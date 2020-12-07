@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+  {% block media %}{% endblock %}
+</head>
+
+<body>
+  <section class="hero">
+    <div class="hero-body title has-text-primary">
+      ShapeWorks Cloud
+    </div>
+  </section>
+
+
+  <hr />
+
+  <section class="section">
+    <div class="is-size-7">
+      {% block breadcrumb %}&nbsp;{% endblock %}
+    </div>
+
+    <div class="level">
+      <div class="level-left is-size-3">
+        {% block title %}{% endblock %}
+      </div>
+      <div class="level-right">
+        {% block actions %}{% endblock %}
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section class="section">
+    {% block content %}{% endblock %}
+  </section>
+
+</body>
+
+</html>

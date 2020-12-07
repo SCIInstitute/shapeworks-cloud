@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<a href="{% url 'dataset_list' %}">Datasets</a> /
+<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
+{% endblock %}
+
+{% block title %}
+{{ asset.name }}
+{% endblock %}
+
+{% block actions %}
+<a class="button" href="/datasets/{{ dataset.pk }}/files/{{ asset.pk }}/edit/">
+  Edit File
+</a>
+{% endblock %}
+
+{% block content %}
+<table class="table">
+  <tbody>
+    <tr>
+      <td>Type</td>
+      <td>{{ asset.get_asset_type_display }}</td>
+    </tr>
+    <tr>
+      <td>Size</td>
+      <td>{{ asset.formatted_size }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}

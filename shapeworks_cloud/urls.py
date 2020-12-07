@@ -5,11 +5,20 @@ from drf_yasg2 import openapi
 from drf_yasg2.views import get_schema_view
 from rest_framework import permissions, routers
 
-from shapeworks_cloud.core.rest import ImageViewSet
-from shapeworks_cloud.core.views import GalleryView, image_summary
+# from shapeworks_cloud.core.rest import ImageViewSet
+# from shapeworks_cloud.core.views import GalleryView, image_summary
+from shapeworks_cloud.core.views import (
+    asset_create,
+    asset_detail,
+    asset_edit,
+    dataset_create,
+    dataset_detail,
+    dataset_edit,
+    dataset_list,
+)
 
 router = routers.SimpleRouter()
-router.register(r'images', ImageViewSet)
+# router.register(r'images', ImageViewSet)
 
 # OpenAPI generation
 schema_view = get_schema_view(
@@ -25,8 +34,13 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
-    path('summary/', image_summary, name='image-summary'),
-    path('gallery/', GalleryView.as_view(), name='gallery'),
+    path('datasets/', dataset_list, name='dataset_list'),
+    path('datasets/create/', dataset_create, name='dataset_create'),
+    path('datasets/<pk>/', dataset_detail, name='dataset_detail'),
+    path('datasets/<pk>/edit/', dataset_edit, name='dataset_edit'),
+    path('datasets/<dataset_pk>/files/create/', asset_create, name='asset_create'),
+    path('datasets/<dataset_pk>/files/<asset_pk>/', asset_detail, name='asset_detail'),
+    path('datasets/<dataset_pk>/files/<asset_pk>/edit/', asset_edit, name='asset_edit'),
 ]
 
 if settings.DEBUG:

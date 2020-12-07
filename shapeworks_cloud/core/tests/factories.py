@@ -1,23 +1,21 @@
-from django.contrib.auth.models import User
 import factory.django
+import factory.fuzzy
 
-from shapeworks_cloud.core.models import Image
+from shapeworks_cloud.core.models import ASSET_TYPE_CHOICES, Asset, Dataset
 
 
-class UserFactory(factory.django.DjangoModelFactory):
+class DatasetFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = User
+        model = Dataset
 
-    username = factory.SelfAttribute('email')
-    email = factory.Faker('safe_email')
-    first_name = factory.Faker('first_name')
-    last_name = factory.Faker('last_name')
+    name = factory.Faker('sentence')
 
 
-class ImageFactory(factory.django.DjangoModelFactory):
+class AssetFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Image
+        model = Asset
 
     name = factory.Faker('file_name', category='image')
     blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
-    owner = factory.SubFactory(UserFactory)
+    dataset = factory.SubFactory(DatasetFactory)
+    asset_type = factory.fuzzy.FuzzyChoice([c[0] for c in ASSET_TYPE_CHOICES])

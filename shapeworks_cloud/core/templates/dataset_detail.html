@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<a href="{% url 'dataset_list' %}">Datasets</a>
+{% endblock %}
+
+{% block title %}
+{{ dataset.name }}
+{% endblock %}
+
+{% block actions %}
+<a class="button" href="/datasets/{{ dataset.pk }}/files/create/">
+  Upload File
+</a>
+<a class="button" href="/datasets/{{ dataset.pk }}/edit/">
+  Edit Dataset
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div>
+  {% if segmentation_page_obj %}
+  <div class="title">Segmentations</div>
+  <table class="table is-fullwidth">
+    <thead>
+      <td>File Name</td>
+      <td>File Size</td>
+      <td></td>
+    </thead>
+    <tbody>
+      {% for object in segmentation_page_obj.object_list %}
+      <tr>
+        <td>
+          <a href="{% url 'asset_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+        </td>
+        <td>
+          {{ object.formatted_size }}
+        </td>
+        <td class="has-text-right">
+          <a href="{{ object.blob.url }}">Download</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <span class="step-links">
+      {% if segmentation_page_obj.has_previous %}
+      <a href="?segmentation_page=1">&laquo; first</a>
+      <a href="?segmentation_page={{ segmentation_page_obj.previous_page_number }}">previous</a>
+      {% endif %}
+
+      <span class="current">
+        Page {{ segmentation_page_obj.number }} of {{ segmentation_page_obj.paginator.num_pages }}.
+      </span>
+
+      {% if segmentation_page_obj.has_next %}
+      <a href="?segmentation_page={{ segmentation_page_obj.next_page_number }}">next</a>
+      <a href="?segmentation_page={{ segmentation_page_obj.paginator.num_pages }}">last &raquo;</a>
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  {% if groomed_page_obj %}
+  <div class="title">Groomed</div>
+  <table class="table is-fullwidth">
+    <thead>
+      <td>File Name</td>
+      <td>File Size</td>
+      <td></td>
+    </thead>
+    <tbody>
+      {% for object in groomed_page_obj.object_list %}
+      <tr>
+        <td>
+          <a href="{% url 'asset_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+        </td>
+        <td>
+          {{ object.formatted_size }}
+        </td>
+        <td class="has-text-right">
+          <a href="{{ object.blob.url }}">Download</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <span class="step-links">
+      {% if groomed_page_obj.has_previous %}
+      <a href="?groomed_page=1">&laquo; first</a>
+      <a href="?groomed_page={{ groomed_page_obj.previous_page_number }}">previous</a>
+      {% endif %}
+
+      <span class="current">
+        Page {{ groomed_page_obj.number }} of {{ groomed_page_obj.paginator.num_pages }}.
+      </span>
+
+      {% if groomed_page_obj.has_next %}
+      <a href="?groomed_page={{ groomed_page_obj.next_page_number }}">next</a>
+      <a href="?groomed_page={{ groomed_page_obj.paginator.num_pages }}">last &raquo;</a>
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  {% if shape_model_page_obj %}
+  <div class="title">Shape Models</div>
+  <table class="table is-fullwidth">
+    <thead>
+      <td>File Name</td>
+      <td>File Size</td>
+      <td></td>
+    </thead>
+    <tbody>
+      {% for object in shape_model_page_obj.object_list %}
+      <tr>
+        <td>
+          <a href="{% url 'asset_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+        </td>
+        <td>
+          {{ object.formatted_size }}
+        </td>
+        <td class="has-text-right">
+          <a href="{{ object.blob.url }}">Download</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <span class="step-links">
+      {% if shape_model_page_obj.has_previous %}
+      <a href="?shape_model_page=1">&laquo; first</a>
+      <a href="?shape_model_page={{ shape_model_page_obj.previous_page_number }}">previous</a>
+      {% endif %}
+
+      <span class="current">
+        Page {{ shape_model_page_obj.number }} of {{ shape_model_page_obj.paginator.num_pages }}.
+      </span>
+
+      {% if shape_model_page_obj.has_next %}
+      <a href="?shape_model_page={{ shape_model_page_obj.next_page_number }}">next</a>
+      <a href="?shape_model_page={{ shape_model_page_obj.paginator.num_pages }}">last &raquo;</a>
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

@@ -44,7 +44,7 @@ setup(
         'django-cors-headers',
         'django-extensions',
         'django-filter',
-        'django-s3-file-field>=0.0.12',
+        'django-s3-file-field',
         'djangorestframework',
         'drf-extensions',
         'drf-yasg2',
@@ -57,7 +57,7 @@ setup(
         'sentry-sdk',
         # Development-only
         'django-debug-toolbar',
-        'django-minio-storage',
+        'django-minio-storage>=0.3.10',
     ],
     extras_require={'dev': ['ipython', 'tox']},
 )

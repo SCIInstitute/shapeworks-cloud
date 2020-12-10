@@ -8,14 +8,17 @@ from rest_framework import permissions, routers
 # from shapeworks_cloud.core.rest import ImageViewSet
 # from shapeworks_cloud.core.views import GalleryView, image_summary
 from shapeworks_cloud.core.views import (
-    asset_create,
-    asset_detail,
-    asset_edit,
     dataset_create,
     dataset_detail,
     dataset_edit,
     dataset_list,
+    groomed_create,
+    groomed_detail,
+    groomed_edit,
     home,
+    segmentation_create,
+    segmentation_detail,
+    segmentation_edit,
 )
 
 router = routers.SimpleRouter()
@@ -40,9 +43,24 @@ urlpatterns = [
     path('datasets/create/', dataset_create, name='dataset_create'),
     path('datasets/<pk>/', dataset_detail, name='dataset_detail'),
     path('datasets/<pk>/edit/', dataset_edit, name='dataset_edit'),
-    path('datasets/<dataset_pk>/files/create/', asset_create, name='asset_create'),
-    path('datasets/<dataset_pk>/files/<asset_pk>/', asset_detail, name='asset_detail'),
-    path('datasets/<dataset_pk>/files/<asset_pk>/edit/', asset_edit, name='asset_edit'),
+    path('datasets/<dataset_pk>/groomed/create/', groomed_create, name='groomed_create'),
+    path('datasets/<dataset_pk>/groomed/<groomed_pk>/', groomed_detail, name='groomed_detail'),
+    path('datasets/<dataset_pk>/groomed/<groomed_pk>/edit/', groomed_edit, name='groomed_edit'),
+    path(
+        'datasets/<dataset_pk>/segmentation/create/',
+        segmentation_create,
+        name='segmentation_create',
+    ),
+    path(
+        'datasets/<dataset_pk>/segmentation/<segmentation_pk>/',
+        segmentation_detail,
+        name='segmentation_detail',
+    ),
+    path(
+        'datasets/<dataset_pk>/segmentation/<segmentation_pk>/edit/',
+        segmentation_edit,
+        name='segmentation_edit',
+    ),
 ]
 
 if settings.DEBUG:

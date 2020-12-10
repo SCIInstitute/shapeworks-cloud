@@ -3,8 +3,14 @@ from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 
-from shapeworks_cloud.core.forms import AssetForm, DatasetForm
-from shapeworks_cloud.core.models import Asset, Dataset
+from shapeworks_cloud.core.forms import (
+    DatasetForm,
+    GroomedForm,
+    SegmentationForm,
+    ShapeModelBlobForm,
+    ShapeModelForm,
+)
+from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, ShapeModelBlob
 
 
 def dataset_list(request):
@@ -18,19 +24,15 @@ def dataset_list(request):
 def dataset_detail(request, pk):
     dataset = get_object_or_404(Dataset, pk=pk)
 
-    segmentation_paginator = Paginator(
-        dataset.files.filter(asset_type='segmentation').order_by('name'), 10
-    )
+    segmentation_paginator = Paginator(dataset.segmentations.order_by('name'), 10)
     segmentation_page_number = request.GET.get('segmentation_page')
     segmentation_page_obj = segmentation_paginator.get_page(segmentation_page_number)
 
-    groomed_paginator = Paginator(dataset.files.filter(asset_type='groomed').order_by('name'), 10)
+    groomed_paginator = Paginator(dataset.groomed.order_by('name'), 10)
     groomed_page_number = request.GET.get('groomed_page')
     groomed_page_obj = groomed_paginator.get_page(groomed_page_number)
 
-    shape_model_paginator = Paginator(
-        dataset.files.filter(asset_type='shape_model').order_by('name'), 10
-    )
+    shape_model_paginator = Paginator(dataset.shape_models.order_by('name'), 10)
     shape_model_page_number = request.GET.get('shape_model_page')
     shape_model_page_obj = shape_model_paginator.get_page(shape_model_page_number)
 

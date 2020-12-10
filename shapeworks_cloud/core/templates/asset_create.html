@@ -3,6 +3,7 @@
 {% block media %}{{ form.media }}{% endblock %}
 
 {% block breadcrumb %}
+<a href="{% url 'home' %}">Home</a> /
 <a href="{% url 'dataset_list' %}">Datasets</a> /
 <a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
 {% endblock %}

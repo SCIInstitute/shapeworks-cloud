@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block breadcrumb %}
+<a href="{% url 'home' %}">Home</a>
+{% endblock %}
+
 {% block title %}
 Datasets
 {% endblock %}

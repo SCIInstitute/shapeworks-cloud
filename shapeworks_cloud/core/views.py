@@ -113,18 +113,15 @@ def asset_edit(request, dataset_pk, asset_pk):
     if request.method == 'POST':
         # Create a new Asset
         form = AssetForm(request.POST, initial={'blob': asset.blob})
-        print(form.fields['blob'])
         if not form.fields['blob']:
             form.fields.blob = asset.blob
         if form.is_valid():
-            print('valid')
             asset.dataset = dataset
             asset.name = form.instance.name
             asset.blob = form.instance.blob
             asset.asset_type = form.instance.asset_type
             asset.save()
             return HttpResponseRedirect(f'/datasets/{dataset_pk}/files/{asset_pk}/')
-        print('doone')
     else:
         form = AssetForm(instance=asset)
     context = {

@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -42,6 +43,7 @@ def dataset_detail(request, pk):
     return render(request, 'dataset_detail.html', context)
 
 
+@login_required
 def dataset_create(request):
     if request.method == 'POST':
         # Create a new Dataset
@@ -55,6 +57,7 @@ def dataset_create(request):
     return render(request, 'dataset_create.html', {'form': form})
 
 
+@login_required
 def dataset_edit(request, pk):
     dataset = get_object_or_404(Dataset, pk=pk)
     if request.method == 'POST':
@@ -83,6 +86,7 @@ def asset_detail(request, dataset_pk, asset_pk):
     return render(request, 'asset_detail.html', context)
 
 
+@login_required
 def asset_create(request, dataset_pk):
     dataset = get_object_or_404(Dataset, pk=dataset_pk)
     if request.method == 'POST':
@@ -102,6 +106,7 @@ def asset_create(request, dataset_pk):
     return render(request, 'asset_create.html', context)
 
 
+@login_required
 def asset_edit(request, dataset_pk, asset_pk):
     dataset = get_object_or_404(Dataset, pk=dataset_pk)
     asset = get_object_or_404(Asset, dataset__pk=dataset_pk, pk=asset_pk)

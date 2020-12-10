@@ -10,9 +10,11 @@
 {% endblock %}
 
 {% block actions %}
+<!--
 <a class="button" href="/datasets/{{ dataset.pk }}/files/create/">
   Upload File
 </a>
+-->
 <a class="button" href="/datasets/{{ dataset.pk }}/edit/">
   Edit Dataset
 </a>
@@ -33,7 +35,7 @@
       {% for object in segmentation_page_obj.object_list %}
       <tr>
         <td>
-          <a href="{% url 'asset_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+          <a href="{% url 'segmentation_detail' dataset.pk object.pk %}">{{ object.name }}</a>
         </td>
         <td>
           {{ object.formatted_size }}
@@ -77,7 +79,7 @@
       {% for object in groomed_page_obj.object_list %}
       <tr>
         <td>
-          <a href="{% url 'asset_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+          <a href="{% url 'groomed_detail' dataset.pk object.pk %}">{{ object.name }}</a>
         </td>
         <td>
           {{ object.formatted_size }}
@@ -121,7 +123,7 @@
       {% for object in shape_model_page_obj.object_list %}
       <tr>
         <td>
-          <a href="{% url 'asset_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+          <a href="{% url 'shape_model_detail' dataset.pk object.pk %}">{{ object.name }}</a>
         </td>
         <td>
           {{ object.formatted_size }}

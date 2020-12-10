@@ -15,6 +15,7 @@ from shapeworks_cloud.core.views import (
     dataset_detail,
     dataset_edit,
     dataset_list,
+    home,
 )
 
 router = routers.SimpleRouter()
@@ -34,6 +35,7 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
+    path('', home, name='home'),
     path('datasets/', dataset_list, name='dataset_list'),
     path('datasets/create/', dataset_create, name='dataset_create'),
     path('datasets/<pk>/', dataset_detail, name='dataset_detail'),

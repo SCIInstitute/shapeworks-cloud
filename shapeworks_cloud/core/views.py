@@ -128,3 +128,7 @@ def asset_edit(request, dataset_pk, asset_pk):
         'asset': asset,
     }
     return render(request, 'asset_edit.html', context)
+
+
+def home(request):
+    return render(request, 'index.html')

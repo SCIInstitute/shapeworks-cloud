@@ -27,7 +27,21 @@
         {% block title %}{% endblock %}
       </div>
       <div class="level-right">
-        {% block actions %}{% endblock %}
+        {% if user.is_authenticated %}
+        <div class="tile is-vertical">
+          <div class="tile level-right">
+            <div class="level">
+              <div>Welcome, {{ user.username }} &nbsp;</div>
+              <a href="{% url 'account_logout' %}?next={{ request.path }}" class="button is-small">Log Out</a>
+            </div>
+          </div>
+          <div class="tile level-right">
+            {% block actions %}{% endblock %}
+          </div>
+        </div>
+        {% else %}
+        <a href="{% url 'account_login' %}?next={{ request.path }}" class="button">Log In</a>
+        {% endif %}
       </div>
     </div>
   </section>

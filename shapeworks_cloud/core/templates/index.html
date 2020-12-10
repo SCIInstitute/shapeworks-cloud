@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}
+Welcome
+{% endblock %}
+
+{% block content %}
+<a class="button is-link is-light" href="{% url 'dataset_list' %}">
+  Go to Datasets
+</a>
+{% endblock %}

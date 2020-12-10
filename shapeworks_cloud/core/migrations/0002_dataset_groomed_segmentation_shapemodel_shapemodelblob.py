@@ -18,9 +18,24 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Dataset',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('name', models.CharField(max_length=255)),
             ],
             options={
@@ -31,15 +46,55 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ShapeModel',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('name', models.CharField(max_length=255)),
-                ('analyze', s3_file_field.fields.S3FileField(max_length=2000, upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename)),
-                ('correspondence', s3_file_field.fields.S3FileField(max_length=2000, upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename)),
-                ('transform', s3_file_field.fields.S3FileField(max_length=2000, upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename)),
+                (
+                    'analyze',
+                    s3_file_field.fields.S3FileField(
+                        max_length=2000,
+                        upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename,
+                    ),
+                ),
+                (
+                    'correspondence',
+                    s3_file_field.fields.S3FileField(
+                        max_length=2000,
+                        upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename,
+                    ),
+                ),
+                (
+                    'transform',
+                    s3_file_field.fields.S3FileField(
+                        max_length=2000,
+                        upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename,
+                    ),
+                ),
                 ('magic_number', models.IntegerField()),
-                ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='shape_models', to='core.dataset')),
+                (
+                    'dataset',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='shape_models',
+                        to='core.dataset',
+                    ),
+                ),
             ],
             options={
                 'get_latest_by': 'modified',
@@ -49,12 +104,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ShapeModelBlob',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('name', models.CharField(max_length=255)),
-                ('blob', s3_file_field.fields.S3FileField(max_length=2000, upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename)),
-                ('shape_model', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='blobs', to='core.shapemodel')),
+                (
+                    'blob',
+                    s3_file_field.fields.S3FileField(
+                        max_length=2000,
+                        upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename,
+                    ),
+                ),
+                (
+                    'shape_model',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='blobs',
+                        to='core.shapemodel',
+                    ),
+                ),
             ],
             options={
                 'abstract': False,
@@ -63,12 +146,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Segmentation',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('name', models.CharField(max_length=255)),
-                ('blob', s3_file_field.fields.S3FileField(max_length=2000, upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename)),
-                ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='segmentations', to='core.dataset')),
+                (
+                    'blob',
+                    s3_file_field.fields.S3FileField(
+                        max_length=2000,
+                        upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename,
+                    ),
+                ),
+                (
+                    'dataset',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='segmentations',
+                        to='core.dataset',
+                    ),
+                ),
             ],
             options={
                 'abstract': False,
@@ -77,12 +188,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Groomed',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('name', models.CharField(max_length=255)),
-                ('blob', s3_file_field.fields.S3FileField(max_length=2000, upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename)),
-                ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='groomed', to='core.dataset')),
+                (
+                    'blob',
+                    s3_file_field.fields.S3FileField(
+                        max_length=2000,
+                        upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename,
+                    ),
+                ),
+                (
+                    'dataset',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='groomed',
+                        to='core.dataset',
+                    ),
+                ),
             ],
             options={
                 'abstract': False,

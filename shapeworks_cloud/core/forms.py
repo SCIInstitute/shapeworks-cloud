@@ -1,6 +1,6 @@
 from django import forms
 
-from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, Particles
+from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
 
 
 class DatasetForm(forms.ModelForm):

@@ -7,11 +7,11 @@ from django.urls.base import reverse
 from shapeworks_cloud.core.forms import (
     DatasetForm,
     GroomedForm,
-    SegmentationForm,
     ParticlesForm,
+    SegmentationForm,
     ShapeModelForm,
 )
-from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, Particles
+from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
 
 
 def dataset_list(request):

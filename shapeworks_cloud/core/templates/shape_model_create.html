@@ -1,18 +1,20 @@
 {% extends "base.html" %}
 
+{% block media %}{{ form.media }}{% endblock %}
+
 {% block breadcrumb %}
 <a href="{% url 'home' %}">Home</a> /
 <a href="{% url 'dataset_list' %}">Datasets</a> /
-<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a> /
-<a href="{% url 'asset_detail' dataset.pk asset.pk %}">{{ asset.name }}</a>
+<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
 {% endblock %}
 
 {% block title %}
-Edit {{ asset.name }}
+Upload New File
 {% endblock %}
 
 {% block content %}
-<form action="{% url 'asset_edit' dataset.pk asset.pk %}" method="post">
+
+<form action="{% url 'shape_model_create' dataset.pk %}" method="post">
   {% csrf_token %}
   {{ form }}
   <div class="field is-grouped">
@@ -20,7 +22,7 @@ Edit {{ asset.name }}
       <input class="button is-link" type="submit" value="Submit">
     </div>
     <div class="control">
-      <a class="button is-link is-light" href="/datasets/{{ dataset.pk }}/">
+      <a class="button is-link is-light" href="{% url 'dataset_detail' dataset.pk %}">
         Cancel
       </a>
     </div>

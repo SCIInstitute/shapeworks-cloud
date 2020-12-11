@@ -3,15 +3,16 @@
 {% block breadcrumb %}
 <a href="{% url 'home' %}">Home</a> /
 <a href="{% url 'dataset_list' %}">Datasets</a> /
-<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
+<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a> /
+<a href="{% url 'groomed_detail' dataset.pk groomed.pk %}">{{ groomed.name }}</a>
 {% endblock %}
 
 {% block title %}
-Edit {{ dataset.name }}
+Edit {{ groomed.name }}
 {% endblock %}
 
 {% block content %}
-<form action="{% url 'dataset_edit' dataset.pk %}" method="post">
+<form action="{% url 'groomed_edit' dataset.pk groomed.pk %}" method="post">
   {% csrf_token %}
   {{ form }}
   <div class="field is-grouped">
@@ -19,7 +20,7 @@ Edit {{ dataset.name }}
       <input class="button is-link" type="submit" value="Submit">
     </div>
     <div class="control">
-      <a class="button is-link is-light" href="{% url 'dataset_detail' dataset.pk %}">
+      <a class="button is-link is-light" href="{% url 'groomed_detail' dataset.pk groomed.pk %}">
         Cancel
       </a>
     </div>

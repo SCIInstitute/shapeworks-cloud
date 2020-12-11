@@ -7,25 +7,21 @@
 {% endblock %}
 
 {% block title %}
-{{ asset.name }}
+{{ groomed.name }}
 {% endblock %}
 
 {% block actions %}
-<a class="button" href="/datasets/{{ dataset.pk }}/files/{{ asset.pk }}/edit/">
-  Edit File
+<a class="button" href="{% url 'groomed_edit' dataset.pk groomed.pk %}">
+  Edit Groomed
 </a>
 {% endblock %}
 
 {% block content %}
-<table class="table">
+<table class=" table">
   <tbody>
     <tr>
-      <td>Type</td>
-      <td>{{ asset.get_asset_type_display }}</td>
-    </tr>
-    <tr>
       <td>Size</td>
-      <td>{{ asset.formatted_size }}</td>
+      <td>{{ groomed.formatted_size }}</td>
     </tr>
   </tbody>
 </table>

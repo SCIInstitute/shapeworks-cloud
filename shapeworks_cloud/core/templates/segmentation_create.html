@@ -9,12 +9,12 @@
 {% endblock %}
 
 {% block title %}
-Upload New File
+Upload New Segmentation
 {% endblock %}
 
 {% block content %}
 
-<form action="{% url 'asset_create' dataset.pk %}" method="post">
+<form action="{% url 'segmentation_create' dataset.pk %}" method="post">
   {% csrf_token %}
   {{ form }}
   <div class="field is-grouped">
@@ -22,7 +22,7 @@ Upload New File
       <input class="button is-link" type="submit" value="Submit">
     </div>
     <div class="control">
-      <a class="button is-link is-light" href="/datasets/{{ dataset.pk }}/">
+      <a class="button is-link is-light" href="{% url 'dataset_detail' dataset.pk %}">
         Cancel
       </a>
     </div>

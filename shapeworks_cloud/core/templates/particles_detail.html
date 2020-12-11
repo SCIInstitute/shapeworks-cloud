@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<a href="{% url 'home' %}">Home</a> /
+<a href="{% url 'dataset_list' %}">Datasets</a> /
+<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
+<a href="{% url 'shape_model_detail' dataset.pk shape_model.pk %}">{{ shape_model.name }}</a>
+{% endblock %}
+
+{% block title %}
+{{ particles.name }}
+{% endblock %}
+
+{% block actions %}
+<a class="button" href="{% url 'particles_edit' dataset.pk shape_model.pk particles.pk %}">
+  Edit Groomed
+</a>
+{% endblock %}
+
+{% block content %}
+<table class=" table">
+  <tbody>
+    <tr>
+      <td>Size</td>
+      <td>{{ particles.formatted_size }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}

@@ -4,14 +4,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from shapeworks_cloud.core.forms import (
-    DatasetForm,
-    GroomedForm,
-    ParticlesForm,
-    SegmentationForm,
-    ShapeModelForm,
-)
-from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
+from shapeworks_cloud.core.forms import DatasetForm
+from shapeworks_cloud.core.models import Dataset
 
 
 def dataset_list(request):

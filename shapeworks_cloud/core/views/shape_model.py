@@ -4,8 +4,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from shapeworks_cloud.core.forms import ParticlesForm, ShapeModelForm
-from shapeworks_cloud.core.models import Dataset, Particles, ShapeModel
+from shapeworks_cloud.core.forms import ShapeModelForm
+from shapeworks_cloud.core.models import Dataset, ShapeModel
 
 
 def shape_model_detail(request, dataset_pk, shape_model_pk):

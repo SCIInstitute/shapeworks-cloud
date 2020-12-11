@@ -21,6 +21,6 @@ __all__ = [
     'segmentation_detail',
     'segmentation_edit',
     'shape_model_create',
-    'shope_model_detail',
+    'shape_model_detail',
     'shape_model_edit',
 ]

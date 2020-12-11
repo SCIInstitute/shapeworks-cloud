@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<a href="{% url 'home' %}">Home</a> /
+<a href="{% url 'dataset_list' %}">Datasets</a> /
+<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
+{% endblock %}
+
+{% block title %}
+{{ segmentation.name }}
+{% endblock %}
+
+{% block actions %}
+<a class="button" href="{% url 'segmentation_edit' dataset.pk segmentation.pk %}">
+  Edit Segmentation
+</a>
+{% endblock %}
+
+{% block content %}
+<table class=" table">
+  <tbody>
+    <tr>
+      <td>Size</td>
+      <td>{{ segmentation.formatted_size }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}

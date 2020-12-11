@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<a href="{% url 'home' %}">Home</a> /
+<a href="{% url 'dataset_list' %}">Datasets</a> /
+<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
+{% endblock %}
+
+{% block title %}
+{{ shape_model.name }}
+{% endblock %}
+
+{% block actions %}
+<a class="button" href="{% url 'shape_model_edit' dataset.pk shape_model.pk %}">
+  Edit Shape Model
+</a>
+{% endblock %}
+
+{% block content %}
+<table class=" table">
+  <tbody>
+    <tr>
+      <td>Magic Number</td>
+      <td>{{ shape_model.magic_number }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}

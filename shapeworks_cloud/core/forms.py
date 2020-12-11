@@ -1,6 +1,6 @@
 from django import forms
 
-from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, ShapeModelBlob
+from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, Particles
 
 
 class DatasetForm(forms.ModelForm):
@@ -27,7 +27,7 @@ class ShapeModelForm(forms.ModelForm):
         fields = ['name', 'analyze', 'correspondence', 'transform', 'magic_number']
 
 
-class ShapeModelBlobForm(forms.ModelForm):
+class ParticlesForm(forms.ModelForm):
     class Meta:
-        model = ShapeModelBlob
+        model = Particles
         fields = ['name', 'blob']

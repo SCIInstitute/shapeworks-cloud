@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, ShapeModelBlob
+from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, Particles
 
 
 @admin.register(Dataset)
@@ -74,8 +74,8 @@ class ShapeModelAdmin(admin.ModelAdmin):
     readonly_fields = ['created', 'modified']
 
 
-@admin.register(ShapeModelBlob)
-class ShapeModelBlobAdmin(BlobAdmin):
+@admin.register(Particles)
+class Particles(BlobAdmin):
     list_filter = [
         ('created', admin.DateFieldListFilter),
         'shape_model',

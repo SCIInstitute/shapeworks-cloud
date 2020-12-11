@@ -7,10 +7,10 @@ from shapeworks_cloud.core.forms import (
     DatasetForm,
     GroomedForm,
     SegmentationForm,
-    ShapeModelBlobForm,
+    ParticlesForm,
     ShapeModelForm,
 )
-from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, ShapeModelBlob
+from shapeworks_cloud.core.models import Dataset, Groomed, Segmentation, ShapeModel, Particles
 
 
 def dataset_list(request):

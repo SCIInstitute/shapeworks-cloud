@@ -3,8 +3,8 @@ from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 
-from shapeworks_cloud.core.forms import ShapeModelBlobForm, ShapeModelForm
-from shapeworks_cloud.core.models import Dataset, ShapeModel, ShapeModelBlob
+from shapeworks_cloud.core.forms import ParticlesForm, ShapeModelForm
+from shapeworks_cloud.core.models import Dataset, ShapeModel, Particles
 
 
 def shape_model_detail(request, dataset_pk, shape_model_pk):

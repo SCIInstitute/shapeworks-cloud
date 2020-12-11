@@ -102,7 +102,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='ShapeModelBlob',
+            name='Particles',
             fields=[
                 (
                     'id',

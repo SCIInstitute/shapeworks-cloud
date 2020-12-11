@@ -45,5 +45,5 @@ class ShapeModel(TimeStampedModel, models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='shape_models')
 
 
-class ShapeModelBlob(BlobModel):
-    shape_model = models.ForeignKey(ShapeModel, on_delete=models.CASCADE, related_name='blobs')
+class Particles(BlobModel):
+    shape_model = models.ForeignKey(ShapeModel, on_delete=models.CASCADE, related_name='particles')

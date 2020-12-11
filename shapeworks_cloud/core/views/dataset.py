@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls.base import reverse
 
 from shapeworks_cloud.core.forms import (
     DatasetForm,
@@ -53,7 +54,7 @@ def dataset_create(request):
         if form.is_valid():
             dataset = form.instance
             dataset.save()
-            return HttpResponseRedirect(f'/datasets/{dataset.pk}')
+            return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:
         form = DatasetForm()
     return render(request, 'dataset_create.html', {'form': form})
@@ -68,7 +69,7 @@ def dataset_edit(request, pk):
         if form.is_valid():
             dataset.name = form.instance.name
             dataset.save()
-            return HttpResponseRedirect(f'/datasets/{dataset.pk}/')
+            return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:
         form = DatasetForm(instance=dataset)
     context = {

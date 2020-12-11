@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls.base import reverse
 
 from shapeworks_cloud.core.forms import ParticlesForm, ShapeModelForm
 from shapeworks_cloud.core.models import Dataset, ShapeModel, Particles
@@ -33,7 +34,7 @@ def shape_model_create(request, dataset_pk):
             shape_model = form.instance
             shape_model.dataset = dataset
             shape_model.save()
-            return HttpResponseRedirect(f'/datasets/{dataset_pk}/')
+            return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:
         form = ShapeModelForm()
     context = {
@@ -70,7 +71,9 @@ def shape_model_edit(request, dataset_pk, shape_model_pk):
             shape_model.correspondence = form.instance.correspondence
             shape_model.transform = form.instance.transform
             shape_model.save()
-            return HttpResponseRedirect(f'/datasets/{dataset_pk}/shape_model/{shape_model_pk}/')
+            return HttpResponseRedirect(
+                reverse('shape_model_detail', args=(dataset.pk, shape_model.pk))
+            )
     else:
         form = ShapeModelForm(instance=shape_model)
     context = {

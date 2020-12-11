@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls.base import reverse
 
 from shapeworks_cloud.core.forms import SegmentationForm
 from shapeworks_cloud.core.models import Dataset, Segmentation
@@ -27,7 +28,7 @@ def segmentation_create(request, dataset_pk):
             segmentation = form.instance
             segmentation.dataset = dataset
             segmentation.save()
-            return HttpResponseRedirect(f'/datasets/{dataset_pk}/')
+            return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:
         form = SegmentationForm()
     context = {
@@ -51,7 +52,9 @@ def segmentation_edit(request, dataset_pk, segmentation_pk):
             segmentation.name = form.instance.name
             segmentation.blob = form.instance.blob
             segmentation.save()
-            return HttpResponseRedirect(f'/datasets/{dataset_pk}/segmentation/{segmentation_pk}/')
+            return HttpResponseRedirect(
+                reverse('segmentation_detail', args=(dataset.pk, segmentation.pk))
+            )
     else:
         form = SegmentationForm(instance=segmentation)
     context = {

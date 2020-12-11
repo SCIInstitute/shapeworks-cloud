@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls.base import reverse
 
 from shapeworks_cloud.core.forms import GroomedForm
 from shapeworks_cloud.core.models import Dataset, Groomed
@@ -27,7 +28,7 @@ def groomed_create(request, dataset_pk):
             groomed = form.instance
             groomed.dataset = dataset
             groomed.save()
-            return HttpResponseRedirect(f'/datasets/{dataset_pk}/')
+            return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:
         form = GroomedForm()
     context = {
@@ -51,7 +52,7 @@ def groomed_edit(request, dataset_pk, groomed_pk):
             groomed.name = form.instance.name
             groomed.blob = form.instance.blob
             groomed.save()
-            return HttpResponseRedirect(f'/datasets/{dataset_pk}/groomed/{groomed_pk}/')
+            return HttpResponseRedirect(reverse('groomed_detail', args=(dataset.pk, groomed.pk)))
     else:
         form = GroomedForm(instance=groomed)
     context = {

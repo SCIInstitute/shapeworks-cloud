@@ -26,7 +26,12 @@
   </tbody>
 </table>
 
-<div class="title">Particles</div>
+<div class="level">
+  <div class="level-left">
+    <div class="title">Particles</div>
+  </div>
+  <a href="{% url 'particles_create' dataset.pk shape_model.pk %}" class="button level-right">Add Particles</a>
+</div>
 <table class="table is-fullwidth">
   <thead>
     <td>File Name</td>
@@ -37,7 +42,7 @@
     {% for object in page_obj.object_list %}
     <tr>
       <td>
-        <a href="{% url 'particles_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+        <a href="{% url 'particles_detail' dataset.pk shape_model.pk object.pk %}">{{ object.name }}</a>
       </td>
       <td>
         {{ object.formatted_size }}

@@ -5,7 +5,7 @@
 {% block breadcrumb %}
 <a href="{% url 'home' %}">Home</a> /
 <a href="{% url 'dataset_list' %}">Datasets</a> /
-<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a>
+<a href="{% url 'dataset_detail' dataset.pk %}">{{ dataset.name }}</a> /
 <a href="{% url 'shape_model_detail' dataset.pk shape_model.pk %}">{{ shape_model.name }}</a>
 {% endblock %}
 

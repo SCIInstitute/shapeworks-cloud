@@ -23,8 +23,10 @@
 {% block content %}
 
 <div>
-  {% if segmentation_page_obj %}
-  <div class="title">Segmentations</div>
+  <div class="level">
+    <div class="title level-left">Segmentations</div>
+    <a href="{% url 'segmentation_create' dataset.pk %}" class="button level-right">Add Segmentation</a>
+  </div>
   <table class="table is-fullwidth">
     <thead>
       <td>File Name</td>
@@ -65,10 +67,11 @@
       {% endif %}
     </span>
   </div>
-  {% endif %}
 
-  {% if groomed_page_obj %}
-  <div class="title">Groomed</div>
+  <div class="level">
+    <div class="title level-left">Groomed</div>
+    <a href="{% url 'groomed_create' dataset.pk %}" class="button level-right">Add Groomed</a>
+  </div>
   <table class="table is-fullwidth">
     <thead>
       <td>File Name</td>
@@ -109,10 +112,11 @@
       {% endif %}
     </span>
   </div>
-  {% endif %}
 
-  {% if shape_model_page_obj %}
-  <div class="title">Shape Models</div>
+  <div class="level">
+    <div class="title level-left">Shape Models</div>
+    <a href="{% url 'shape_model_create' dataset.pk %}" class="button level-right">Add Shape Model</a>
+  </div>
   <table class="table is-fullwidth">
     <thead>
       <td>File Name</td>
@@ -153,7 +157,6 @@
       {% endif %}
     </span>
   </div>
-  {% endif %}
 
 </div>
 

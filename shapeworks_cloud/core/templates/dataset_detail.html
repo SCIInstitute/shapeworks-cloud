@@ -10,12 +10,7 @@
 {% endblock %}
 
 {% block actions %}
-<!--
-<a class="button" href="/datasets/{{ dataset.pk }}/files/create/">
-  Upload File
-</a>
--->
-<a class="button" href="/datasets/{{ dataset.pk }}/edit/">
+<a class="button" href="{% url 'dataset_edit' dataset.pk %}">
   Edit Dataset
 </a>
 {% endblock %}

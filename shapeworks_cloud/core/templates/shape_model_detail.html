@@ -25,4 +25,46 @@
     </tr>
   </tbody>
 </table>
+
+<div class="title">Particles</div>
+<table class="table is-fullwidth">
+  <thead>
+    <td>File Name</td>
+    <td>File Size</td>
+    <td></td>
+  </thead>
+  <tbody>
+    {% for object in page_obj.object_list %}
+    <tr>
+      <td>
+        <a href="{% url 'particles_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+      </td>
+      <td>
+        {{ object.formatted_size }}
+      </td>
+      <td class="has-text-right">
+        <a href="{{ object.blob.url }}">Download</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="pagination">
+  <span class="step-links">
+    {% if page_obj.has_previous %}
+    <a href="?page=1">&laquo; first</a>
+    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+    {% endif %}
+
+    <span class="current">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}">next</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+    {% endif %}
+  </span>
+</div>
 {% endblock %}

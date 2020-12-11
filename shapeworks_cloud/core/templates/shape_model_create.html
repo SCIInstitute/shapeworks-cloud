@@ -14,7 +14,7 @@ Upload New File
 
 {% block content %}
 
-<form action="{% url 'asset_create' dataset.pk %}" method="post">
+<form action="{% url 'shape_model_create' dataset.pk %}" method="post">
   {% csrf_token %}
   {{ form }}
   <div class="field is-grouped">

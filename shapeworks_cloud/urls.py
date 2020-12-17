@@ -3,10 +3,16 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_yasg2 import openapi
 from drf_yasg2.views import get_schema_view
-from rest_framework import permissions, routers
+from rest_framework import permissions
+from rest_framework_extensions.routers import ExtendedSimpleRouter
 
-# from shapeworks_cloud.core.rest import ImageViewSet
-# from shapeworks_cloud.core.views import GalleryView, image_summary
+from shapeworks_cloud.core.rest import (
+    DatasetViewSet,
+    GroomedViewSet,
+    ParticlesViewSet,
+    SegmentationViewSet,
+    ShapeModelViewSet,
+)
 from shapeworks_cloud.core.views import (
     dataset_create,
     dataset_detail,
@@ -27,8 +33,31 @@ from shapeworks_cloud.core.views import (
     shape_model_edit,
 )
 
-router = routers.SimpleRouter()
-# router.register(r'images', ImageViewSet)
+router = ExtendedSimpleRouter()
+dataset_router = router.register(r'datasets', DatasetViewSet, basename='dataset')
+dataset_router.register(
+    'segmentations',
+    SegmentationViewSet,
+    basename='segmentation',
+    parents_query_lookups=['dataset__pk'],
+)
+dataset_router.register(
+    'groomed',
+    GroomedViewSet,
+    basename='groomed',
+    parents_query_lookups=['dataset__pk'],
+)
+dataset_router.register(
+    'shape_models',
+    ShapeModelViewSet,
+    basename='shape_model',
+    parents_query_lookups=['dataset__pk'],
+).register(
+    'particles',
+    ParticlesViewSet,
+    basename='particles',
+    parents_query_lookups=['shape_model__dataset__pk', 'shape_model__pk'],
+)
 
 # OpenAPI generation
 schema_view = get_schema_view(
@@ -42,8 +71,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/s3-upload/', include('s3_file_field.urls')),
     path('api/v1/', include(router.urls)),
-    path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
-    path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
+    path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
+    path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
     path('', home, name='home'),
     path('datasets/', dataset_list, name='dataset_list'),
     path('datasets/create/', dataset_create, name='dataset_create'),

@@ -7,6 +7,7 @@ class DatasetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dataset
         fields = [
+            'id',
             'name',
             'created',
             'modified',
@@ -18,6 +19,7 @@ class SegmentationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Segmentation
         fields = [
+            'id',
             'name',
             'blob',
             'created',
@@ -30,6 +32,7 @@ class GroomedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Groomed
         fields = [
+            'id',
             'name',
             'blob',
             'created',
@@ -42,6 +45,7 @@ class ShapeModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShapeModel
         fields = [
+            'id',
             'name',
             'analyze',
             'correspondence',
@@ -57,6 +61,7 @@ class ParticlesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Particles
         fields = [
+            'id',
             'name',
             'blob',
             'created',

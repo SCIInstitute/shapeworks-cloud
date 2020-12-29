@@ -12,7 +12,6 @@ else:
 
 setup(
     name='swcc',
-    version='0.1.0',
     description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -28,7 +27,7 @@ setup(
         'Programming Language :: Python',
     ],
     python_requires='>=3.8',
-    packages=find_packages(include=['swcc']),
+    packages=find_packages(exclude=['tests']),
     install_requires=[
         'click',
         'pydantic',

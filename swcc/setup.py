@@ -11,7 +11,7 @@ else:
     long_description = ''
 
 setup(
-    name='swc',
+    name='swcc',
     version='0.1.0',
     description='',
     long_description=long_description,
@@ -28,7 +28,7 @@ setup(
         'Programming Language :: Python',
     ],
     python_requires='>=3.8',
-    packages=find_packages(include=['swc']),
+    packages=find_packages(include=['swcc']),
     install_requires=[
         'click',
         'pydantic',
@@ -37,6 +37,6 @@ setup(
         'rich',
         'tqdm',
     ],
-    entry_points={'console_scripts': ['swc=swc:main']},
+    entry_points={'console_scripts': ['swcc=swcc:main']},
     extras_require={'dev': ['factory_boy', 'ipython', 'tox']},
 )

@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 __version__ = '0.0000'
 
 
-class SwcSession(BaseUrlSession):
+class SwccSession(BaseUrlSession):
     page_size = 50
 
     def __init__(self, base_url: str):
@@ -31,14 +31,14 @@ class SwcSession(BaseUrlSession):
         super().__init__(base_url=base_url)
         self.headers.update(
             {
-                'User-agent': f'swc/{__version__}',
+                'User-agent': f'swcc/{__version__}',
                 'Accept': 'application/json',
             }
         )
 
 
 class CliContext(BaseModel):
-    session: SwcSession
+    session: SwccSession
     url: str
     json_output: bool
 
@@ -47,7 +47,7 @@ class CliContext(BaseModel):
 
 
 @click.group()
-@click.option('--url', default='https://app.shapeworks-cloud.org/api/v1', envvar='SWC_URL')
+@click.option('--url', default='https://app.shapeworks-cloud.org/api/v1', envvar='SWCC_URL')
 @click.option('--json', 'json_output', is_flag=True)
 @click.option('-v', '--verbose', count=True)
 @click.version_option()
@@ -60,7 +60,7 @@ def cli(ctx, url, json_output: bool, verbose: int):
     else:
         logger.setLevel(logging.WARN)
 
-    session = SwcSession(url)
+    session = SwccSession(url)
     ctx.obj = CliContext(session=session, url=url.rstrip('/'), json_output=json_output)
 
 
@@ -136,15 +136,15 @@ def main():
 
         click.echo(traceback.format_exc(), err=True)
 
-        click.echo(f'swc:     v{__version__}', err=True)
+        click.echo(f'swcc:    v{__version__}', err=True)
         click.echo(f'python:  v{platform.python_version()}', err=True)
         click.echo(f'time:    {datetime.utcnow().isoformat()}', err=True)
         click.echo(f'os:      {platform.platform()}', err=True)
-        click.echo(f'command: swc {" ".join(sys.argv[1:])}\n', err=True)
+        click.echo(f'command: swcc {" ".join(sys.argv[1:])}\n', err=True)
 
         click.echo(
             click.style(
-                'This is a bug in swc and should be reported. You can open an issue below: ',
+                'This is a bug in swcc and should be reported. You can open an issue below: ',
                 fg='yellow',
             ),
             err=True,

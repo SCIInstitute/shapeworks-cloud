@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from importlib.metadata import PackageNotFoundError, version
 import logging
 from pathlib import Path
 import platform
@@ -20,7 +21,11 @@ FORMAT = '%(message)s'
 logging.basicConfig(format=FORMAT, datefmt='[%X]', handlers=[RichHandler()])
 logger = logging.getLogger(__name__)
 
-__version__ = '0.0000'
+try:
+    __version__ = version('swcc')
+except PackageNotFoundError:
+    # package is not installed
+    pass
 
 
 class SwccSession(BaseUrlSession):

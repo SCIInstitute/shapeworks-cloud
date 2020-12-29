@@ -28,7 +28,8 @@ jobs:
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
       - run:
           name: Run CLI tests
-          command: cd swcc && tox
+          command: tox
+          working_directory: swcc
 workflows:
   version: 2
   ci:

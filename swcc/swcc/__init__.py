@@ -9,7 +9,10 @@ import sys
 import traceback
 
 import click
+from packaging.version import parse as parse_version
 from pydantic import BaseModel
+import requests
+from requests.exceptions import RequestException
 from requests_toolbelt.sessions import BaseUrlSession
 from rich.console import Console
 from rich.logging import RichHandler
@@ -51,6 +54,23 @@ class CliContext(BaseModel):
         arbitrary_types_allowed = True
 
 
+def newer_version_available():
+    if __version__ is None:
+        return False
+
+    this_version = parse_version(__version__)
+    if this_version.is_devrelease:
+        return False
+
+    r = requests.get('https://pypi.org/pypi/swcc/json', timeout=(5, 5))
+    r.raise_for_status()
+    releases = [parse_version(v) for v in r.json()['releases'].keys()]
+    for release in releases:
+        if not (release.is_prerelease or release.is_devrelease) and release > this_version:
+            return True
+    return False
+
+
 @click.group()
 @click.option('--url', default='https://app.shapeworks-cloud.org/api/v1', envvar='SWCC_URL')
 @click.option('--json', 'json_output', is_flag=True)
@@ -64,6 +84,23 @@ def cli(ctx, url, json_output: bool, verbose: int):
         logger.setLevel(logging.INFO)
     else:
         logger.setLevel(logging.WARN)
+
+    try:
+        if newer_version_available():
+            click.echo(
+                click.style(
+                    """There is a newer version of swcc available.
+You must upgrade to the latest version before continuing.
+""",
+                    fg='yellow',
+                ),
+                err=True,
+            )
+            click.echo(click.style('pip install --upgrade swcc', fg='green'), err=True)
+            sys.exit(1)
+    except RequestException:
+        click.echo(click.style('Failed to check for newer version of swcc:', fg='red'), err=True)
+        raise
 
     session = SwccSession(url)
     ctx.obj = CliContext(session=session, url=url.rstrip('/'), json_output=json_output)

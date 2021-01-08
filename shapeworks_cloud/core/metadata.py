@@ -4,8 +4,8 @@ Methods and constants for manipulating metadata in filenames.
 For the purposes of this module, "patterns" are basically f-strings which are used to associate
 bits of filenames with bits of metadata.
 The only allowed variable names are the members of METADATA_FIELDS, i.e. '{subject}'.
-Patterns may also include formatting information, for example '{subject:04}.txt', which will match the
-filenames '0000.txt', '0001.txt', '9999.txt', etc. but will not match '1.txt'.
+Patterns may also include formatting information, for example '{subject:04}.txt', which will match
+the filenames '0000.txt', '0001.txt', '9999.txt', etc. but will not match '1.txt'.
 """
 
 import re

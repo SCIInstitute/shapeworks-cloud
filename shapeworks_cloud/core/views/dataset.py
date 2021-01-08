@@ -59,10 +59,9 @@ def dataset_edit(request, pk):
     dataset = get_object_or_404(Dataset, pk=pk)
     if request.method == 'POST':
         # Overwrite the Dataset
-        form = DatasetForm(request.POST)
+        form = DatasetForm(request.POST, instance=dataset)
         if form.is_valid():
-            dataset.name = form.instance.name
-            dataset.save()
+            form.instance.save()
             return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:
         form = DatasetForm(instance=dataset)

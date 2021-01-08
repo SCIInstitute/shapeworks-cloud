@@ -43,14 +43,9 @@ def segmentation_edit(request, dataset_pk, segmentation_pk):
     segmentation = get_object_or_404(Segmentation, dataset__pk=dataset_pk, pk=segmentation_pk)
     if request.method == 'POST':
         # Edit an existing Segmentation
-        form = SegmentationForm(request.POST, initial={'blob': segmentation.blob})
-        if not form.fields['blob']:
-            form.fields.blob = segmentation.blob
+        form = SegmentationForm(request.POST, instance=segmentation)
         if form.is_valid():
-            segmentation.dataset = dataset
-            segmentation.name = form.instance.name
-            segmentation.blob = form.instance.blob
-            segmentation.save()
+            form.instance.save()
             return HttpResponseRedirect(
                 reverse('segmentation_detail', args=(dataset.pk, segmentation.pk))
             )

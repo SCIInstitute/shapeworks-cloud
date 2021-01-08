@@ -60,14 +60,9 @@ def particles_edit(request, dataset_pk, shape_model_pk, particles_pk):
     )
     if request.method == 'POST':
         # Edit an existing Particles
-        form = ParticlesForm(request.POST, initial={'blob': particles.blob})
-        if not form.fields['blob']:
-            form.fields.blob = particles.blob
+        form = ParticlesForm(request.POST, instance=particles)
         if form.is_valid():
-            particles.dataset = dataset
-            particles.name = form.instance.name
-            particles.blob = form.instance.blob
-            particles.save()
+            form.instance.save()
             return HttpResponseRedirect(
                 reverse('particles_detail', args=(dataset_pk, shape_model_pk, particles_pk))
             )

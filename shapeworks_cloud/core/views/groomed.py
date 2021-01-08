@@ -43,14 +43,9 @@ def groomed_edit(request, dataset_pk, groomed_pk):
     groomed = get_object_or_404(Groomed, dataset__pk=dataset_pk, pk=groomed_pk)
     if request.method == 'POST':
         # Edit an existing Groomed
-        form = GroomedForm(request.POST, initial={'blob': groomed.blob})
-        if not form.fields['blob']:
-            form.fields.blob = groomed.blob
+        form = GroomedForm(request.POST, instance=groomed)
         if form.is_valid():
-            groomed.dataset = dataset
-            groomed.name = form.instance.name
-            groomed.blob = form.instance.blob
-            groomed.save()
+            form.instance.save()
             return HttpResponseRedirect(reverse('groomed_detail', args=(dataset.pk, groomed.pk)))
     else:
         form = GroomedForm(instance=groomed)

@@ -12,7 +12,7 @@ from composed_configuration import (
 )
 
 
-class ShapeworksCloudConfig(ConfigMixin):
+class ShapeworksCloudMixin(ConfigMixin):
     WSGI_APPLICATION = 'shapeworks_cloud.wsgi.application'
     ROOT_URLCONF = 'shapeworks_cloud.urls'
 
@@ -26,17 +26,17 @@ class ShapeworksCloudConfig(ConfigMixin):
         ]
 
 
-class DevelopmentConfiguration(ShapeworksCloudConfig, DevelopmentBaseConfiguration):
+class DevelopmentConfiguration(ShapeworksCloudMixin, DevelopmentBaseConfiguration):
     pass
 
 
-class TestingConfiguration(ShapeworksCloudConfig, TestingBaseConfiguration):
+class TestingConfiguration(ShapeworksCloudMixin, TestingBaseConfiguration):
     pass
 
 
-class ProductionConfiguration(ShapeworksCloudConfig, ProductionBaseConfiguration):
+class ProductionConfiguration(ShapeworksCloudMixin, ProductionBaseConfiguration):
     pass
 
 
-class HerokuProductionConfiguration(ShapeworksCloudConfig, HerokuProductionBaseConfiguration):
+class HerokuProductionConfiguration(ShapeworksCloudMixin, HerokuProductionBaseConfiguration):
     pass

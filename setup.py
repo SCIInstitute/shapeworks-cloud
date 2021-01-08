@@ -7,7 +7,7 @@ if readme_file.exists():
     with readme_file.open() as f:
         long_description = f.read()
 else:
-    # WHen this is first installed in development Docker, README.md is not available
+    # When this is first installed in development Docker, README.md is not available
     long_description = ''
 
 setup(
@@ -34,30 +34,25 @@ setup(
     ],
     python_requires='>=3.8',
     packages=find_packages(),
+    include_package_data=True,
     install_requires=[
         'celery',
         'django==3.0.9',
         'django-admin-display',
         'django-allauth',
-        'django-composed-configuration',
+        'django-composed-configuration[dev,prod]>=0.10.0',
         'django-configurations[database,email]',
-        'django-cors-headers',
         'django-extensions',
         'django-filter',
+        'django-oauth-toolkit',
         'django-s3-file-field',
         'djangorestframework',
         'drf-extensions',
-        'drf-yasg2',
-        'psycopg2',
-        'rich',
-        'whitenoise[brotli]',
+        'drf-yasg',
         # Production-only
-        'django-storages[boto3]',
         'gunicorn',
-        'sentry-sdk',
         # Development-only
         'django-debug-toolbar',
-        'django-minio-storage>=0.3.10',
     ],
     extras_require={'dev': ['ipython', 'tox']},
 )

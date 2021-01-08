@@ -1,6 +1,6 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
 from shapeworks_cloud.core.serializers import (
@@ -18,7 +18,7 @@ class Pagination(PageNumberPagination):
     page_size_query_param = 'page_size'
 
 
-class DatasetViewSet(ModelViewSet):
+class DatasetViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = DatasetSerializer
     pagination_class = Pagination
@@ -26,7 +26,7 @@ class DatasetViewSet(ModelViewSet):
     queryset = Dataset.objects.all()
 
 
-class SegmentationViewSet(ModelViewSet):
+class SegmentationViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = SegmentationSerializer
     pagination_class = Pagination
@@ -34,7 +34,7 @@ class SegmentationViewSet(ModelViewSet):
     queryset = Segmentation.objects.all()
 
 
-class GroomedViewSet(ModelViewSet):
+class GroomedViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = GroomedSerializer
     pagination_class = Pagination
@@ -42,7 +42,7 @@ class GroomedViewSet(ModelViewSet):
     queryset = Groomed.objects.all()
 
 
-class ShapeModelViewSet(ModelViewSet):
+class ShapeModelViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = ShapeModelSerializer
     pagination_class = Pagination
@@ -50,7 +50,7 @@ class ShapeModelViewSet(ModelViewSet):
     queryset = ShapeModel.objects.all()
 
 
-class ParticlesViewSet(ModelViewSet):
+class ParticlesViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = ParticlesSerializer
     pagination_class = Pagination

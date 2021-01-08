@@ -1,6 +1,6 @@
 data "heroku_team" "heroku" {
   # This must be created by hand in the Heroku console
-  name = "shapeworks-cloud"
+  name = "kitware"
 }
 
 module "django" {

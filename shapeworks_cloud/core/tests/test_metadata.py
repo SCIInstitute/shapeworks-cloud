@@ -21,11 +21,8 @@ def test_pattern_as_regex(pattern, regex):
 
 
 def test_pattern_as_regex_double_definitions():
-    try:
+    with pytest.raises(ValueError, match='Multiple definitions of subject'):
         metadata.pattern_as_regex(r'{subject}{subject}')
-        raise Exception('Expected an exception')
-    except ValueError as e:
-        assert e.args == ('Multiple definitions of subject',)
 
 
 @pytest.mark.parametrize(
@@ -49,11 +46,8 @@ def test_extract_metadata(pattern, filename, expected):
     ],
 )
 def test_extract_metadata_error(pattern, filename, expected):
-    try:
+    with pytest.raises(ValueError, match=re.escape(expected)):
         metadata.extract_metadata(pattern, filename)
-        raise Exception('Expected an exception')
-    except ValueError as e:
-        assert e.args == (expected,)
 
 
 @pytest.mark.parametrize(
@@ -80,11 +74,8 @@ def test_validate_filename(pattern, filename):
     ],
 )
 def test_validate_filename_error(pattern, filename, expected):
-    try:
+    with pytest.raises(ValueError, match=re.escape(expected)):
         metadata.validate_filename(pattern, filename)
-        raise Exception('Expected an exception')
-    except ValueError as e:
-        assert e.args == (expected,)
 
 
 @pytest.mark.parametrize(
@@ -109,8 +100,5 @@ def test_validate_metadata(pattern, _metadata):
     ],
 )
 def test_validate_metadata_error(pattern, _metadata, expected):
-    try:
+    with pytest.raises(ValueError, match=re.escape(expected)):
         metadata.validate_metadata(pattern, _metadata)
-        raise Exception('Expected an exception')
-    except ValueError as e:
-        assert e.args == (expected,)

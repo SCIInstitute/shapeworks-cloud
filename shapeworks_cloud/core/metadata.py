@@ -57,3 +57,11 @@ def validate_filename(pattern: str, filename: str):
     new_filename = generate_filename(pattern, metadata)
     if filename != new_filename:
         raise ValueError(f'{filename} does not match generated {new_filename}')
+
+
+def validate_metadata(pattern: str, metadata: Dict[str, any]):
+    """Validate that a filename matches the given pattern."""
+    filename = generate_filename(pattern, metadata)
+    new_metadata = extract_metadata(pattern, filename)
+    if metadata != new_metadata:
+        raise ValueError(f'{metadata} does not match generated {new_metadata}')

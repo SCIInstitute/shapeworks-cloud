@@ -85,3 +85,32 @@ def test_validate_filename_error(pattern, filename, expected):
         raise Exception('Expected an exception')
     except ValueError as e:
         assert e.args == (expected,)
+
+
+@pytest.mark.parametrize(
+    'pattern,_metadata',
+    [
+        (r'abc', {}),
+        (r'{subject}', {'subject': 1}),
+        (r'ellipsoid_{subject}_L.nrrd', {'subject': 42}),
+        (r'{subject:d}', {'subject': 2}),
+        (r'{subject:03}', {'subject': 0}),
+    ],
+)
+def test_validate_metadata(pattern, _metadata):
+    metadata.validate_metadata(pattern, _metadata)
+
+
+@pytest.mark.parametrize(
+    'pattern,_metadata,expected',
+    [
+        (r'{subject}{subject}', {'subject': None}, 'Multiple definitions of subject'),
+        (r'{subject}', {'subject': 'foo'}, "invalid literal for int() with base 10: 'foo'"),
+    ],
+)
+def test_validate_metadata_error(pattern, _metadata, expected):
+    try:
+        metadata.validate_metadata(pattern, _metadata)
+        raise Exception('Expected an exception')
+    except ValueError as e:
+        assert e.args == (expected,)

@@ -50,6 +50,11 @@ def test_extract_metadata_error(pattern, filename, expected):
         metadata.extract_metadata(pattern, filename)
 
 
+def test_generate_filename_error():
+    with pytest.raises(ValueError, match='subject'):
+        metadata.generate_filename('{subject}', {})
+
+
 @pytest.mark.parametrize(
     'pattern,filename',
     [

@@ -48,7 +48,10 @@ def extract_metadata(pattern: str, filename: str):
 
 def generate_filename(pattern: str, metadata: Dict[str, any]):
     """Generate the filename associated with a set of metadata using the given pattern."""
-    return pattern.format(**metadata)
+    try:
+        return pattern.format(**metadata)
+    except KeyError as e:
+        raise ValueError(e)
 
 
 def validate_filename(pattern: str, filename: str):

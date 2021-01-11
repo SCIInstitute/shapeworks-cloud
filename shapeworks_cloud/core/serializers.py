@@ -9,6 +9,9 @@ class DatasetSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            'groomed_pattern',
+            'segmentation_pattern',
+            'particles_pattern',
             'created',
             'modified',
         ]

@@ -35,6 +35,7 @@
 <table class="table is-fullwidth">
   <thead>
     <td>File Name</td>
+    <td>Subject</td>
     <td>File Size</td>
     <td></td>
   </thead>
@@ -43,6 +44,9 @@
     <tr>
       <td>
         <a href="{% url 'particles_detail' dataset.pk shape_model.pk object.pk %}">{{ object.name }}</a>
+      </td>
+      <td>
+        {{ object.subject }}
       </td>
       <td>
         {{ object.formatted_size }}

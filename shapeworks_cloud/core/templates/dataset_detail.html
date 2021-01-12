@@ -27,6 +27,7 @@
   <table class="table is-fullwidth">
     <thead>
       <td>File Name</td>
+      <td>Subject</td>
       <td>File Size</td>
       <td></td>
     </thead>
@@ -35,6 +36,9 @@
       <tr>
         <td>
           <a href="{% url 'segmentation_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+        </td>
+        <td>
+          {{ object.subject }}
         </td>
         <td>
           {{ object.formatted_size }}
@@ -74,6 +78,7 @@
   <table class="table is-fullwidth">
     <thead>
       <td>File Name</td>
+      <td>Subject</td>
       <td>File Size</td>
       <td></td>
     </thead>
@@ -82,6 +87,9 @@
       <tr>
         <td>
           <a href="{% url 'groomed_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+        </td>
+        <td>
+          {{ object.subject }}
         </td>
         <td>
           {{ object.formatted_size }}
@@ -120,8 +128,7 @@
   </div>
   <table class="table is-fullwidth">
     <thead>
-      <td>File Name</td>
-      <td>File Size</td>
+      <td>Name</td>
       <td></td>
     </thead>
     <tbody>
@@ -129,9 +136,6 @@
       <tr>
         <td>
           <a href="{% url 'shape_model_detail' dataset.pk object.pk %}">{{ object.name }}</a>
-        </td>
-        <td>
-          {{ object.formatted_size }}
         </td>
         <td class="has-text-right">
           <a href="{{ object.blob.url }}">Download</a>

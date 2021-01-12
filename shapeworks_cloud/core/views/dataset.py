@@ -19,11 +19,11 @@ def dataset_list(request):
 def dataset_detail(request, pk):
     dataset = get_object_or_404(Dataset, pk=pk)
 
-    segmentation_paginator = Paginator(dataset.segmentations.order_by('name'), 10)
+    segmentation_paginator = Paginator(dataset.segmentations.order_by('subject'), 10)
     segmentation_page_number = request.GET.get('segmentation_page')
     segmentation_page_obj = segmentation_paginator.get_page(segmentation_page_number)
 
-    groomed_paginator = Paginator(dataset.groomed.order_by('name'), 10)
+    groomed_paginator = Paginator(dataset.groomed.order_by('subject'), 10)
     groomed_page_number = request.GET.get('groomed_page')
     groomed_page_obj = groomed_paginator.get_page(groomed_page_number)
 

@@ -28,7 +28,7 @@ class BlobAdmin(admin.ModelAdmin):
 
     search_fields = ['name']
 
-    readonly_fields = ['created', 'modified']
+    readonly_fields = ['name', 'created', 'modified']
 
 
 @admin.register(Segmentation)
@@ -37,7 +37,7 @@ class SegmentationAdmin(BlobAdmin):
         ('created', admin.DateFieldListFilter),
         'dataset',
     ]
-    fields = ['name', 'blob', 'dataset', 'created', 'modified']
+    fields = ['name', 'subject', 'blob', 'dataset', 'created', 'modified']
 
 
 @admin.register(Groomed)
@@ -46,7 +46,7 @@ class GroomedAdmin(BlobAdmin):
         ('created', admin.DateFieldListFilter),
         'dataset',
     ]
-    fields = ['name', 'blob', 'dataset', 'created', 'modified']
+    fields = ['name', 'subject', 'blob', 'dataset', 'created', 'modified']
 
 
 @admin.register(ShapeModel)
@@ -80,4 +80,4 @@ class Particles(BlobAdmin):
         ('created', admin.DateFieldListFilter),
         'shape_model',
     ]
-    fields = ['name', 'blob', 'shape_model', 'created', 'modified']
+    fields = ['name', 'subject', 'blob', 'shape_model', 'created', 'modified']

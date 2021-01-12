@@ -12,7 +12,7 @@ def shape_model_detail(request, dataset_pk, shape_model_pk):
     dataset = get_object_or_404(Dataset, pk=dataset_pk)
     shape_model = get_object_or_404(ShapeModel, dataset__pk=dataset_pk, pk=shape_model_pk)
 
-    paginator = Paginator(shape_model.particles.order_by('name'), 10)
+    paginator = Paginator(shape_model.particles.order_by('subject'), 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 

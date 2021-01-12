@@ -22,7 +22,7 @@ class Pagination(PageNumberPagination):
     page_size_query_param = 'page_size'
 
 
-class DatasetViewSet(ReadOnlyModelViewSet):
+class DatasetViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = DatasetSerializer
     pagination_class = Pagination

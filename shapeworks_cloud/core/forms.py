@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from shapeworks_cloud.core.metadata import METADATA_FIELDS, validate_metadata
+from shapeworks_cloud.core.metadata import METADATA_FIELDS, validate_filename
 from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
 
 
@@ -14,7 +14,7 @@ class DatasetForm(forms.ModelForm):
         pattern = self.cleaned_data[pattern_name]
         try:
             for instance in queryset.all():
-                validate_metadata(pattern, instance.metadata)
+                validate_filename(pattern, instance.name)
         except ValueError as e:
             raise ValidationError(e)
         return pattern

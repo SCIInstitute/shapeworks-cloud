@@ -28,6 +28,7 @@
     <thead>
       <td>File Name</td>
       <td>Subject</td>
+      <td>Metadata</td>
       <td>File Size</td>
       <td></td>
     </thead>
@@ -39,6 +40,9 @@
         </td>
         <td>
           {{ object.subject }}
+        </td>
+        <td>
+          {{ object.metadata_values }}
         </td>
         <td>
           {{ object.formatted_size }}
@@ -79,6 +83,7 @@
     <thead>
       <td>File Name</td>
       <td>Subject</td>
+      <td>Metadata</td>
       <td>File Size</td>
       <td></td>
     </thead>
@@ -90,6 +95,9 @@
         </td>
         <td>
           {{ object.subject }}
+        </td>
+        <td>
+          {{ object.metadata_values }}
         </td>
         <td>
           {{ object.formatted_size }}

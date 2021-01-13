@@ -11,10 +11,50 @@ the filenames '0000.txt', '0001.txt', '9999.txt', etc. but will not match '1.txt
 import re
 from typing import Dict
 
+
+def validate_subject(subject):
+    return int(subject)
+
+
+def validate_particle_type(particle_type):
+    if particle_type not in ['local', 'world', 'wptsFeatures']:
+        raise ValueError(f'particle_type {particle_type} is not allowed')
+    return particle_type
+
+
+def validate_chirality(chirality):
+    if chirality not in ['L', 'R']:
+        raise ValueError(f'chirality {chirality} is not allowed')
+    return chirality
+
+
+def validate_extension(extension):
+    if extension not in ['nrrd', 'vtk', 'ply', 'particles']:
+        raise ValueError(f'extension {extension} is not allowed')
+    return extension
+
+
+def validate_grooming_steps(grooming_steps):
+    if len(grooming_steps) > 255:
+        raise ValueError('grooming_steps is more than 255 characters')
+    return grooming_steps
+
+
 # TODO add more fields
 # Fields need to be mapped from strings to however they will be used and stored
 _METADATA_FIELD_TYPE_CONVERSIONS = {
-    'subject': lambda subject: int(subject),
+    'subject': validate_subject,
+    'particle_type': validate_particle_type,
+    'chirality': validate_chirality,
+    'extension': validate_extension,
+    'grooming_steps': validate_grooming_steps,
+}
+_METADATA_FIELD_REGEXES = {
+    'subject': r'[0-9]+',
+    'particle_type': 'local|world|wptsFeatures',
+    'chirality': 'L|R',
+    'extension': 'nrrd|vtk|ply|particles',
+    'grooming_steps': r'[a-zA-Z]+(?:\.[a-zA-Z]+)*',
 }
 METADATA_FIELDS = list(_METADATA_FIELD_TYPE_CONVERSIONS.keys())
 
@@ -29,7 +69,7 @@ def pattern_as_regex(pattern: str):
             continue
         if len(instances) > 1:
             raise ValueError(f'Multiple definitions of {field}')
-        pattern = re.sub(field_regex, f'(?P<{field}>\\\\S+)', pattern)
+        pattern = re.sub(field_regex, f'(?P<{field}>{_METADATA_FIELD_REGEXES[field]})', pattern)
     return re.compile(pattern)
 
 

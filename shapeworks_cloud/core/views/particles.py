@@ -30,10 +30,9 @@ def particles_create(request, dataset_pk, shape_model_pk):
     shape_model = get_object_or_404(ShapeModel, dataset__pk=dataset_pk, pk=shape_model_pk)
     if request.method == 'POST':
         # Create a new Particles
-        form = ParticlesForm(request.POST)
+        particles = Particles(shape_model=shape_model)
+        form = ParticlesForm(request.POST, instance=particles)
         if form.is_valid():
-            particles = form.instance
-            particles.shape_model = shape_model
             particles.save()
             return HttpResponseRedirect(
                 reverse('shape_model_detail', args=(dataset_pk, shape_model_pk))

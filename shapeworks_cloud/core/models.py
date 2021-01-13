@@ -83,6 +83,13 @@ class BlobModel(TimeStampedModel, models.Model):
         return {field: self.__dict__[field] for field in METADATA_FIELDS}
 
     @property
+    def metadata_values(self):
+        """Concisely summarize all metadata for display in a table"""
+        return ','.join(
+            [value for field, value in self.metadata.items() if value and field != 'subject']
+        )
+
+    @property
     def name(self):
         return generate_filename(self.pattern, self.metadata)
 

@@ -14,6 +14,9 @@ Edit {{ segmentation.name }}
 {% endblock %}
 
 {% block content %}
+<div>
+  File pattern: <b>{{ dataset.segmentation_pattern }}</b>
+</div>
 <form action="{% url 'segmentation_edit' dataset.pk segmentation.pk %}" method="post">
   {% csrf_token %}
   {{ form }}

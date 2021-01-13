@@ -13,7 +13,9 @@ Upload New Groomed File
 {% endblock %}
 
 {% block content %}
-
+<div>
+  File pattern: <b>{{ dataset.groomed_pattern }}</b>
+</div>
 <form action="{% url 'groomed_create' dataset.pk %}" method="post">
   {% csrf_token %}
   {{ form }}

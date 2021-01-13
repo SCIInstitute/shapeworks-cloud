@@ -22,10 +22,9 @@ def segmentation_create(request, dataset_pk):
     dataset = get_object_or_404(Dataset, pk=dataset_pk)
     if request.method == 'POST':
         # Create a new Segmentation
-        form = SegmentationForm(request.POST)
+        segmentation = Segmentation(dataset=dataset)
+        form = SegmentationForm(request.POST, instance=segmentation)
         if form.is_valid():
-            segmentation = form.instance
-            segmentation.dataset = dataset
             segmentation.save()
             return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:

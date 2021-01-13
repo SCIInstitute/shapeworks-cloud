@@ -36,15 +36,6 @@ class BlobForm(forms.ModelForm):
         abstract = True
         fields = METADATA_FIELDS + ['blob']
 
-    def clean(self):
-        # The only non-metadata field is 'blob'
-        metadata = {key: self.cleaned_data[key] for key in self.cleaned_data if key != 'blob'}
-        # Raise a ValidationError now rather than an IntegrityError later
-        if self.Meta.model.objects.filter(**metadata):
-            raise ValidationError(
-                f'Another {self.Meta.model.__name__} already exists with that metadata'
-            )
-
 
 class SegmentationForm(BlobForm):
     class Meta(BlobForm.Meta):

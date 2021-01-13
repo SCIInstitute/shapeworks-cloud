@@ -13,12 +13,28 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='groomed',
             name='chirality',
-            field=models.CharField(blank=True, choices=[('', ''), ('L', 'Left'), ('R', 'Right')], default='', max_length=1),
+            field=models.CharField(
+                blank=True,
+                choices=[('', ''), ('L', 'Left'), ('R', 'Right')],
+                default='',
+                max_length=1,
+            ),
         ),
         migrations.AddField(
             model_name='groomed',
             name='extension',
-            field=models.CharField(blank=True, choices=[('', ''), ('nrrd', 'nrrd'), ('vtk', 'vtk'), ('ply', 'ply'), ('particles', 'particles')], default='', max_length=9),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('', ''),
+                    ('nrrd', 'nrrd'),
+                    ('vtk', 'vtk'),
+                    ('ply', 'ply'),
+                    ('particles', 'particles'),
+                ],
+                default='',
+                max_length=9,
+            ),
         ),
         migrations.AddField(
             model_name='groomed',
@@ -28,17 +44,43 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='groomed',
             name='particle_type',
-            field=models.CharField(blank=True, choices=[('', ''), ('local', 'local'), ('world', 'world'), ('wptsFeatures', 'wptsFeatures')], default='', max_length=12),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('', ''),
+                    ('local', 'local'),
+                    ('world', 'world'),
+                    ('wptsFeatures', 'wptsFeatures'),
+                ],
+                default='',
+                max_length=12,
+            ),
         ),
         migrations.AddField(
             model_name='particles',
             name='chirality',
-            field=models.CharField(blank=True, choices=[('', ''), ('L', 'Left'), ('R', 'Right')], default='', max_length=1),
+            field=models.CharField(
+                blank=True,
+                choices=[('', ''), ('L', 'Left'), ('R', 'Right')],
+                default='',
+                max_length=1,
+            ),
         ),
         migrations.AddField(
             model_name='particles',
             name='extension',
-            field=models.CharField(blank=True, choices=[('', ''), ('nrrd', 'nrrd'), ('vtk', 'vtk'), ('ply', 'ply'), ('particles', 'particles')], default='', max_length=9),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('', ''),
+                    ('nrrd', 'nrrd'),
+                    ('vtk', 'vtk'),
+                    ('ply', 'ply'),
+                    ('particles', 'particles'),
+                ],
+                default='',
+                max_length=9,
+            ),
         ),
         migrations.AddField(
             model_name='particles',
@@ -48,17 +90,43 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='particles',
             name='particle_type',
-            field=models.CharField(blank=True, choices=[('', ''), ('local', 'local'), ('world', 'world'), ('wptsFeatures', 'wptsFeatures')], default='', max_length=12),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('', ''),
+                    ('local', 'local'),
+                    ('world', 'world'),
+                    ('wptsFeatures', 'wptsFeatures'),
+                ],
+                default='',
+                max_length=12,
+            ),
         ),
         migrations.AddField(
             model_name='segmentation',
             name='chirality',
-            field=models.CharField(blank=True, choices=[('', ''), ('L', 'Left'), ('R', 'Right')], default='', max_length=1),
+            field=models.CharField(
+                blank=True,
+                choices=[('', ''), ('L', 'Left'), ('R', 'Right')],
+                default='',
+                max_length=1,
+            ),
         ),
         migrations.AddField(
             model_name='segmentation',
             name='extension',
-            field=models.CharField(blank=True, choices=[('', ''), ('nrrd', 'nrrd'), ('vtk', 'vtk'), ('ply', 'ply'), ('particles', 'particles')], default='', max_length=9),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('', ''),
+                    ('nrrd', 'nrrd'),
+                    ('vtk', 'vtk'),
+                    ('ply', 'ply'),
+                    ('particles', 'particles'),
+                ],
+                default='',
+                max_length=9,
+            ),
         ),
         migrations.AddField(
             model_name='segmentation',
@@ -68,7 +136,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='segmentation',
             name='particle_type',
-            field=models.CharField(blank=True, choices=[('', ''), ('local', 'local'), ('world', 'world'), ('wptsFeatures', 'wptsFeatures')], default='', max_length=12),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('', ''),
+                    ('local', 'local'),
+                    ('world', 'world'),
+                    ('wptsFeatures', 'wptsFeatures'),
+                ],
+                default='',
+                max_length=12,
+            ),
         ),
         migrations.AlterUniqueTogether(
             name='groomed',
@@ -84,14 +162,44 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='groomed',
-            constraint=models.UniqueConstraint(fields=('subject', 'particle_type', 'chirality', 'extension', 'grooming_steps', 'dataset'), name='unique_groomed'),
+            constraint=models.UniqueConstraint(
+                fields=(
+                    'subject',
+                    'particle_type',
+                    'chirality',
+                    'extension',
+                    'grooming_steps',
+                    'dataset',
+                ),
+                name='unique_groomed',
+            ),
         ),
         migrations.AddConstraint(
             model_name='particles',
-            constraint=models.UniqueConstraint(fields=('subject', 'particle_type', 'chirality', 'extension', 'grooming_steps', 'shape_model'), name='unique_particles'),
+            constraint=models.UniqueConstraint(
+                fields=(
+                    'subject',
+                    'particle_type',
+                    'chirality',
+                    'extension',
+                    'grooming_steps',
+                    'shape_model',
+                ),
+                name='unique_particles',
+            ),
         ),
         migrations.AddConstraint(
             model_name='segmentation',
-            constraint=models.UniqueConstraint(fields=('subject', 'particle_type', 'chirality', 'extension', 'grooming_steps', 'dataset'), name='unique_segmentation'),
+            constraint=models.UniqueConstraint(
+                fields=(
+                    'subject',
+                    'particle_type',
+                    'chirality',
+                    'extension',
+                    'grooming_steps',
+                    'dataset',
+                ),
+                name='unique_segmentation',
+            ),
         ),
     ]

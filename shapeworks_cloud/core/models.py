@@ -63,7 +63,7 @@ class BlobModel(TimeStampedModel, models.Model):
         try:
             validate_metadata(
                 self.pattern,
-                {field: value for field, value in self.metadata.items() if value is not ''},
+                {field: value for field, value in self.metadata.items() if value != ''},
             )
         except ValueError as e:
             raise ValidationError(e)
@@ -84,7 +84,7 @@ class BlobModel(TimeStampedModel, models.Model):
 
     @property
     def metadata_values(self):
-        """Concisely summarize all metadata for display in a table"""
+        """Concisely summarize all metadata for display in a table."""
         return ','.join(
             [value for field, value in self.metadata.items() if value and field != 'subject']
         )

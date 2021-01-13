@@ -76,10 +76,12 @@ class BlobModel(TimeStampedModel, models.Model):
         raise NotImplementedError()
 
     @property
+    def all_metadata(self):
+        return {field: self.__dict__[field] for field in METADATA_FIELDS}
+
+    @property
     def metadata(self):
-        return {
-            field: self.__dict__[field] for field in METADATA_FIELDS if self.__dict__[field] != ''
-        }
+        return {field: value for field, value in self.all_metadata.items() if value != ''}
 
     @property
     def metadata_values(self):
@@ -88,7 +90,7 @@ class BlobModel(TimeStampedModel, models.Model):
 
     @property
     def name(self):
-        return generate_filename(self.pattern, self.metadata)
+        return generate_filename(self.pattern, self.all_metadata)
 
     @property
     def formatted_size(self, base=1024, unit='B'):

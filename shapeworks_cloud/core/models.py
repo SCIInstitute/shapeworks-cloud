@@ -61,10 +61,7 @@ class BlobModel(TimeStampedModel, models.Model):
 
     def clean(self, *args, **kwargs):
         try:
-            validate_metadata(
-                self.pattern,
-                {field: value for field, value in self.metadata.items() if value != ''},
-            )
+            validate_metadata(self.pattern, self.metadata)
         except ValueError as e:
             raise ValidationError(e)
 
@@ -80,14 +77,14 @@ class BlobModel(TimeStampedModel, models.Model):
 
     @property
     def metadata(self):
-        return {field: self.__dict__[field] for field in METADATA_FIELDS}
+        return {
+            field: self.__dict__[field] for field in METADATA_FIELDS if self.__dict__[field] != ''
+        }
 
     @property
     def metadata_values(self):
         """Concisely summarize all metadata for display in a table."""
-        return ','.join(
-            [value for field, value in self.metadata.items() if value and field != 'subject']
-        )
+        return ','.join([value for field, value in self.metadata.items() if field != 'subject'])
 
     @property
     def name(self):

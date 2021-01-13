@@ -17,6 +17,43 @@ class BlobModel(TimeStampedModel, models.Model):
 
     # Each member of METADATA_FIELDS has a corresponding field here
     subject = models.IntegerField(null=False)
+    particle_type = models.CharField(
+        null=False,
+        blank=True,
+        default='',
+        max_length=12,
+        choices=[
+            ('', ''),
+            ('local', 'local'),
+            ('world', 'world'),
+            ('wptsFeatures', 'wptsFeatures'),
+        ],
+    )
+    chirality = models.CharField(
+        null=False,
+        blank=True,
+        default='',
+        max_length=1,
+        choices=[
+            ('', ''),
+            ('L', 'Left'),
+            ('R', 'Right'),
+        ],
+    )
+    extension = models.CharField(
+        null=False,
+        blank=True,
+        default='',
+        max_length=9,
+        choices=[
+            ('', ''),
+            ('nrrd', 'nrrd'),
+            ('vtk', 'vtk'),
+            ('ply', 'ply'),
+            ('particles', 'particles'),
+        ],
+    )
+    grooming_steps = models.CharField(null=False, blank=True, default='', max_length=255)
 
     class Meta:
         abstract = True

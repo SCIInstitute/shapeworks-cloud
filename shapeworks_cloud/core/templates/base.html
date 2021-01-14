@@ -18,30 +18,32 @@
   <hr />
 
   <section class="section">
-    <div class="is-size-7">
-      {% block breadcrumb %}&nbsp;{% endblock %}
-    </div>
-
-    <div class="level">
-      <div class="level-left is-size-3">
-        {% block title %}{% endblock %}
+    <div class="table-container">
+      <div class="is-size-7">
+        {% block breadcrumb %}&nbsp;{% endblock %}
       </div>
-      <div class="level-right">
-        {% if user.is_authenticated %}
-        <div class="tile is-vertical">
-          <div class="tile level-right">
-            <div class="level">
-              <div>Welcome, {{ user.username }} &nbsp;</div>
-              <a href="{% url 'account_logout' %}?next={{ request.path }}" class="button is-small">Log Out</a>
+
+      <div class="level">
+        <div class="level-left is-size-3">
+          {% block title %}{% endblock %}
+        </div>
+        <div class="level-right">
+          {% if user.is_authenticated %}
+          <div class="tile is-vertical">
+            <div class="tile level-right">
+              <div class="level">
+                <div>Welcome, {{ user.username }} &nbsp;</div>
+                <a href="{% url 'account_logout' %}?next={{ request.path }}" class="button is-small">Log Out</a>
+              </div>
+            </div>
+            <div class="tile level-right">
+              {% block actions %}{% endblock %}
             </div>
           </div>
-          <div class="tile level-right">
-            {% block actions %}{% endblock %}
-          </div>
+          {% else %}
+          <a href="{% url 'account_login' %}?next={{ request.path }}" class="button">Log In</a>
+          {% endif %}
         </div>
-        {% else %}
-        <a href="{% url 'account_login' %}?next={{ request.path }}" class="button">Log In</a>
-        {% endif %}
       </div>
     </div>
   </section>

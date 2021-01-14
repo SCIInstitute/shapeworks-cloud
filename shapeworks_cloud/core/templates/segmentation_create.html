@@ -18,7 +18,11 @@ Upload New Segmentation
 </div>
 <form action="{% url 'segmentation_create' dataset.pk %}" method="post">
   {% csrf_token %}
-  {{ form }}
+  <table>
+    <tbody>
+      {{ form.as_table }}
+    </tbody>
+  </table>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

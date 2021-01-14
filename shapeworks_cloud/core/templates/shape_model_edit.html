@@ -16,7 +16,11 @@ Edit {{ shape_model.name }}
 {% block content %}
 <form action="{% url 'shape_model_edit' dataset.pk shape_model.pk %}" method="post">
   {% csrf_token %}
-  {{ form }}
+  <table>
+    <tbody>
+      {{ form.as_table }}
+    </tbody>
+  </table>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

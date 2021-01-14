@@ -19,7 +19,11 @@ Upload New Particle File
 </div>
 <form action="{% url 'particles_create' dataset.pk shape_model.pk %}" method="post">
   {% csrf_token %}
-  {{ form }}
+  <table>
+    <tbody>
+      {{ form.as_table }}
+    </tbody>
+  </table>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

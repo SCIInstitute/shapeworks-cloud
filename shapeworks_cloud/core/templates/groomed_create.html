@@ -18,7 +18,11 @@ Upload New Groomed File
 </div>
 <form action="{% url 'groomed_create' dataset.pk %}" method="post">
   {% csrf_token %}
-  {{ form }}
+  <table>
+    <tbody>
+      {{ form.as_table }}
+    </tbody>
+  </table>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

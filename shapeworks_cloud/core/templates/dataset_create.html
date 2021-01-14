@@ -12,7 +12,11 @@ Create New Dataset
 {% block content %}
 <form action="{% url 'dataset_create' %}" method="post">
   {% csrf_token %}
-  {{ form }}
+  <table>
+    <tbody>
+      {{ form.as_table }}
+    </tbody>
+  </table>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

@@ -37,7 +37,18 @@ class SegmentationAdmin(BlobAdmin):
         ('created', admin.DateFieldListFilter),
         'dataset',
     ]
-    fields = ['name', 'subject', 'blob', 'dataset', 'created', 'modified']
+    fields = [
+        'name',
+        'subject',
+        'particle_type',
+        'chirality',
+        'extension',
+        'grooming_steps',
+        'blob',
+        'dataset',
+        'created',
+        'modified',
+    ]
 
 
 @admin.register(Groomed)
@@ -46,7 +57,18 @@ class GroomedAdmin(BlobAdmin):
         ('created', admin.DateFieldListFilter),
         'dataset',
     ]
-    fields = ['name', 'subject', 'blob', 'dataset', 'created', 'modified']
+    fields = [
+        'name',
+        'subject',
+        'particle_type',
+        'chirality',
+        'extension',
+        'grooming_steps',
+        'blob',
+        'dataset',
+        'created',
+        'modified',
+    ]
 
 
 @admin.register(ShapeModel)
@@ -80,4 +102,15 @@ class Particles(BlobAdmin):
         ('created', admin.DateFieldListFilter),
         'shape_model',
     ]
-    fields = ['name', 'subject', 'blob', 'shape_model', 'created', 'modified']
+    fields = [
+        'name',
+        'subject',
+        'particle_type',
+        'chirality',
+        'extension',
+        'grooming_steps',
+        'blob',
+        'shape_model',
+        'created',
+        'modified',
+    ]

@@ -17,16 +17,5 @@
 {% endblock %}
 
 {% block content %}
-<table class=" table">
-  <tbody>
-    <tr>
-      <td>Subject</td>
-      <td>{{ groomed.subject }}</td>
-    </tr>
-    <tr>
-      <td>Size</td>
-      <td>{{ groomed.formatted_size }}</td>
-    </tr>
-  </tbody>
-</table>
+{% include "metadata.html" with object=groomed %}
 {% endblock %}

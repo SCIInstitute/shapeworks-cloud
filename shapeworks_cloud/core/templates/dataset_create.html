@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load filters %}
+
 {% block breadcrumb %}
 <a href="{% url 'home' %}">Home</a> /
 <a href="{% url 'dataset_list' %}">Datasets</a>
@@ -12,11 +14,47 @@ Create New Dataset
 {% block content %}
 <form action="{% url 'dataset_create' %}" method="post">
   {% csrf_token %}
-  <table>
-    <tbody>
-      {{ form.as_table }}
-    </tbody>
-  </table>
+  {% if form.non_field_errors %}
+  <div class="notification is-warning">
+    {{ form.non_field_errors }}
+  </div>
+  {% endif %}
+  <div class="field">
+    <label class="label" for="{{ form.name.id_for_label }}">Name</label>
+    {{ form.name | class:'input' }}
+    {% if form.name.errors %}
+    <div class="notification is-warning">
+      {{ form.name.errors }}
+    </div>
+    {% endif %}
+  </div>
+  <div class="field">
+    <label class="label" for="{{ form.groomed_pattern.id_for_label }}">Groomed Pattern</label>
+    {{ form.groomed_pattern | class:'input' }}
+    {% if form.groomed_pattern.errors %}
+    <div class="notification is-warning">
+      {{ form.groomed_pattern.errors }}
+    </div>
+    {% endif %}
+  </div>
+  <div class="field">
+    <label class="label" for="{{ form.segmentation_pattern.id_for_label }}">Segmentation Pattern</label>
+    {{ form.segmentation_pattern | class:'input' }}
+    {% if form.segmentation_pattern.errors %}
+    <div class="notification is-warning">
+      {{ form.segmentation_pattern.errors }}
+    </div>
+    {% endif %}
+  </div>
+  <div class="field">
+    <label class="label" for="{{ form.particles_pattern.id_for_label }}">Particles Pattern</label>
+    {{ form.particles_pattern | class:'input' }}
+    {% if form.particles_pattern.errors %}
+    <div class="notification is-warning">
+      {{ form.particles_pattern.errors }}
+    </div>
+    {% endif %}
+  </div>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

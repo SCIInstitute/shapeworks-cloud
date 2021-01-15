@@ -28,6 +28,7 @@ Create New Dataset
     </div>
     {% endif %}
   </div>
+  {% include 'pattern_help.html' %}
   <div class="field">
     <label class="label" for="{{ form.groomed_pattern.id_for_label }}">Groomed Pattern</label>
     {{ form.groomed_pattern | class:'input' }}

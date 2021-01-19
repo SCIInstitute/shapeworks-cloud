@@ -37,7 +37,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'django==3.0.9',
+        'django',
         'django-admin-display',
         'django-allauth',
         'django-composed-configuration[dev,prod]>=0.10.0',
@@ -47,7 +47,7 @@ setup(
         'django-oauth-toolkit==1.3.2',
         'django-s3-file-field[minio,boto3]',
         'djangorestframework',
-        'drf-extensions',
+        'drf-extensions @ git+ssh://git@github.com/chibisov/drf-extensions@master',
         'drf-yasg',
         # Production-only
         'gunicorn',

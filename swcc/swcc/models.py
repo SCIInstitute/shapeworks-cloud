@@ -57,6 +57,10 @@ class Dataset(BaseModel):
     id: int
     name: str
     created: datetime
+    num_segmentations: int
+    num_groomed: int
+    num_shape_models: int
+    size: int
 
     @classmethod
     def from_id(cls, ctx, id_) -> Dataset:

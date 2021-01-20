@@ -112,6 +112,17 @@ def dataset(ctx):
     pass
 
 
+def formatted_size(size, base=1024, unit='B'):
+    if size < base:
+        return f'{size} {unit}'
+    units = ['', 'K', 'M', 'G', 'T']
+    i = 0
+    while i < 5 and size >= base:
+        size /= base
+        i += 1
+    return f'{size:.2f} {units[i]}{unit}'
+
+
 @dataset.command(name='list', help='list datasets')
 @click.pass_obj
 def list_(ctx):
@@ -127,9 +138,21 @@ def list_(ctx):
         table.add_column('ID')
         table.add_column('Created')
         table.add_column('Name', width=50)
+        table.add_column('Size')
+        table.add_column('Segmentations')
+        table.add_column('Groomed')
+        table.add_column('Shape Models')
 
         for dataset in datasets:
-            table.add_row(f'{dataset.id}', dataset.created.strftime('%c'), dataset.name)
+            table.add_row(
+                f'{dataset.id}',
+                dataset.created.strftime('%c'),
+                dataset.name,
+                f'{formatted_size(dataset.size)}',
+                f'{dataset.num_segmentations}',
+                f'{dataset.num_groomed}',
+                f'{dataset.num_shape_models}',
+            )
 
         console.print(table)
 

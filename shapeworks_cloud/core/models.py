@@ -5,14 +5,48 @@ from s3_file_field import S3FileField
 from .metadata import METADATA_FIELDS, generate_filename
 
 
-class Dataset(TimeStampedModel, models.Model):
+class FormattedSizeMixin:
+    @property
+    def formatted_size(self, base=1024, unit='B'):
+        size = self.size
+        if size < base:
+            return f'{size} {unit}'
+        units = ['', 'K', 'M', 'G', 'T']
+        i = 0
+        while i < 5 and size >= base:
+            size /= base
+            i += 1
+        return f'{size:.2f} {units[i]}{unit}'
+
+
+class Dataset(FormattedSizeMixin, TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     groomed_pattern = models.CharField(max_length=255, null=False, blank=True, default='')
     segmentation_pattern = models.CharField(max_length=255, null=False, blank=True, default='')
     particles_pattern = models.CharField(max_length=255, null=False, blank=True, default='')
 
+    @property
+    def num_segmentations(self):
+        return self.segmentations.count()
 
-class BlobModel(TimeStampedModel, models.Model):
+    @property
+    def num_groomed(self):
+        return self.groomed.count()
+
+    @property
+    def num_shape_models(self):
+        return self.shape_models.count()
+
+    @property
+    def size(self):
+        return (
+            sum([segmentation.size for segmentation in self.segmentations.all()])
+            + sum([groomed.size for groomed in self.groomed.all()])
+            + sum([shape_model.size for shape_model in self.shape_models.all()])
+        )
+
+
+class BlobModel(FormattedSizeMixin, TimeStampedModel, models.Model):
     blob = S3FileField()
 
     # Each member of METADATA_FIELDS has a corresponding field here
@@ -34,8 +68,12 @@ class BlobModel(TimeStampedModel, models.Model):
         return generate_filename(self.pattern, self.metadata)
 
     @property
+    def size(self):
+        return self.blob.size
+
+    @property
     def formatted_size(self, base=1024, unit='B'):
-        size = self.blob.size
+        size = self.size
         if size < base:
             return f'{size} {unit}'
         units = ['', 'K', 'M', 'G', 'T']
@@ -68,13 +106,21 @@ class Groomed(BlobModel):
         return self.dataset.groomed_pattern
 
 
-class ShapeModel(TimeStampedModel, models.Model):
+class ShapeModel(FormattedSizeMixin, TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     analyze = S3FileField()
     correspondence = S3FileField()
     transform = S3FileField()
     magic_number = models.IntegerField()
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='shape_models')
+
+    @property
+    def num_particles(self):
+        return self.particles.count()
+
+    @property
+    def size(self):
+        return sum([particles.size for particles in self.particles.all()])
 
 
 class Particles(BlobModel):

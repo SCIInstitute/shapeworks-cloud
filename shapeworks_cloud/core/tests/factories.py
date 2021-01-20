@@ -11,20 +11,22 @@ class DatasetFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('sentence')
 
 
-class GroomedFactory(factory.django.DjangoModelFactory):
+class BlobFactory(factory.django.DjangoModelFactory):
+    blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
+    subject = factory.Faker('random_int')
+
+
+class GroomedFactory(BlobFactory):
     class Meta:
         model = Groomed
 
-    name = factory.Faker('file_name', category='image')
-    blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
     dataset = factory.SubFactory(DatasetFactory)
 
 
-class SegmentationFactory(factory.django.DjangoModelFactory):
+class SegmentationFactory(BlobFactory):
     class Meta:
         model = Segmentation
 
-    name = factory.Faker('file_name', category='image')
     blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
     dataset = factory.SubFactory(DatasetFactory)
 
@@ -33,18 +35,16 @@ class ShapeModelFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ShapeModel
 
-    name = factory.Faker('file_name', category='image')
     analyze = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
     correspondence = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
     transform = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
-    magic_number = factory.Faker('int')  # TODO powers of 2
+    magic_number = factory.Faker('random_int')  # TODO powers of 2
     dataset = factory.SubFactory(DatasetFactory)
 
 
-class ParticlesFactory(factory.django.DjangoModelFactory):
+class ParticlesFactory(BlobFactory):
     class Meta:
         model = Particles
 
-    name = factory.Faker('file_name', category='image')
     blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
     shape_model = factory.SubFactory(ShapeModelFactory)

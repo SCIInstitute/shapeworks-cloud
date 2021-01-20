@@ -24,10 +24,6 @@ class ShapeworksCloudMixin(ConfigMixin):
             'shapeworks_cloud.core.apps.CoreConfig',
             's3_file_field',
         ]
-        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            # Required for swagger logins
-            'rest_framework.authentication.SessionAuthentication',
-        ]
 
 
 class DevelopmentConfiguration(ShapeworksCloudMixin, DevelopmentBaseConfiguration):

@@ -24,32 +24,39 @@
     </div>
     <a href="{% url 'segmentation_create' dataset.pk %}" class="button level-right">Add Segmentation</a>
   </div>
-  <table class="table is-fullwidth">
-    <thead>
-      <td>File Name</td>
-      <td>Subject</td>
-      <td>File Size</td>
-      <td></td>
-    </thead>
-    <tbody>
-      {% for object in segmentation_page_obj.object_list %}
-      <tr>
-        <td>
-          <a href="{% url 'segmentation_detail' dataset.pk object.pk %}">{{ object.name }}</a>
-        </td>
-        <td>
-          {{ object.subject }}
-        </td>
-        <td>
-          {{ object.formatted_size }}
-        </td>
-        <td class="has-text-right">
-          <a href="{{ object.blob.url }}">Download</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table class="table is-fullwidth">
+      <thead>
+        <td>File Name</td>
+        <td>Subject</td>
+        <td>Metadata</td>
+        <td>File Size</td>
+        <td></td>
+      </thead>
+      <tbody>
+        {% for object in segmentation_page_obj.object_list %}
+        <tr>
+          <td>
+            <a href="{% url 'segmentation_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+          </td>
+          <td>
+            {{ object.subject }}
+          </td>
+          <td>
+            {{ object.metadata_values }}
+          </td>
+          <td>
+            {{ object.formatted_size }}
+          </td>
+          <td class="has-text-right">
+            <a class="button is-small" href="{% url 'segmentation_edit' dataset.pk object.pk %}">Edit</a>
+            <a class="button is-small" href="{{ object.blob.url }}">Download</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <div class="pagination">
     <span class="step-links">
@@ -75,32 +82,39 @@
     </div>
     <a href="{% url 'groomed_create' dataset.pk %}" class="button level-right">Add Groomed</a>
   </div>
-  <table class="table is-fullwidth">
-    <thead>
-      <td>File Name</td>
-      <td>Subject</td>
-      <td>File Size</td>
-      <td></td>
-    </thead>
-    <tbody>
-      {% for object in groomed_page_obj.object_list %}
-      <tr>
-        <td>
-          <a href="{% url 'groomed_detail' dataset.pk object.pk %}">{{ object.name }}</a>
-        </td>
-        <td>
-          {{ object.subject }}
-        </td>
-        <td>
-          {{ object.formatted_size }}
-        </td>
-        <td class="has-text-right">
-          <a href="{{ object.blob.url }}">Download</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table class="table is-fullwidth">
+      <thead>
+        <td>File Name</td>
+        <td>Subject</td>
+        <td>Metadata</td>
+        <td>File Size</td>
+        <td></td>
+      </thead>
+      <tbody>
+        {% for object in groomed_page_obj.object_list %}
+        <tr>
+          <td>
+            <a href="{% url 'groomed_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+          </td>
+          <td>
+            {{ object.subject }}
+          </td>
+          <td>
+            {{ object.metadata_values }}
+          </td>
+          <td>
+            {{ object.formatted_size }}
+          </td>
+          <td class="has-text-right">
+            <a class="button is-small" href="{% url 'groomed_edit' dataset.pk object.pk %}">Edit</a>
+            <a class="button is-small" href="{{ object.blob.url }}">Download</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <div class="pagination">
     <span class="step-links">
@@ -126,24 +140,26 @@
     </div>
     <a href="{% url 'shape_model_create' dataset.pk %}" class="button level-right">Add Shape Model</a>
   </div>
-  <table class="table is-fullwidth">
-    <thead>
-      <td>Name</td>
-      <td></td>
-    </thead>
-    <tbody>
-      {% for object in shape_model_page_obj.object_list %}
-      <tr>
-        <td>
-          <a href="{% url 'shape_model_detail' dataset.pk object.pk %}">{{ object.name }}</a>
-        </td>
-        <td class="has-text-right">
-          <a href="{{ object.blob.url }}">Download</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table class="table is-fullwidth">
+      <thead>
+        <td>Name</td>
+        <td></td>
+      </thead>
+      <tbody>
+        {% for object in shape_model_page_obj.object_list %}
+        <tr>
+          <td>
+            <a href="{% url 'shape_model_detail' dataset.pk object.pk %}">{{ object.name }}</a>
+          </td>
+          <td class="has-text-right">
+            <a class="button is-small" href="{% url 'shape_model_edit' dataset.pk object.pk %}">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <div class="pagination">
     <span class="step-links">

@@ -22,10 +22,9 @@ def groomed_create(request, dataset_pk):
     dataset = get_object_or_404(Dataset, pk=dataset_pk)
     if request.method == 'POST':
         # Create a new Groomed
-        form = GroomedForm(request.POST)
+        groomed = Groomed(dataset=dataset)
+        form = GroomedForm(request.POST, instance=groomed)
         if form.is_valid():
-            groomed = form.instance
-            groomed.dataset = dataset
             groomed.save()
             return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
     else:

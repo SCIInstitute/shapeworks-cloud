@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block content %}
-<table class=" table">
+<table class="table">
   <tbody>
     <tr>
       <td>Magic Number</td>
@@ -32,32 +32,39 @@
   </div>
   <a href="{% url 'particles_create' dataset.pk shape_model.pk %}" class="button level-right">Add Particles</a>
 </div>
-<table class="table is-fullwidth">
-  <thead>
-    <td>File Name</td>
-    <td>Subject</td>
-    <td>File Size</td>
-    <td></td>
-  </thead>
-  <tbody>
-    {% for object in page_obj.object_list %}
-    <tr>
-      <td>
-        <a href="{% url 'particles_detail' dataset.pk shape_model.pk object.pk %}">{{ object.name }}</a>
-      </td>
-      <td>
-        {{ object.subject }}
-      </td>
-      <td>
-        {{ object.formatted_size }}
-      </td>
-      <td class="has-text-right">
-        <a href="{{ object.blob.url }}">Download</a>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="table-container">
+  <table class="table is-fullwidth">
+    <thead>
+      <td>File Name</td>
+      <td>Subject</td>
+      <td>Metadata</td>
+      <td>File Size</td>
+      <td></td>
+    </thead>
+    <tbody>
+      {% for object in page_obj.object_list %}
+      <tr>
+        <td>
+          <a href="{% url 'particles_detail' dataset.pk shape_model.pk object.pk %}">{{ object.name }}</a>
+        </td>
+        <td>
+          {{ object.subject }}
+        </td>
+        <td>
+          {{ object.metadata_values }}
+        </td>
+        <td>
+          {{ object.formatted_size }}
+        </td>
+        <td class="has-text-right">
+          <a class="button is-small" href="{% url 'particles_edit' dataset.pk shape_model.pk object.pk %}">Edit</a>
+          <a class="button is-small" href="{{ object.blob.url }}">Download</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 <div class="pagination">
   <span class="step-links">

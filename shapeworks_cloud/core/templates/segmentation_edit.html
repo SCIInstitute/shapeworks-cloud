@@ -14,9 +14,16 @@ Edit {{ segmentation.name }}
 {% endblock %}
 
 {% block content %}
+<div>
+  File pattern: <b>{{ dataset.segmentation_pattern }}</b>
+</div>
 <form action="{% url 'segmentation_edit' dataset.pk segmentation.pk %}" method="post">
   {% csrf_token %}
-  {{ form }}
+  <table>
+    <tbody>
+      {{ form.as_table }}
+    </tbody>
+  </table>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

@@ -14,10 +14,16 @@ Upload New Particle File
 {% endblock %}
 
 {% block content %}
-
+<div>
+  File pattern: <b>{{ dataset.particles_pattern }}</b>
+</div>
 <form action="{% url 'particles_create' dataset.pk shape_model.pk %}" method="post">
   {% csrf_token %}
-  {{ form }}
+  <table>
+    <tbody>
+      {{ form.as_table }}
+    </tbody>
+  </table>
   <div class="field is-grouped">
     <div class="control">
       <input class="button is-link" type="submit" value="Submit">

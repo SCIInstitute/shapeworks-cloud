@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from shapeworks_cloud.core.metadata import METADATA_FIELDS, validate_metadata
+from shapeworks_cloud.core.metadata import METADATA_FIELDS, validate_filename
 from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
 
 
@@ -14,7 +14,7 @@ class DatasetForm(forms.ModelForm):
         pattern = self.cleaned_data[pattern_name]
         try:
             for instance in queryset.all():
-                validate_metadata(pattern, instance.metadata)
+                validate_filename(pattern, instance.name)
         except ValueError as e:
             raise ValidationError(e)
         return pattern
@@ -35,15 +35,6 @@ class BlobForm(forms.ModelForm):
     class Meta:
         abstract = True
         fields = METADATA_FIELDS + ['blob']
-
-    def clean(self):
-        # The only non-metadata field is 'blob'
-        metadata = {key: self.cleaned_data[key] for key in self.cleaned_data if key != 'blob'}
-        # Raise a ValidationError now rather than an IntegrityError later
-        if self.Meta.model.objects.filter(**metadata):
-            raise ValidationError(
-                f'Another {self.Meta.model.__name__} already exists with that metadata'
-            )
 
 
 class SegmentationForm(BlobForm):

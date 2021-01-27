@@ -33,6 +33,9 @@
             <div class="tile level-right">
               <div class="level">
                 <div>Welcome, {{ user.username }} &nbsp;</div>
+                {% if user.is_superuser %}
+                  <a href="{% url 'admin:index' %}" class="button is-small">Admin</a>
+                {% endif %}
                 <a href="{% url 'account_logout' %}?next={{ request.path }}" class="button is-small">Log Out</a>
               </div>
             </div>

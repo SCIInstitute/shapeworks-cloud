@@ -18,8 +18,12 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 
+from swcc.utils import get_config_value, update_config_value
+
 from .models import Dataset
 
+SWCC_CONFIG_PATH = __name__
+SWCC_CONFIG_FILE = 'config'
 FORMAT = '%(message)s'
 logging.basicConfig(format=FORMAT, datefmt='[%X]', handlers=[RichHandler()])
 logger = logging.getLogger(__name__)
@@ -43,6 +47,26 @@ class SwccSession(BaseUrlSession):
                 'Accept': 'application/json',
             }
         )
+
+        token = get_config_value(SWCC_CONFIG_FILE, 'token')
+        if token:
+            self.headers['Authorization'] = f'Token {token}'
+
+    def request(self, *args, **kwargs):
+        response = super().request(*args, **kwargs)
+
+        if response.status_code in [401, 403]:
+            click.echo(
+                click.style(
+                    "You are attempting to perform an authorized operation but you aren't logged in.\n"  # noqa
+                    "Run 'swcc login' to continue.",
+                    fg='yellow',
+                ),
+                err=True,
+            )
+            sys.exit(1)
+
+        return response
 
 
 class CliContext(BaseModel):
@@ -112,6 +136,23 @@ def dataset(ctx):
     pass
 
 
+@dataset.command(name='create', help='create a dataset')
+@click.argument('name', type=str)
+@click.argument('groomed-pattern', type=str)
+@click.argument('segmentation-pattern', type=str)
+@click.argument('particles-pattern', type=str)
+@click.pass_obj
+def create(ctx, name, groomed_pattern, segmentation_pattern, particles_pattern):
+    dataset = Dataset.create(
+        ctx,
+        name=name,
+        groomed_pattern=groomed_pattern,
+        segmentation_pattern=segmentation_pattern,
+        particles_pattern=particles_pattern,
+    )
+    click.echo(dataset)
+
+
 @dataset.command(name='list', help='list datasets')
 @click.pass_obj
 def list_(ctx):
@@ -162,6 +203,30 @@ def download(ctx, id_: int, dest):
         particles.mkdir(exist_ok=True, parents=True)
         for particle in dataset.particles(ctx, x.id):
             particle.download(ctx, particles)
+
+
+@cli.command(name='login', help='authenticate with shapeworks cloud')
+@click.pass_obj
+def login(ctx):
+    while True:
+        username = click.prompt('username', err=True)
+        password = click.prompt('password', hide_input=True, err=True)
+
+        # explicitly sidestep the session, since it checks for auth-related errors
+        # to tell the user to login.
+        r = requests.post(
+            f'{ctx.url.rstrip("/").replace("/api/v1", "")}/api-token-auth/',
+            data={'username': username, 'password': password},
+        )
+
+        if r.ok:
+            update_config_value(SWCC_CONFIG_FILE, 'token', r.json()['token'])
+            return click.echo(click.style('logged in successfully.', fg='green'), err=True)
+        elif r.status_code == 400:
+            continue
+        else:
+            # an error other than 'bad credentials'
+            r.raise_for_status()
 
 
 def main():

@@ -4,6 +4,7 @@ from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
 from shapeworks_cloud.core.rest import (
@@ -75,6 +76,7 @@ urlpatterns = [
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
     path('', home, name='home'),
+    path('api-token-auth/', obtain_auth_token),
     path('datasets/', dataset_list, name='dataset_list'),
     path('datasets/create/', dataset_create, name='dataset_create'),
     path('datasets/<pk>/', dataset_detail, name='dataset_detail'),

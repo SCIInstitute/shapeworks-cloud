@@ -14,6 +14,10 @@ class DatasetSerializer(serializers.ModelSerializer):
             'groomed_pattern',
             'segmentation_pattern',
             'particles_pattern',
+            'num_groomed',
+            'num_segmentations',
+            'num_shape_models',
+            'size',
             'created',
             'modified',
         ]
@@ -75,6 +79,8 @@ class ShapeModelSerializer(serializers.ModelSerializer):
             'correspondence_field_value',
             'transform_field_value',
             'magic_number',
+            'num_particles',
+            'size',
             'created',
             'modified',
         ]

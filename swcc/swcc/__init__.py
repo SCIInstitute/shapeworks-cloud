@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import os
 from datetime import datetime
 from importlib.metadata import PackageNotFoundError, version
 import logging
+import os
 from pathlib import Path
 import platform
-from swcc.utils import upload_data_file
 import sys
 import traceback
 
@@ -21,8 +20,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 from s3_file_field_client import S3FileFieldClient
 
-from shapeworks_cloud.core.metadata import extract_metadata, validate_filename
-from swcc.utils import get_config_value, update_config_value
+from swcc.utils import get_config_value, update_config_value, upload_data_file
 
 from .models import Dataset
 

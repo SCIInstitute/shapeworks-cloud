@@ -6,9 +6,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
-
-from shapeworks_cloud.core.metadata import extract_metadata, validate_filename
 import requests
+from shapeworks_cloud.core.metadata import extract_metadata, validate_filename
 import toml
 from tqdm import tqdm
 from xdg import BaseDirectory
@@ -29,6 +28,7 @@ def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[d
     if mtime:
         os.utime(filename, (datetime.now().timestamp(), mtime.timestamp()))
 
+
 def upload_data_file(ctx, dataset, path, pattern, field, endpoint):
     click.echo(f'uploading {path}')
     validate_filename(pattern, path.name)
@@ -41,6 +41,7 @@ def upload_data_file(ctx, dataset, path, pattern, field, endpoint):
         )
         r.raise_for_status()
 
+
 def update_config_value(filename: str, key: str, value: Any) -> None:
     from swcc import SWCC_CONFIG_PATH
 
@@ -51,8 +52,8 @@ def update_config_value(filename: str, key: str, value: Any) -> None:
 
     if os.path.exists(config_file):
         with open(config_file, 'r') as infile:
-            config = toml.load(infile)['default']
-            config[key] = value
+            config = toml.load(infile)
+            config['default'][key] = value
     else:
         config = {'default': {key: value}}
 

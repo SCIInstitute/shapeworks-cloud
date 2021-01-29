@@ -30,6 +30,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     install_requires=[
         'click',
+        'django-s3-file-field-client',
         'packaging',
         'pydantic',
         'pyxdg',

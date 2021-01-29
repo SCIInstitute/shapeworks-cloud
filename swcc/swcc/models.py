@@ -21,6 +21,10 @@ class BlobModel(BaseModel):
     grooming_steps: str
     created: datetime
     modified: datetime
+    subject: int
+    chirality: str
+    grooming_steps: str
+    extension: str
 
     def download(self, ctx, dest: Path):
         r = requests.get(self.blob, stream=True)
@@ -61,6 +65,9 @@ class Particle(BlobModel):
 class Dataset(BaseModel):
     id: int
     name: str
+    groomed_pattern: str
+    segmentation_pattern: str
+    particles_pattern: str
     created: datetime
     num_segmentations: int
     num_groomed: int
@@ -74,12 +81,23 @@ class Dataset(BaseModel):
         return cls(**r.json())
 
     @staticmethod
+    def create(ctx, **kwargs) -> Dataset:
+        r = ctx.session.post('datasets/', data=kwargs)
+        r.raise_for_status()
+        return Dataset(**r.json())
+
+    @staticmethod
     def list(ctx) -> Iterable[Dataset]:
         r = ctx.session.get('datasets')
         r.raise_for_status()
         # TODO: pagination
         for dataset in r.json()['results']:
             yield Dataset(**dataset)
+
+    @staticmethod
+    def delete(ctx, id_):
+        r = ctx.session.delete(f'datasets/{id_}/')
+        r.raise_for_status()
 
     def segmentations(self, ctx) -> Iterable[Segmentation]:
         r = ctx.session.get(f'datasets/{self.id}/segmentations')

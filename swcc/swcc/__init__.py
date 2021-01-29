@@ -176,10 +176,11 @@ def list_(ctx):
 
 
 @dataset.command(name='download', help='download a dataset')
-@click.argument('id_', type=int)
+@click.argument('id_', type=int, metavar='ID')
 @click.argument('dest', type=click.Path(exists=False, file_okay=False, dir_okay=True))
+@click.option('-s', '--subject-id', type=int, multiple=True)
 @click.pass_obj
-def download(ctx, id_: int, dest):
+def download(ctx, id_: int, dest, subject_id):
     dest = Path(dest)
     dest.mkdir(exist_ok=True)
     dataset = Dataset.from_id(ctx, id_)
@@ -187,12 +188,14 @@ def download(ctx, id_: int, dest):
     segmentations = Path(dest / 'segmentations')
     segmentations.mkdir(exist_ok=True, parents=True)
     for x in dataset.segmentations(ctx):
-        x.download(ctx, segmentations)
+        if (not subject_id) or (x.subject in subject_id):
+            x.download(ctx, segmentations)
 
     groomed = Path(dest / 'groomed')
     groomed.mkdir(exist_ok=True, parents=True)
     for x in dataset.groomed(ctx):
-        x.download(ctx, groomed)
+        if (not subject_id) or (x.subject in subject_id):
+            x.download(ctx, groomed)
 
     shape_models = Path(dest / 'shape_models')
     shape_models.mkdir(exist_ok=True, parents=True)
@@ -202,7 +205,8 @@ def download(ctx, id_: int, dest):
         particles = Path(shape_models / x.name / 'particles')
         particles.mkdir(exist_ok=True, parents=True)
         for particle in dataset.particles(ctx, x.id):
-            particle.download(ctx, particles)
+            if (not subject_id) or (particle.subject in subject_id):
+                particle.download(ctx, particles)
 
 
 @cli.command(name='login', help='authenticate with shapeworks cloud')

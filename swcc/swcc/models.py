@@ -14,6 +14,11 @@ class BlobModel(BaseModel):
     id: int
     name: str
     blob: str
+    subject: int
+    particle_type: str
+    chirality: str
+    extension: str
+    grooming_steps: str
     created: datetime
     modified: datetime
 

@@ -29,7 +29,7 @@ jobs:
       - name: Publish swc_metadata to PyPI
         env:
           TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN_METADATA_PACKAGE }}
           TWINE_NON_INTERACTIVE: "true"
         working-directory: ./swc-metadata
         run: |

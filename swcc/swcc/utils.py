@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 import click
 import requests
-from shapeworks_cloud.core.metadata import extract_metadata, validate_filename
+from swc_metadata.metadata import extract_metadata, validate_filename
 import toml
 from tqdm import tqdm
 from xdg import BaseDirectory

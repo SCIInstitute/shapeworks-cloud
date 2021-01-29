@@ -37,6 +37,7 @@ setup(
         'requests',
         'requests-toolbelt',
         'rich',
+        'swc-metadata',
         'toml',
         'tqdm',
     ],

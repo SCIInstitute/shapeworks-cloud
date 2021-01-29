@@ -133,7 +133,7 @@ You must upgrade to the latest version before continuing.
     ctx.obj = CliContext(
         session=session,
         url=url.rstrip('/'),
-        s3ff=S3FileFieldClient(url.rstrip('/') + '/s3-upload/'),
+        s3ff=S3FileFieldClient(url.rstrip('/') + '/s3-upload/', session),
         json_output=json_output,
     )
 

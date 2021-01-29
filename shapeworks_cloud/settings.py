@@ -27,6 +27,7 @@ class ShapeworksCloudMixin(ConfigMixin):
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             # Required for swagger logins
             'rest_framework.authentication.SessionAuthentication',
+            'rest_framework.authentication.TokenAuthentication',
         ]
 
 

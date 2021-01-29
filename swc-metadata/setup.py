@@ -11,7 +11,7 @@ else:
     long_description = ''
 
 setup(
-    name='swcc',
+    name='swc-metadata',
     description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -28,17 +28,6 @@ setup(
     ],
     python_requires='>=3.8',
     packages=find_packages(exclude=['tests']),
-    install_requires=[
-        'click',
-        'packaging',
-        'pydantic',
-        'pyxdg',
-        'requests',
-        'requests-toolbelt',
-        'rich',
-        'toml',
-        'tqdm',
-    ],
-    entry_points={'console_scripts': ['swcc=swcc:main']},
-    extras_require={'dev': ['factory_boy', 'ipython', 'tox']},
+    install_requires=[],
+    extras_require={'dev': ['tox']},
 )

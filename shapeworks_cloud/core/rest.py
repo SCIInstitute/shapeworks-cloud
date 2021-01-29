@@ -48,7 +48,7 @@ class BaseViewSet(
         instance = self.model(**serializer.validated_data, **kwargs)
         instance.save()
 
-        return Response(status=201)
+        return Response({**{'id': instance.id}, **serializer.data}, status=201)
 
 
 class SegmentationViewSet(BaseViewSet):

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from importlib.metadata import PackageNotFoundError, version
 import logging
+import os
 from pathlib import Path
 import platform
 import sys
@@ -17,8 +18,9 @@ from requests_toolbelt.sessions import BaseUrlSession
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
+from s3_file_field_client import S3FileFieldClient
 
-from swcc.utils import get_config_value, update_config_value
+from swcc.utils import get_config_value, update_config_value, upload_data_file
 
 from .models import Dataset
 
@@ -72,6 +74,7 @@ class SwccSession(BaseUrlSession):
 class CliContext(BaseModel):
     session: SwccSession
     url: str
+    s3ff: S3FileFieldClient
     json_output: bool
 
     class Config:
@@ -127,7 +130,12 @@ You must upgrade to the latest version before continuing.
         raise
 
     session = SwccSession(url)
-    ctx.obj = CliContext(session=session, url=url.rstrip('/'), json_output=json_output)
+    ctx.obj = CliContext(
+        session=session,
+        url=url.rstrip('/'),
+        s3ff=S3FileFieldClient(url.rstrip('/') + '/s3-upload/'),
+        json_output=json_output,
+    )
 
 
 @cli.group(name='dataset', short_help='get information about datasets')
@@ -198,6 +206,19 @@ def list_(ctx):
         console.print(table)
 
 
+@dataset.command(name='delete', help='delete a dataset')
+@click.argument('id_', type=int)
+@click.pass_obj
+def delete(ctx, id_: int):
+    dataset = Dataset.from_id(ctx, id_)
+
+    if click.confirm(
+        f'Are you sure you want to delete the dataset "{dataset.name}"? This is irreversible.'
+    ):
+        Dataset.delete(ctx, id_)
+        click.echo('deleted.')
+
+
 @dataset.command(name='download', help='download a dataset')
 @click.argument('id_', type=int, metavar='ID')
 @click.argument('dest', type=click.Path(exists=False, file_okay=False, dir_okay=True))
@@ -230,6 +251,65 @@ def download(ctx, id_: int, dest, subject_id):
         for particle in dataset.particles(ctx, x.id):
             if (not subject_id) or (particle.subject in subject_id):
                 particle.download(ctx, particles)
+
+
+@dataset.command(name='upload', help='upload a dataset')
+@click.argument('id_', type=int)
+@click.argument('src', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.pass_obj
+def upload(ctx, id_: int, src):
+    src = Path(src)
+    dataset = Dataset.from_id(ctx, id_)
+
+    groomed = Path(src / 'groomed')
+    for filename in os.listdir(groomed):
+        upload_data_file(
+            ctx,
+            dataset,
+            Path(groomed / filename),
+            dataset.groomed_pattern,
+            'core.Groomed.blob',
+            f'datasets/{dataset.id}/groomed/',
+        )
+
+    segmentations = Path(src / 'segmentations')
+    for filename in os.listdir(segmentations):
+        upload_data_file(
+            ctx,
+            dataset,
+            Path(segmentations / filename),
+            dataset.segmentation_pattern,
+            'core.Segmentation.blob',
+            f'datasets/{dataset.id}/segmentations/',
+        )
+
+    shape_models = Path(src / 'shape_models')
+    for maybe_filename in os.listdir(shape_models):
+        shape_dir = Path(shape_models / maybe_filename)
+        if os.path.isdir(shape_dir):
+            shape_model_data = {'name': maybe_filename, 'magic_number': 0}  # TODO
+            for (filename, model_field, api_field) in [
+                ('analyze', 'core.ShapeModel.analyze', 'analyze_field_value'),
+                ('correspondence', 'core.ShapeModel.correspondence', 'correspondence_field_value'),
+                ('transform', 'core.ShapeModel.transform', 'transform_field_value'),
+            ]:
+                with open(shape_dir / filename, 'rb') as stream:
+                    shape_model_data[api_field] = ctx.s3ff.upload_file(
+                        stream, str(filename), model_field
+                    )['field_value']
+
+            r = ctx.session.post(f'datasets/{dataset.id}/shape_models/', data=shape_model_data)
+            r.raise_for_status()
+
+        for particle_file in os.listdir(shape_dir / 'particles'):
+            upload_data_file(
+                ctx,
+                dataset,
+                Path(shape_dir / 'particles' / particle_file),
+                dataset.particles_pattern,
+                'core.Particles.blob',
+                f'datasets/{dataset.id}/shape_models/{r.json()["id"]}/particles/',
+            )
 
 
 @cli.command(name='login', help='authenticate with shapeworks cloud')

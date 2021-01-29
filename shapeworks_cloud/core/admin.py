@@ -15,7 +15,14 @@ class DatasetAdmin(admin.ModelAdmin):
 
     search_fields = ['name']
 
-    fields = ['name', 'created', 'modified']
+    fields = [
+        'name',
+        'created',
+        'modified',
+        'groomed_pattern',
+        'segmentation_pattern',
+        'particles_pattern',
+    ]
     readonly_fields = ['created', 'modified']
 
 

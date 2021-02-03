@@ -20,16 +20,20 @@ from shapeworks_cloud.core.views import (
     dataset_edit,
     dataset_list,
     groomed_create,
+    groomed_delete,
     groomed_detail,
     groomed_edit,
     home,
     particles_create,
+    particles_delete,
     particles_detail,
     particles_edit,
     segmentation_create,
+    segmentation_delete,
     segmentation_detail,
     segmentation_edit,
     shape_model_create,
+    shape_model_delete,
     shape_model_detail,
     shape_model_edit,
 )
@@ -85,6 +89,11 @@ urlpatterns = [
     path('datasets/<dataset_pk>/groomed/<groomed_pk>/', groomed_detail, name='groomed_detail'),
     path('datasets/<dataset_pk>/groomed/<groomed_pk>/edit/', groomed_edit, name='groomed_edit'),
     path(
+        'datasets/<dataset_pk>/groomed/<groomed_pk>/delete/',
+        groomed_delete,
+        name='groomed_delete',
+    ),
+    path(
         'datasets/<dataset_pk>/segmentation/create/',
         segmentation_create,
         name='segmentation_create',
@@ -100,6 +109,11 @@ urlpatterns = [
         name='segmentation_edit',
     ),
     path(
+        'datasets/<dataset_pk>/segmentation/<segmentation_pk>/delete/',
+        segmentation_delete,
+        name='segmentation_delete',
+    ),
+    path(
         'datasets/<dataset_pk>/shape_model/create/', shape_model_create, name='shape_model_create'
     ),
     path(
@@ -111,6 +125,11 @@ urlpatterns = [
         'datasets/<dataset_pk>/shape_model/<shape_model_pk>/edit/',
         shape_model_edit,
         name='shape_model_edit',
+    ),
+    path(
+        'datasets/<dataset_pk>/shape_model/<shape_model_pk>/delete/',
+        shape_model_delete,
+        name='shape_model_delete',
     ),
     path(
         'datasets/<dataset_pk>/shape_model/<shape_model_pk>/particles/create/',
@@ -126,6 +145,11 @@ urlpatterns = [
         'datasets/<dataset_pk>/shape_model/<shape_model_pk>/particles/<particles_pk>/edit/',
         particles_edit,
         name='particles_edit',
+    ),
+    path(
+        'datasets/<dataset_pk>/shape_model/<shape_model_pk>/particles/<particles_pk>/delete/',
+        particles_delete,
+        name='particles_delete',
     ),
 ]
 

@@ -56,3 +56,18 @@ def segmentation_edit(request, dataset_pk, segmentation_pk):
         'segmentation': segmentation,
     }
     return render(request, 'segmentation_edit.html', context)
+
+
+@login_required
+def segmentation_delete(request, dataset_pk, segmentation_pk):
+    dataset = get_object_or_404(Dataset, pk=dataset_pk)
+    segmentation = get_object_or_404(Segmentation, dataset__pk=dataset_pk, pk=segmentation_pk)
+    if request.method == 'POST':
+        # Delete the instance
+        segmentation.delete()
+        return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
+    context = {
+        'dataset': dataset,
+        'segmentation': segmentation,
+    }
+    return render(request, 'segmentation_delete.html', context)

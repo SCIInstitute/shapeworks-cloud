@@ -30,6 +30,7 @@ from shapeworks_cloud.core.views import (
     segmentation_create,
     segmentation_detail,
     segmentation_edit,
+    segmentation_delete,
     shape_model_create,
     shape_model_detail,
     shape_model_edit,
@@ -104,6 +105,11 @@ urlpatterns = [
         'datasets/<dataset_pk>/segmentation/<segmentation_pk>/edit/',
         segmentation_edit,
         name='segmentation_edit',
+    ),
+    path(
+        'datasets/<dataset_pk>/segmentation/<segmentation_pk>/delete/',
+        segmentation_delete,
+        name='segmentation_delete',
     ),
     path(
         'datasets/<dataset_pk>/shape_model/create/', shape_model_create, name='shape_model_create'

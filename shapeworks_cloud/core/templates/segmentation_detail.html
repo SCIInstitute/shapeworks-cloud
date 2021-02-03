@@ -14,6 +14,9 @@
 <a class="button" href="{% url 'segmentation_edit' dataset.pk segmentation.pk %}">
   Edit Segmentation
 </a>
+<a class="button is-danger" href="{% url 'segmentation_delete' dataset.pk segmentation.pk %}">
+  Delete Segmentation
+</a>
 {% endblock %}
 
 {% block content %}

@@ -59,6 +59,9 @@
         <td class="has-text-right">
           <a class="button is-small" href="{% url 'particles_edit' dataset.pk shape_model.pk object.pk %}">Edit</a>
           <a class="button is-small" href="{{ object.blob.url }}">Download</a>
+          <a class="button is-small is-danger" href="{% url 'particles_delete' dataset.pk shape_model.pk object.pk %}">
+            Delete
+          </a>
         </td>
       </tr>
       {% endfor %}

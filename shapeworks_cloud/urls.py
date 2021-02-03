@@ -27,6 +27,7 @@ from shapeworks_cloud.core.views import (
     particles_create,
     particles_detail,
     particles_edit,
+    particles_delete,
     segmentation_create,
     segmentation_detail,
     segmentation_edit,
@@ -138,6 +139,11 @@ urlpatterns = [
         'datasets/<dataset_pk>/shape_model/<shape_model_pk>/particles/<particles_pk>/edit/',
         particles_edit,
         name='particles_edit',
+    ),
+    path(
+        'datasets/<dataset_pk>/shape_model/<shape_model_pk>/particles/<particles_pk>/delete/',
+        particles_delete,
+        name='particles_delete',
     ),
 ]
 

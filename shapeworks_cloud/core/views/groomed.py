@@ -54,3 +54,18 @@ def groomed_edit(request, dataset_pk, groomed_pk):
         'groomed': groomed,
     }
     return render(request, 'groomed_edit.html', context)
+
+
+@login_required
+def groomed_delete(request, dataset_pk, groomed_pk):
+    dataset = get_object_or_404(Dataset, pk=dataset_pk)
+    groomed = get_object_or_404(Groomed, dataset__pk=dataset_pk, pk=groomed_pk)
+    if request.method == 'POST':
+        # Delete the instance
+        groomed.delete()
+        return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
+    context = {
+        'dataset': dataset,
+        'groomed': groomed,
+    }
+    return render(request, 'groomed_delete.html', context)

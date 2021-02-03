@@ -22,6 +22,7 @@ from shapeworks_cloud.core.views import (
     groomed_create,
     groomed_detail,
     groomed_edit,
+    groomed_delete,
     home,
     particles_create,
     particles_detail,
@@ -84,6 +85,11 @@ urlpatterns = [
     path('datasets/<dataset_pk>/groomed/create/', groomed_create, name='groomed_create'),
     path('datasets/<dataset_pk>/groomed/<groomed_pk>/', groomed_detail, name='groomed_detail'),
     path('datasets/<dataset_pk>/groomed/<groomed_pk>/edit/', groomed_edit, name='groomed_edit'),
+    path(
+        'datasets/<dataset_pk>/groomed/<groomed_pk>/delete/',
+        groomed_delete,
+        name='groomed_delete',
+    ),
     path(
         'datasets/<dataset_pk>/segmentation/create/',
         segmentation_create,

@@ -82,3 +82,18 @@ def shape_model_edit(request, dataset_pk, shape_model_pk):
         'shape_model': shape_model,
     }
     return render(request, 'shape_model_edit.html', context)
+
+
+@login_required
+def shape_model_delete(request, dataset_pk, shape_model_pk):
+    dataset = get_object_or_404(Dataset, pk=dataset_pk)
+    shape_model = get_object_or_404(ShapeModel, dataset__pk=dataset_pk, pk=shape_model_pk)
+    if request.method == 'POST':
+        # Delete the instance
+        shape_model.delete()
+        return HttpResponseRedirect(reverse('dataset_detail', args=(dataset.pk,)))
+    context = {
+        'dataset': dataset,
+        'shape_model': shape_model,
+    }
+    return render(request, 'shape_model_delete.html', context)

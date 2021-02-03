@@ -14,6 +14,9 @@
 <a class="button" href="{% url 'shape_model_edit' dataset.pk shape_model.pk %}">
   Edit Shape Model
 </a>
+<a class="button is-danger" href="{% url 'shape_model_delete' dataset.pk shape_model.pk %}">
+  Delete Shape Model
+</a>
 {% endblock %}
 
 {% block content %}

@@ -35,6 +35,7 @@ from shapeworks_cloud.core.views import (
     shape_model_create,
     shape_model_detail,
     shape_model_edit,
+    shape_model_delete,
 )
 
 router = ExtendedSimpleRouter()
@@ -124,6 +125,11 @@ urlpatterns = [
         'datasets/<dataset_pk>/shape_model/<shape_model_pk>/edit/',
         shape_model_edit,
         name='shape_model_edit',
+    ),
+    path(
+        'datasets/<dataset_pk>/shape_model/<shape_model_pk>/delete/',
+        shape_model_delete,
+        name='shape_model_delete',
     ),
     path(
         'datasets/<dataset_pk>/shape_model/<shape_model_pk>/particles/create/',

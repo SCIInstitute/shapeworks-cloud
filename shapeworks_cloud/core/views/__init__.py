@@ -8,7 +8,12 @@ from .segmentation import (
     segmentation_edit,
     segmentation_delete,
 )
-from .shape_model import shape_model_create, shape_model_detail, shape_model_edit
+from .shape_model import (
+    shape_model_create,
+    shape_model_detail,
+    shape_model_edit,
+    shape_model_delete,
+)
 
 __all__ = [
     'dataset_create',
@@ -31,4 +36,5 @@ __all__ = [
     'shape_model_create',
     'shape_model_detail',
     'shape_model_edit',
+    'shape_model_delete',
 ]

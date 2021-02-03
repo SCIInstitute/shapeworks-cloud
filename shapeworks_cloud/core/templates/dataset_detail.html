@@ -156,6 +156,7 @@
           </td>
           <td class="has-text-right">
             <a class="button is-small" href="{% url 'shape_model_edit' dataset.pk object.pk %}">Edit</a>
+            <a class="button is-small is-danger" href="{% url 'shape_model_delete' dataset.pk object.pk %}">Delete</a>
           </td>
         </tr>
         {% endfor %}

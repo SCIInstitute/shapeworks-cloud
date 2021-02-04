@@ -1,4 +1,7 @@
 from django.shortcuts import get_object_or_404
+from drf_yasg import openapi
+from drf_yasg.utils import no_body, swagger_auto_schema
+from rest_framework.decorators import action
 from rest_framework.mixins import DestroyModelMixin, UpdateModelMixin
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -49,6 +52,31 @@ class BaseViewSet(
         instance.save()
 
         return Response({**{'id': instance.id}, **serializer.data}, status=201)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'filename',
+                openapi.IN_QUERY,
+                description='Search for a filename',
+                type=openapi.TYPE_STRING,
+            )
+        ],
+        request_body=no_body,
+        responses={
+            200: 'Search result list',
+        },
+    )
+    @action(methods=['GET'], detail=False)
+    def search(self, request, **kwargs):
+        if 'filename' not in request.query_params:
+            return Response([])
+        filename = request.query_params['filename']
+        objects = self.get_queryset().all()
+        # Can't use queryset filtering because object.name is a computed property
+        matching_objects = list(filter(lambda o: o.name == filename, objects))
+        serializer: GroomedSerializer = self.get_serializer_class()(matching_objects, many=True)
+        return Response(serializer.data)
 
 
 class SegmentationViewSet(BaseViewSet):

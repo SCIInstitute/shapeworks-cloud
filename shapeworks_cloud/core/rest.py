@@ -67,7 +67,7 @@ class BaseViewSet(
             200: 'Search result list',
         },
     )
-    @action(methods=['POST'], detail=False)
+    @action(methods=['GET'], detail=False)
     def search(self, request, **kwargs):
         if 'filename' not in request.query_params:
             return Response([])

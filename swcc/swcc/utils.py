@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 import os
 from pathlib import Path
 from typing import Any, Optional
@@ -30,16 +31,27 @@ def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[d
 
 
 def upload_data_file(ctx, dataset, path, pattern, field, endpoint):
-    click.echo(f'uploading {path}')
     validate_filename(pattern, path.name)
-    metadata = extract_metadata(pattern, path.name)
-    with open(path, 'rb') as stream:
-        field = ctx.s3ff.upload_file(stream, path.name, field)
-        r = ctx.session.post(
-            endpoint,
-            json={**{'field_value': field['field_value']}, **metadata},
-        )
-        r.raise_for_status()
+    r = ctx.session.get(f'{endpoint}search/', params={'filename': path.name})
+    r.raise_for_status()
+    results = json.loads(r.content)
+    if len(results) == 0:
+        # No results means the file is being uploaded for the first time
+        click.echo(f'uploading {path}')
+        metadata = extract_metadata(pattern, path.name)
+        with open(path, 'rb') as stream:
+            field = ctx.s3ff.upload_file(stream, path.name, field)
+            r = ctx.session.post(
+                endpoint,
+                json={**{'field_value': field['field_value']}, **metadata},
+            )
+            r.raise_for_status()
+    elif len(results) == 1:
+        # Skip upload if a file with the same name already exists
+        # TODO: handle reuploads
+        click.echo(f'skipping {path}')
+    else:
+        click.echo(f'duplicate file {path}', err=True)
 
 
 def update_config_value(filename: str, key: str, value: Any) -> None:

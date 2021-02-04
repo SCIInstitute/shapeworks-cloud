@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from importlib.metadata import PackageNotFoundError, version
+import json
 import logging
 import os
 from pathlib import Path
@@ -287,19 +288,39 @@ def upload(ctx, id_: int, src):
     for maybe_filename in os.listdir(shape_models):
         shape_dir = Path(shape_models / maybe_filename)
         if os.path.isdir(shape_dir):
-            shape_model_data = {'name': maybe_filename, 'magic_number': 0}  # TODO
-            for (filename, model_field, api_field) in [
-                ('analyze', 'core.ShapeModel.analyze', 'analyze_field_value'),
-                ('correspondence', 'core.ShapeModel.correspondence', 'correspondence_field_value'),
-                ('transform', 'core.ShapeModel.transform', 'transform_field_value'),
-            ]:
-                with open(shape_dir / filename, 'rb') as stream:
-                    shape_model_data[api_field] = ctx.s3ff.upload_file(
-                        stream, str(filename), model_field
-                    )['field_value']
-
-            r = ctx.session.post(f'datasets/{dataset.id}/shape_models/', data=shape_model_data)
+            r = ctx.session.get(
+                f'datasets/{dataset.id}/shape_models/search/', params={'filename': shape_dir.name}
+            )
             r.raise_for_status()
+            results = json.loads(r.content)
+            if len(results) == 0:
+                # No results means the shape model is being uploaded for the first time
+                click.echo(f'uploading {shape_dir.name}')
+                shape_model_data = {'name': maybe_filename, 'magic_number': 0}  # TODO
+                for (filename, model_field, api_field) in [
+                    ('analyze', 'core.ShapeModel.analyze', 'analyze_field_value'),
+                    (
+                        'correspondence',
+                        'core.ShapeModel.correspondence',
+                        'correspondence_field_value',
+                    ),
+                    ('transform', 'core.ShapeModel.transform', 'transform_field_value'),
+                ]:
+                    with open(shape_dir / filename, 'rb') as stream:
+                        shape_model_data[api_field] = ctx.s3ff.upload_file(
+                            stream, str(filename), model_field
+                        )['field_value']
+
+                r = ctx.session.post(f'datasets/{dataset.id}/shape_models/', data=shape_model_data)
+                r.raise_for_status()
+                shape_model_id = r.json()['id']
+            elif len(results) == 1:
+                # Skip upload if a shape model with the same name already exists
+                # TODO: handle reuploads
+                click.echo(f'skipping {shape_dir.name}')
+                shape_model_id = results[0]['id']
+            else:
+                click.echo(f'duplicate shape model {shape_dir.name}', err=True)
 
         for particle_file in os.listdir(shape_dir / 'particles'):
             upload_data_file(
@@ -308,7 +329,7 @@ def upload(ctx, id_: int, src):
                 Path(shape_dir / 'particles' / particle_file),
                 dataset.particles_pattern,
                 'core.Particles.blob',
-                f'datasets/{dataset.id}/shape_models/{r.json()["id"]}/particles/',
+                f'datasets/{dataset.id}/shape_models/{shape_model_id}/particles/',
             )
 
 

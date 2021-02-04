@@ -46,7 +46,7 @@
             {{ object.metadata_values }}
           </td>
           <td>
-            {{ object.formatted_size }}
+            {{ object.size|filesizeformat }}
           </td>
           <td class="has-text-right">
             <a class="button is-small" href="{% url 'segmentation_edit' dataset.pk object.pk %}">Edit</a>
@@ -105,7 +105,7 @@
             {{ object.metadata_values }}
           </td>
           <td>
-            {{ object.formatted_size }}
+            {{ object.size|filesizeformat }}
           </td>
           <td class="has-text-right">
             <a class="button is-small" href="{% url 'groomed_edit' dataset.pk object.pk %}">Edit</a>

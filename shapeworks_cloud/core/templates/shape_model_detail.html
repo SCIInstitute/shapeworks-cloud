@@ -57,7 +57,7 @@
           {{ object.metadata_values }}
         </td>
         <td>
-          {{ object.formatted_size }}
+          {{ object.size|filesizeformat }}
         </td>
         <td class="has-text-right">
           <a class="button is-small" href="{% url 'particles_edit' dataset.pk shape_model.pk object.pk %}">Edit</a>

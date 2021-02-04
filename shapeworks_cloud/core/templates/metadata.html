@@ -30,7 +30,7 @@
     {% endif %}
     <tr>
       <td>Size</td>
-      <td>{{ object.formatted_size }}</td>
+      <td>{{ object.size|filesizeformat }}</td>
     </tr>
   </tbody>
 </table>

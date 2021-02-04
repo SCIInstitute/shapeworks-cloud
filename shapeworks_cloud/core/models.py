@@ -6,21 +6,7 @@ from s3_file_field import S3FileField
 from .metadata import METADATA_FIELDS, generate_filename, validate_metadata
 
 
-class FormattedSizeMixin:
-    @property
-    def formatted_size(self, base=1024, unit='B'):
-        size = self.size
-        if size < base:
-            return f'{size} {unit}'
-        units = ['', 'K', 'M', 'G', 'T']
-        i = 0
-        while i < 5 and size >= base:
-            size /= base
-            i += 1
-        return f'{size:.2f} {units[i]}{unit}'
-
-
-class Dataset(FormattedSizeMixin, TimeStampedModel, models.Model):
+class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     groomed_pattern = models.CharField(max_length=255, null=False, blank=True, default='')
     segmentation_pattern = models.CharField(max_length=255, null=False, blank=True, default='')
@@ -47,7 +33,7 @@ class Dataset(FormattedSizeMixin, TimeStampedModel, models.Model):
         )
 
 
-class BlobModel(FormattedSizeMixin, TimeStampedModel, models.Model):
+class BlobModel(TimeStampedModel, models.Model):
     blob = S3FileField()
 
     # Each member of METADATA_FIELDS has a corresponding field here
@@ -130,18 +116,6 @@ class BlobModel(FormattedSizeMixin, TimeStampedModel, models.Model):
     def size(self):
         return self.blob.size
 
-    @property
-    def formatted_size(self, base=1024, unit='B'):
-        size = self.size
-        if size < base:
-            return f'{size} {unit}'
-        units = ['', 'K', 'M', 'G', 'T']
-        i = 0
-        while i < 5 and size >= base:
-            size /= base
-            i += 1
-        return f'{size:.2f} {units[i]}{unit}'
-
 
 class Segmentation(BlobModel):
     class Meta(BlobModel.Meta):
@@ -171,7 +145,7 @@ class Groomed(BlobModel):
         return self.dataset.groomed_pattern
 
 
-class ShapeModel(FormattedSizeMixin, TimeStampedModel, models.Model):
+class ShapeModel(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     analyze = S3FileField()
     correspondence = S3FileField()

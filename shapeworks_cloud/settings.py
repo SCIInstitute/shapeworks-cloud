@@ -20,13 +20,17 @@ class ShapeworksCloudMixin(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.INSTALLED_APPS += [
+        # Install local apps first, to ensure any overridden resources are found first
+        configuration.INSTALLED_APPS = [
             'shapeworks_cloud.core.apps.CoreConfig',
+        ] + configuration.INSTALLED_APPS
+
+        # Install additional apps
+        configuration.INSTALLED_APPS += [
             's3_file_field',
         ]
+
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            # Required for swagger logins
-            'rest_framework.authentication.SessionAuthentication',
             'rest_framework.authentication.TokenAuthentication',
         ]
 

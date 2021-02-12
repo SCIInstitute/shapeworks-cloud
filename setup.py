@@ -40,19 +40,25 @@ setup(
         'django',
         'django-admin-display',
         'django-allauth',
-        'django-composed-configuration[dev,prod]>=0.11.0',
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
-        'django-oauth-toolkit==1.3.2',
-        'django-s3-file-field[minio,boto3]',
+        'django-oauth-toolkit',
         'djangorestframework',
         'drf-extensions @ git+ssh://git@github.com/chibisov/drf-extensions@master',
         'drf-yasg',
         # Production-only
+        'django-composed-configuration[prod]',
+        'django-s3-file-field[boto3]',
         'gunicorn',
-        # Development-only
-        'django-debug-toolbar',
     ],
-    extras_require={'dev': ['ipython', 'tox']},
+    extras_require={
+        'dev': [
+            'django-composed-configuration[dev]',
+            'django-debug-toolbar',
+            'django-s3-file-field[minio]',
+            'ipython',
+            'tox',
+        ]
+    },
 )

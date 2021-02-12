@@ -146,7 +146,7 @@ class Groomed(BlobModel):
 
 
 class ShapeModel(TimeStampedModel, models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
     analyze = S3FileField()
     correspondence = S3FileField()
     transform = S3FileField()

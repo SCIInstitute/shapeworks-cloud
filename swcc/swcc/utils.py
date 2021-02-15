@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Iterable, Optional
 
 import click
 import requests
@@ -11,6 +11,9 @@ from swc_metadata.metadata import extract_metadata, validate_filename
 import toml
 from tqdm import tqdm
 from xdg import BaseDirectory
+
+if TYPE_CHECKING:
+    from swcc import CliContext
 
 
 def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[datetime] = None):
@@ -29,7 +32,32 @@ def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[d
         os.utime(filename, (datetime.now().timestamp(), mtime.timestamp()))
 
 
-def upload_data_file(ctx, dataset, path, pattern, field, endpoint):
+def files_to_upload(ctx: CliContext, existing: Iterable, path: Path) -> Iterable[Path]:
+    existing_filenames = set([e.name for e in existing])
+    for filename in os.listdir(path):
+        if filename not in existing_filenames:
+            yield Path(path / filename)
+
+
+def upload_data_files(
+    ctx: CliContext,
+    existing: Iterable,
+    path: Path,
+    pattern: str,
+    field: str,
+    endpoint: str,
+):
+    for file_path in files_to_upload(ctx, existing, path):
+        upload_data_file(ctx, file_path, pattern, field, endpoint)
+
+
+def upload_data_file(
+    ctx: CliContext,
+    path: Path,
+    pattern: str,
+    field: str,
+    endpoint: str,
+):
     click.echo(f'uploading {path}')
     validate_filename(pattern, path.name)
     metadata = extract_metadata(pattern, path.name)

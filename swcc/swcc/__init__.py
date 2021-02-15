@@ -8,6 +8,7 @@ from pathlib import Path
 import platform
 import sys
 import traceback
+from typing import Dict, Iterable
 
 import click
 from packaging.version import parse as parse_version
@@ -69,6 +70,18 @@ class SwccSession(BaseUrlSession):
             sys.exit(1)
 
         return response
+
+    def all_paginated_results(self, ctx, url: str) -> Iterable[Dict]:
+        page = 1
+        page_size = 20
+        json = None
+        while (not json) or (json['next'] is not None):
+            response = ctx.session.get(url, params={'page': page, 'page_size': page_size})
+            response.raise_for_status()
+            json = response.json()
+            for result in json['results']:
+                yield result
+            page += 1
 
 
 class CliContext(BaseModel):

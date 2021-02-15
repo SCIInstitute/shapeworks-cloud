@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from pydantic import BaseModel
 import requests
 
 from .utils import download_file
+
+if TYPE_CHECKING:
+    from swcc.swcc import CliContext
 
 
 class BlobModel(BaseModel):
@@ -26,7 +29,7 @@ class BlobModel(BaseModel):
     grooming_steps: str
     extension: str
 
-    def download(self, ctx, dest: Path):
+    def download(self, ctx: CliContext, dest: Path):
         r = requests.get(self.blob, stream=True)
         r.raise_for_status()
         download_file(r, dest, self.name, self.modified)
@@ -41,7 +44,7 @@ class ShapeModel(BaseModel):
     created: datetime
     modified: datetime
 
-    def download(self, ctx, dest: Path):
+    def download(self, ctx: CliContext, dest: Path):
         dest.mkdir(exist_ok=True)
         for attr in ['analyze', 'correspondence', 'transform']:
             r = requests.get(getattr(self, attr), stream=True)
@@ -75,19 +78,19 @@ class Dataset(BaseModel):
     size: int
 
     @classmethod
-    def from_id(cls, ctx, id_) -> Dataset:
+    def from_id(cls, ctx: CliContext, id_) -> Dataset:
         r = ctx.session.get(f'datasets/{id_}')
         r.raise_for_status()
         return cls(**r.json())
 
     @staticmethod
-    def create(ctx, **kwargs) -> Dataset:
+    def create(ctx: CliContext, **kwargs) -> Dataset:
         r = ctx.session.post('datasets/', data=kwargs)
         r.raise_for_status()
         return Dataset(**r.json())
 
     @staticmethod
-    def list(ctx) -> Iterable[Dataset]:
+    def list(ctx: CliContext) -> Iterable[Dataset]:
         r = ctx.session.get('datasets')
         r.raise_for_status()
         # TODO: pagination
@@ -95,30 +98,24 @@ class Dataset(BaseModel):
             yield Dataset(**dataset)
 
     @staticmethod
-    def delete(ctx, id_):
+    def delete(ctx: CliContext, id_):
         r = ctx.session.delete(f'datasets/{id_}/')
         r.raise_for_status()
 
-    def segmentations(self, ctx) -> Iterable[Segmentation]:
-        r = ctx.session.get(f'datasets/{self.id}/segmentations')
-        r.raise_for_status()
-        for segmentation in r.json()['results']:
-            yield Segmentation(**segmentation)
+    def segmentations(self, ctx: CliContext) -> Iterable[Segmentation]:
+        for result in ctx.session.all_paginated_results(ctx, f'datasets/{self.id}/segmentations'):
+            yield Segmentation(**result)
 
-    def groomed(self, ctx) -> Iterable[Groomed]:
-        r = ctx.session.get(f'datasets/{self.id}/groomed')
-        r.raise_for_status()
-        for groomed in r.json()['results']:
-            yield Groomed(**groomed)
+    def groomed(self, ctx: CliContext) -> Iterable[Groomed]:
+        for result in ctx.session.all_paginated_results(ctx, f'datasets/{self.id}/groomed'):
+            yield Groomed(**result)
 
-    def shape_models(self, ctx) -> Iterable:
-        r = ctx.session.get(f'datasets/{self.id}/shape_models')
-        r.raise_for_status()
-        for shape_model in r.json()['results']:
-            yield ShapeModel(**shape_model)
+    def shape_models(self, ctx: CliContext) -> Iterable[ShapeModel]:
+        for result in ctx.session.all_paginated_results(ctx, f'datasets/{self.id}/shape_models'):
+            yield ShapeModel(**result)
 
-    def particles(self, ctx, shape_model_id: int) -> Iterable[Particle]:
-        r = ctx.session.get(f'datasets/{self.id}/shape_models/{shape_model_id}/particles')
-        r.raise_for_status()
-        for particle in r.json()['results']:
-            yield Particle(**particle)
+    def particles(self, ctx: CliContext, shape_model_id: int) -> Iterable[Particle]:
+        for result in ctx.session.all_paginated_results(
+            ctx, f'datasets/{self.id}/shape_models/{shape_model_id}/particles'
+        ):
+            yield Particle(**result)

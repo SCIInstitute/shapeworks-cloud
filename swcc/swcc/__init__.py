@@ -21,7 +21,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 from s3_file_field_client import S3FileFieldClient
 
-from swcc.utils import get_config_value, update_config_value, upload_data_file
+from swcc.utils import files_to_upload, get_config_value, update_config_value, upload_data_files
 
 from .models import Dataset
 
@@ -273,40 +273,35 @@ def download(ctx, id_: int, dest, subject_id):
 def upload(ctx, id_: int, src):
     src = Path(src)
     dataset = Dataset.from_id(ctx, id_)
+    upload_data_files(
+        ctx,
+        dataset.groomed(ctx),
+        Path(src / 'groomed'),
+        dataset.groomed_pattern,
+        'core.Groomed.blob',
+        f'datasets/{dataset.id}/groomed/',
+    )
 
-    groomed = Path(src / 'groomed')
-    for filename in os.listdir(groomed):
-        upload_data_file(
-            ctx,
-            dataset,
-            Path(groomed / filename),
-            dataset.groomed_pattern,
-            'core.Groomed.blob',
-            f'datasets/{dataset.id}/groomed/',
-        )
-
-    segmentations = Path(src / 'segmentations')
-    for filename in os.listdir(segmentations):
-        upload_data_file(
-            ctx,
-            dataset,
-            Path(segmentations / filename),
-            dataset.segmentation_pattern,
-            'core.Segmentation.blob',
-            f'datasets/{dataset.id}/segmentations/',
-        )
+    upload_data_files(
+        ctx,
+        dataset.segmentations(ctx),
+        Path(src / 'segmentations'),
+        dataset.segmentation_pattern,
+        'core.Segmentation.blob',
+        f'datasets/{dataset.id}/segmentations/',
+    )
 
     shape_models = Path(src / 'shape_models')
-    for maybe_filename in os.listdir(shape_models):
-        shape_dir = Path(shape_models / maybe_filename)
-        if os.path.isdir(shape_dir):
-            shape_model_data = {'name': maybe_filename, 'magic_number': 0}  # TODO
+    existing_shape_models = list(dataset.shape_models(ctx))
+    for shape_model_path in files_to_upload(ctx, existing_shape_models, shape_models):
+        if os.path.isdir(shape_model_path):
+            shape_model_data = {'name': shape_model_path.name, 'magic_number': 0}  # TODO
             for (filename, model_field, api_field) in [
                 ('analyze', 'core.ShapeModel.analyze', 'analyze_field_value'),
                 ('correspondence', 'core.ShapeModel.correspondence', 'correspondence_field_value'),
                 ('transform', 'core.ShapeModel.transform', 'transform_field_value'),
             ]:
-                with open(shape_dir / filename, 'rb') as stream:
+                with open(shape_model_path / filename, 'rb') as stream:
                     shape_model_data[api_field] = ctx.s3ff.upload_file(
                         stream, str(filename), model_field
                     )['field_value']
@@ -314,15 +309,23 @@ def upload(ctx, id_: int, src):
             r = ctx.session.post(f'datasets/{dataset.id}/shape_models/', data=shape_model_data)
             r.raise_for_status()
 
-        for particle_file in os.listdir(shape_dir / 'particles'):
-            upload_data_file(
-                ctx,
-                dataset,
-                Path(shape_dir / 'particles' / particle_file),
-                dataset.particles_pattern,
-                'core.Particles.blob',
-                f'datasets/{dataset.id}/shape_models/{r.json()["id"]}/particles/',
-            )
+    # Update the list with any freshly created shape models
+    existing_shape_models = list(dataset.shape_models(ctx))
+    for shape_dir in os.listdir(shape_models):
+        for shape_model in existing_shape_models:
+            if shape_model.name == shape_dir:
+                break
+        else:
+            # Shouldn't be possible, we just created any missing shape models
+            raise ValueError(f'Shape model {shape_model.name} not found.')
+        upload_data_files(
+            ctx,
+            dataset.particles(ctx, shape_model.id),
+            Path(shape_models / shape_dir / 'particles'),
+            dataset.particles_pattern,
+            'core.Particles.blob',
+            f'datasets/{dataset.id}/shape_models/{shape_model.id}/particles/',
+        )
 
 
 @cli.command(name='login', help='authenticate with shapeworks cloud')

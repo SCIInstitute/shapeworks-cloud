@@ -14,6 +14,7 @@ from xdg import BaseDirectory
 
 if TYPE_CHECKING:
     from swcc import CliContext
+    from swcc.models import Dataset
 
 
 def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[datetime] = None):
@@ -30,6 +31,83 @@ def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[d
 
     if mtime:
         os.utime(filename, (datetime.now().timestamp(), mtime.timestamp()))
+
+
+def validate_dataset(ctx, src: Path, dataset: 'Dataset'):
+    validated = True
+    validated &= validate_files(ctx, Path(src / 'groomed'), dataset.groomed_pattern)
+    validated &= validate_files(ctx, Path(src / 'segmentations'), dataset.segmentation_pattern)
+    shape_models = Path(src / 'shape_models')
+    for shape_model in os.listdir(shape_models):
+        shape_model_path = Path(shape_models / shape_model)
+        # All shape_models are stored in directories
+        if not os.path.isdir(shape_model_path):
+            click.echo(
+                click.style(f'File {shape_model} found in {shape_models}', fg='red'),
+                err=True,
+            )
+            validated = False
+            continue
+
+        # Check that all the auxiliary files are in place
+        if 'analyze' not in os.listdir(shape_model_path):
+            click.echo(
+                click.style(f'File "analyze" not found in shape model {shape_model}', fg='red'),
+                err=True,
+            )
+            validated = False
+        if 'correspondence' not in os.listdir(shape_model_path):
+            click.echo(
+                click.style(
+                    f'File "correspondence" not found in shape model {shape_model}', fg='red'
+                ),
+                err=True,
+            )
+            validated = False
+        if 'transform' not in os.listdir(shape_model_path):
+            click.echo(
+                click.style(f'File "transform" not found in shape model {shape_model}', fg='red'),
+                err=True,
+            )
+            validated = False
+        for file in os.listdir(shape_model_path):
+            if file not in ('analyze', 'correspondence', 'transform', 'particles'):
+                click.echo(
+                    click.style(
+                        f'Unknown file "{file}" found in shape model {shape_model}', fg='red'
+                    ),
+                    err=True,
+                )
+                validated = False
+
+        # Validate particles
+        validated &= validate_files(
+            ctx,
+            Path(shape_model_path / 'particles'),
+            dataset.particles_pattern,
+        )
+
+    return validated
+
+
+def validate_files(ctx, path: Path, pattern: str):
+    errors = []
+    if os.path.exists(path):
+        if os.path.isdir(path):
+            for file in os.listdir(path):
+                try:
+                    validate_filename(pattern, file)
+                except ValueError as e:
+                    errors.append(e)
+        else:
+            errors.append(ValueError(f'{path} is not a directory'))
+    else:
+        errors.append(ValueError(f'{path} does not exist'))
+    if errors:
+        click.echo(click.style(f'Errors validating {path}:', fg='red'), err=True)
+        for error in errors:
+            click.echo(click.style(str(error), fg='red'), err=True)
+    return errors == []
 
 
 def files_to_upload(ctx: CliContext, existing: Iterable, path: Path) -> Iterable[Path]:

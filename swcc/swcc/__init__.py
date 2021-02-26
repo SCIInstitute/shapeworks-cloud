@@ -21,7 +21,13 @@ from rich.logging import RichHandler
 from rich.table import Table
 from s3_file_field_client import S3FileFieldClient
 
-from swcc.utils import files_to_upload, get_config_value, update_config_value, upload_data_files
+from swcc.utils import (
+    files_to_upload,
+    get_config_value,
+    update_config_value,
+    upload_data_files,
+    validate_dataset,
+)
 
 from .models import Dataset
 
@@ -220,7 +226,7 @@ def list_(ctx):
 
 
 @dataset.command(name='delete', help='delete a dataset')
-@click.argument('id_', type=int)
+@click.argument('id_', type=int, metavar='ID')
 @click.pass_obj
 def delete(ctx, id_: int):
     dataset = Dataset.from_id(ctx, id_)
@@ -266,13 +272,28 @@ def download(ctx, id_: int, dest, subject_id):
                 particle.download(ctx, particles)
 
 
+@dataset.command(name='validate', help='validate a dataset')
+@click.argument('id_', type=int, metavar='ID')
+@click.argument('src', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.pass_obj
+def validate(ctx, id_: int, src):
+    src = Path(src)
+    dataset = Dataset.from_id(ctx, id_)
+    if validate_dataset(ctx, src, dataset):
+        click.echo(click.style('validation succeeded', fg='green'))
+
+
 @dataset.command(name='upload', help='upload a dataset')
-@click.argument('id_', type=int)
+@click.argument('id_', type=int, metavar='ID')
 @click.argument('src', type=click.Path(exists=True, file_okay=False, dir_okay=True))
 @click.pass_obj
 def upload(ctx, id_: int, src):
     src = Path(src)
     dataset = Dataset.from_id(ctx, id_)
+
+    if not validate_dataset(ctx, src, dataset):
+        return
+
     upload_data_files(
         ctx,
         dataset.groomed(ctx),

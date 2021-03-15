@@ -1,0 +1,12 @@
+---
+- name: Deploy Celery worker
+  hosts: all
+  vars:
+    ansible_python_interpreter: auto
+    ansible_user: ubuntu
+  roles:
+    - role: girder.celery
+      vars:
+        celery_app: shapeworks_cloud.celery
+        celery_repository_url: https://github.com/girder/shapeworks-cloud.git
+        celery_environment: "{{ django_vars }}" # Must be provided at runtime

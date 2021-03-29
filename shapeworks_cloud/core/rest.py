@@ -35,6 +35,7 @@ class DatasetViewSet(ModelViewSet):
         .prefetch_related('segmentations')
         .prefetch_related('groomed')
         .prefetch_related('shape_models')
+        .prefetch_related('shape_models__particles')
     )
 
 

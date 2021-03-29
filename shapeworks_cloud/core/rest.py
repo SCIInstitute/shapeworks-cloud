@@ -30,7 +30,12 @@ class DatasetViewSet(ModelViewSet):
     serializer_class = DatasetSerializer
     pagination_class = Pagination
 
-    queryset = Dataset.objects.all()
+    queryset = (
+        Dataset.objects.all()
+        .prefetch_related('segmentations')
+        .prefetch_related('groomed')
+        .prefetch_related('shape_models')
+    )
 
 
 class BaseViewSet(

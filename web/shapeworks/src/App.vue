@@ -38,19 +38,22 @@
     </v-app-bar>
 
     <v-main>
-      <HelloWorld/>
+      <shape-viewer
+          :shape="{}"
+          :points="{}"
+      />
     </v-main>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld';
+import ShapeViewer from './components/ShapeViewer';
 
 export default {
   name: 'App',
 
   components: {
-    HelloWorld,
+    ShapeViewer,
   },
 
   data: () => ({
@@ -58,3 +61,10 @@ export default {
   }),
 };
 </script>
+
+<style>
+html {
+  height: 100vh;
+  overflow-y: hidden !important;
+}
+</style>

@@ -39,8 +39,9 @@
 
     <v-main>
       <shape-viewer
-          :shape="{}"
-          :points="{}"
+        :data="shapeData"
+        :rows="rows"
+        :columns="columns"
       />
     </v-main>
   </v-app>
@@ -48,17 +49,42 @@
 
 <script>
 import ShapeViewer from './components/ShapeViewer';
+import shapeReader from './reader/shape';
+import pointsReader from './reader/points';
+
+const SHAPE_URL = 'https://data.kitware.com/api/v1/file/6053965f2fa25629b9828263/download'
+const POINTS_URL = 'https://data.kitware.com/api/v1/file/605396602fa25629b982826b/download'
 
 export default {
-  name: 'App',
-
   components: {
     ShapeViewer,
   },
+  data() {
+    return {
+      rows: 3,
+      columns: 4,
+      shapeData: [],
+    };
+  },
+  created() {
+    this.loadData();
+  },
+  methods: {
+    async loadData() {
+      const [shape, points] = await Promise.all([
+        shapeReader(SHAPE_URL),
+        pointsReader(POINTS_URL),
+      ]);
 
-  data: () => ({
-    //
-  }),
+      this.shapeData.length = 0;
+      for (let i = 0; i < 15; i += 1) {
+        this.shapeData.push({
+          points,
+          shape,
+        });
+      }
+    },
+  },
 };
 </script>
 

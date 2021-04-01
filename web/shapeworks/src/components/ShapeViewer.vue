@@ -1,0 +1,228 @@
+<template>
+  <div
+    class="full-screen"
+    ref="vtk"
+    v-resize="resize"
+  />
+</template>
+
+<script>
+import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
+import vtkCalculator from 'vtk.js/Sources/Filters/General/Calculator';
+import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera';
+import vtkGlyph3DMapper from 'vtk.js/Sources/Rendering/Core/Glyph3DMapper';
+import vtkInteractorStyleTrackballCamera from 'vtk.js/Sources/Interaction/Style/InteractorStyleTrackballCamera';
+import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
+import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
+import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
+import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
+import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
+
+import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
+import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
+
+const SPHERE_RESOLUTION = 32;
+const COLORS = [
+  [166,206,227],
+  [31,120,180],
+  [178,223,138],
+  [51,160,44],
+  [251,154,153],
+  [227,26,28],
+  [253,191,111],
+  [255,127,0],
+  [202,178,214],
+  [106,61,154],
+  [255,255,153],
+  [177,89,40]
+];
+
+export default {
+  props: {
+    data: {
+      type: Array,
+      required: true,
+    },
+    rows: {
+      type: Number,
+      required: true,
+    },
+    columns: {
+      type: Number,
+      required: true,
+    },
+  },
+  data() {
+    return {};
+  },
+  computed: {
+    grid() {
+      const grid = [];
+      const nx = this.columns;
+      const ny = this.rows;
+      for (let x = 0; x < nx; x += 1) {
+        for (let y = 0; y < ny; y += 1) {
+          const xmin = x / nx;
+          const ymin = y / ny;
+          const xmax = (x + 1) / nx;
+          const ymax = (y + 1) / ny;
+          grid.push([xmin, ymin, xmax, ymax]);
+        }
+      }
+      return grid;
+    },
+  },
+  watch: {
+    data() {
+      this.renderGrid();
+    },
+    grid() {
+      this.renderGrid();
+    },
+  },
+  beforeDestroy() {
+    this.vtk.interactor.unbindEvents();
+    this.vtk.openglRenderWindow.delete();
+  },
+  created() {
+    const renderWindow = vtkRenderWindow.newInstance();
+    const renderer = vtkRenderer.newInstance();
+    renderWindow.addRenderer(renderer);
+    const interactor = vtkRenderWindowInteractor.newInstance();
+
+    const openglRenderWindow = vtkOpenGLRenderWindow.newInstance();
+    renderWindow.addView(openglRenderWindow);
+
+    interactor.setView(openglRenderWindow);
+    interactor.initialize();
+    interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
+
+    const camera = vtkCamera.newInstance();
+
+    this.vtk = {
+      camera,
+      renderWindow,
+      renderer,
+      interactor,
+      openglRenderWindow,
+      renderers: [],
+    };
+  },
+  mounted() {
+    const el = this.$refs.vtk;
+    this.vtk.openglRenderWindow.setContainer(el);
+    this.vtk.interactor.bindEvents(el);
+
+    this.updateSize();
+    this.vtk.renderer.resetCamera();
+    this.vtk.renderWindow.render();
+    this.renderGrid();
+  },
+  methods: {
+    async resize() {
+      await this.$nextTick();
+      if (this.vtk.renderWindow) {
+        this.updateSize();
+      }
+    },
+    updateSize() {
+      const el = this.$refs.vtk;
+      if (el) {
+        const { width, height } = el.getBoundingClientRect();
+        this.vtk.openglRenderWindow.setSize(width, height);
+        this.vtk.renderWindow.render();
+      }
+    },
+    createColorFilter() {
+      const filter = vtkCalculator.newInstance()
+      filter.setFormula({
+        getArrays() {
+          return {
+            input: [{ location: FieldDataTypes.COORDINATE }],
+            output: [{
+              location: FieldDataTypes.POINT,
+              name: 'color',
+              dataType: 'Uint8Array',
+              attribute: AttributeTypes.SCALARS,
+              numberOfComponents: 3,
+            }],
+          };
+        },
+        evaluate(input, output) {
+          const [coords] = input.map((d) => d.getData());
+          const [color] = output.map((d) => d.getData());
+
+          const n = coords.length / 3;
+          for (let i = 0; i < n; i += 1) {
+            const c = COLORS[i % COLORS.length];
+            color[3 * i] = c[0];
+            color[3 * i + 1] = c[1];
+            color[3 * i + 2] = c[2];
+          }
+          input.forEach((x) => x.modified());
+        },
+      });
+      return filter;
+    },
+    addPoints(renderer, points) {
+      const source = vtkSphereSource.newInstance({
+        thetaResolution: SPHERE_RESOLUTION,
+        phiResolution: SPHERE_RESOLUTION,
+      });
+      const mapper = vtkGlyph3DMapper.newInstance({
+        scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
+        scaleFactor: 1.5,
+      });
+      const actor = vtkActor.newInstance();
+      const filter = this.createColorFilter();
+
+      filter.setInputData(points, 0);
+      mapper.setInputConnection(filter.getOutputPort(), 0);
+      mapper.setInputConnection(source.getOutputPort(), 1);
+      actor.setMapper(mapper);
+      renderer.addActor(actor);
+    },
+    addShape(renderer, shape) {
+      const mapper = vtkMapper.newInstance();
+      const actor = vtkActor.newInstance();
+
+      actor.setMapper(mapper);
+      mapper.setInputData(shape);
+      renderer.addActor(actor);
+    },
+    createRenderer(viewport, points, shape) {
+      const renderer = vtkRenderer.newInstance();
+      renderer.setViewport.apply(renderer, viewport);
+      renderer.setActiveCamera(this.vtk.camera);
+
+      this.vtk.renderWindow.addRenderer(renderer);
+
+      this.addPoints(renderer, points);
+      this.addShape(renderer, shape);
+      renderer.resetCamera();
+      return renderer;
+    },
+    renderGrid() {
+      for (let i = 0; i < this.vtk.renderers.length; i += 1) {
+        this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
+      }
+      this.vtk.renderers = [];
+
+      for (let i = 0; i < this.grid.length; i += 1) {
+        if (i < this.data.length) {
+          this.vtk.renderers.push(this.createRenderer(this.grid[i], this.data[i].points, this.data[i].shape));
+        }
+      }
+
+      this.vtk.renderWindow.render();
+    },
+  },
+};
+</script>
+
+<style scoped>
+.full-screen {
+  height: calc(100vh - 64px);
+}
+</style>

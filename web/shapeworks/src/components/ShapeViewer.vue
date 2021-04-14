@@ -52,6 +52,10 @@ export default {
       type: Number,
       required: true,
     },
+    glyphSize: {
+      type: Number,
+      required: true,
+    },
   },
   data() {
     return {};
@@ -80,6 +84,12 @@ export default {
     grid() {
       this.renderGrid();
     },
+    glyphSize() {
+      this.vtk.pointMappers.forEach((mapper) => {
+        mapper.setScaleFactor(this.glyphSize);
+      });
+      this.render();
+    },
   },
   beforeDestroy() {
     this.vtk.interactor.unbindEvents();
@@ -107,6 +117,7 @@ export default {
       interactor,
       openglRenderWindow,
       renderers: [],
+      pointMappers: [],
     };
   },
   mounted() {
@@ -116,7 +127,6 @@ export default {
 
     this.updateSize();
     this.vtk.renderer.resetCamera();
-    this.vtk.renderWindow.render();
     this.renderGrid();
   },
   methods: {
@@ -131,7 +141,7 @@ export default {
       if (el) {
         const { width, height } = el.getBoundingClientRect();
         this.vtk.openglRenderWindow.setSize(width, height);
-        this.vtk.renderWindow.render();
+        this.render();
       }
     },
     createColorFilter() {
@@ -172,7 +182,7 @@ export default {
       });
       const mapper = vtkGlyph3DMapper.newInstance({
         scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
-        scaleFactor: 1.5,
+        scaleFactor: this.glyphSize,
       });
       const actor = vtkActor.newInstance();
       const filter = this.createColorFilter();
@@ -182,6 +192,7 @@ export default {
       mapper.setInputConnection(source.getOutputPort(), 1);
       actor.setMapper(mapper);
       renderer.addActor(actor);
+      this.vtk.pointMappers.push(mapper);
     },
     addShape(renderer, shape) {
       const mapper = vtkMapper.newInstance();
@@ -208,6 +219,7 @@ export default {
         this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
       }
       this.vtk.renderers = [];
+      this.vtk.pointMappers = [];
 
       for (let i = 0; i < this.grid.length; i += 1) {
         if (i < this.data.length) {
@@ -215,6 +227,9 @@ export default {
         }
       }
 
+      this.render();
+    },
+    render() {
       this.vtk.renderWindow.render();
     },
   },

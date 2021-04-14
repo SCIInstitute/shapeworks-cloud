@@ -53,8 +53,8 @@ import ShapeViewer from './components/ShapeViewer';
 import shapeReader from './reader/shape';
 import pointsReader from './reader/points';
 
-const SHAPE_URL = 'https://data.kitware.com/api/v1/file/6053965f2fa25629b9828263/download'
-const POINTS_URL = 'https://data.kitware.com/api/v1/file/605396602fa25629b982826b/download'
+const SHAPE_URL = 'https://data.kitware.com/api/v1/file/60774afa2fa25629b9c4d14e/download'
+const POINTS_URL = 'https://data.kitware.com/api/v1/file/60774bd32fa25629b9c4d1e2/download'
 
 export default {
   components: {

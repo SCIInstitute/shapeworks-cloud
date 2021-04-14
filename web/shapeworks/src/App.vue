@@ -42,6 +42,7 @@
         :data="shapeData"
         :rows="rows"
         :columns="columns"
+        :glyph-size="glyphSize"
       />
     </v-main>
   </v-app>
@@ -64,6 +65,7 @@ export default {
       rows: 3,
       columns: 4,
       shapeData: [],
+      glyphSize: 1.5
     };
   },
   created() {

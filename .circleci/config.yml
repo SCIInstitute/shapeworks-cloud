@@ -27,10 +27,6 @@ jobs:
             DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
       - run:
-          name: Run metadata tests
-          command: tox
-          working_directory: swc-metadata
-      - run:
           name: Run CLI tests
           command: tox
           working_directory: swcc

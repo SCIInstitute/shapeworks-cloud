@@ -1,25 +1,13 @@
-from typing import Any, Type
+from typing import Dict, Type
 
-from django.shortcuts import get_object_or_404
-from drf_yasg import openapi
-from drf_yasg.utils import no_body, swagger_auto_schema
-from rest_framework.decorators import action
-from rest_framework.mixins import DestroyModelMixin, UpdateModelMixin
+from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework_extensions.mixins import NestedViewSetMixin
+from rest_framework.viewsets import ModelViewSet
 
-from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
-from shapeworks_cloud.core.serializers import (
-    DatasetSerializer,
-    GroomedSerializer,
-    ParticlesSerializer,
-    SegmentationSerializer,
-    ShapeModelSerializer,
-)
+from . import filters, models, serializers, tasks
 
 
 class Pagination(PageNumberPagination):
@@ -28,111 +16,54 @@ class Pagination(PageNumberPagination):
     page_size_query_param = 'page_size'
 
 
-class DatasetViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    serializer_class = DatasetSerializer
-    pagination_class = Pagination
-
-    queryset = (
-        Dataset.objects.all()
-        .prefetch_related('segmentations')
-        .prefetch_related('groomed')
-        .prefetch_related('shape_models')
-        .prefetch_related('shape_models__particles')
-    )
-
-
-class BaseViewSet(
-    NestedViewSetMixin,
-    DestroyModelMixin,
-    UpdateModelMixin,
-    ReadOnlyModelViewSet,
-):
+class BaseViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = Pagination
-    serializer_class: Type[BaseSerializer[Any]]
 
-    # TODO this was the best way I could find to populate foreign keys.
-    # Each ViewSet defines it's own create() which locates the parent entity, then delegates
-    # to this method to handle the rest.
-    def _create(self, request, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = self.model(**serializer.validated_data, **kwargs)
-        instance.save()
+    serializer_class_dict: Dict[str, Type[BaseSerializer]] = {}
+    serializer_class: Type[BaseSerializer]
 
-        return Response({**{'id': instance.id}, **serializer.data}, status=201)
-
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'filename',
-                openapi.IN_QUERY,
-                description='Search for a filename',
-                type=openapi.TYPE_STRING,
-            )
-        ],
-        request_body=no_body,
-        responses={
-            200: 'Search result list',
-        },
-    )
-    @action(methods=['GET'], detail=False)
-    def search(self, request, **kwargs):
-        if 'filename' not in request.query_params:
-            return Response([])
-        filename = request.query_params['filename']
-        objects = self.get_queryset().all()
-        # Can't use queryset filtering because object.name is a computed property
-        matching_objects = list(filter(lambda o: o.name == filename, objects))
-        serializer = self.get_serializer_class()(matching_objects, many=True)
-        return Response(serializer.data)
+    def get_serializer_class(self) -> Type[BaseSerializer]:
+        return self.serializer_class_dict.get(self.action, self.serializer_class)
 
 
-class SegmentationViewSet(BaseViewSet):
-    serializer_class = SegmentationSerializer
-    model = Segmentation
-    queryset = Segmentation.objects.all()
-
-    def create(self, request, parent_lookup_dataset__pk):
-        dataset = get_object_or_404(Dataset, pk=parent_lookup_dataset__pk)
-        return self._create(request, dataset=dataset)
-
-
-class GroomedViewSet(BaseViewSet):
-    serializer_class = GroomedSerializer
-    model = Groomed
-    queryset = Groomed.objects.all()
-
-    def create(self, request, parent_lookup_dataset__pk):
-        dataset = get_object_or_404(Dataset, pk=parent_lookup_dataset__pk)
-        return self._create(request, dataset=dataset)
+class GroomedDatasetViewSet(BaseViewSet):
+    queryset = models.GroomedDataset.objects.all().order_by('name')
+    serializer_class = serializers.GroomedDatasetSerializer
+    serializer_class_dict = {
+        'create': serializers.CreateGroomedDatasetSerializer,
+        'list': serializers.ListGroomedDatasetSerializer,
+    }
 
 
-class ShapeModelViewSet(BaseViewSet):
-    serializer_class = ShapeModelSerializer
-    model = ShapeModel
-    queryset = ShapeModel.objects.all()
+class ProjectViewSet(BaseViewSet):
+    queryset = models.Project.objects.all()
+    serializer_class = serializers.ProjectSerializer
+    serializer_class_dict = {
+        'create': serializers.CreateProjectSerializer,
+        'list': serializers.ListProjectSerializer,
+    }
 
-    def create(self, request, parent_lookup_dataset__pk):
-        dataset = get_object_or_404(Dataset, pk=parent_lookup_dataset__pk)
-        return self._create(request, dataset=dataset)
 
+class OptimizationViewSet(BaseViewSet):
+    queryset = models.Optimization.objects.all()
+    serializer_class_dict = {
+        'create': serializers.CreateOptimizationSerializer,
+    }
+    serializer_class = serializers.OptimizationSerializer
+    filterset_class = filters.OptimizationFilter
 
-class ParticlesViewSet(BaseViewSet):
-    serializer_class = ParticlesSerializer
-    model = Particles
-    queryset = Particles.objects.all()
+    def create(self, request, **kwargs):
+        params_serializer = serializers.CreateOptimizationSerializer(data=request.data)
+        params_serializer.is_valid(raise_exception=True)
 
-    def create(
-        self,
-        request,
-        parent_lookup_shape_model__dataset__pk,
-        parent_lookup_shape_model__pk,
-    ):
-        shape_model = get_object_or_404(
-            ShapeModel,
-            pk=parent_lookup_shape_model__pk,
-            dataset__pk=parent_lookup_shape_model__dataset__pk,
+        project = params_serializer.validated_data.pop('project')
+        optimization = models.Optimization.objects.create(project=project)
+        models.OptimizationParameters.objects.create(
+            optimization=optimization, **params_serializer.validated_data
         )
-        return self._create(request, shape_model=shape_model)
+
+        tasks.optimize_shapes.delay(optimization.pk)
+
+        optimization_serializer = serializers.OptimizationSerializer(optimization)
+        return Response(optimization_serializer.data, status=status.HTTP_201_CREATED)

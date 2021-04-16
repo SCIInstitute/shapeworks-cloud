@@ -30,6 +30,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     install_requires=[
         'click<8',  # celery depends on click<8, pin for now
+        'click-pathlib',
         'django-s3-file-field-client',
         'packaging',
         'pydantic',
@@ -37,7 +38,6 @@ setup(
         'requests',
         'requests-toolbelt',
         'rich',
-        'swc-metadata',
         'toml',
         'tqdm',
     ],

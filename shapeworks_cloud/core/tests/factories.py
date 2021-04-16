@@ -1,50 +1,69 @@
 import factory.django
 import factory.fuzzy
 
-from shapeworks_cloud.core.models import Dataset, Groomed, Particles, Segmentation, ShapeModel
+from shapeworks_cloud.core import models
 
 
-class DatasetFactory(factory.django.DjangoModelFactory):
+class GroomedDatasetFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Dataset
+        model = models.GroomedDataset
 
     name = factory.Faker('sentence')
 
 
-class BlobFactory(factory.django.DjangoModelFactory):
-    blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
-    subject = factory.Faker('random_int')
-
-
-class GroomedFactory(BlobFactory):
+class GroomedSegmentationFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Groomed
+        model = models.GroomedSegmentation
 
-    dataset = factory.SubFactory(DatasetFactory)
+    name = factory.Faker('file_name', extension='nrrd')
+    blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.nrrd')
+    mesh = factory.django.FileField(data=b'fakemeshbytes', filename='fake.vtp')
+    dataset = factory.SubFactory(GroomedDatasetFactory)
+    index = factory.Sequence(lambda n: n)
 
 
-class SegmentationFactory(BlobFactory):
+class ProjectFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Segmentation
+        model = models.Project
 
-    blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
-    dataset = factory.SubFactory(DatasetFactory)
+    name = factory.Faker('sentence')
+    groomed_dataset = factory.SubFactory(GroomedDatasetFactory)
 
 
+# Eventually, we may want to include additional information on this object such as
+# the number of particles, etc.
 class ShapeModelFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = ShapeModel
+        model = models.ShapeModel
 
-    analyze = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
-    correspondence = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
-    transform = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
-    magic_number = factory.Faker('random_int')  # TODO powers of 2
-    dataset = factory.SubFactory(DatasetFactory)
+    blob = factory.django.FileField(data=b'fakeshapebytes', filename='fake.npy')
 
 
-class ParticlesFactory(BlobFactory):
+class OptimizationParametersFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Particles
+        model = models.OptimizationParameters
 
-    blob = factory.django.FileField(data=b'fakeimagebytes', filename='fake.png')
+    optimization = factory.SubFactory(
+        'shapeworks_cloud.core.tests.factories.OptimizationFactory', optimization=None
+    )
+
+
+class OptimizationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.Optimization
+
+    project = factory.SubFactory(ProjectFactory)
+    shape_model = factory.SubFactory(ShapeModelFactory)
+    parameters = factory.RelatedFactory(
+        OptimizationParametersFactory, factory_related_name='optimization'
+    )
+
+
+class OptimizationCheckpointFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.OptimizationCheckpoint
+
+    split = factory.Faker('pyint')
+    iteration = factory.Sequence(lambda n: n)
+    optimization = factory.SubFactory(OptimizationFactory)
     shape_model = factory.SubFactory(ShapeModelFactory)

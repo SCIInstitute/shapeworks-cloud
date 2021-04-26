@@ -20,6 +20,7 @@ import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
 
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
+import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
 const SPHERE_RESOLUTION = 32;
@@ -35,7 +36,7 @@ const COLORS = [
   [202,178,214],
   [106,61,154],
   [255,255,153],
-  [177,89,40]
+  [177,89,40],
 ];
 
 export default {
@@ -65,13 +66,13 @@ export default {
       const grid = [];
       const nx = this.columns;
       const ny = this.rows;
-      for (let x = 0; x < nx; x += 1) {
-        for (let y = 0; y < ny; y += 1) {
+      for (let y = 0; y < ny; y += 1) {
+        for (let x = 0; x < nx; x += 1) {
           const xmin = x / nx;
           const ymin = y / ny;
           const xmax = (x + 1) / nx;
           const ymax = (y + 1) / ny;
-          grid.push([xmin, ymin, xmax, ymax]);
+          grid.push([xmin, 1 - ymax, xmax, 1 - ymin]);
         }
       }
       return grid;
@@ -195,8 +196,12 @@ export default {
       this.vtk.pointMappers.push(mapper);
     },
     addShape(renderer, shape) {
-      const mapper = vtkMapper.newInstance();
+      const mapper = vtkMapper.newInstance({
+        colorMode: ColorMode.MAP_SCALARS,
+      });
       const actor = vtkActor.newInstance();
+      actor.getProperty().setColor(1, 1, 1);
+      actor.getProperty().setOpacity(1);
 
       actor.setMapper(mapper);
       mapper.setInputData(shape);

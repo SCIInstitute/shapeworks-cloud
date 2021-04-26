@@ -1,7 +1,9 @@
-import vtkPLYReader from 'vtk.js/Sources/IO/Geometry/PLYReader';
+import vtkXMLPolyDataReader from 'vtk.js/Sources/IO/XML/XMLPolyDataReader';
 
 export default async function (url) {
-    const reader = vtkPLYReader.newInstance();
+    const reader = vtkXMLPolyDataReader.newInstance();
     await reader.setUrl(url, { binary: true });
-    return reader.getOutputData();
+    const data = reader.getOutputData();
+    data.getPointData().setActiveScalars('does-not-exist');
+    return data;
 }

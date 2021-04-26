@@ -24,10 +24,6 @@ class BlobModel(BaseModel):
     grooming_steps: str
     created: datetime
     modified: datetime
-    subject: int
-    chirality: str
-    grooming_steps: str
-    extension: str
 
     def download(self, ctx: CliContext, dest: Path):
         r = requests.get(self.blob, stream=True)

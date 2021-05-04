@@ -28,17 +28,20 @@ export default {}
       />
     </div>
     <v-tabs>
-      <v-tab>
+      <v-tab to="data">
         Data
       </v-tab>
-      <v-tab>
+      <v-tab to="groom">
         Groom
       </v-tab>
-      <v-tab>
+      <v-tab to="optimize">
         Optimize
       </v-tab>
-      <v-tab>
+      <v-tab to="analyze">
         Analyze
+      </v-tab>
+      <v-tab to="demo">
+        Demo
       </v-tab>
     </v-tabs>
   </v-app-bar>

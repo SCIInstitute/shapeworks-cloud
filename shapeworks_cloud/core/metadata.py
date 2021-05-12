@@ -9,7 +9,7 @@ the filenames '0000.txt', '0001.txt', '9999.txt', etc. but will not match '1.txt
 """
 
 import re
-from typing import Dict
+from typing import Any, Dict
 
 
 def validate_subject(subject):
@@ -86,7 +86,7 @@ def extract_metadata(pattern: str, filename: str):
     }
 
 
-def generate_filename(pattern: str, metadata: Dict[str, any]):
+def generate_filename(pattern: str, metadata: Dict[str, Any]):
     """Generate the filename associated with a set of metadata using the given pattern."""
     try:
         return pattern.format(**metadata)
@@ -102,7 +102,7 @@ def validate_filename(pattern: str, filename: str):
         raise ValueError(f'{filename} does not match generated {new_filename}')
 
 
-def validate_metadata(pattern: str, metadata: Dict[str, any]):
+def validate_metadata(pattern: str, metadata: Dict[str, Any]):
     """Validate that a filename matches the given pattern."""
     filename = generate_filename(pattern, metadata)
     new_metadata = extract_metadata(pattern, filename)

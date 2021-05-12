@@ -1,3 +1,5 @@
+from typing import Any, Type
+
 from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -6,6 +8,7 @@ from rest_framework.mixins import DestroyModelMixin, UpdateModelMixin
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
@@ -47,6 +50,7 @@ class BaseViewSet(
 ):
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = Pagination
+    serializer_class: Type[BaseSerializer[Any]]
 
     # TODO this was the best way I could find to populate foreign keys.
     # Each ViewSet defines it's own create() which locates the parent entity, then delegates
@@ -81,7 +85,7 @@ class BaseViewSet(
         objects = self.get_queryset().all()
         # Can't use queryset filtering because object.name is a computed property
         matching_objects = list(filter(lambda o: o.name == filename, objects))
-        serializer: GroomedSerializer = self.get_serializer_class()(matching_objects, many=True)
+        serializer = self.get_serializer_class()(matching_objects, many=True)
         return Response(serializer.data)
 
 

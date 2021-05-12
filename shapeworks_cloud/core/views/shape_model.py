@@ -59,11 +59,11 @@ def shape_model_edit(request, dataset_pk, shape_model_pk):
             },
         )
         if not form.fields['analyze']:
-            form.fields.analyze = shape_model.analyze
+            form.fields['analyze'] = shape_model.analyze
         if not form.fields['correspondence']:
-            form.fields.correspondence = shape_model.correspondence
+            form.fields['correspondence'] = shape_model.correspondence
         if not form.fields['transform']:
-            form.fields.transform = shape_model.transform
+            form.fields['transform'] = shape_model.transform
         if form.is_valid():
             shape_model.dataset = dataset
             shape_model.name = form.instance.name

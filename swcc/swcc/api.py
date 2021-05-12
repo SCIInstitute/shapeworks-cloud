@@ -34,11 +34,12 @@ class SwccSession(BaseUrlSession):
     def all_paginated_results(self, url: str) -> Iterable[Dict]:
         page = 1
         page_size = 20
-        json = None
-        while (not json) or (json['next'] is not None):
+        iterate = True
+        while iterate:
             response = self.get(url, params={'page': page, 'page_size': page_size})
             response.raise_for_status()
             json = response.json()
+            iterate = json['next'] is not None
             for result in json['results']:
                 yield result
             page += 1

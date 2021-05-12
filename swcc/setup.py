@@ -29,7 +29,7 @@ setup(
     python_requires='>=3.8',
     packages=find_packages(exclude=['tests']),
     install_requires=[
-        'click',
+        'click<8',  # celery depends on click<8, pin for now
         'django-s3-file-field-client',
         'packaging',
         'pydantic',

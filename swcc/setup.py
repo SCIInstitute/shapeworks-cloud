@@ -41,6 +41,6 @@ setup(
         'toml',
         'tqdm',
     ],
-    entry_points={'console_scripts': ['swcc=swcc:main']},
+    entry_points={'console_scripts': ['swcc=swcc.cli:main']},
     extras_require={'dev': ['factory_boy', 'ipython', 'tox']},
 )

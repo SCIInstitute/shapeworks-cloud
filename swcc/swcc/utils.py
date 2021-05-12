@@ -13,7 +13,7 @@ from tqdm import tqdm
 from xdg import BaseDirectory
 
 if TYPE_CHECKING:
-    from swcc import CliContext
+    from swcc.cli import CliContext
     from swcc.models import Dataset
 
 
@@ -140,10 +140,10 @@ def upload_data_file(
     validate_filename(pattern, path.name)
     metadata = extract_metadata(pattern, path.name)
     with open(path, 'rb') as stream:
-        field = ctx.s3ff.upload_file(stream, path.name, field)
+        response = ctx.s3ff.upload_file(stream, path.name, field)
         r = ctx.session.post(
             endpoint,
-            json={**{'field_value': field['field_value']}, **metadata},
+            json={**{'field_value': response['field_value']}, **metadata},
         )
         r.raise_for_status()
 

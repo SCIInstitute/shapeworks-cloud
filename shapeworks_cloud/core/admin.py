@@ -104,7 +104,7 @@ class ShapeModelAdmin(admin.ModelAdmin):
 
 
 @admin.register(Particles)
-class Particles(BlobAdmin):
+class ParticlesAdmin(BlobAdmin):
     list_filter = [
         ('created', admin.DateFieldListFilter),
         'shape_model',

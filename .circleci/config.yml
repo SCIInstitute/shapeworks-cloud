@@ -19,13 +19,17 @@ jobs:
           name: Install tox
           command: sudo pip install tox
       - run:
-          name: Run tests
+          name: Run server tests
           command: tox
           environment:
             DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
             DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
             DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+      - run:
+          name: Run metadata tests
+          command: tox
+          working_directory: swc-metadata
       - run:
           name: Run CLI tests
           command: tox

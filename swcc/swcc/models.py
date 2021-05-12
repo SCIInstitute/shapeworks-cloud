@@ -2,15 +2,22 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable, Type, TypeVar
 
 from pydantic import BaseModel
-import requests
 
+from .api import SwccSession
 from .utils import download_file
 
-if TYPE_CHECKING:
-    from swcc.swcc import CliContext
+ModelType = TypeVar('ModelType')
+
+
+class ApiModelMixin:
+    _endpoint: str
+
+    @classmethod
+    def from_id(cls: Type[ModelType], id: int) -> ModelType:
+        pass
 
 
 class BlobModel(BaseModel):
@@ -25,8 +32,8 @@ class BlobModel(BaseModel):
     created: datetime
     modified: datetime
 
-    def download(self, ctx: CliContext, dest: Path):
-        r = requests.get(self.blob, stream=True)
+    def download(self, session: SwccSession, dest: Path):
+        r = session.get(self.blob, stream=True)
         r.raise_for_status()
         download_file(r, dest, self.name, self.modified)
 
@@ -40,10 +47,10 @@ class ShapeModel(BaseModel):
     created: datetime
     modified: datetime
 
-    def download(self, ctx: CliContext, dest: Path):
+    def download(self, session: SwccSession, dest: Path):
         dest.mkdir(exist_ok=True)
         for attr in ['analyze', 'correspondence', 'transform']:
-            r = requests.get(getattr(self, attr), stream=True)
+            r = session.get(getattr(self, attr), stream=True)
             r.raise_for_status()
             Path(dest / self.name).mkdir(exist_ok=True)
             download_file(r, dest / self.name, attr, self.modified)
@@ -74,44 +81,44 @@ class Dataset(BaseModel):
     size: int
 
     @classmethod
-    def from_id(cls, ctx: CliContext, id_) -> Dataset:
-        r = ctx.session.get(f'datasets/{id_}')
+    def from_id(cls, session: SwccSession, id_) -> Dataset:
+        r = session.get(f'datasets/{id_}')
         r.raise_for_status()
         return cls(**r.json())
 
     @staticmethod
-    def create(ctx: CliContext, **kwargs) -> Dataset:
-        r = ctx.session.post('datasets/', data=kwargs)
+    def create(session: SwccSession, **kwargs) -> Dataset:
+        r = session.post('datasets/', data=kwargs)
         r.raise_for_status()
         return Dataset(**r.json())
 
     @staticmethod
-    def list(ctx: CliContext) -> Iterable[Dataset]:
-        r = ctx.session.get('datasets')
+    def list(session: SwccSession) -> Iterable[Dataset]:
+        r = session.get('datasets')
         r.raise_for_status()
         # TODO: pagination
         for dataset in r.json()['results']:
             yield Dataset(**dataset)
 
     @staticmethod
-    def delete(ctx: CliContext, id_):
-        r = ctx.session.delete(f'datasets/{id_}/')
+    def delete(session: SwccSession, id_):
+        r = session.delete(f'datasets/{id_}/')
         r.raise_for_status()
 
-    def segmentations(self, ctx: CliContext) -> Iterable[Segmentation]:
-        for result in ctx.session.all_paginated_results(ctx, f'datasets/{self.id}/segmentations'):
+    def segmentations(self, session: SwccSession) -> Iterable[Segmentation]:
+        for result in session.all_paginated_results(f'datasets/{self.id}/segmentations'):
             yield Segmentation(**result)
 
-    def groomed(self, ctx: CliContext) -> Iterable[Groomed]:
-        for result in ctx.session.all_paginated_results(ctx, f'datasets/{self.id}/groomed'):
+    def groomed(self, session: SwccSession) -> Iterable[Groomed]:
+        for result in session.all_paginated_results(f'datasets/{self.id}/groomed'):
             yield Groomed(**result)
 
-    def shape_models(self, ctx: CliContext) -> Iterable[ShapeModel]:
-        for result in ctx.session.all_paginated_results(ctx, f'datasets/{self.id}/shape_models'):
+    def shape_models(self, session: SwccSession) -> Iterable[ShapeModel]:
+        for result in session.all_paginated_results(f'datasets/{self.id}/shape_models'):
             yield ShapeModel(**result)
 
-    def particles(self, ctx: CliContext, shape_model_id: int) -> Iterable[Particle]:
-        for result in ctx.session.all_paginated_results(
-            ctx, f'datasets/{self.id}/shape_models/{shape_model_id}/particles'
+    def particles(self, session: SwccSession, shape_model_id: int) -> Iterable[Particle]:
+        for result in session.all_paginated_results(
+            f'datasets/{self.id}/shape_models/{shape_model_id}/particles'
         ):
             yield Particle(**result)

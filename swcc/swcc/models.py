@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Generic, List, Literal, Optional, Type, TypeVar, Union, get_args
+from typing import Generic, Iterator, List, Literal, Optional, Type, TypeVar, Union, get_args
 
 from pydantic import AnyHttpUrl, BaseModel, FilePath, StrictStr, ValidationError, parse_obj_as
 from pydantic.fields import ModelField
-from requests import Response
+import requests
 
 from .api import SwccSession
 from .utils import raise_for_status
@@ -78,7 +78,7 @@ class FileType(Generic[FieldId]):
         if self.field_id is None:
             # I assume validate will always get called, but pydantic *might* be doing something
             # unusual in some cases.
-            raise Exception('Unknown field id, this is likely a bug in teh FileType class')
+            raise Exception('Unknown field id, this is likely a bug in the FileType class')
 
         with self.path.open('rb') as f:
             self.field_value = session.s3ff.upload_file(f, self.path.name, self.field_id)[
@@ -86,6 +86,29 @@ class FileType(Generic[FieldId]):
             ]
 
         return self.field_value
+
+    def download(self, path: Union[Path, str]) -> Path:
+        if self.url is None:
+            raise Exception('Cannot download a local file')
+
+        if not self.url.path:
+            raise Exception('Server returned an unexpected url')
+
+        path = Path(path)
+        if path.is_file():
+            raise ValueError('Expected a directory name')
+
+        if not path.is_dir():
+            path.mkdir(parents=True, exist_ok=True)
+
+        path = path / self.url.path.split('/')[-1]
+        r = requests.get(self.url, stream=True)
+        raise_for_status(r)
+
+        with path.open('wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+        return path
 
 
 ModelType = TypeVar('ModelType', bound='ApiModel')
@@ -98,7 +121,7 @@ class ApiModel(BaseModel):
 
     @classmethod
     def from_id(cls: Type[ModelType], session: SwccSession, id: int) -> ModelType:
-        r: Response = session.get(f'{cls._endpoint}/{id}/')
+        r: requests.Response = session.get(f'{cls._endpoint}/{id}/')
         raise_for_status(r)
         json = r.json()
         for key, value in cls.__fields__.items():
@@ -108,17 +131,17 @@ class ApiModel(BaseModel):
 
     @classmethod
     def list(cls: Type[ModelType], session: SwccSession, **kwargs) -> List[ModelType]:
-        r: Response = session.get(f'{cls._endpoint}/', json=kwargs)
+        r: requests.Response = session.get(f'{cls._endpoint}/', json=kwargs)
         raise_for_status(r)
         return [cls(**obj) for obj in r.json()['results']]
 
     def delete(self, session: SwccSession) -> None:
         self.assert_remote()
-        r: Response = session.delete(f'{self._endpoint}/{self.id}/')
+        r: requests.Response = session.delete(f'{self._endpoint}/{self.id}/')
         raise_for_status(r)
         self.id = None
 
-    def create(self, session: SwccSession) -> None:
+    def create(self: ModelType, session: SwccSession) -> ModelType:
         self.assert_local()
         json = self.dict()
         for key, value in self:
@@ -129,9 +152,15 @@ class ApiModel(BaseModel):
                     value.create(session)
                 json[key] = value.id
 
-        r: Response = session.post(f'{self._endpoint}/', json=json)
+        r: requests.Response = session.post(f'{self._endpoint}/', json=json)
         raise_for_status(r)
         self.id = r.json()['id']
+        return self
+
+    def download_files(self, path: Union[Path, str]) -> Iterator[Path]:
+        for _, value in self:
+            if isinstance(value, FileType):
+                yield value.download(path)
 
     def assert_remote(self):
         if self.id is None:
@@ -153,12 +182,18 @@ class Dataset(ApiModel):
     contributors: str = ''
     publications: str = ''
 
+    def add_subject(self, session: SwccSession, name: str) -> Subject:
+        return Subject(name=name, dataset=self).create(session)
+
 
 class Subject(ApiModel):
     _endpoint: str = 'subjects'
 
     name: NonEmptyString
     dataset: Dataset
+
+    def add_segmentation(self, session: SwccSession, file: Path, anatomy_type: str) -> Segmentation:
+        return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create(session)
 
 
 class Segmentation(ApiModel):

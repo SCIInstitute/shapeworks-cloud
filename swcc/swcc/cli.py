@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import logging
 import platform
 import sys
@@ -12,14 +11,10 @@ from packaging.version import parse as parse_version
 from pydantic import BaseModel
 import requests
 from requests.exceptions import RequestException
-from rich.console import Console
-from rich.table import Table
-from s3_file_field_client import S3FileFieldClient
 
 from . import SWCC_CONFIG_FILE, __version__
 from .api import SwccSession
-from .models import GroomedDataset, Optimization, Project
-from .utils import get_config_value, update_config_value
+from .utils import get_config_value
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +22,6 @@ logger = logging.getLogger(__name__)
 class CliContext(BaseModel):
     session: SwccSession
     url: str
-    s3ff: S3FileFieldClient
     json_output: bool
 
     class Config:
@@ -103,7 +97,6 @@ You must upgrade to the latest version before continuing.
     ctx.obj = CliContext(
         session=session,
         url=url.rstrip('/'),
-        s3ff=S3FileFieldClient(url.rstrip('/') + '/s3-upload/', session),
         json_output=json_output,
     )
 
@@ -123,122 +116,6 @@ def formatted_size(size, base=1024, unit='B'):
         size /= base
         i += 1
     return f'{size:.2f} {units[i]}{unit}'
-
-
-# @dataset.command(name='create', help='create a groomed dataset')
-# @click.argument('name')
-# @click.argument('segmentations', type=click_pathlib.Path(dir_okay=False, exists=True), nargs=-1)
-# @click.pass_obj
-# def create(ctx, name, segmentations):
-#     dataset = GroomedDataset.create(ctx, name=name, segmentations=segmentations)
-#     click.echo(json.dumps(dataset.dict(), indent=2, default=str))
-
-
-@dataset.command(name='delete', help='delete a groomed dataset')
-@click.argument('id_', type=int, metavar='id')
-@click.pass_obj
-def delete(ctx, id_):
-    GroomedDataset.delete(ctx, id_)
-
-
-@dataset.command(name='list', help='list groomed datasets')
-@click.pass_obj
-def list_(ctx):
-    datasets = GroomedDataset.list(ctx)
-
-    if ctx.json_output:
-        for dataset in datasets:
-            click.echo(dataset.json())
-    else:
-        console = Console()
-
-        table = Table(show_header=True, header_style='bold green')
-        table.add_column('ID')
-        table.add_column('Created')
-        table.add_column('Name', width=50)
-        table.add_column('Segmentations')
-
-        for dataset in datasets:
-            table.add_row(
-                f'{dataset.id}',
-                dataset.created.strftime('%c'),
-                dataset.name,
-                f'{dataset.num_segmentations}',
-            )
-
-        console.print(table)
-
-
-@cli.group(name='project', short_help='get information about projects')
-@click.pass_obj
-def project(ctx):
-    pass
-
-
-@project.command(name='create', help='create a project')
-@click.argument('name')
-@click.argument('groomed_dataset', type=int)
-@click.pass_obj
-def create_project(ctx, name, groomed_dataset):
-    project = Project.create(ctx, name, groomed_dataset)
-    click.echo(json.dumps(project.dict(), indent=2, default=str))
-
-
-@cli.group(name='optimization', short_help='run optimizations and get results')
-@click.pass_obj
-def optimization(ctx):
-    pass
-
-
-@optimization.command(name='create', help='create an optimization run')
-@click.argument('project', type=click.INT)
-@click.option(
-    '-n', '--number-of-particles', type=click.IntRange(min=1), default=128, show_default=True
-)
-@click.option('--use-normals', type=bool, default=False, show_default=True)
-@click.option('--normal-weight', type=float, default=10, show_default=True)
-@click.option(
-    '--checkpointing-interval', type=click.IntRange(min=1), default=1000, show_default=True
-)
-@click.option('--iterations-per-split', type=click.IntRange(min=1), default=1000, show_default=True)
-@click.option(
-    '--optimization-iterations', type=click.IntRange(min=1), default=1000, show_default=True
-)
-@click.option('--starting-regularization', type=float, default=10, show_default=True)
-@click.option('--ending-regularization', type=float, default=10, show_default=True)
-@click.option('--recompute-regularization-interval', type=int, default=1, show_default=True)
-@click.option('--relative-weighting', type=float, default=1, show_default=True)
-@click.option('--initial-relative-weighting', type=float, default=1, show_default=True)
-@click.option('--procrustes-interval', type=int, default=0, show_default=True)
-@click.option('--procrustes-scaling', type=bool, default=False, show_default=True)
-@click.pass_obj
-def create_optimization(ctx, **kwargs):
-    optimization = Optimization.create(ctx, **kwargs)
-    click.echo(json.dumps(optimization.dict(), indent=2, default=str))
-
-
-@cli.command(name='login', help='authenticate with shapeworks cloud')
-@click.pass_obj
-def login(ctx):
-    while True:
-        username = click.prompt('username', err=True)
-        password = click.prompt('password', hide_input=True, err=True)
-
-        # explicitly sidestep the session, since it checks for auth-related errors
-        # to tell the user to login.
-        r = requests.post(
-            f'{ctx.url.rstrip("/").replace("/api/v1", "")}/api-token-auth/',
-            data={'username': username, 'password': password},
-        )
-
-        if r.ok:
-            update_config_value(SWCC_CONFIG_FILE, 'token', r.json()['token'])
-            return click.echo(click.style('logged in successfully.', fg='green'), err=True)
-        elif r.status_code == 400:
-            continue
-        else:
-            # an error other than 'bad credentials'
-            r.raise_for_status()
 
 
 def main():

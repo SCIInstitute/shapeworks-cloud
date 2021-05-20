@@ -2,6 +2,7 @@ from typing import Dict, Iterable
 
 import requests
 from requests_toolbelt.sessions import BaseUrlSession
+from s3_file_field_client import S3FileFieldClient
 
 from . import __version__
 
@@ -19,6 +20,7 @@ class SwccSession(BaseUrlSession):
                 'Accept': 'application/json',
             }
         )
+        self.s3ff = S3FileFieldClient(f'{base_url}s3-upload/', self)
 
     def set_token(self, token: str):
         self.headers['Authorization'] = f'Token {token}'

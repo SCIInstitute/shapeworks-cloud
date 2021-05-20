@@ -10,13 +10,13 @@ class Dataset(TimeStampedModel, models.Model):
     license = models.TextField()
     description = models.TextField()
     acknowledgement = models.TextField()
-    keywords = models.CharField(max_length=255, default='')
+    keywords = models.CharField(max_length=255, blank=True, default='')
 
     # FK to another table?
-    contributors = models.TextField(default='')
+    contributors = models.TextField(blank=True, default='')
 
     # FK to another table?
-    publications = models.TextField(default='')
+    publications = models.TextField(blank=True, default='')
 
 
 class Subject(TimeStampedModel, models.Model):
@@ -34,8 +34,8 @@ class Segmentation(models.Model):
 #       doesn't make sense.  Need to clarify.
 class Project(TimeStampedModel, models.Model):
     file = S3FileField()
-    keywords = models.CharField(max_length=255, default='')
-    description = models.TextField(default='')
+    keywords = models.CharField(max_length=255, blank=True, default='')
+    description = models.TextField(blank=True, default='')
 
 
 class GroomedSegmentation(models.Model):

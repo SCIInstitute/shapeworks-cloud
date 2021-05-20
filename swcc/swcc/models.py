@@ -7,7 +7,7 @@ from pydantic import AnyHttpUrl, BaseModel, FilePath, StrictStr, ValidationError
 from pydantic.fields import ModelField
 import requests
 
-from .api import SwccSession
+from .api import current_session
 from .utils import raise_for_status
 
 FieldId = TypeVar('FieldId', bound=str)
@@ -67,7 +67,9 @@ class FileType(Generic[FieldId]):
 
         return FileType(path=path, url=url, field_id=field_id)
 
-    def upload(self, session: SwccSession):
+    def upload(self):
+        session = current_session()
+
         if self.field_value:
             return self.field_value
 
@@ -88,6 +90,8 @@ class FileType(Generic[FieldId]):
         return self.field_value
 
     def download(self, path: Union[Path, str]) -> Path:
+        session = current_session()
+
         if self.url is None:
             raise Exception('Cannot download a local file')
 
@@ -102,7 +106,7 @@ class FileType(Generic[FieldId]):
             path.mkdir(parents=True, exist_ok=True)
 
         path = path / self.url.path.split('/')[-1]
-        r = requests.get(self.url, stream=True)
+        r = session.get(self.url, stream=True)
         raise_for_status(r)
 
         with path.open('wb') as f:
@@ -120,7 +124,9 @@ class ApiModel(BaseModel):
     id: Optional[int]
 
     @classmethod
-    def from_id(cls: Type[ModelType], session: SwccSession, id: int) -> ModelType:
+    def from_id(cls: Type[ModelType], id: int) -> ModelType:
+        session = current_session()
+
         r: requests.Response = session.get(f'{cls._endpoint}/{id}/')
         raise_for_status(r)
         json = r.json()
@@ -130,26 +136,32 @@ class ApiModel(BaseModel):
         return cls(**json)
 
     @classmethod
-    def list(cls: Type[ModelType], session: SwccSession, **kwargs) -> List[ModelType]:
+    def list(cls: Type[ModelType], **kwargs) -> List[ModelType]:
+        session = current_session()
+
         r: requests.Response = session.get(f'{cls._endpoint}/', json=kwargs)
         raise_for_status(r)
         return [cls(**obj) for obj in r.json()['results']]
 
-    def delete(self, session: SwccSession) -> None:
+    def delete(self) -> None:
+        session = current_session()
+
         self.assert_remote()
         r: requests.Response = session.delete(f'{self._endpoint}/{self.id}/')
         raise_for_status(r)
         self.id = None
 
-    def create(self: ModelType, session: SwccSession) -> ModelType:
+    def create(self: ModelType) -> ModelType:
+        session = current_session()
+
         self.assert_local()
         json = self.dict()
         for key, value in self:
             if isinstance(value, FileType):
-                json[key] = value.upload(session)
+                json[key] = value.upload()
             if isinstance(value, ApiModel):
                 if value.id is None:
-                    value.create(session)
+                    value.create()
                 json[key] = value.id
 
         r: requests.Response = session.post(f'{self._endpoint}/', json=json)
@@ -182,8 +194,8 @@ class Dataset(ApiModel):
     contributors: str = ''
     publications: str = ''
 
-    def add_subject(self, session: SwccSession, name: str) -> Subject:
-        return Subject(name=name, dataset=self).create(session)
+    def add_subject(self, name: str) -> Subject:
+        return Subject(name=name, dataset=self).create()
 
 
 class Subject(ApiModel):
@@ -192,8 +204,8 @@ class Subject(ApiModel):
     name: NonEmptyString
     dataset: Dataset
 
-    def add_segmentation(self, session: SwccSession, file: Path, anatomy_type: str) -> Segmentation:
-        return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create(session)
+    def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
+        return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create()
 
 
 class Segmentation(ApiModel):

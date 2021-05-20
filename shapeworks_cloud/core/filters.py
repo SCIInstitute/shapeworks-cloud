@@ -1,11 +1,19 @@
-# from django_filters import FilterSet, ModelChoiceFilter
+from django_filters import FilterSet, ModelChoiceFilter
 
-# from . import models
+from . import models
 
 
-# class OptimizationFilter(FilterSet):
-#     project = ModelChoiceFilter(queryset=models.Project.objects.all())
+class SubjectFilter(FilterSet):
+    dataset = ModelChoiceFilter(queryset=models.Dataset.objects.all())
 
-#     class Meta:
-#         model = models.Optimization
-#         fields = ['project']
+    class Meta:
+        model = models.Subject
+        fields = ['dataset']
+
+
+class SegmentationFilter(FilterSet):
+    subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
+
+    class Meta:
+        models = models.Segmentation
+        fields = ['subject']

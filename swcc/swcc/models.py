@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Generic, Iterator, List, Literal, Optional, Type, TypeVar, Union, get_args
+from typing import Any, Dict, Generic, Iterator, Literal, Optional, Type, TypeVar, Union, get_args
 
 from pydantic import AnyHttpUrl, BaseModel, FilePath, StrictStr, ValidationError, parse_obj_as
 from pydantic.fields import ModelField
@@ -124,24 +124,44 @@ class ApiModel(BaseModel):
     id: Optional[int]
 
     @classmethod
-    def from_id(cls: Type[ModelType], id: int) -> ModelType:
+    def from_id(cls: Type[ModelType], id: int, **kwargs) -> ModelType:
         session = current_session()
 
         r: requests.Response = session.get(f'{cls._endpoint}/{id}/')
         raise_for_status(r)
         json = r.json()
         for key, value in cls.__fields__.items():
-            if issubclass(value.type_, ApiModel):
-                json[key] = value.type_.from_id(session, json[key])
+            if key in kwargs:
+                json[key] = kwargs[key]
+            elif issubclass(value.type_, ApiModel):
+                json[key] = value.type_.from_id(json[key])
         return cls(**json)
 
     @classmethod
-    def list(cls: Type[ModelType], **kwargs) -> List[ModelType]:
+    def list(cls: Type[ModelType], **kwargs) -> Iterator[ModelType]:
         session = current_session()
 
-        r: requests.Response = session.get(f'{cls._endpoint}/', json=kwargs)
-        raise_for_status(r)
-        return [cls(**obj) for obj in r.json()['results']]
+        filter: Dict[str, Any] = {}
+        replace: Dict[str, ApiModel] = {}
+        for key, value in kwargs.items():
+            if isinstance(value, ApiModel):
+                filter[key] = value.id
+                replace[key] = value
+            else:
+                filter[key] = value
+
+        r: requests.Response = session.get(f'{cls._endpoint}/', json=filter)
+
+        while True:
+            raise_for_status(r)
+            data = r.json()
+            for result in data['results']:
+                result.update(replace)
+                yield cls(**result)
+            if not data.get('next'):
+                return
+
+            r = session.get(data['next'])
 
     def delete(self) -> None:
         session = current_session()
@@ -194,6 +214,11 @@ class Dataset(ApiModel):
     contributors: str = ''
     publications: str = ''
 
+    @property
+    def subjects(self) -> Iterator[Subject]:
+        self.assert_remote()
+        return Subject.list(dataset=self)
+
     def add_subject(self, name: str) -> Subject:
         return Subject(name=name, dataset=self).create()
 
@@ -203,6 +228,11 @@ class Subject(ApiModel):
 
     name: NonEmptyString
     dataset: Dataset
+
+    @property
+    def segmentations(self) -> Iterator[Segmentation]:
+        self.assert_remote()
+        return Segmentation.list(subject=self)
 
     def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
         return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create()

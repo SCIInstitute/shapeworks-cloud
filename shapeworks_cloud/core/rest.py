@@ -1,12 +1,13 @@
 from typing import Dict, Type
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
 
-from . import models, serializers
+from . import filters, models, serializers
 
 
 class Pagination(PageNumberPagination):
@@ -28,6 +29,8 @@ class BaseViewSet(
     serializer_class_dict: Dict[str, Type[BaseSerializer]] = {}
     serializer_class: Type[BaseSerializer]
 
+    filter_backends = [DjangoFilterBackend]
+
     def get_serializer_class(self) -> Type[BaseSerializer]:
         return self.serializer_class_dict.get(self.action, self.serializer_class)
 
@@ -40,8 +43,10 @@ class DatasetViewSet(BaseViewSet):
 class SubjectViewSet(BaseViewSet):
     queryset = models.Subject.objects.all().order_by('name')
     serializer_class = serializers.SubjectSerializer
+    filterset_class = filters.SubjectFilter
 
 
 class SegmentationViewSet(BaseViewSet):
     queryset = models.Segmentation.objects.order_by('subject')
     serializer_class = serializers.SegmentationSerializer
+    filterset_class = filters.SegmentationFilter

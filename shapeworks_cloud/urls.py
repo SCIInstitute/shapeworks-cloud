@@ -13,6 +13,16 @@ router = ExtendedSimpleRouter()
 router.register('datasets', rest.DatasetViewSet, basename='dataset')
 router.register('subjects', rest.SubjectViewSet, basename='subject')
 router.register('segmentations', rest.SegmentationViewSet, basename='segmentation')
+router.register('projects', rest.ProjectViewSet, basename='project')
+router.register(
+    'groomed-segmentations', rest.GroomedSegmentationViewSet, basename='groomed_segmentation'
+)
+router.register(
+    'optimized-shape-models', rest.OptimizedShapeModelViewSet, basename='optimized_shape_model'
+)
+router.register(
+    'optimized-particles', rest.OptimizedParticlesViewSet, basename='optimized_particles'
+)
 
 
 # OpenAPI generation

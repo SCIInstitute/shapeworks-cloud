@@ -204,7 +204,7 @@ class ApiModel(BaseModel):
 
 
 class Dataset(ApiModel):
-    _endpoint: str = 'datasets'
+    _endpoint = 'datasets'
 
     name: NonEmptyString
     license: NonEmptyString
@@ -224,7 +224,7 @@ class Dataset(ApiModel):
 
 
 class Subject(ApiModel):
-    _endpoint: str = 'subjects'
+    _endpoint = 'subjects'
 
     name: NonEmptyString
     dataset: Dataset
@@ -239,8 +239,94 @@ class Subject(ApiModel):
 
 
 class Segmentation(ApiModel):
-    _endpoint: str = 'segmentations'
+    _endpoint = 'segmentations'
 
     file: FileType[Literal['core.Segmentation.file']]
     anatomy_type: NonEmptyString
     subject: Subject
+
+
+class Project(ApiModel):
+    _endpoint = 'projects'
+
+    file: FileType[Literal['core.Project.file']]
+    keywords: str = ''
+    description: str = ''
+
+    @property
+    def groomed_segmentations(self) -> Iterator[GroomedSegmentation]:
+        self.assert_remote()
+        return GroomedSegmentation.list(project=self)
+
+    def add_groomed_segmentation(
+        self,
+        file: Path,
+        segmentation: Segmentation,
+        pre_cropping: Optional[Path],
+        pre_alignment: Optional[Path],
+    ) -> GroomedSegmentation:
+        return GroomedSegmentation(
+            file=file,
+            segmentation=segmentation,
+            project=self,
+            pre_cropping=pre_cropping,
+            pre_alignment=pre_alignment,
+        )
+
+    @property
+    def shape_models(self) -> Iterator[OptimizedShapeModel]:
+        self.assert_remote()
+        return OptimizedShapeModel.list(project=self)
+
+    def add_shape_model(self, parameters: Dict[str, Any]) -> OptimizedShapeModel:
+        return OptimizedShapeModel(
+            project=self,
+            parameters=parameters,
+        ).create()
+
+
+class GroomedSegmentation(ApiModel):
+    _endpoint = 'groomed-segmentations'
+
+    file: FileType[Literal['core.GroomedSegmentation.file']]
+    pre_cropping: Optional[FileType[Literal['core.GroomedSegmentation.pre_cropping']]]
+    pre_alignment: Optional[FileType[Literal['core.GroomedSegmentation.pre_alignment']]]
+
+    segmentation: Segmentation
+    project: Project
+
+
+class OptimizedShapeModel(ApiModel):
+    _endpoint = 'optimized_shape_models'
+
+    project: Project
+    parameters: Dict[str, Any]
+
+    @property
+    def particles(self) -> Iterator[OptimizedParticles]:
+        return OptimizedParticles.list(shape_model=self)
+
+    def add_particles(
+        self,
+        world: Path,
+        local: Path,
+        transform: Path,
+        groomed_segmentation: GroomedSegmentation,
+    ) -> OptimizedParticles:
+        return OptimizedParticles(
+            world=world,
+            local=local,
+            transform=transform,
+            shape_model=self,
+            groomed_segmentation=groomed_segmentation,
+        ).create()
+
+
+class OptimizedParticles(ApiModel):
+    _endpoint = 'optimized_particles'
+
+    world: FileType[Literal['core.OptimizedParticles.world']]
+    local: FileType[Literal['core.OptimizedParticles.local']]
+    transform: FileType[Literal['core.OptimizedParticles.transform']]
+    shape_model: OptimizedShapeModel
+    groomed_segmentation: GroomedSegmentation

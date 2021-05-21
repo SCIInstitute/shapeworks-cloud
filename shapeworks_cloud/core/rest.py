@@ -47,6 +47,29 @@ class SubjectViewSet(BaseViewSet):
 
 
 class SegmentationViewSet(BaseViewSet):
-    queryset = models.Segmentation.objects.order_by('subject')
+    queryset = models.Segmentation.objects.all().order_by('subject')
     serializer_class = serializers.SegmentationSerializer
     filterset_class = filters.SegmentationFilter
+
+
+class ProjectViewSet(BaseViewSet):
+    queryset = models.Project.objects.all()
+    serializer_class = serializers.ProjectSerializer
+
+
+class GroomedSegmentationViewSet(BaseViewSet):
+    queryset = models.GroomedSegmentation.objects.all()
+    serializer_class = serializers.GroomedSegmentationSerializer
+    filterset_class = filters.GroomedSegmentationFilter
+
+
+class OptimizedShapeModelViewSet(BaseViewSet):
+    queryset = models.OptimizedShapeModel.objects.all()
+    serializer_class = serializers.OptimizedShapeModelSerializer
+    filterset_class = filters.OptimizedShapeModelFilter
+
+
+class OptimizedParticlesViewSet(BaseViewSet):
+    queryset = models.OptimizedParticles.objects.all()
+    serializer_class = serializers.OptimizedParticlesSerializer
+    filterset_class = filters.OptimizedShapeModelFilter

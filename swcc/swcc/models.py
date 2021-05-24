@@ -3,7 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Generic, Iterator, Literal, Optional, Type, TypeVar, Union, get_args
 
-from pydantic import AnyHttpUrl, BaseModel, FilePath, StrictStr, ValidationError, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    FilePath,
+    StrictStr,
+    ValidationError,
+    parse_obj_as,
+    validator,
+)
 from pydantic.fields import ModelField
 import requests
 
@@ -123,6 +131,13 @@ class ApiModel(BaseModel):
 
     id: Optional[int]
 
+    @validator('*', pre=True)
+    def fetch_entity(cls, v, field: ModelField):
+        type_ = cls.__fields__[field.name].type_
+        if type_ is not Any and issubclass(type_, ApiModel) and isinstance(v, int):
+            return type_.from_id(v)
+        return v
+
     @classmethod
     def from_id(cls: Type[ModelType], id: int, **kwargs) -> ModelType:
         session = current_session()
@@ -133,7 +148,7 @@ class ApiModel(BaseModel):
         for key, value in cls.__fields__.items():
             if key in kwargs:
                 json[key] = kwargs[key]
-            elif issubclass(value.type_, ApiModel):
+            elif value.type_ is not Any and issubclass(value.type_, ApiModel):
                 json[key] = value.type_.from_id(json[key])
         return cls(**json)
 
@@ -150,7 +165,7 @@ class ApiModel(BaseModel):
             else:
                 filter[key] = value
 
-        r: requests.Response = session.get(f'{cls._endpoint}/', json=filter)
+        r: requests.Response = session.get(f'{cls._endpoint}/', params=filter)
 
         while True:
             raise_for_status(r)
@@ -297,7 +312,7 @@ class GroomedSegmentation(ApiModel):
 
 
 class OptimizedShapeModel(ApiModel):
-    _endpoint = 'optimized_shape_models'
+    _endpoint = 'optimized-shape-models'
 
     project: Project
     parameters: Dict[str, Any]
@@ -323,7 +338,7 @@ class OptimizedShapeModel(ApiModel):
 
 
 class OptimizedParticles(ApiModel):
-    _endpoint = 'optimized_particles'
+    _endpoint = 'optimized-particles'
 
     world: FileType[Literal['core.OptimizedParticles.world']]
     local: FileType[Literal['core.OptimizedParticles.local']]

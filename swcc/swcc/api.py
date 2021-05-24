@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import List
+from typing import List, Optional
 
 import requests
 from requests_toolbelt.sessions import BaseUrlSession
@@ -32,7 +32,7 @@ def swcc_session(base_url: str, **kwargs):
 
 
 class SwccSession(BaseUrlSession):
-    def __init__(self, base_url: str, **kwargs):
+    def __init__(self, base_url: str, token: Optional[str] = None, **kwargs):
         base_url = f'{base_url.rstrip("/")}/'  # tolerate input with or without trailing slash
         super().__init__(base_url=base_url, **kwargs)
 
@@ -43,14 +43,17 @@ class SwccSession(BaseUrlSession):
             }
         )
         self.s3ff = S3FileFieldClient(f'{base_url}s3-upload/', self)
+        if token:
+            self.set_token(token)
 
     def set_token(self, token: str):
         self.headers['Authorization'] = f'Token {token}'
 
-    def login(self, username: str, password: str) -> requests.Response:
+    def login(self, username: str, password: str) -> str:
         auth_url = f'{self.base_url.rstrip("/").replace("/api/v1", "")}/api-token-auth/'
         resp = requests.post(auth_url, data={'username': username, 'password': password})
         if resp.status_code != 200:
             raise Exception('Invalid username or password provided')
-        self.set_token(resp.json()['token'])
-        return resp
+        token = resp.json()['token']
+        self.set_token(token)
+        return token

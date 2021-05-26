@@ -345,3 +345,12 @@ class OptimizedParticles(ApiModel):
     transform: FileType[Literal['core.OptimizedParticles.transform']]
     shape_model: OptimizedShapeModel
     groomed_segmentation: GroomedSegmentation
+
+
+class OptimizedPCAModel(ApiModel):
+    _endpoint = 'optimized-pca-model'
+
+    mean_particles: FileType[Literal['core.OptimizedPCAModel.mean_particles']]
+    pca_modes: FileType[Literal['core.OptimizedPCAModel.pca_modes']]
+    eigen_spectrum: FileType[Literal['core.OptimizedPCAModel.eigen_spectrum']]
+    shape_model: OptimizedShapeModel

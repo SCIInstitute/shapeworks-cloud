@@ -36,10 +36,18 @@ class OptimizedShapeModelFilter(FilterSet):
         fields = ['project']
 
 
-class OptimizedParticles(FilterSet):
+class OptimizedParticlesFilter(FilterSet):
     shape_model = ModelChoiceFilter(queryset=models.OptimizedShapeModel.objects.all())
     groomed_segmentation = ModelChoiceFilter(queryset=models.GroomedSegmentation.objects.all())
 
     class Meta:
         models = models.OptimizedParticles
         fields = ['shape_model', 'groomed_segmentation']
+
+
+class OptimizedPCAModelFilter(FilterSet):
+    shape_model = ModelChoiceFilter(queryset=models.OptimizedShapeModel.objects.all())
+
+    class Meta:
+        models = models.OptimizedParticles
+        fields = ['shape_model']

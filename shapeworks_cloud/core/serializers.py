@@ -62,3 +62,34 @@ class OptimizedParticlesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OptimizedParticles
         fields = '__all__'
+
+
+class OptimizedSurfaceReconstructionMetaSerializer(serializers.ModelSerializer):
+    reconstruction_params = S3FileSerializerField()
+    template_reconstruction = S3FileSerializerField()
+
+    class Meta:
+        model = models.OptimizedSurfaceReconstructionMeta
+        fields = '__all__'
+
+
+class OptimizedSurfaceReconstructionSerializer(serializers.ModelSerializer):
+    sample_reconstruction = S3FileSerializerField()
+
+    class Meta:
+        model = models.OptimizedSurfaceReconstruction
+        fields = '__all__'
+
+
+class OptimizedPCSModelSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    mean_particles = S3FileSerializerField()
+    pca_modes = S3FileSerializerField()
+    eigen_spectrum = S3FileSerializerField()
+
+    class Meta:
+        model = models.OptimizedPCAModel
+        fields = '__all__'
+
+    def get_id(self, obj) -> int:
+        return obj.shape_model.id

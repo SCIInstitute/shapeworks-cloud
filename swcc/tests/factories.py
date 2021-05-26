@@ -107,3 +107,13 @@ class OptimizedParticlesFactory(Factory):
     transform = Faker('file', extension='txt')
     shape_model = SubFactory(OptimizedShapeModelFactory)
     groomed_segmentation = SubFactory(GroomedSegmentationFactory)
+
+
+class OptimizedPCAModelFactory(Factory):
+    class Meta:
+        model = models.OptimizedPCAModel
+
+    mean_particles = Faker('file', extension='txt')
+    pca_modes = Faker('file', extension='txt')
+    eigen_spectrum = Faker('file', extension='txt')
+    shape_model = SubFactory(OptimizedShapeModelFactory)

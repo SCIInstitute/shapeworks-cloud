@@ -1,9 +1,18 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from factory import Factory
+import pytest
+
 from swcc import models
 
 from . import factories
+
+_factories = [
+    f
+    for f in factories.__dict__.values()
+    if isinstance(f, type) and issubclass(f, Factory) and f is not Factory
+]
 
 
 def test_api_common(session):
@@ -43,3 +52,15 @@ def test_file_download_api(session):
         d2.mkdir()
         files = list(segmentation.download_files(d2))
         assert files == [d2 / 'test_file.nrrd']
+
+
+@pytest.mark.parametrize('factory', _factories)
+def test_model_crud(session, factory):
+    obj = factory().create()
+    model = obj.__class__
+
+    assert model.from_id(obj.id).id == obj.id
+    assert obj.id in {o.id for o in model.list()}
+
+    obj.delete()
+    assert obj.id not in {o.id for o in model.list()}

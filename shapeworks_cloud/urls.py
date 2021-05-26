@@ -23,6 +23,9 @@ router.register(
 router.register(
     'optimized-particles', rest.OptimizedParticlesViewSet, basename='optimized_particles'
 )
+router.register(
+    'optimized-pca-model', rest.OptimizedPCAModelViewSet, basename='optimized_pca_model'
+)
 
 
 # OpenAPI generation

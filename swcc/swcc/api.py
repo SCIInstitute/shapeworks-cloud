@@ -21,9 +21,9 @@ def current_session():
 
 
 @contextmanager
-def swcc_session(base_url: str, **kwargs):
+def swcc_session(**kwargs):
     global _session_stack
-    _session_stack.append(SwccSession(base_url, **kwargs))
+    _session_stack.append(SwccSession(**kwargs))
     try:
         yield _session_stack[-1]
     finally:
@@ -32,7 +32,12 @@ def swcc_session(base_url: str, **kwargs):
 
 
 class SwccSession(BaseUrlSession):
-    def __init__(self, base_url: str, token: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        base_url: str = 'https://app.shapeworks-cloud.org/api/v1',
+        token: Optional[str] = None,
+        **kwargs,
+    ):
         base_url = f'{base_url.rstrip("/")}/'  # tolerate input with or without trailing slash
         super().__init__(base_url=base_url, **kwargs)
 

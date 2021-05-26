@@ -1,20 +1,33 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, Optional
+from typing import Any, Iterable, Optional
 
 import click
 import requests
-from swc_metadata.metadata import extract_metadata, validate_filename
 import toml
 from tqdm import tqdm
 from xdg import BaseDirectory
 
-if TYPE_CHECKING:
-    from swcc.cli import CliContext
-    from swcc.models import Dataset
+from swcc.api import SwccSession
+
+
+def raise_for_status(response: requests.Response):
+    try:
+        response.raise_for_status()
+    except requests.HTTPError:
+        data = None
+        try:
+            data = json.dumps(response.json(), indent=2)
+        except Exception:
+            data = response.text
+
+        if data:
+            click.echo(click.style(f'Received:\n{data}\n', fg='yellow'), err=True)
+        raise
 
 
 def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[datetime] = None):
@@ -33,119 +46,18 @@ def download_file(r: requests.Response, dest: Path, name: str, mtime: Optional[d
         os.utime(filename, (datetime.now().timestamp(), mtime.timestamp()))
 
 
-def validate_dataset(ctx, src: Path, dataset: 'Dataset'):
-    validated = True
-    validated &= validate_files(ctx, Path(src / 'groomed'), dataset.groomed_pattern)
-    validated &= validate_files(ctx, Path(src / 'segmentations'), dataset.segmentation_pattern)
-    shape_models = Path(src / 'shape_models')
-    for shape_model in os.listdir(shape_models):
-        shape_model_path = Path(shape_models / shape_model)
-        # All shape_models are stored in directories
-        if not os.path.isdir(shape_model_path):
-            click.echo(
-                click.style(f'File {shape_model} found in {shape_models}', fg='red'),
-                err=True,
-            )
-            validated = False
-            continue
-
-        # Check that all the auxiliary files are in place
-        if 'analyze' not in os.listdir(shape_model_path):
-            click.echo(
-                click.style(f'File "analyze" not found in shape model {shape_model}', fg='red'),
-                err=True,
-            )
-            validated = False
-        if 'correspondence' not in os.listdir(shape_model_path):
-            click.echo(
-                click.style(
-                    f'File "correspondence" not found in shape model {shape_model}', fg='red'
-                ),
-                err=True,
-            )
-            validated = False
-        if 'transform' not in os.listdir(shape_model_path):
-            click.echo(
-                click.style(f'File "transform" not found in shape model {shape_model}', fg='red'),
-                err=True,
-            )
-            validated = False
-        for file in os.listdir(shape_model_path):
-            if file not in ('analyze', 'correspondence', 'transform', 'particles'):
-                click.echo(
-                    click.style(
-                        f'Unknown file "{file}" found in shape model {shape_model}', fg='red'
-                    ),
-                    err=True,
-                )
-                validated = False
-
-        # Validate particles
-        validated &= validate_files(
-            ctx,
-            Path(shape_model_path / 'particles'),
-            dataset.particles_pattern,
-        )
-
-    return validated
-
-
-def validate_files(ctx, path: Path, pattern: str):
-    errors = []
-    if os.path.exists(path):
-        if os.path.isdir(path):
-            for file in os.listdir(path):
-                try:
-                    validate_filename(pattern, file)
-                except ValueError as e:
-                    errors.append(e)
-        else:
-            errors.append(ValueError(f'{path} is not a directory'))
-    else:
-        errors.append(ValueError(f'{path} does not exist'))
-    if errors:
-        click.echo(click.style(f'Errors validating {path}:', fg='red'), err=True)
-        for error in errors:
-            click.echo(click.style(str(error), fg='red'), err=True)
-    return errors == []
-
-
-def files_to_upload(ctx: CliContext, existing: Iterable, path: Path) -> Iterable[Path]:
+def files_to_upload(session: SwccSession, existing: Iterable, path: Path) -> Iterable[Path]:
     existing_filenames = set([e.name for e in existing])
     for filename in os.listdir(path):
         if filename not in existing_filenames:
             yield Path(path / filename)
 
 
-def upload_data_files(
-    ctx: CliContext,
-    existing: Iterable,
-    path: Path,
-    pattern: str,
-    field: str,
-    endpoint: str,
-):
-    for file_path in files_to_upload(ctx, existing, path):
-        upload_data_file(ctx, file_path, pattern, field, endpoint)
-
-
-def upload_data_file(
-    ctx: CliContext,
-    path: Path,
-    pattern: str,
-    field: str,
-    endpoint: str,
-):
-    click.echo(f'uploading {path}')
-    validate_filename(pattern, path.name)
-    metadata = extract_metadata(pattern, path.name)
-    with open(path, 'rb') as stream:
-        response = ctx.s3ff.upload_file(stream, path.name, field)
-        r = ctx.session.post(
-            endpoint,
-            json={**{'field_value': response['field_value']}, **metadata},
-        )
-        r.raise_for_status()
+def upload_path(session: SwccSession, path: Path, field: str, name=None) -> str:
+    if name is None:
+        name = path.name
+    with path.open('rb') as f:
+        return session.s3ff.upload_file(f, name, field)['field_value']
 
 
 def update_config_value(filename: str, key: str, value: Any) -> None:

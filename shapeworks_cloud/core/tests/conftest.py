@@ -1,14 +1,5 @@
 import pytest
-from pytest_factoryboy import register
 from rest_framework.test import APIClient
-
-from .factories import (
-    DatasetFactory,
-    GroomedFactory,
-    ParticlesFactory,
-    SegmentationFactory,
-    ShapeModelFactory,
-)
 
 
 @pytest.fixture
@@ -21,10 +12,3 @@ def authenticated_api_client(user) -> APIClient:
     client = APIClient()
     client.force_authenticate(user=user)
     return client
-
-
-register(DatasetFactory)
-register(GroomedFactory)
-register(SegmentationFactory)
-register(ShapeModelFactory)
-register(ParticlesFactory)

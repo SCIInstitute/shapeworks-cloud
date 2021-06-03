@@ -38,6 +38,7 @@ class BaseViewSet(
 class DatasetViewSet(BaseViewSet):
     queryset = models.Dataset.objects.all().order_by('name')
     serializer_class = serializers.DatasetSerializer
+    filterset_class = filters.DatasetFilter
 
 
 class SubjectViewSet(BaseViewSet):

@@ -64,3 +64,17 @@ def test_model_crud(session, factory):
 
     obj.delete()
     assert obj.id not in {o.id for o in model.list()}
+
+
+def test_get_dataset_by_name(session):
+    factories.DatasetFactory(name='dataset1').create()
+    factories.DatasetFactory(name='dataset2').create()
+
+    dataset = models.Dataset.from_name('dataset1')
+    assert dataset and dataset.name == 'dataset1'
+
+    dataset = models.Dataset.from_name('dataset2')
+    assert dataset and dataset.name == 'dataset2'
+
+    dataset = models.Dataset.from_name('dataset3')
+    assert dataset is None

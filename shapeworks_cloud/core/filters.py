@@ -3,6 +3,12 @@ from django_filters import FilterSet, ModelChoiceFilter
 from . import models
 
 
+class DatasetFilter(FilterSet):
+    class Meta:
+        model = models.Dataset
+        fields = ['name']
+
+
 class SubjectFilter(FilterSet):
     dataset = ModelChoiceFilter(queryset=models.Dataset.objects.all())
 

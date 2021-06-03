@@ -237,6 +237,14 @@ class Dataset(ApiModel):
     def add_subject(self, name: str) -> Subject:
         return Subject(name=name, dataset=self).create()
 
+    @classmethod
+    def from_name(cls, name: str) -> Optional[Dataset]:
+        results = cls.list(name=name)
+        try:
+            return next(results)
+        except StopIteration:
+            return None
+
 
 class Subject(ApiModel):
     _endpoint = 'subjects'

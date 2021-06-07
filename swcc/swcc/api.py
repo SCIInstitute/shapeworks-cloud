@@ -6,6 +6,7 @@ from typing import List, Optional
 import requests
 from requests_toolbelt.sessions import BaseUrlSession
 from s3_file_field_client import S3FileFieldClient
+from urllib3.util.retry import Retry
 
 from . import __version__
 
@@ -40,6 +41,10 @@ class SwccSession(BaseUrlSession):
     ):
         base_url = f'{base_url.rstrip("/")}/'  # tolerate input with or without trailing slash
         super().__init__(base_url=base_url, **kwargs)
+
+        retry = Retry()
+        adapter = requests.adapters.HTTPAdapter(max_retries=retry)
+        self.mount(base_url, adapter)
 
         self.headers.update(
             {

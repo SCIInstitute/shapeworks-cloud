@@ -10,6 +10,7 @@ def add_dataset(apps, schema_editor):
         groomed = project.groomed_segmentations.first()
         if groomed is None:
             project.delete()
+            continue
 
         project.dataset = groomed.segmentation.subject.dataset
         project.save()

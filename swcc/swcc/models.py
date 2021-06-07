@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, Generic, Iterator, Literal, Optional, Type, TypeVar, Union, get_args
+from urllib.parse import unquote
 
 from pydantic import (
     AnyHttpUrl,
@@ -98,8 +99,6 @@ class FileType(Generic[FieldId]):
         return self.field_value
 
     def download(self, path: Union[Path, str]) -> Path:
-        session = current_session()
-
         if self.url is None:
             raise Exception('Cannot download a local file')
 
@@ -114,13 +113,23 @@ class FileType(Generic[FieldId]):
             path.mkdir(parents=True, exist_ok=True)
 
         path = path / self.url.path.split('/')[-1]
-        r = session.get(self.url, stream=True)
+        r = requests.get(self.url, stream=True)
         raise_for_status(r)
 
         with path.open('wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
         return path
+
+    @property
+    def name(self) -> str:
+        if self.path:
+            return self.path.name
+        elif self.url:
+            if self.url.path is None:
+                raise Exception('Invalid file url')
+            return unquote(self.url.path.split('/')[-1])
+        raise Exception('Invalid file object')
 
 
 ModelType = TypeVar('ModelType', bound='ApiModel')
@@ -285,8 +294,8 @@ class Project(ApiModel):
         self,
         file: Path,
         segmentation: Segmentation,
-        pre_cropping: Optional[Path],
-        pre_alignment: Optional[Path],
+        pre_cropping: Optional[Path] = None,
+        pre_alignment: Optional[Path] = None,
     ) -> GroomedSegmentation:
         return GroomedSegmentation(
             file=file,
@@ -294,7 +303,7 @@ class Project(ApiModel):
             project=self,
             pre_cropping=pre_cropping,
             pre_alignment=pre_alignment,
-        )
+        ).create()
 
     @property
     def shape_models(self) -> Iterator[OptimizedShapeModel]:
@@ -312,8 +321,8 @@ class GroomedSegmentation(ApiModel):
     _endpoint = 'groomed-segmentations'
 
     file: FileType[Literal['core.GroomedSegmentation.file']]
-    pre_cropping: Optional[FileType[Literal['core.GroomedSegmentation.pre_cropping']]]
-    pre_alignment: Optional[FileType[Literal['core.GroomedSegmentation.pre_alignment']]]
+    pre_cropping: Optional[FileType[Literal['core.GroomedSegmentation.pre_cropping']]] = None
+    pre_alignment: Optional[FileType[Literal['core.GroomedSegmentation.pre_alignment']]] = None
 
     segmentation: Segmentation
     project: Project

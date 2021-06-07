@@ -76,6 +76,7 @@ class ProjectFactory(Factory):
     file = Faker('file', extension='csv')
     keywords = Faker('word')
     description = Faker('sentence')
+    dataset = SubFactory(DatasetFactory)
 
 
 class GroomedSegmentationFactory(Factory):

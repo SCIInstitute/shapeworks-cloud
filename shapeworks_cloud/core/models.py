@@ -30,12 +30,11 @@ class Segmentation(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='segmentations')
 
 
-# TODO: A project is related to a subject directly in the ER diagram, but the relational model
-#       doesn't make sense.  Need to clarify.
 class Project(TimeStampedModel, models.Model):
     file = S3FileField()
     keywords = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
 
 
 class GroomedSegmentation(models.Model):

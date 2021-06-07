@@ -17,6 +17,14 @@ class SubjectFilter(FilterSet):
         fields = ['dataset']
 
 
+class ProjectFilter(FilterSet):
+    dataset = ModelChoiceFilter(queryset=models.Dataset.objects.all())
+
+    class Meta:
+        model = models.Project
+        fields = ['dataset']
+
+
 class SegmentationFilter(FilterSet):
     subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
 

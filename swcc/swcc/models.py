@@ -246,6 +246,14 @@ class Dataset(ApiModel):
     def add_subject(self, name: str) -> Subject:
         return Subject(name=name, dataset=self).create()
 
+    @property
+    def projects(self) -> Iterator[Project]:
+        self.assert_remote()
+        return Project.list(dataset=self)
+
+    def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:
+        return Project(file=file, keywords=keywords, description=description, dataset=self).create()
+
     @classmethod
     def from_name(cls, name: str) -> Optional[Dataset]:
         results = cls.list(name=name)
@@ -284,6 +292,7 @@ class Project(ApiModel):
     file: FileType[Literal['core.Project.file']]
     keywords: str = ''
     description: str = ''
+    dataset: Dataset
 
     @property
     def groomed_segmentations(self) -> Iterator[GroomedSegmentation]:

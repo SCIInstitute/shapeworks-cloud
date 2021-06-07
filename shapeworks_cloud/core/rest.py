@@ -56,6 +56,7 @@ class SegmentationViewSet(BaseViewSet):
 class ProjectViewSet(BaseViewSet):
     queryset = models.Project.objects.all()
     serializer_class = serializers.ProjectSerializer
+    filterset_class = filters.ProjectFilter
 
 
 class GroomedSegmentationViewSet(BaseViewSet):

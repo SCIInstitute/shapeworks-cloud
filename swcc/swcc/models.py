@@ -99,8 +99,6 @@ class FileType(Generic[FieldId]):
         return self.field_value
 
     def download(self, path: Union[Path, str]) -> Path:
-        session = current_session()
-
         if self.url is None:
             raise Exception('Cannot download a local file')
 
@@ -115,7 +113,7 @@ class FileType(Generic[FieldId]):
             path.mkdir(parents=True, exist_ok=True)
 
         path = path / self.url.path.split('/')[-1]
-        r = session.get(self.url, stream=True)
+        r = requests.get(self.url, stream=True)
         raise_for_status(r)
 
         with path.open('wb') as f:

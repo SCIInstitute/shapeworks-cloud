@@ -32,6 +32,7 @@ setup(
         'click<8',  # celery depends on click<8, pin for now
         'click-pathlib',
         'django-s3-file-field-client',
+        'openpyxl',
         'packaging',
         'pydantic',
         'pyxdg',

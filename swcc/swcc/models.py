@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePath
+from tempfile import TemporaryDirectory
 from typing import Any, Dict, Generic, Iterator, Literal, Optional, Type, TypeVar, Union, get_args
 from urllib.parse import unquote
 
+from openpyxl import load_workbook
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
@@ -251,8 +253,15 @@ class Dataset(ApiModel):
         self.assert_remote()
         return Project.list(dataset=self)
 
+    @property
+    def segmentations(self) -> Iterator[Segmentation]:
+        for subject in self.subjects:
+            for segmentation in subject.segmentations:
+                yield segmentation
+
     def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:
-        return Project(file=file, keywords=keywords, description=description, dataset=self).create()
+        project = Project(file=file, keywords=keywords, description=description, dataset=self)
+        return project.load_project_spreadsheet()
 
     @classmethod
     def from_name(cls, name: str) -> Optional[Dataset]:
@@ -261,6 +270,36 @@ class Dataset(ApiModel):
             return next(results)
         except StopIteration:
             return None
+
+    def load_data_spreadsheet(self, file: Union[Path, str]) -> Dataset:
+        file = Path(file)
+        xls = load_workbook(str(file), read_only=True)
+        if 'data' not in xls:
+            raise Exception('`data` sheet not found')
+
+        data = xls['data'].values
+
+        if next(data)[0] != 'shape_file':
+            raise Exception('Unknown spreadsheet format')
+
+        root = file.parent
+        subjects: Dict[str, Subject] = {}
+
+        for row in data:
+            shape_file = root / row[0]
+            if not shape_file.exists():
+                raise Exception(f'Could not find shape file at "{shape_file}"')
+
+            subject_name = shape_file.stem
+            if subject_name not in subjects:
+                subjects[subject_name] = self.add_subject(subject_name)
+
+            subject = subjects[subject_name]
+
+            # TODO: where to find the anatomy type?
+            subject.add_segmentation(file=shape_file, anatomy_type='unknown')
+
+        return self
 
 
 class Subject(ApiModel):
@@ -324,6 +363,89 @@ class Project(ApiModel):
             project=self,
             parameters=parameters,
         ).create()
+
+    def load_project_spreadsheet(self) -> Project:
+        self.assert_local()
+
+        file = self.file.path
+        assert file  # should be guaranteed by assert_local
+
+        root = file.parent
+        xls = load_workbook(str(file), read_only=True)
+
+        segmentations = {
+            PurePath(segmentation.file.name).stem: segmentation
+            for segmentation in self.dataset.segmentations
+        }
+
+        if 'optimize' not in xls or 'data' not in xls:
+            raise Exception('`data` sheet not found')
+
+        shape_model = self._parse_optimize_sheet(xls['optimize'].values)
+        self._parse_data_sheet(segmentations, shape_model, xls['data'].values, root)
+
+        return self
+
+    def _parse_optimize_sheet(self, sheet: Any) -> OptimizedShapeModel:
+        headers = next(sheet)
+        if headers != ('key', 'value'):
+            raise Exception('Unknown spreadsheet format')
+
+        params: Dict[str, Union[str, float]] = {}
+        for row in sheet:
+            key, value = row
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+            params[key] = value
+
+        return self.add_shape_model(params)
+
+    def _parse_data_sheet(
+        self,
+        segmentations: Dict[str, Segmentation],
+        shape_model: OptimizedShapeModel,
+        sheet: Any,
+        root: Path,
+    ):
+        headers = next(sheet)
+        if headers != (
+            'shape_file',
+            'groomed_file',
+            'alignment_file',
+            'local_particles_file',
+            'world_particles_file',
+        ):
+            raise Exception('Unknown spreadsheet format')
+
+        for row in sheet:
+            shape_file, groomed_file, alignment_file, local, world = row
+
+            shape_file = root / shape_file
+            groomed_file = root / groomed_file
+            local = root / local
+            world = root / world
+
+            segmentation = segmentations.get(shape_file.stem)
+            if not segmentation:
+                raise Exception(f'Could not find segmentation for "{shape_file}"')
+
+            groomed_segmentation = self.add_groomed_segmentation(
+                file=groomed_file,
+                segmentation=segmentation,
+            )
+            with TemporaryDirectory() as dir:
+                transform = Path(dir) / f'{shape_file.stem}.transform'
+                with transform.open('w') as f:
+                    f.write(alignment_file)
+
+                shape_model.add_particles(
+                    world=world,
+                    local=local,
+                    transform=transform,
+                    groomed_segmentation=groomed_segmentation,
+                )
 
 
 class GroomedSegmentation(ApiModel):

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from requests_toolbelt.sessions import BaseUrlSession
@@ -42,6 +43,7 @@ class SwccSession(BaseUrlSession):
         base_url = f'{base_url.rstrip("/")}/'  # tolerate input with or without trailing slash
         super().__init__(base_url=base_url, **kwargs)
 
+        self.cache: Dict[Any, Dict[int, Any]] = defaultdict(dict)
         retry = Retry()
         adapter = requests.adapters.HTTPAdapter(max_retries=retry)
         self.mount(base_url, adapter)

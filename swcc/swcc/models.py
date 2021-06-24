@@ -2,7 +2,19 @@ from __future__ import annotations
 
 from pathlib import Path, PurePath
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, Generic, Iterator, Literal, Optional, Type, TypeVar, Union, get_args
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterator,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_args,
+)
 from urllib.parse import unquote
 
 from openpyxl import load_workbook
@@ -152,16 +164,19 @@ class ApiModel(BaseModel):
     @classmethod
     def from_id(cls: Type[ModelType], id: int, **kwargs) -> ModelType:
         session = current_session()
+        cache = session.cache[cls]
 
-        r: requests.Response = session.get(f'{cls._endpoint}/{id}/')
-        raise_for_status(r)
-        json = r.json()
-        for key, value in cls.__fields__.items():
-            if key in kwargs:
-                json[key] = kwargs[key]
-            elif value.type_ is not Any and issubclass(value.type_, ApiModel):
-                json[key] = value.type_.from_id(json[key])
-        return cls(**json)
+        if id not in cache:
+            r: requests.Response = session.get(f'{cls._endpoint}/{id}/')
+            raise_for_status(r)
+            json = r.json()
+            for key, value in cls.__fields__.items():
+                if key in kwargs:
+                    json[key] = kwargs[key]
+                elif value.type_ is not Any and issubclass(value.type_, ApiModel):
+                    json[key] = value.type_.from_id(json[key])
+            cache[id] = cls(**json)
+        return cache[id]
 
     @classmethod
     def list(cls: Type[ModelType], **kwargs) -> Iterator[ModelType]:
@@ -260,7 +275,12 @@ class Dataset(ApiModel):
                 yield segmentation
 
     def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:
-        project = Project(file=file, keywords=keywords, description=description, dataset=self)
+        project = Project(
+            file=file,
+            keywords=keywords,
+            description=description,
+            dataset=self,
+        ).create()
         return project.load_project_spreadsheet()
 
     @classmethod
@@ -300,6 +320,16 @@ class Dataset(ApiModel):
             subject.add_segmentation(file=shape_file, anatomy_type='unknown')
 
         return self
+
+    def download(self, path: Union[Path, str]):
+        self.assert_remote()
+        path = Path(path)
+        for segmentation in self.segmentations:
+            # TODO: add a dataset spreadsheet to the data model and get the path from it
+            segmentation.file.download(path / 'segmentations')
+
+        for project in self.projects:
+            project.download(path)
 
 
 class Subject(ApiModel):
@@ -365,8 +395,6 @@ class Project(ApiModel):
         ).create()
 
     def load_project_spreadsheet(self) -> Project:
-        self.assert_local()
-
         file = self.file.path
         assert file  # should be guaranteed by assert_local
 
@@ -385,6 +413,29 @@ class Project(ApiModel):
         self._parse_data_sheet(segmentations, shape_model, xls['data'].values, root)
 
         return self
+
+    def _iter_data_sheet(
+        self, sheet: Any, root: Path
+    ) -> Iterator[Tuple[Path, Path, str, Path, Path]]:
+        headers = next(sheet)
+        if headers != (
+            'shape_file',
+            'groomed_file',
+            'alignment_file',
+            'local_particles_file',
+            'world_particles_file',
+        ):
+            raise Exception('Unknown spreadsheet format')
+
+        for row in sheet:
+            shape_file, groomed_file, alignment_file, local, world = row
+
+            shape_file = root / shape_file
+            groomed_file = root / groomed_file
+            local = root / local
+            world = root / world
+
+            yield shape_file, groomed_file, alignment_file, local, world
 
     def _parse_optimize_sheet(self, sheet: Any) -> OptimizedShapeModel:
         headers = next(sheet)
@@ -409,24 +460,9 @@ class Project(ApiModel):
         sheet: Any,
         root: Path,
     ):
-        headers = next(sheet)
-        if headers != (
-            'shape_file',
-            'groomed_file',
-            'alignment_file',
-            'local_particles_file',
-            'world_particles_file',
+        for shape_file, groomed_file, alignment_file, local, world in self._iter_data_sheet(
+            sheet, root
         ):
-            raise Exception('Unknown spreadsheet format')
-
-        for row in sheet:
-            shape_file, groomed_file, alignment_file, local, world = row
-
-            shape_file = root / shape_file
-            groomed_file = root / groomed_file
-            local = root / local
-            world = root / world
-
             segmentation = segmentations.get(shape_file.stem)
             if not segmentation:
                 raise Exception(f'Could not find segmentation for "{shape_file}"')
@@ -446,6 +482,27 @@ class Project(ApiModel):
                     transform=transform,
                     groomed_segmentation=groomed_segmentation,
                 )
+
+    def download(self, path: Union[Path, str]):
+        path = Path(path)
+        project_file = self.file.download(path)
+        xls = load_workbook(str(project_file), read_only=True)
+        sheet = xls['data'].values
+
+        shape_model = next(self.shape_models)
+        groomed_segmentations = {
+            PurePath(gs.file.name).stem: gs for gs in self.groomed_segmentations
+        }
+        local_files = {PurePath(p.local.name).stem: p for p in shape_model.particles}
+
+        # TODO: Do we detect if alignment_file (transform) is a path?
+        for _, groomed_file, _, local, world in self._iter_data_sheet(sheet, path):
+            gs = groomed_segmentations[groomed_file.stem]
+            gs.file.download(groomed_file.parent)
+
+            particles = local_files[local.stem]
+            particles.local.download(local.parent)
+            particles.world.download(world.parent)
 
 
 class GroomedSegmentation(ApiModel):

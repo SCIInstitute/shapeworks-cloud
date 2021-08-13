@@ -299,12 +299,13 @@ class Dataset(ApiModel):
 
         data = xls['data'].values
 
-        expected = ('shape_file', )
+        expected = ('shape_file',)
         headers = next(data)
-        if headers[:len(expected)] != expected:
+        if headers[: len(expected)] != expected:
             raise Exception(
-                'Unknown spreadsheet format in %r - expected headers to be %r, found %r' % (
-                    file, expected, headers[:len(expected)]))
+                'Unknown spreadsheet format in %r - expected headers to be %r, found %r'
+                % (file, expected, headers[: len(expected)])
+            )
 
         root = file.parent
         subjects: Dict[str, Subject] = {}
@@ -429,10 +430,11 @@ class Project(ApiModel):
             'world_particles_file',
         )
         headers = next(sheet)
-        if headers[:len(expected)] != expected:
+        if headers[: len(expected)] != expected:
             raise Exception(
-                'Unknown spreadsheet format - expected headers to be %r, found %r' % (
-                    expected, headers[:len(expected)]))
+                'Unknown spreadsheet format - expected headers to be %r, found %r'
+                % (expected, headers[: len(expected)])
+            )
 
         for row in sheet:
             shape_file, groomed_file, alignment_file, local, world = row
@@ -447,10 +449,11 @@ class Project(ApiModel):
     def _parse_optimize_sheet(self, sheet: Any) -> OptimizedShapeModel:
         expected = ('key', 'value')
         headers = next(sheet)
-        if headers[:len(expected)] != expected:
+        if headers[: len(expected)] != expected:
             raise Exception(
-                'Unknown spreadsheet format - expected headers to be %r, found %r' % (
-                    expected, headers[:len(expected)]))
+                'Unknown spreadsheet format - expected headers to be %r, found %r'
+                % (expected, headers[: len(expected)])
+            )
 
         params: Dict[str, Union[str, float]] = {}
         for row in sheet:

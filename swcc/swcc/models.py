@@ -241,7 +241,7 @@ class ApiModel(BaseModel):
 
     def assert_local(self):
         if self.id is not None:
-            raise Exception('This entity already exists on the server.')
+            raise Exception('This entity already exists on the server (id: %r).' % self.id)
 
 
 class Dataset(ApiModel):
@@ -299,8 +299,13 @@ class Dataset(ApiModel):
 
         data = xls['data'].values
 
-        if next(data)[0] != 'shape_file':
-            raise Exception('Unknown spreadsheet format')
+        expected = ('shape_file',)
+        headers = next(data)
+        if headers[: len(expected)] != expected:
+            raise Exception(
+                'Unknown spreadsheet format in %r - expected headers to be %r, found %r'
+                % (file, expected, headers[: len(expected)])
+            )
 
         root = file.parent
         subjects: Dict[str, Subject] = {}
@@ -417,15 +422,19 @@ class Project(ApiModel):
     def _iter_data_sheet(
         self, sheet: Any, root: Path
     ) -> Iterator[Tuple[Path, Path, str, Path, Path]]:
-        headers = next(sheet)
-        if headers != (
+        expected = (
             'shape_file',
             'groomed_file',
             'alignment_file',
             'local_particles_file',
             'world_particles_file',
-        ):
-            raise Exception('Unknown spreadsheet format')
+        )
+        headers = next(sheet)
+        if headers[: len(expected)] != expected:
+            raise Exception(
+                'Unknown spreadsheet format - expected headers to be %r, found %r'
+                % (expected, headers[: len(expected)])
+            )
 
         for row in sheet:
             shape_file, groomed_file, alignment_file, local, world = row
@@ -438,9 +447,13 @@ class Project(ApiModel):
             yield shape_file, groomed_file, alignment_file, local, world
 
     def _parse_optimize_sheet(self, sheet: Any) -> OptimizedShapeModel:
+        expected = ('key', 'value')
         headers = next(sheet)
-        if headers != ('key', 'value'):
-            raise Exception('Unknown spreadsheet format')
+        if headers[: len(expected)] != expected:
+            raise Exception(
+                'Unknown spreadsheet format - expected headers to be %r, found %r'
+                % (expected, headers[: len(expected)])
+            )
 
         params: Dict[str, Union[str, float]] = {}
         for row in sheet:

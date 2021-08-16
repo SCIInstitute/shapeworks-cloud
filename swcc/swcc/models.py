@@ -311,6 +311,9 @@ class Dataset(ApiModel):
         subjects: Dict[str, Subject] = {}
 
         for row in data:
+            if not row[0]:
+                continue
+            print(row, root)
             shape_file = root / row[0]
             if not shape_file.exists():
                 raise Exception(f'Could not find shape file at "{shape_file}"')

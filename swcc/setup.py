@@ -32,6 +32,8 @@ setup(
         'click<8',  # celery depends on click<8, pin for now
         'click-pathlib',
         'django-s3-file-field-client',
+        # if you override and install in python 3.7
+        'importlib_metadata ; python_version < "3.8"',
         'openpyxl',
         'packaging',
         'pydantic',

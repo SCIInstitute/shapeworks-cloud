@@ -2,19 +2,38 @@ from __future__ import annotations
 
 from pathlib import Path, PurePath
 from tempfile import TemporaryDirectory
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    Iterator,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    get_args,
-)
+
+try:
+    from typing import (
+        Any,
+        Dict,
+        Generic,
+        Iterator,
+        Literal,
+        Optional,
+        Tuple,
+        Type,
+        TypeVar,
+        Union,
+        get_args,
+    )
+except ImportError:
+    from typing import (
+        Any,
+        Dict,
+        Generic,
+        Iterator,
+        Optional,
+        Tuple,
+        Type,
+        TypeVar,
+        Union,
+    )
+    from typing_extensions import (  # type: ignore
+        Literal,
+        get_args,
+    )
+
 from urllib.parse import unquote
 
 from openpyxl import load_workbook

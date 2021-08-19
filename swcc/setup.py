@@ -43,6 +43,7 @@ setup(
         'rich',
         'toml',
         'tqdm',
+        'typing-extensions ; python_version < "3.8"',
     ],
     entry_points={'console_scripts': ['swcc=swcc.cli:main']},
     extras_require={'dev': ['factory_boy', 'ipython', 'tox']},

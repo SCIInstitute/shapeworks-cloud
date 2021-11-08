@@ -52,6 +52,7 @@ class SegmentationViewSet(BaseViewSet):
     serializer_class = serializers.SegmentationSerializer
     filterset_class = filters.SegmentationFilter
 
+
 class MeshViewSet(BaseViewSet):
     queryset = models.Mesh.objects.all().order_by('subject')
     serializer_class = serializers.MeshSerializer
@@ -68,6 +69,7 @@ class GroomedSegmentationViewSet(BaseViewSet):
     queryset = models.GroomedSegmentation.objects.all()
     serializer_class = serializers.GroomedSegmentationSerializer
     filterset_class = filters.GroomedSegmentationFilter
+
 
 class GroomedMeshViewSet(BaseViewSet):
     queryset = models.GroomedMesh.objects.all()

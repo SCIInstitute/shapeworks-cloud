@@ -23,6 +23,7 @@ class SegmentationSerializer(serializers.ModelSerializer):
         model = models.Segmentation
         fields = '__all__'
 
+
 class MeshSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
 
@@ -51,6 +52,7 @@ class GroomedSegmentationSerializer(serializers.ModelSerializer):
 
     def get_id(self, obj) -> int:
         return obj.segmentation_id
+
 
 class GroomedMeshSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()

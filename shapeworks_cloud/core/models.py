@@ -29,6 +29,7 @@ class Segmentation(models.Model):
     anatomy_type = models.CharField(max_length=255)  # choices?
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='segmentations')
 
+
 class Mesh(models.Model):
     file = S3FileField()
     anatomy_type = models.CharField(max_length=255)  # choices?
@@ -77,9 +78,7 @@ class GroomedMesh(models.Model):
         related_name='groomed',
     )
 
-    project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name='groomed_meshes'
-    )
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='groomed_meshes')
 
 
 class OptimizedShapeModel(models.Model):

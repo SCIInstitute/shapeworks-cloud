@@ -15,16 +15,34 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Mesh',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('file', s3_file_field.fields.S3FileField()),
                 ('anatomy_type', models.CharField(max_length=255)),
-                ('subject', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='meshes', to='core.subject')),
+                (
+                    'subject',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='meshes',
+                        to='core.subject',
+                    ),
+                ),
             ],
         ),
         migrations.AlterField(
             model_name='optimizedparticles',
             name='groomed_segmentation',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='+', to='core.groomedsegmentation'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='+',
+                to='core.groomedsegmentation',
+            ),
         ),
         migrations.CreateModel(
             name='GroomedMesh',
@@ -32,13 +50,35 @@ class Migration(migrations.Migration):
                 ('file', s3_file_field.fields.S3FileField()),
                 ('pre_cropping', s3_file_field.fields.S3FileField(null=True)),
                 ('pre_alignment', s3_file_field.fields.S3FileField(null=True)),
-                ('mesh', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='groomed', serialize=False, to='core.mesh')),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='groomed_meshes', to='core.project')),
+                (
+                    'mesh',
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        primary_key=True,
+                        related_name='groomed',
+                        serialize=False,
+                        to='core.mesh',
+                    ),
+                ),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='groomed_meshes',
+                        to='core.project',
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
             model_name='optimizedparticles',
             name='groomed_mesh',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='+', to='core.groomedmesh'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='+',
+                to='core.groomedmesh',
+            ),
         ),
     ]

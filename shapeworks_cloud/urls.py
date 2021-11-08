@@ -18,9 +18,7 @@ router.register('projects', rest.ProjectViewSet, basename='project')
 router.register(
     'groomed-segmentations', rest.GroomedSegmentationViewSet, basename='groomed_segmentation'
 )
-router.register(
-    'groomed-meshes', rest.GroomedMeshViewSet, basename='groomed_mesh'
-)
+router.register('groomed-meshes', rest.GroomedMeshViewSet, basename='groomed_mesh')
 router.register(
     'optimized-shape-models', rest.OptimizedShapeModelViewSet, basename='optimized_shape_model'
 )

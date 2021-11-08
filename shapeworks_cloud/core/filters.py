@@ -32,6 +32,7 @@ class SegmentationFilter(FilterSet):
         models = models.Segmentation
         fields = ['subject']
 
+
 class MeshFilter(FilterSet):
     subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
 
@@ -47,6 +48,7 @@ class GroomedSegmentationFilter(FilterSet):
     class Meta:
         models = models.GroomedSegmentation
         fields = ['project', 'segmentation']
+
 
 class GroomedMeshFilter(FilterSet):
     project = ModelChoiceFilter(queryset=models.Project.objects.all())

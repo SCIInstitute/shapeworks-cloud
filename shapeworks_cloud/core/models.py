@@ -29,6 +29,11 @@ class Segmentation(models.Model):
     anatomy_type = models.CharField(max_length=255)  # choices?
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='segmentations')
 
+class Mesh(models.Model):
+    file = S3FileField()
+    anatomy_type = models.CharField(max_length=255)  # choices?
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='meshes')
+
 
 class Project(TimeStampedModel, models.Model):
     file = S3FileField()
@@ -57,6 +62,26 @@ class GroomedSegmentation(models.Model):
     )
 
 
+class GroomedMesh(models.Model):
+    # The contents of the nrrd file
+    file = S3FileField()
+
+    # represent these in raw form?
+    pre_cropping = S3FileField(null=True)
+    pre_alignment = S3FileField(null=True)
+
+    mesh = models.OneToOneField(
+        Mesh,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name='groomed',
+    )
+
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='groomed_meshes'
+    )
+
+
 class OptimizedShapeModel(models.Model):
     project = models.ForeignKey(
         Project,
@@ -80,6 +105,15 @@ class OptimizedParticles(models.Model):
         GroomedSegmentation,
         on_delete=models.CASCADE,
         related_name='+',
+        blank=True,
+        null=True,
+    )
+    groomed_mesh = models.ForeignKey(
+        GroomedMesh,
+        on_delete=models.CASCADE,
+        related_name='+',
+        blank=True,
+        null=True,
     )
 
 

@@ -55,7 +55,7 @@ from .utils import raise_for_status
 FieldId = TypeVar('FieldId', bound=str)
 
 
-def shape_file_type(path: Path) -> Segmentation | Mesh:
+def shape_file_type(path: Path) -> Type[Segmentation] | Type[Mesh]:
     """
     Determine the type of the shape file.
 
@@ -493,10 +493,7 @@ class Project(ApiModel):
             PurePath(segmentation.file.name).stem: segmentation
             for segmentation in self.dataset.segmentations
         }
-        meshes = {
-            PurePath(mesh.file.name).stem: mesh
-            for mesh in self.dataset.meshes
-        }
+        meshes = {PurePath(mesh.file.name).stem: mesh for mesh in self.dataset.meshes}
 
         # if 'optimize' not in xls or 'data' not in xls:
         #     raise Exception('`data` sheet not found')
@@ -666,8 +663,8 @@ class OptimizedShapeModel(ApiModel):
         world: Path,
         local: Path,
         transform: Path,
-        groomed_segmentation: GroomedSegmentation,
-        groomed_mesh: GroomedMesh,
+        groomed_segmentation: Optional[GroomedSegmentation],
+        groomed_mesh: Optional[GroomedMesh],
     ) -> OptimizedParticles:
         return OptimizedParticles(
             world=world,

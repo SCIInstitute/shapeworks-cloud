@@ -69,6 +69,15 @@ class SegmentationFactory(Factory):
     subject = SubFactory(SubjectFactory)
 
 
+class MeshFactory(Factory):
+    class Meta:
+        model = models.Mesh
+
+    file = Faker('file', extension='ply')
+    anatomy_type = Faker('word')
+    subject = SubFactory(SubjectFactory)
+
+
 class ProjectFactory(Factory):
     class Meta:
         model = models.Project
@@ -91,6 +100,18 @@ class GroomedSegmentationFactory(Factory):
     project = SubFactory(ProjectFactory)
 
 
+class GroomedMeshFactory(Factory):
+    class Meta:
+        model = models.GroomedMesh
+
+    file = Faker('file', extension='ply')
+    pre_cropping = Faker('file', extension='txt', null_chance=50)
+    pre_alignment = Faker('file', extension='txt', null_chance=50)
+
+    mesh = SubFactory(MeshFactory)
+    project = SubFactory(ProjectFactory)
+
+
 class OptimizedShapeModelFactory(Factory):
     class Meta:
         model = models.OptimizedShapeModel
@@ -108,6 +129,7 @@ class OptimizedParticlesFactory(Factory):
     transform = Faker('file', extension='txt')
     shape_model = SubFactory(OptimizedShapeModelFactory)
     groomed_segmentation = SubFactory(GroomedSegmentationFactory)
+    groomed_mesh = SubFactory(GroomedMeshFactory)
 
 
 class OptimizedPCAModelFactory(Factory):

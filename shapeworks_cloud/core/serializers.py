@@ -23,6 +23,13 @@ class SegmentationSerializer(serializers.ModelSerializer):
         model = models.Segmentation
         fields = '__all__'
 
+class MeshSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Mesh
+        fields = '__all__'
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
@@ -44,6 +51,19 @@ class GroomedSegmentationSerializer(serializers.ModelSerializer):
 
     def get_id(self, obj) -> int:
         return obj.segmentation_id
+
+class GroomedMeshSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    file = S3FileSerializerField()
+    pre_cropping = S3FileSerializerField(required=False, allow_null=True)
+    pre_alignment = S3FileSerializerField(required=False, allow_null=True)
+
+    class Meta:
+        model = models.GroomedMesh
+        fields = '__all__'
+
+    def get_id(self, obj) -> int:
+        return obj.mesh_id
 
 
 class OptimizedShapeModelSerializer(serializers.ModelSerializer):

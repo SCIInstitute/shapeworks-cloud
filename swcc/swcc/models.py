@@ -293,6 +293,12 @@ class Dataset(ApiModel):
             for segmentation in subject.segmentations:
                 yield segmentation
 
+    @property
+    def meshes(self) -> Iterator[Mesh]:
+        for subject in self.subjects:
+            for mesh in subject.meshes:
+                yield mesh
+
     def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:
         project = Project(
             file=file,
@@ -369,14 +375,30 @@ class Subject(ApiModel):
         self.assert_remote()
         return Segmentation.list(subject=self)
 
+    @property
+    def meshes(self) -> Iterator[Mesh]:
+        self.assert_remote()
+        return Mesh.list(subject=self)
+
     def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
         return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create()
+
+    def add_mesh(self, file: Path, anatomy_type: str) -> Mesh:
+        return Mesh(file=file, anatomy_type=anatomy_type, subject=self).create()
 
 
 class Segmentation(ApiModel):
     _endpoint = 'segmentations'
 
     file: FileType[Literal['core.Segmentation.file']]
+    anatomy_type: NonEmptyString
+    subject: Subject
+
+
+class Mesh(ApiModel):
+    _endpoint = 'meshes'
+
+    file: FileType[Literal['core.Mesh.file']]
     anatomy_type: NonEmptyString
     subject: Subject
 
@@ -394,6 +416,11 @@ class Project(ApiModel):
         self.assert_remote()
         return GroomedSegmentation.list(project=self)
 
+    @property
+    def groomed_meshes(self) -> Iterator[GroomedMesh]:
+        self.assert_remote()
+        return GroomedMesh.list(project=self)
+
     def add_groomed_segmentation(
         self,
         file: Path,
@@ -404,6 +431,21 @@ class Project(ApiModel):
         return GroomedSegmentation(
             file=file,
             segmentation=segmentation,
+            project=self,
+            pre_cropping=pre_cropping,
+            pre_alignment=pre_alignment,
+        ).create()
+
+    def add_groomed_mesh(
+        self,
+        file: Path,
+        mesh: Mesh,
+        pre_cropping: Optional[Path] = None,
+        pre_alignment: Optional[Path] = None,
+    ) -> GroomedMesh:
+        return GroomedMesh(
+            file=file,
+            mesh=mesh,
             project=self,
             pre_cropping=pre_cropping,
             pre_alignment=pre_alignment,
@@ -490,6 +532,7 @@ class Project(ApiModel):
     def _parse_data_sheet(
         self,
         segmentations: Dict[str, Segmentation],
+        meshes: Dict[str, Mesh],
         shape_model: OptimizedShapeModel,
         sheet: Any,
         root: Path,
@@ -550,6 +593,17 @@ class GroomedSegmentation(ApiModel):
     project: Project
 
 
+class GroomedMesh(ApiModel):
+    _endpoint = 'groomed-meshes'
+
+    file: FileType[Literal['core.GroomedMesh.file']]
+    pre_cropping: Optional[FileType[Literal['core.GroomedMesh.pre_cropping']]] = None
+    pre_alignment: Optional[FileType[Literal['core.GroomedMesh.pre_alignment']]] = None
+
+    mesh: Mesh
+    project: Project
+
+
 class OptimizedShapeModel(ApiModel):
     _endpoint = 'optimized-shape-models'
 
@@ -583,7 +637,8 @@ class OptimizedParticles(ApiModel):
     local: FileType[Literal['core.OptimizedParticles.local']]
     transform: FileType[Literal['core.OptimizedParticles.transform']]
     shape_model: OptimizedShapeModel
-    groomed_segmentation: GroomedSegmentation
+    groomed_segmentation: Optional[GroomedSegmentation]
+    groomed_mesh: Optional[GroomedMesh]
 
 
 class OptimizedPCAModel(ApiModel):

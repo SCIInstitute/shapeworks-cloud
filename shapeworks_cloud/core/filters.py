@@ -33,6 +33,14 @@ class SegmentationFilter(FilterSet):
         fields = ['subject']
 
 
+class MeshFilter(FilterSet):
+    subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
+
+    class Meta:
+        models = models.Mesh
+        fields = ['subject']
+
+
 class GroomedSegmentationFilter(FilterSet):
     project = ModelChoiceFilter(queryset=models.Project.objects.all())
     segmentation = ModelChoiceFilter(queryset=models.Segmentation.objects.all())
@@ -40,6 +48,15 @@ class GroomedSegmentationFilter(FilterSet):
     class Meta:
         models = models.GroomedSegmentation
         fields = ['project', 'segmentation']
+
+
+class GroomedMeshFilter(FilterSet):
+    project = ModelChoiceFilter(queryset=models.Project.objects.all())
+    mesh = ModelChoiceFilter(queryset=models.Mesh.objects.all())
+
+    class Meta:
+        models = models.GroomedMesh
+        fields = ['project', 'mesh']
 
 
 class OptimizedShapeModelFilter(FilterSet):
@@ -53,10 +70,11 @@ class OptimizedShapeModelFilter(FilterSet):
 class OptimizedParticlesFilter(FilterSet):
     shape_model = ModelChoiceFilter(queryset=models.OptimizedShapeModel.objects.all())
     groomed_segmentation = ModelChoiceFilter(queryset=models.GroomedSegmentation.objects.all())
+    groomed_mesh = ModelChoiceFilter(queryset=models.GroomedMesh.objects.all())
 
     class Meta:
         models = models.OptimizedParticles
-        fields = ['shape_model', 'groomed_segmentation']
+        fields = ['shape_model', 'groomed_segmentation', 'groomed_mesh']
 
 
 class OptimizedPCAModelFilter(FilterSet):

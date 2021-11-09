@@ -55,6 +55,22 @@ from .utils import raise_for_status
 FieldId = TypeVar('FieldId', bound=str)
 
 
+def shape_file_type(path: Path) -> Type[Segmentation] | Type[Mesh]:
+    """
+    Determine the type of the shape file.
+
+    Segmentations are represented in the spreadsheet as "segmentations/foo.bar".
+    Meshes are represented in the spreadsheet as "meshes/foo.bar".
+    """
+    file_type = path.parent.name
+    if file_type == 'segmentations':
+        return Segmentation
+    elif file_type == 'meshes':
+        return Mesh
+    else:
+        raise Exception(f'Could not determine if "{path}" is a segmentation or a mesh')
+
+
 class NonEmptyString(StrictStr):
     min_length = 1
 
@@ -293,6 +309,12 @@ class Dataset(ApiModel):
             for segmentation in subject.segmentations:
                 yield segmentation
 
+    @property
+    def meshes(self) -> Iterator[Mesh]:
+        for subject in self.subjects:
+            for mesh in subject.meshes:
+                yield mesh
+
     def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:
         project = Project(
             file=file,
@@ -343,7 +365,11 @@ class Dataset(ApiModel):
             subject = subjects[subject_name]
 
             # TODO: where to find the anatomy type?
-            subject.add_segmentation(file=shape_file, anatomy_type='unknown')
+            data_type = shape_file_type(shape_file)
+            if data_type == Segmentation:
+                subject.add_segmentation(file=shape_file, anatomy_type='unknown')
+            elif data_type == Mesh:
+                subject.add_mesh(file=shape_file, anatomy_type='unknown')
 
         return self
 
@@ -369,14 +395,30 @@ class Subject(ApiModel):
         self.assert_remote()
         return Segmentation.list(subject=self)
 
+    @property
+    def meshes(self) -> Iterator[Mesh]:
+        self.assert_remote()
+        return Mesh.list(subject=self)
+
     def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
         return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create()
+
+    def add_mesh(self, file: Path, anatomy_type: str) -> Mesh:
+        return Mesh(file=file, anatomy_type=anatomy_type, subject=self).create()
 
 
 class Segmentation(ApiModel):
     _endpoint = 'segmentations'
 
     file: FileType[Literal['core.Segmentation.file']]
+    anatomy_type: NonEmptyString
+    subject: Subject
+
+
+class Mesh(ApiModel):
+    _endpoint = 'meshes'
+
+    file: FileType[Literal['core.Mesh.file']]
     anatomy_type: NonEmptyString
     subject: Subject
 
@@ -394,6 +436,11 @@ class Project(ApiModel):
         self.assert_remote()
         return GroomedSegmentation.list(project=self)
 
+    @property
+    def groomed_meshes(self) -> Iterator[GroomedMesh]:
+        self.assert_remote()
+        return GroomedMesh.list(project=self)
+
     def add_groomed_segmentation(
         self,
         file: Path,
@@ -404,6 +451,21 @@ class Project(ApiModel):
         return GroomedSegmentation(
             file=file,
             segmentation=segmentation,
+            project=self,
+            pre_cropping=pre_cropping,
+            pre_alignment=pre_alignment,
+        ).create()
+
+    def add_groomed_mesh(
+        self,
+        file: Path,
+        mesh: Mesh,
+        pre_cropping: Optional[Path] = None,
+        pre_alignment: Optional[Path] = None,
+    ) -> GroomedMesh:
+        return GroomedMesh(
+            file=file,
+            mesh=mesh,
             project=self,
             pre_cropping=pre_cropping,
             pre_alignment=pre_alignment,
@@ -431,12 +493,20 @@ class Project(ApiModel):
             PurePath(segmentation.file.name).stem: segmentation
             for segmentation in self.dataset.segmentations
         }
+        meshes = {PurePath(mesh.file.name).stem: mesh for mesh in self.dataset.meshes}
 
-        if 'optimize' not in xls or 'data' not in xls:
-            raise Exception('`data` sheet not found')
+        # if 'optimize' not in xls or 'data' not in xls:
+        #     raise Exception('`data` sheet not found')
+
+        # shape_model = self._parse_optimize_sheet(xls['optimize'].values)
+        # self._parse_data_sheet(segmentations, shape_model, xls['data'].values, root)
+
+        for sheet_name in ['optimize', 'data']:
+            if sheet_name not in xls:
+                raise Exception(f'`{sheet_name}` sheet not found')
 
         shape_model = self._parse_optimize_sheet(xls['optimize'].values)
-        self._parse_data_sheet(segmentations, shape_model, xls['data'].values, root)
+        self._parse_data_sheet(segmentations, meshes, shape_model, xls['data'].values, root)
 
         return self
 
@@ -459,6 +529,9 @@ class Project(ApiModel):
 
         for row in sheet:
             shape_file, groomed_file, alignment_file, local, world = row
+            if not shape_file:
+                # It's possible to get XLSX files with empty rows where every column is None
+                continue
 
             shape_file = root / shape_file
             groomed_file = root / groomed_file
@@ -490,6 +563,7 @@ class Project(ApiModel):
     def _parse_data_sheet(
         self,
         segmentations: Dict[str, Segmentation],
+        meshes: Dict[str, Mesh],
         shape_model: OptimizedShapeModel,
         sheet: Any,
         root: Path,
@@ -497,14 +571,26 @@ class Project(ApiModel):
         for shape_file, groomed_file, alignment_file, local, world in self._iter_data_sheet(
             sheet, root
         ):
-            segmentation = segmentations.get(shape_file.stem)
-            if not segmentation:
-                raise Exception(f'Could not find segmentation for "{shape_file}"')
+            groomed_segmentation = None
+            groomed_mesh = None
+            data_type = shape_file_type(shape_file)
+            if data_type == Segmentation:
+                segmentation = segmentations.get(shape_file.stem)
+                if not segmentation:
+                    raise Exception(f'Could not find segmentation for "{shape_file}"')
+                groomed_segmentation = self.add_groomed_segmentation(
+                    file=groomed_file,
+                    segmentation=segmentation,
+                )
+            elif data_type == Mesh:
+                mesh = meshes.get(shape_file.stem)
+                if not mesh:
+                    raise Exception(f'Could not find mesh for "{shape_file}"')
+                groomed_mesh = self.add_groomed_mesh(
+                    file=groomed_file,
+                    mesh=mesh,
+                )
 
-            groomed_segmentation = self.add_groomed_segmentation(
-                file=groomed_file,
-                segmentation=segmentation,
-            )
             with TemporaryDirectory() as dir:
                 transform = Path(dir) / f'{shape_file.stem}.transform'
                 with transform.open('w') as f:
@@ -515,6 +601,7 @@ class Project(ApiModel):
                     local=local,
                     transform=transform,
                     groomed_segmentation=groomed_segmentation,
+                    groomed_mesh=groomed_mesh,
                 )
 
     def download(self, path: Union[Path, str]):
@@ -550,6 +637,17 @@ class GroomedSegmentation(ApiModel):
     project: Project
 
 
+class GroomedMesh(ApiModel):
+    _endpoint = 'groomed-meshes'
+
+    file: FileType[Literal['core.GroomedMesh.file']]
+    pre_cropping: Optional[FileType[Literal['core.GroomedMesh.pre_cropping']]] = None
+    pre_alignment: Optional[FileType[Literal['core.GroomedMesh.pre_alignment']]] = None
+
+    mesh: Mesh
+    project: Project
+
+
 class OptimizedShapeModel(ApiModel):
     _endpoint = 'optimized-shape-models'
 
@@ -565,7 +663,8 @@ class OptimizedShapeModel(ApiModel):
         world: Path,
         local: Path,
         transform: Path,
-        groomed_segmentation: GroomedSegmentation,
+        groomed_segmentation: Optional[GroomedSegmentation],
+        groomed_mesh: Optional[GroomedMesh],
     ) -> OptimizedParticles:
         return OptimizedParticles(
             world=world,
@@ -573,6 +672,7 @@ class OptimizedShapeModel(ApiModel):
             transform=transform,
             shape_model=self,
             groomed_segmentation=groomed_segmentation,
+            groomed_mesh=groomed_mesh,
         ).create()
 
 
@@ -583,7 +683,8 @@ class OptimizedParticles(ApiModel):
     local: FileType[Literal['core.OptimizedParticles.local']]
     transform: FileType[Literal['core.OptimizedParticles.transform']]
     shape_model: OptimizedShapeModel
-    groomed_segmentation: GroomedSegmentation
+    groomed_segmentation: Optional[GroomedSegmentation]
+    groomed_mesh: Optional[GroomedMesh]
 
 
 class OptimizedPCAModel(ApiModel):

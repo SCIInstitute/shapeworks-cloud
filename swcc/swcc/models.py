@@ -59,16 +59,15 @@ def shape_file_type(path: Path) -> Type[Segmentation] | Type[Mesh]:
     """
     Determine the type of the shape file.
 
-    Segmentations are represented in the spreadsheet as "segmentations/foo.bar".
-    Meshes are represented in the spreadsheet as "meshes/foo.bar".
-    """
-    file_type = path.parent.name
-    if file_type == 'segmentations':
-        return Segmentation
-    elif file_type == 'meshes':
+    As described in https://github.com/SCIInstitute/ShapeWorks/blob/3344bbfd42cb83eea50d01c06218e3034b5c67aa/Libs/Mesh/Mesh.h#L212,
+    Meshes are of file type "vtk", "vtp", "ply", "stl", "obj", while Segmentations are any other
+    file type.
+    """  # noqa: E501
+    file_type = path.suffix
+    if file_type in ['.vtk', '.vtp', '.ply', '.stl', '.obj']:
         return Mesh
     else:
-        raise Exception(f'Could not determine if "{path}" is a segmentation or a mesh')
+        return Segmentation
 
 
 class NonEmptyString(StrictStr):

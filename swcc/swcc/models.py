@@ -314,6 +314,12 @@ class Dataset(ApiModel):
             for mesh in subject.meshes:
                 yield mesh
 
+    def force_create(self):
+        old_dataset = Dataset.from_name(self.name)
+        if old_dataset is not None:
+            old_dataset.delete()
+        return self.create()
+
     def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:
         project = Project(
             file=file,

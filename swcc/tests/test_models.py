@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 
 from factory import Factory
 import pytest
+import requests
 
 from swcc import models
 
@@ -78,3 +79,38 @@ def test_get_dataset_by_name(session):
 
     dataset = models.Dataset.from_name('dataset3')
     assert dataset is None
+
+
+def test_dataset_force_create_overwrite(session):
+    old_dataset = factories.DatasetFactory(name='dataset1').create()
+    assert models.Dataset.from_id(old_dataset.id)
+
+    new_dataset = models.Dataset(
+        name='dataset1',
+        license=old_dataset.license,
+        description=old_dataset.description,
+        acknowledgement=old_dataset.acknowledgement,
+    ).force_create()
+    new_dataset.assert_remote()
+
+    # The new dataset should now exist on the server
+    assert models.Dataset.from_name('dataset1') == new_dataset
+    # The old dataset should no longer exist on the server
+    with pytest.raises(requests.exceptions.HTTPError):
+        # Gotta clear the cache first
+        session.cache[models.Dataset] = {}
+        old = models.Dataset.from_id(old_dataset.id)
+        print(old)
+        assert old
+
+
+def test_dataset_force_create_no_existing(session):
+    dataset = models.Dataset(
+        name='dataset1',
+        license='license',
+        description='description',
+        acknowledgement='acknowledgement',
+    ).force_create()
+    dataset.assert_remote()
+
+    assert models.Dataset.from_name('dataset1') == dataset

@@ -100,7 +100,6 @@ def test_dataset_force_create_overwrite(session):
         # Gotta clear the cache first
         session.cache[models.Dataset] = {}
         old = models.Dataset.from_id(old_dataset.id)
-        print(old)
         assert old
 
 
@@ -114,3 +113,47 @@ def test_dataset_force_create_no_existing(session):
     dataset.assert_remote()
 
     assert models.Dataset.from_name('dataset1') == dataset
+
+
+@pytest.mark.parametrize(
+    'version',
+    [0, 1, 9, 10, 99],
+)
+def test_dataset_force_create_backup(session, version):
+    old_name = f'dataset-v{version}'
+    new_name = f'dataset-v{version+1}'
+    old_dataset = factories.DatasetFactory(name=old_name).create()
+    assert models.Dataset.from_id(old_dataset.id)
+
+    new_dataset = models.Dataset(
+        name=old_name,
+        license=old_dataset.license,
+        description=old_dataset.description,
+        acknowledgement=old_dataset.acknowledgement,
+    ).force_create(backup=True)
+    new_dataset.assert_remote()
+
+    # The old dataset should still exist on the server
+    assert models.Dataset.from_name(old_name) == old_dataset
+    # The new dataset should also exist on the server
+    assert models.Dataset.from_name(new_name) == new_dataset
+    # The new dataset should have its name changed in place
+    assert new_dataset.name == new_name
+
+
+def test_dataset_force_create_backup_no_version_suffix(session):
+    old_dataset = factories.DatasetFactory(name='dataset1').create()
+    assert models.Dataset.from_id(old_dataset.id)
+
+    new_dataset = models.Dataset(
+        name='dataset1',
+        license=old_dataset.license,
+        description=old_dataset.description,
+        acknowledgement=old_dataset.acknowledgement,
+    ).force_create(backup=True)
+    new_dataset.assert_remote()
+
+    # The old dataset should still exist on the server
+    assert models.Dataset.from_name('dataset1') == old_dataset
+    # The new dataset should also exist on the server
+    assert models.Dataset.from_name('dataset1-v1') == new_dataset

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path, PurePath
+import re
 from tempfile import TemporaryDirectory
 
 try:
@@ -312,10 +313,32 @@ class Dataset(ApiModel):
             for mesh in subject.meshes:
                 yield mesh
 
-    def force_create(self):
+    def force_create(self, backup=False):
+        """
+        Forcibly create the Dataset, even if it already exists.
+
+        If backup=False (the default), then the existing Dataset is deleted.
+        If backup=True, then the new Dataset will append an appropriate `-v*` version string to
+        its name before creation.
+        """
         old_dataset = Dataset.from_name(self.name)
         if old_dataset is not None:
-            old_dataset.delete()
+            if not backup:
+                # Delete the old dataset to resolve the collision
+                old_dataset.delete()
+            else:
+                # Use a version suffix to resolve the collision
+                version_regex = re.compile('(.*)-v([0-9]+)')
+                match = version_regex.match(self.name)
+                if match:
+                    # The old name had a suffix, so increment it
+                    name, old_version = match.groups()
+                    print(name, old_version)
+                    new_version = int(old_version) + 1
+                    self.name = f'{name}-v{new_version}'  # type: ignore
+                else:
+                    # The old name had no suffix, so append "-v1"
+                    self.name = f'{self.name}-v1'  # type: ignore
         return self.create()
 
     def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:

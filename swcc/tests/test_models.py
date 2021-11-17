@@ -157,3 +157,22 @@ def test_dataset_force_create_backup_no_version_suffix(session):
     assert models.Dataset.from_name('dataset1') == old_dataset
     # The new dataset should also exist on the server
     assert models.Dataset.from_name('dataset1-v1') == new_dataset
+
+
+def test_dataset_force_create_backup_multiple_conflicts(session):
+    old_dataset = factories.DatasetFactory(name='dataset').create()
+    factories.DatasetFactory(name='dataset-v1').create()
+    factories.DatasetFactory(name='dataset-v2').create()
+    factories.DatasetFactory(name='dataset-v3').create()
+    assert models.Dataset.from_id(old_dataset.id)
+
+    new_dataset = models.Dataset(
+        name='dataset',
+        license=old_dataset.license,
+        description=old_dataset.description,
+        acknowledgement=old_dataset.acknowledgement,
+    ).force_create(backup=True)
+    new_dataset.assert_remote()
+
+    # The new dataset should cascade up until it reaches dataset-v4
+    assert models.Dataset.from_name('dataset-v4') == new_dataset

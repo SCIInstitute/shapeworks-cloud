@@ -322,7 +322,7 @@ class Dataset(ApiModel):
         its name before creation.
         """
         old_dataset = Dataset.from_name(self.name)
-        if old_dataset is not None:
+        while old_dataset is not None:
             if not backup:
                 # Delete the old dataset to resolve the collision
                 old_dataset.delete()
@@ -339,6 +339,9 @@ class Dataset(ApiModel):
                 else:
                     # The old name had no suffix, so append "-v1"
                     self.name = f'{self.name}-v1'  # type: ignore
+            # We have a new name now, but that new name might also conflict.
+            # Keep looping until there is no conflict.
+            old_dataset = Dataset.from_name(self.name)
         return self.create()
 
     def add_project(self, file: Path, keywords: str = '', description: str = '') -> Project:

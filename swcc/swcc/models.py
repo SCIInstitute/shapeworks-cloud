@@ -140,9 +140,7 @@ class FileType(Generic[FieldId]):
             raise Exception('Unknown field id, this is likely a bug in the FileType class')
 
         with self.path.open('rb') as f:
-            self.field_value = session.s3ff.upload_file(f, self.path.name, self.field_id)[
-                'field_value'
-            ]
+            self.field_value = session.s3ff.upload_file(f, self.path.name, self.field_id)
 
         return self.field_value
 

@@ -59,6 +59,12 @@ class MeshViewSet(BaseViewSet):
     filterset_class = filters.MeshFilter
 
 
+class ImageViewSet(BaseViewSet):
+    queryset = models.Image.objects.all().order_by('subject')
+    serializer_class = serializers.ImageSerializer
+    filterset_class = filters.ImageFilter
+
+
 class ProjectViewSet(BaseViewSet):
     queryset = models.Project.objects.all()
     serializer_class = serializers.ProjectSerializer

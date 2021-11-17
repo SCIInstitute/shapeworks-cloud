@@ -32,6 +32,14 @@ class MeshSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ImageSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Image
+        fields = '__all__'
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
 

@@ -36,6 +36,12 @@ class Mesh(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='meshes')
 
 
+class Image(models.Model):
+    file = S3FileField()
+    modality = models.CharField(max_length=255)  # choices?
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='images')
+
+
 class Project(TimeStampedModel, models.Model):
     file = S3FileField()
     keywords = models.CharField(max_length=255, blank=True, default='')

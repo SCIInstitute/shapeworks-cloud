@@ -78,6 +78,15 @@ class MeshFactory(Factory):
     subject = SubFactory(SubjectFactory)
 
 
+class ImageFactory(Factory):
+    class Meta:
+        model = models.Image
+
+    file = Faker('file', extension='nrrd')
+    modality = Faker('word')
+    subject = SubFactory(SubjectFactory)
+
+
 class ProjectFactory(Factory):
     class Meta:
         model = models.Project

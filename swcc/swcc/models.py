@@ -382,7 +382,7 @@ class Dataset(ApiModel):
                 subject.add_segmentation(file=shape_file, anatomy_type='unknown')
             elif data_type == Mesh:
                 subject.add_mesh(file=shape_file, anatomy_type='unknown')
-            
+
             # TODO: where to find the modality?
             subject.add_image(file=image_file, modality='unknown')
 
@@ -426,7 +426,7 @@ class Subject(ApiModel):
     def add_mesh(self, file: Path, anatomy_type: str) -> Mesh:
         return Mesh(file=file, anatomy_type=anatomy_type, subject=self).create()
 
-    def add_image(self, file: Path, modality: str) -> Mesh:
+    def add_image(self, file: Path, modality: str) -> Image:
         return Image(file=file, modality=modality, subject=self).create()
 
 

@@ -14,6 +14,7 @@ router.register('datasets', rest.DatasetViewSet, basename='dataset')
 router.register('subjects', rest.SubjectViewSet, basename='subject')
 router.register('segmentations', rest.SegmentationViewSet, basename='segmentation')
 router.register('meshes', rest.MeshViewSet, basename='mesh')
+router.register('images', rest.ImageViewSet, basename='image')
 router.register('projects', rest.ProjectViewSet, basename='project')
 router.register(
     'groomed-segmentations', rest.GroomedSegmentationViewSet, basename='groomed_segmentation'

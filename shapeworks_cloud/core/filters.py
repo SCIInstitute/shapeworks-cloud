@@ -41,6 +41,14 @@ class MeshFilter(FilterSet):
         fields = ['subject']
 
 
+class ImageFilter(FilterSet):
+    subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
+
+    class Meta:
+        models = models.Image
+        fields = ['subject']
+
+
 class GroomedSegmentationFilter(FilterSet):
     project = ModelChoiceFilter(queryset=models.Project.objects.all())
     segmentation = ModelChoiceFilter(queryset=models.Segmentation.objects.all())

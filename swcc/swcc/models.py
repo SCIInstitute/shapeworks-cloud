@@ -313,6 +313,12 @@ class Dataset(ApiModel):
             for mesh in subject.meshes:
                 yield mesh
 
+    @property
+    def images(self) -> Iterator[Image]:
+        for subject in self.subjects:
+            for mesh in subject.images:
+                yield mesh
+
     def force_create(self, backup=False):
         """
         Forcibly create the Dataset, even if it already exists.
@@ -369,7 +375,7 @@ class Dataset(ApiModel):
 
         data = xls['data'].values
 
-        expected = ('shape_file',)
+        expected = ('shape_file', 'image_file')
         headers = next(data)
         if headers[: len(expected)] != expected:
             raise Exception(
@@ -386,6 +392,9 @@ class Dataset(ApiModel):
             shape_file = root / row[0]
             if not shape_file.exists():
                 raise Exception(f'Could not find shape file at "{shape_file}"')
+            image_file = root / row[1]
+            if not image_file.exists():
+                raise Exception(f'Could not find image file at "{image_file}"')
 
             subject_name = shape_file.stem
             if subject_name not in subjects:
@@ -399,6 +408,9 @@ class Dataset(ApiModel):
                 subject.add_segmentation(file=shape_file, anatomy_type='unknown')
             elif data_type == Mesh:
                 subject.add_mesh(file=shape_file, anatomy_type='unknown')
+
+            # TODO: where to find the modality?
+            subject.add_image(file=image_file, modality='unknown')
 
         return self
 
@@ -429,11 +441,19 @@ class Subject(ApiModel):
         self.assert_remote()
         return Mesh.list(subject=self)
 
+    @property
+    def images(self) -> Iterator[Image]:
+        self.assert_remote()
+        return Image.list(subject=self)
+
     def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
         return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create()
 
     def add_mesh(self, file: Path, anatomy_type: str) -> Mesh:
         return Mesh(file=file, anatomy_type=anatomy_type, subject=self).create()
+
+    def add_image(self, file: Path, modality: str) -> Image:
+        return Image(file=file, modality=modality, subject=self).create()
 
 
 class Segmentation(ApiModel):
@@ -449,6 +469,14 @@ class Mesh(ApiModel):
 
     file: FileType[Literal['core.Mesh.file']]
     anatomy_type: NonEmptyString
+    subject: Subject
+
+
+class Image(ApiModel):
+    _endpoint = 'images'
+
+    file: FileType[Literal['core.Image.file']]
+    modality: str
     subject: Subject
 
 

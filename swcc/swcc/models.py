@@ -375,7 +375,7 @@ class Dataset(ApiModel):
 
         data = xls['data'].values
 
-        expected = ('shape_file', 'image_file')
+        expected = ('shape_file',)
         headers = next(data)
         if headers[: len(expected)] != expected:
             raise Exception(
@@ -392,9 +392,6 @@ class Dataset(ApiModel):
             shape_file = root / row[0]
             if not shape_file.exists():
                 raise Exception(f'Could not find shape file at "{shape_file}"')
-            image_file = root / row[1]
-            if not image_file.exists():
-                raise Exception(f'Could not find image file at "{image_file}"')
 
             subject_name = shape_file.stem
             if subject_name not in subjects:
@@ -409,8 +406,13 @@ class Dataset(ApiModel):
             elif data_type == Mesh:
                 subject.add_mesh(file=shape_file, anatomy_type='unknown')
 
-            # TODO: where to find the modality?
-            subject.add_image(file=image_file, modality='unknown')
+            # The image_file column is optional
+            if row[1]:
+                image_file = root / row[1]
+                if not image_file.exists():
+                    raise Exception(f'Could not find image file at "{image_file}"')
+                # TODO: where to find the modality?
+                subject.add_image(file=image_file, modality='unknown')
 
         return self
 

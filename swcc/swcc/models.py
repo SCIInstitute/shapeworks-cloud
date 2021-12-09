@@ -145,7 +145,7 @@ class FileType(Generic[FieldId]):
 
         with self.path.open('rb') as f:
             logger.info('Uploading file %s', self.path.name)
-            self.field_value = session.s3ff.upload_file(f, self.path.name, self.field_id)
+            self.field_value = session.s3ff.upload_file(f, str(self.path.name), self.field_id)
             logger.debug('Uploaded file %s', self.path.name)
 
         return self.field_value
@@ -168,6 +168,7 @@ class FileType(Generic[FieldId]):
         r = requests.get(self.url, stream=True)
         raise_for_status(r)
 
+        logger.info('Downloading %s', path)
         with path.open('wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
@@ -182,6 +183,9 @@ class FileType(Generic[FieldId]):
                 raise Exception('Invalid file url')
             return unquote(self.url.path.split('/')[-1])
         raise Exception('Invalid file object')
+
+    def __str__(self):
+        return self.name
 
 
 ModelType = TypeVar('ModelType', bound='ApiModel')
@@ -286,6 +290,7 @@ class Dataset(ApiModel):
     _endpoint = 'datasets'
 
     name: NonEmptyString
+    file: Optional[FileType[Literal['core.Dataset.file']]] = None
     license: NonEmptyString
     description: NonEmptyString
     acknowledgement: NonEmptyString
@@ -372,8 +377,30 @@ class Dataset(ApiModel):
         except StopIteration:
             return None
 
+    def patch_file(self):
+        session = current_session()
+        self.assert_remote()
+        json = self.dict()
+        for key, value in self:
+            if isinstance(value, FileType):
+                json[key] = value.upload()
+        r: requests.Response = session.patch(f'{self._endpoint}/{self.id}/', json=json)
+        raise_for_status(r)
+        cls = self.__class__
+        cache = session.cache[cls]
+        if self.id in cache:
+            del cache[self.id]
+        reload = cls.from_id(self.id)
+        self.file = reload.file
+        return self
+
     def load_data_spreadsheet(self, file: Union[Path, str]) -> Dataset:
         file = Path(file)
+
+        self.file = FileType(path=file, field_id='core.Dataset.file')
+
+        self.patch_file()
+
         xls = load_workbook(str(file), read_only=True)
         if 'data' not in xls:
             raise Exception('`data` sheet not found')
@@ -424,12 +451,22 @@ class Dataset(ApiModel):
     def download(self, path: Union[Path, str]):
         self.assert_remote()
         path = Path(path)
-        for segmentation in self.segmentations:
-            # TODO: add a dataset spreadsheet to the data model and get the path from it
-            segmentation.file.download(path / 'segmentations')
-
+        dataset_file = None
+        if self.file:
+            dataset_file = self.file.download(path)
         for project in self.projects:
             project.download(path)
+        if not dataset_file:
+            return
+        xls = load_workbook(str(dataset_file), read_only=True)
+        for subject in self.subjects:
+            row = next(entry for entry in xls['data'].values if subject.name == Path(entry[0]).stem)
+            for segmentation in subject.segmentations:
+                segmentation.file.download(path / Path(row[0]).parent)
+            for mesh in subject.meshes:
+                mesh.file.download(path / Path(row[0]).parent)
+            for image in subject.images:
+                image.file.download(path / Path(row[1]).parent)
 
 
 class Subject(ApiModel):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path, PurePath
 import re
 from tempfile import TemporaryDirectory
@@ -52,6 +53,8 @@ import requests
 
 from .api import current_session
 from .utils import raise_for_status
+
+logger = logging.getLogger(__name__)
 
 FieldId = TypeVar('FieldId', bound=str)
 
@@ -141,7 +144,9 @@ class FileType(Generic[FieldId]):
             raise Exception('Unknown field id, this is likely a bug in the FileType class')
 
         with self.path.open('rb') as f:
+            logger.info('Uploading file %s', self.path.name)
             self.field_value = session.s3ff.upload_file(f, self.path.name, self.field_id)
+            logger.debug('Uploaded file %s', self.path.name)
 
         return self.field_value
 
@@ -339,7 +344,7 @@ class Dataset(ApiModel):
                 if match:
                     # The old name had a suffix, so increment it
                     name, old_version = match.groups()
-                    print(name, old_version)
+                    logger.info('Trying a new name: %s, %s', name, old_version)
                     new_version = int(old_version) + 1
                     self.name = f'{name}-v{new_version}'  # type: ignore
                 else:

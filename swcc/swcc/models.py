@@ -375,7 +375,7 @@ class Dataset(ApiModel):
 
         data = xls['data'].values
 
-        expected = ('shape_file',)
+        expected = ('shape_file', 'image_file')
         headers = next(data)
         if headers[: len(expected)] != expected:
             raise Exception(

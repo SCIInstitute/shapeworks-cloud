@@ -17,6 +17,7 @@ try:
         Type,
         TypeVar,
         Union,
+        cast,
         get_args,
     )
 except ImportError:
@@ -30,6 +31,7 @@ except ImportError:
         Type,
         TypeVar,
         Union,
+        cast,
     )
     from typing_extensions import (  # type: ignore
         Literal,
@@ -390,7 +392,7 @@ class Dataset(ApiModel):
         cache = session.cache[cls]
         if self.id in cache:
             del cache[self.id]
-        reload = cls.from_id(self.id)
+        reload = cls.from_id(cast(int, self.id))
         self.file = reload.file
         return self
 

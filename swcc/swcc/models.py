@@ -377,14 +377,17 @@ class Dataset(ApiModel):
         except StopIteration:
             return None
 
-    def create(self, *args, **kwargs):
-        result = super().create(*args, **kwargs)
+    def create(self) -> Dataset:
+        result = super().create()
         if self.file:
             self._load_data_spreadsheet()
         # Load the new dataset so we get an appropriate file field
+        assert result.id
         return Dataset.from_id(result.id)
 
     def _load_data_spreadsheet(self):
+        if not self.file or not self.file.path:
+            return
         file = self.file.path
 
         xls = load_workbook(str(file), read_only=True)

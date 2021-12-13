@@ -17,7 +17,6 @@ try:
         Type,
         TypeVar,
         Union,
-        cast,
         get_args,
     )
 except ImportError:
@@ -31,7 +30,6 @@ except ImportError:
         Type,
         TypeVar,
         Union,
-        cast,
     )
     from typing_extensions import (  # type: ignore
         Literal,
@@ -369,7 +367,7 @@ class Dataset(ApiModel):
             description=description,
             dataset=self,
         ).create()
-        return project.load_project_spreadsheet()
+        return project._load_project_spreadsheet()
 
     @classmethod
     def from_name(cls, name: str) -> Optional[Dataset]:
@@ -379,29 +377,15 @@ class Dataset(ApiModel):
         except StopIteration:
             return None
 
-    def patch_file(self):
-        session = current_session()
-        self.assert_remote()
-        json = self.dict()
-        for key, value in self:
-            if isinstance(value, FileType):
-                json[key] = value.upload()
-        r: requests.Response = session.patch(f'{self._endpoint}/{self.id}/', json=json)
-        raise_for_status(r)
-        cls = self.__class__
-        cache = session.cache[cls]
-        if self.id in cache:
-            del cache[self.id]
-        reload = cls.from_id(cast(int, self.id))
-        self.file = reload.file
-        return self
+    def create(self, *args, **kwargs):
+        result = super().create(*args, **kwargs)
+        if self.file:
+            self._load_data_spreadsheet()
+        # Load the new dataset so we get an appropriate file field
+        return Dataset.from_id(result.id)
 
-    def load_data_spreadsheet(self, file: Union[Path, str]) -> Dataset:
-        file = Path(file)
-
-        self.file = FileType(path=file, field_id='core.Dataset.file')
-
-        self.patch_file()
+    def _load_data_spreadsheet(self):
+        file = self.file.path
 
         xls = load_workbook(str(file), read_only=True)
         if 'data' not in xls:
@@ -447,8 +431,6 @@ class Dataset(ApiModel):
                     raise Exception(f'Could not find image file at "{image_file}"')
                 # TODO: where to find the modality?
                 subject.add_image(file=image_file, modality='unknown')
-
-        return self
 
     def download(self, path: Union[Path, str]):
         self.assert_remote()
@@ -585,7 +567,7 @@ class Project(ApiModel):
             parameters=parameters,
         ).create()
 
-    def load_project_spreadsheet(self) -> Project:
+    def _load_project_spreadsheet(self) -> Project:
         file = self.file.path
         assert file  # should be guaranteed by assert_local
 

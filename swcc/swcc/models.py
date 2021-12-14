@@ -384,7 +384,7 @@ class Dataset(ApiModel):
         for header in headers:
             if not (header.startswith('shape_') or header.startswith('image_')):
                 raise Exception(
-                    f'Unknown spreadsheet format in {file} - expected "shape_" or "image_" prefix, found {header}'
+                    f'Unknown spreadsheet format in {file} - expected "shape_" or "image_" prefix, found {header}'  # noqa: E501
                 )
         # split each header into ('shape', anatomy_type) and ('image', modality) tuples
         column_info = [header.split('_', 1) for header in headers]
@@ -401,7 +401,7 @@ class Dataset(ApiModel):
                 file_path: Path = root / cell
 
                 # Use the file name in the first cell as the subject name
-                if subject == None:
+                if subject is None:
                     subject_name = file_path.stem
                     if subject_name not in subjects:
                         subjects[subject_name] = self.add_subject(subject_name)

@@ -5,6 +5,8 @@ from shapeworks_cloud.core import models
 
 
 class DatasetSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField(required=False, allow_null=True)
+
     class Meta:
         model = models.Dataset
         fields = '__all__'

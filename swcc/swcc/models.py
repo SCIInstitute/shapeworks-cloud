@@ -145,7 +145,7 @@ class FileType(Generic[FieldId]):
 
         with self.path.open('rb') as f:
             logger.info('Uploading file %s', self.path.name)
-            self.field_value = session.s3ff.upload_file(f, self.path.name, self.field_id)
+            self.field_value = session.s3ff.upload_file(f, str(self.path.name), self.field_id)
             logger.debug('Uploaded file %s', self.path.name)
 
         return self.field_value
@@ -168,6 +168,7 @@ class FileType(Generic[FieldId]):
         r = requests.get(self.url, stream=True)
         raise_for_status(r)
 
+        logger.info('Downloading %s', path)
         with path.open('wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
@@ -182,6 +183,9 @@ class FileType(Generic[FieldId]):
                 raise Exception('Invalid file url')
             return unquote(self.url.path.split('/')[-1])
         raise Exception('Invalid file object')
+
+    def __str__(self):
+        return self.name
 
 
 ModelType = TypeVar('ModelType', bound='ApiModel')
@@ -286,6 +290,7 @@ class Dataset(ApiModel):
     _endpoint = 'datasets'
 
     name: NonEmptyString
+    file: Optional[FileType[Literal['core.Dataset.file']]] = None
     license: NonEmptyString
     description: NonEmptyString
     acknowledgement: NonEmptyString
@@ -362,7 +367,7 @@ class Dataset(ApiModel):
             description=description,
             dataset=self,
         ).create()
-        return project.load_project_spreadsheet()
+        return project._load_project_spreadsheet()
 
     @classmethod
     def from_name(cls, name: str) -> Optional[Dataset]:
@@ -372,8 +377,19 @@ class Dataset(ApiModel):
         except StopIteration:
             return None
 
-    def load_data_spreadsheet(self, file: Union[Path, str]) -> Dataset:
-        file = Path(file)
+    def create(self) -> Dataset:
+        result = super().create()
+        if self.file:
+            self._load_data_spreadsheet()
+        # Load the new dataset so we get an appropriate file field
+        assert result.id
+        return Dataset.from_id(result.id)
+
+    def _load_data_spreadsheet(self):
+        if not self.file or not self.file.path:
+            return
+        file = self.file.path
+
         xls = load_workbook(str(file), read_only=True)
         if 'data' not in xls:
             raise Exception('`data` sheet not found')
@@ -419,17 +435,25 @@ class Dataset(ApiModel):
                 # TODO: where to find the modality?
                 subject.add_image(file=image_file, modality='unknown')
 
-        return self
-
     def download(self, path: Union[Path, str]):
         self.assert_remote()
         path = Path(path)
-        for segmentation in self.segmentations:
-            # TODO: add a dataset spreadsheet to the data model and get the path from it
-            segmentation.file.download(path / 'segmentations')
-
+        dataset_file = None
+        if self.file:
+            dataset_file = self.file.download(path)
         for project in self.projects:
             project.download(path)
+        if not dataset_file:
+            return
+        xls = load_workbook(str(dataset_file), read_only=True)
+        for subject in self.subjects:
+            row = next(entry for entry in xls['data'].values if subject.name == Path(entry[0]).stem)
+            for segmentation in subject.segmentations:
+                segmentation.file.download(path / Path(row[0]).parent)
+            for mesh in subject.meshes:
+                mesh.file.download(path / Path(row[0]).parent)
+            for image in subject.images:
+                image.file.download(path / Path(row[1]).parent)
 
 
 class Subject(ApiModel):
@@ -546,7 +570,7 @@ class Project(ApiModel):
             parameters=parameters,
         ).create()
 
-    def load_project_spreadsheet(self) -> Project:
+    def _load_project_spreadsheet(self) -> Project:
         file = self.file.path
         assert file  # should be guaranteed by assert_local
 

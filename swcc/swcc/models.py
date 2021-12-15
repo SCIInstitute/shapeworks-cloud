@@ -388,6 +388,9 @@ class Dataset(ApiModel):
                 )
         # split each header into ('shape', anatomy_type) and ('image', modality) tuples
         column_info = [header.split('_', 1) for header in headers]
+        # at least one shape column must be present
+        if all(info[0] != 'shape' for info in column_info):
+            raise Exception('No "shape_" column specified')
 
         root = file.parent
         subjects: Dict[str, Subject] = {}

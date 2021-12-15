@@ -21,6 +21,7 @@ class BaseViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
     GenericViewSet,
 ):
     permission_classes = [IsAuthenticatedOrReadOnly]

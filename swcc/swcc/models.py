@@ -396,44 +396,51 @@ class Dataset(ApiModel):
 
         data = xls['data'].values
 
-        expected = ('shape_file', 'image_file')
         headers = next(data)
-        if headers[: len(expected)] != expected:
-            raise Exception(
-                'Unknown spreadsheet format in %r - expected headers to be %r, found %r'
-                % (file, expected, headers[: len(expected)])
-            )
+        for header in headers:
+            if not (header.startswith('shape_') or header.startswith('image_')):
+                raise Exception(
+                    f'Unknown spreadsheet format in {file} - expected "shape_" or "image_" prefix, found {header}'  # noqa: E501
+                )
+        # split each header into ('shape', anatomy_type) and ('image', modality) tuples
+        column_info = [header.split('_', 1) for header in headers]
+        # at least one shape column must be present
+        if all(info[0] != 'shape' for info in column_info):
+            raise Exception('No "shape_" column specified')
 
         root = file.parent
         subjects: Dict[str, Subject] = {}
 
         for row in data:
-            if not row[0]:
-                continue
-            shape_file = root / row[0]
-            if not shape_file.exists():
-                raise Exception(f'Could not find shape file at "{shape_file}"')
+            subject = None
+            for i, cell in enumerate(row):
+                if not cell:
+                    continue
+                file_type, domain = column_info[i]
+                file_path: Path = root / cell
 
-            subject_name = shape_file.stem
-            if subject_name not in subjects:
-                subjects[subject_name] = self.add_subject(subject_name)
+                # Use the file name in the first cell as the subject name
+                if subject is None:
+                    subject_name = file_path.stem
+                    if subject_name not in subjects:
+                        subjects[subject_name] = self.add_subject(subject_name)
+                    subject = subjects[subject_name]
 
-            subject = subjects[subject_name]
+                if file_type == 'shape':
+                    shape_file = file_path
+                    if not shape_file.exists():
+                        raise Exception(f'Could not find shape file at "{shape_file}"')
+                    data_type = shape_file_type(shape_file)
+                    if data_type == Segmentation:
+                        subject.add_segmentation(file=shape_file, anatomy_type=domain)
+                    elif data_type == Mesh:
+                        subject.add_mesh(file=shape_file, anatomy_type=domain)
 
-            # TODO: where to find the anatomy type?
-            data_type = shape_file_type(shape_file)
-            if data_type == Segmentation:
-                subject.add_segmentation(file=shape_file, anatomy_type='unknown')
-            elif data_type == Mesh:
-                subject.add_mesh(file=shape_file, anatomy_type='unknown')
-
-            # The image_file column is optional
-            if row[1]:
-                image_file = root / row[1]
-                if not image_file.exists():
-                    raise Exception(f'Could not find image file at "{image_file}"')
-                # TODO: where to find the modality?
-                subject.add_image(file=image_file, modality='unknown')
+                elif file_type == 'image':
+                    image_file = file_path
+                    if not image_file.exists():
+                        raise Exception(f'Could not find image file at "{image_file}"')
+                    subject.add_image(file=image_file, modality=domain)
 
     def download(self, path: Union[Path, str]):
         self.assert_remote()

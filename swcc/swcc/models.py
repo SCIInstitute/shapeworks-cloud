@@ -298,6 +298,21 @@ class Dataset(ApiModel):
     contributors: str = ''
     publications: str = ''
 
+    def __repr_args__(self: BaseModel):
+        return [
+            (key, value)
+            for key, value in self.__dict__.items()
+            if key
+            not in {
+                'license',
+                'description',
+                'acknowledgement',
+                'keywords',
+                'contributors',
+                'publications',
+            }
+        ]
+
     @property
     def subjects(self) -> Iterator[Subject]:
         self.assert_remote()
@@ -385,7 +400,7 @@ class Dataset(ApiModel):
         assert result.id
         return Dataset.from_id(result.id)
 
-    def _load_data_spreadsheet(self):
+    def _load_data_spreadsheet(self):  # noqa: C901
         if not self.file or not self.file.path:
             return
         file = self.file.path

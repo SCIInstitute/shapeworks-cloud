@@ -52,3 +52,8 @@ class ProductionConfiguration(ShapeworksCloudMixin, ProductionBaseConfiguration)
 
 class HerokuProductionConfiguration(ShapeworksCloudMixin, HerokuProductionBaseConfiguration):
     pass
+
+
+BASE_DIR = Path(__file__).resolve(strict=True).parent
+STATIC_ROOT = BASE_DIR / 'static'
+STATIC_URL = '/static/'

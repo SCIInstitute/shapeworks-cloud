@@ -4,6 +4,7 @@ module.exports = {
       warnings: false,
       errors: false,
     },
+    disableHostCheck: true,
   },
   chainWebpack: (config) => {
     // Add vtk.js shader loader
@@ -37,4 +38,8 @@ module.exports = {
   transpileDependencies: [
     'vuetify'
   ],
+  // in Django's TEMPLATE_DIRS
+  outputDir: '../../shapeworks_cloud/staticfiles',
+  // Django's STATIC_URL
+  assetsDir: '.',
 }

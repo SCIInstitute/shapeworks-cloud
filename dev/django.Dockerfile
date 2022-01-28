@@ -7,6 +7,16 @@ RUN apt-get update && \
         libgl1-mesa-glx libxt6 libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
+RUN curl -sL https://deb.nodesource.com/setup_16.x  | bash - && \
+    apt-get update && \
+    apt-get install --yes --no-install-recommends \
+    nodejs && \
+    npm install -g npm@latest && \
+    npm --version && \
+    node --version && \
+    npm install -g yarn && \
+    yarn --version
+
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 

@@ -86,6 +86,12 @@ Useful sub-commands include:
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
 
+## Deployed Instance
+
+See [https://app.shapeworks-cloud.org/](https://app.shapeworks-cloud.org/).
+
+There is some sample data at [https://girder.shapeworks-cloud.org/](https://girder.shapeworks-cloud.org/).  
+
 ## Shapeworks
 
 See [Shapeworks](http://sciinstitute.github.io/ShapeWorks/) for more details

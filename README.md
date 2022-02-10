@@ -90,7 +90,7 @@ some (but not all) of the style checks, run `tox -e format`.
 
 See [https://app.shapeworks-cloud.org/](https://app.shapeworks-cloud.org/).
 
-There is some sample data at [https://girder.shapeworks-cloud.org/](https://girder.shapeworks-cloud.org/).  
+There is some sample data at [https://girder.shapeworks-cloud.org/](https://girder.shapeworks-cloud.org/).
 
 ## Shapeworks
 

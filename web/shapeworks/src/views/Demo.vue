@@ -1,16 +1,10 @@
-<template>
-  <shape-viewer
-    :data="shapeData"
-    :rows="rows"
-    :columns="columns"
-    :glyph-size="glyphSize"
-  />
-</template>
+<script lang="ts">
+import { defineComponent, onMounted, ref } from '@vue/composition-api'
 
-<script>
-import ShapeViewer from '../components/ShapeViewer';
+import ShapeViewer from '../components/ShapeViewer.vue';
 import shapeReader from '../reader/shape';
 import pointsReader from '../reader/points';
+import { ShapeData } from '../types';
 
 const SHAPE_URLS = [
   'https://data.kitware.com/api/v1/item/6086c7282fa25629b9389550/download',
@@ -48,37 +42,49 @@ const POINTS_URLS = [
   'https://data.kitware.com/api/v1/item/6086c6352fa25629b9389426/download',
 ];
 
-export default {
+export default defineComponent({
   components: {
     ShapeViewer,
   },
-  data() {
-    return {
-      rows: 3,
-      columns: 4,
-      shapeData: [],
-      glyphSize: 1.5
-    };
-  },
-  created() {
-    this.loadData();
-  },
-  methods: {
-    async loadData() {
+  setup() {
+    const rows = 3
+    const columns = 5
+    const glyphSize = 1.5
+
+
+    const shapeData= ref<ShapeData[]>([])
+    onMounted(async () => {
       const shapes = await Promise.all(SHAPE_URLS.map(shapeReader));
       const points = await Promise.all(POINTS_URLS.map(pointsReader));
 
-      this.shapeData.length = 0;
+      shapeData.value = [];
       for (let i = 0; i < 15; i += 1) {
-        this.shapeData.push({
+        shapeData.value.push({
           points: points[i],
           shape: shapes[i],
         });
       }
-    },
+    });
+    console.log(shapeData)
+
+    return {
+      rows,
+      columns,
+      shapeData,
+      glyphSize,
+    };
   },
-};
+});
 </script>
+
+<template>
+  <shape-viewer
+    :data="shapeData"
+    :rows="rows"
+    :columns="columns"
+    :glyph-size="glyphSize"
+  />
+</template>
 
 <style>
 html {

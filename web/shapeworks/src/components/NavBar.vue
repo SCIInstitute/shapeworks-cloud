@@ -1,6 +1,7 @@
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
+import { selectedDataset } from '../store/index';
 
 
 export default defineComponent({
@@ -17,6 +18,7 @@ export default defineComponent({
     return {
       oauthClient,
       logInOrOut,
+      selectedDataset,
     }
   }
 })
@@ -34,19 +36,22 @@ export default defineComponent({
       <v-toolbar-title class="text-h6">Shapeworks</v-toolbar-title>
     </div>
     <v-tabs>
-      <v-tab to="/data">
+      <v-tab to="/">
+        Select
+      </v-tab>
+      <v-tab to="/data" v-if="selectedDataset">
         Data
       </v-tab>
-      <v-tab to="/groom">
+      <v-tab to="/groom" v-if="selectedDataset">
         Groom
       </v-tab>
-      <v-tab to="/optimize">
+      <v-tab to="/optimize" v-if="selectedDataset">
         Optimize
       </v-tab>
-      <v-tab to="/analyze">
+      <v-tab to="/analyze" v-if="selectedDataset">
         Analyze
       </v-tab>
-      <v-tab to="/">
+      <v-tab to="/demo">
         Demo
       </v-tab>
     </v-tabs>

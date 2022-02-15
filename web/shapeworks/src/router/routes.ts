@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter, { RouteConfig } from 'vue-router'
+import Select from '../views/Select.vue'
 import Data from '../views/Data.vue'
 import Groom from '../views/Groom.vue'
 import Optimize from '../views/Optimize.vue'
@@ -30,9 +31,14 @@ const routes: Array<RouteConfig> = [
     component: Analyze,
   },
   {
-    path: '/',
+    path: '/demo',
     name: 'demo',
     component: Demo,
+  },
+  {
+    path: '/',
+    name: 'select',
+    component: Select,
   },
   {
     path: '*',

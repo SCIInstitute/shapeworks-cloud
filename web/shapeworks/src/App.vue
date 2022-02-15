@@ -8,10 +8,7 @@ export default defineComponent({
     NavBar,
   },
   setup() {
-    console.log('setup', oauthClient)
-
     const logIn = () => {
-      console.log('redirect', oauthClient)
       oauthClient.redirectToLogin();
     }
     return {

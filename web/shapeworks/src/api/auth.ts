@@ -2,7 +2,7 @@ import axios from 'axios';
 import OauthClient from '@girder/oauth-client';
 
 
-export const axiosInstance = axios.create({
+export const apiClient = axios.create({
   baseURL: `${process.env.VUE_APP_API_ROOT}api`,
 });
 export const oauthClient = new OauthClient(
@@ -14,14 +14,18 @@ export async function restoreLogin() {
   if (!oauthClient) {
     return;
   }
-  console.log('maybe restore', oauthClient)
   await oauthClient.maybeRestoreLogin();
 }
 
-axiosInstance.interceptors.request.use((config) => ({
+apiClient.interceptors.request.use((config) => ({
   ...config,
   headers: {
     ...oauthClient?.authHeaders,
     ...config.headers,
   },
 }));
+
+export const logout = async () => {
+  await oauthClient.logout();
+  // TODO: clear cookies and local storage, which maintain csrftoken and sessionid
+}

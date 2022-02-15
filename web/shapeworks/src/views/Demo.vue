@@ -65,7 +65,6 @@ export default defineComponent({
         });
       }
     });
-    console.log(shapeData)
 
     return {
       rows,

@@ -1,20 +1,14 @@
 <script lang="ts">
-import { defineComponent, inject } from '@vue/composition-api'
-import OAuthClient from '@girder/oauth-client';
+import { defineComponent } from '@vue/composition-api'
+import { logout, oauthClient } from '@/api/auth';
 
 
 export default defineComponent({
   setup() {
-    const oauthClient = inject<OAuthClient>('oauthClient');
-    if (oauthClient === undefined) {
-      throw new Error('Must provide "oauthClient" into component.');
-    }
-
-    const logInOrOut = () => {
+    const logInOrOut = async() => {
       if (oauthClient.isLoggedIn) {
-        // TODO: this doesn't clear cookies and local storage,
-        // so our session is still restorable after logout
-        oauthClient.logout();
+        await logout();
+        window.location.reload();
       } else {
         oauthClient.redirectToLogin();
       }

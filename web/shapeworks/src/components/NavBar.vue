@@ -1,49 +1,64 @@
 <script lang="ts">
-export default {}
+import { defineComponent } from '@vue/composition-api'
+import { logout, oauthClient } from '@/api/auth';
+
+
+export default defineComponent({
+  setup() {
+    const logInOrOut = async() => {
+      if (oauthClient.isLoggedIn) {
+        await logout();
+        window.location.reload();
+      } else {
+        oauthClient.redirectToLogin();
+      }
+    }
+
+    return {
+      oauthClient,
+      logInOrOut,
+    }
+  }
+})
 </script>
 
 <template>
-  <v-app-bar
-    app
-    color="primary"
-    dark
-  >
-    <div class="d-flex align-center">
+  <v-app-bar app>
+    <div class="d-flex align-center px-5">
       <v-img
-        alt="Vuetify Logo"
-        class="shrink mr-2"
-        contain
-        src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
+        alt="Shapeworks Logo"
+        src="favicon.ico"
         transition="scale-transition"
-        width="40"
+        width="55px"
       />
-
-      <v-img
-        alt="Vuetify Name"
-        class="shrink mt-1 hidden-sm-and-down"
-        contain
-        min-width="100"
-        src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-        width="100"
-      />
+      <v-toolbar-title class="text-h6">Shapeworks</v-toolbar-title>
     </div>
     <v-tabs>
-      <v-tab to="data">
+      <v-tab to="/data">
         Data
       </v-tab>
-      <v-tab to="groom">
+      <v-tab to="/groom">
         Groom
       </v-tab>
-      <v-tab to="optimize">
+      <v-tab to="/optimize">
         Optimize
       </v-tab>
-      <v-tab to="analyze">
+      <v-tab to="/analyze">
         Analyze
       </v-tab>
-      <v-tab to="demo">
+      <v-tab to="/">
         Demo
       </v-tab>
     </v-tabs>
+    <v-spacer />
+    <v-btn
+    v-if="oauthClient.isLoggedIn"
+      text
+      @click="logInOrOut"
+    >
+      Logout
+    </v-btn>
+
   </v-app-bar>
 </template>
 

@@ -7,7 +7,7 @@ from rest_framework import permissions
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
-from shapeworks_cloud.core import rest, views
+from shapeworks_cloud.core import rest
 
 router = ExtendedSimpleRouter()
 router.register('datasets', rest.DatasetViewSet, basename='dataset')
@@ -39,7 +39,6 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('', views.home, name='home'),
     path('accounts/', include('allauth.urls')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),

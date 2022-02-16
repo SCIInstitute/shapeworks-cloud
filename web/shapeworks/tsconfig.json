@@ -37,8 +37,8 @@
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx",
-    "src/reader/shape.js",
-    "src/reader/points.js"
+    "src/reader/shape.ts",
+    "src/reader/points.ts"
   ],
   "exclude": [
     "node_modules"

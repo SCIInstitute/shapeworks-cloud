@@ -27,24 +27,28 @@ export default defineComponent({
     </v-main>
 
     <v-overlay
-        absolute
-        :value="!oauthClient.isLoggedIn"
-        :opacity="0.8"
-        style="margin-top: -30vh"
+      absolute
+      :value="!oauthClient.isLoggedIn"
+      :opacity="0.8"
+    >
+      <v-btn
+        color="primary"
+        @click="logIn"
       >
-        <v-btn
-          color="primary"
-          @click="logIn"
-        >
-          Log in to Continue
-        </v-btn>
-      </v-overlay>
+        Log in to Continue
+      </v-btn>
+    </v-overlay>
   </v-app>
 </template>
 
 <style>
 html {
-  height: 100vh;
-  overflow-y: hidden !important;
+  overflow-y: auto !important;
+}
+.v-overlay {
+  top: -100%!important;
+}
+.v-overlay__content {
+  top: 50vh;
 }
 </style>

@@ -3,7 +3,7 @@ import OauthClient from '@girder/oauth-client';
 
 
 export const apiClient = axios.create({
-  baseURL: `${process.env.VUE_APP_API_ROOT}api`,
+  baseURL: `${process.env.VUE_APP_API_ROOT}api/v1/`,
 });
 export const oauthClient = new OauthClient(
   process.env.VUE_APP_OAUTH_API_ROOT,

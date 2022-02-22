@@ -8,10 +8,7 @@ import router from '@/router/routes';
 export default defineComponent({
     setup() {
         onMounted(async () => {
-            selectedDataset.value = undefined;
-            if(allDatasets.value.length === 0){
-                allDatasets.value = await getDatasets();
-            }
+            allDatasets.value = await getDatasets();
         })
         function selectDataset (dataset: Dataset) {
             selectedDataset.value = dataset;

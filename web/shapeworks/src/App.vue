@@ -30,7 +30,6 @@ export default defineComponent({
       absolute
       :value="!oauthClient.isLoggedIn"
       :opacity="0.8"
-      style="margin-top: -30vh"
     >
       <v-btn
         color="primary"
@@ -45,5 +44,11 @@ export default defineComponent({
 <style>
 html {
   overflow-y: auto !important;
+}
+.v-overlay {
+  top: -100%!important;
+}
+.v-overlay__content {
+  top: 50vh;
 }
 </style>

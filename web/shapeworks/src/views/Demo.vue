@@ -84,10 +84,3 @@ export default defineComponent({
     :glyph-size="glyphSize"
   />
 </template>
-
-<style>
-html {
-  height: 100vh;
-  overflow-y: hidden !important;
-}
-</style>

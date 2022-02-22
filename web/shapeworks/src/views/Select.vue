@@ -36,7 +36,7 @@ export default defineComponent({
         class="dataset-card"
     >
         <div class="text-overline mb-4">
-            DATASET ({{ dataset.created }})
+            DATASET ({{ dataset.created.split('T')[0] }})
         </div>
         <v-list-item-title class="text-h5 mb-1">
             {{ dataset.name }}

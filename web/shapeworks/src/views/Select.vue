@@ -8,7 +8,11 @@ import router from '@/router/routes';
 export default defineComponent({
     setup() {
         onMounted(async () => {
-            allDatasets.value = await getDatasets();
+            allDatasets.value = (await getDatasets()).sort((a, b) => {
+                if(a.created < b.created) return 1;
+                if(a.created > b.created) return -1;
+                return 0;
+            });
         })
         function selectDataset (dataset: Dataset) {
             selectedDataset.value = dataset;
@@ -32,7 +36,7 @@ export default defineComponent({
         class="dataset-card"
     >
         <div class="text-overline mb-4">
-            DATASET {{ dataset.id }}
+            DATASET ({{ dataset.created }})
         </div>
         <v-list-item-title class="text-h5 mb-1">
             {{ dataset.name }}

@@ -44,7 +44,6 @@ export default defineComponent({
 
 <style>
 html {
-  height: 100vh;
-  overflow-y: hidden !important;
+  overflow-y: auto !important;
 }
 </style>

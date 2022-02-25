@@ -1,7 +1,7 @@
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
-import { selectedDataset } from '../store/index';
+import { selectedDataset, selectedSubject } from '../store/index';
 
 
 export default defineComponent({
@@ -19,6 +19,7 @@ export default defineComponent({
       oauthClient,
       logInOrOut,
       selectedDataset,
+      selectedSubject,
     }
   }
 })
@@ -39,16 +40,16 @@ export default defineComponent({
       <v-tab to="/">
         Select
       </v-tab>
-      <v-tab to="/data" v-if="selectedDataset">
+      <v-tab to="/data" v-if="selectedDataset && selectedSubject">
         Data
       </v-tab>
-      <v-tab to="/groom" v-if="selectedDataset">
+      <v-tab to="/groom" v-if="selectedDataset && selectedSubject">
         Groom
       </v-tab>
-      <v-tab to="/optimize" v-if="selectedDataset">
+      <v-tab to="/optimize" v-if="selectedDataset && selectedSubject">
         Optimize
       </v-tab>
-      <v-tab to="/analyze" v-if="selectedDataset">
+      <v-tab to="/analyze" v-if="selectedDataset && selectedSubject">
         Analyze
       </v-tab>
       <v-tab to="/demo">

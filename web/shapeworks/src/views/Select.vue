@@ -5,19 +5,22 @@ import {
     allDatasets,
     selectedDataset,
     allSubjectsForDataset,
-    selectedSubject
-} from '../store/index';
+    selectedSubject,
+    loadingState,
+} from '../store';
 import { Dataset, Subject } from '@/types';
-import router from '@/router/routes';
+import router from '@/router';
 
 export default defineComponent({
     setup() {
         async function getAllDatasets(){
+            loadingState.value = true;
             allDatasets.value = (await getDatasets()).sort((a, b) => {
                 if(a.created < b.created) return 1;
                 if(a.created > b.created) return -1;
                 return 0;
             });
+            loadingState.value = false;
         }
         onMounted(async () => {
             if(!selectedDataset.value) await getAllDatasets()
@@ -25,11 +28,13 @@ export default defineComponent({
         async function selectOrDeselectDataset (dataset: Dataset) {
             if(!selectedDataset.value){
                 selectedDataset.value = dataset;
+                loadingState.value = true;
                 allSubjectsForDataset.value = (await getSubjectsForDataset(dataset.id)).sort((a, b) => {
                     if(a.created < b.created) return 1;
                     if(a.created > b.created) return -1;
                     return 0;
                 });
+                loadingState.value = false;
             } else {
                 selectedDataset.value = undefined;
                 allSubjectsForDataset.value = [];
@@ -38,8 +43,10 @@ export default defineComponent({
             }
         }
         async function selectSubject (subject: Subject) {
+            if(!selectedDataset.value) return;
             selectedSubject.value = subject;
-            router.push('data')
+            const newRoute = `/data/dataset_${selectedDataset.value.id}/subject_${selectedSubject.value.id}`
+            router.push(newRoute)
         }
 
         return {

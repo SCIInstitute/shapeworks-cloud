@@ -1,27 +1,40 @@
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api'
+import { defineComponent, onMounted } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
-import { selectedDataset, selectedSubject } from '../store/index';
+import { selectedDataset, selectedSubject, loadingState } from '../store';
+import router from '@/router';
+import { getDataset, getSubject } from '@/api/rest';
 
 
 export default defineComponent({
-  setup() {
-    const logInOrOut = async() => {
-      if (oauthClient.isLoggedIn) {
-        await logout();
-        window.location.reload();
-      } else {
-        oauthClient.redirectToLogin();
-      }
-    }
+    setup() {
+        onMounted(async () => {
+            if (!router.currentRoute.params) return;
+            loadingState.value = true;
+            let { datasetId, subjectId } = router.currentRoute.params;
+            datasetId = datasetId.split('_')[1]
+            subjectId = subjectId.split('_')[1]
+            selectedDataset.value = await getDataset(datasetId);
+            selectedSubject.value = await getSubject(subjectId);
+            loadingState.value = false;
+        })
 
-    return {
-      oauthClient,
-      logInOrOut,
-      selectedDataset,
-      selectedSubject,
+        const logInOrOut = async() => {
+            if (oauthClient.isLoggedIn) {
+              await logout();
+              window.location.reload();
+            } else {
+              oauthClient.redirectToLogin();
+            }
+        }
+
+        return {
+            oauthClient,
+            logInOrOut,
+            selectedDataset,
+            selectedSubject,
+        }
     }
-  }
 })
 </script>
 

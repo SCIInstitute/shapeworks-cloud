@@ -1,6 +1,8 @@
 import { Dataset, Subject } from '@/types'
 import { ref } from '@vue/composition-api'
 
+export const loadingState = ref<boolean>(false)
+
 export const allDatasets = ref<Dataset[]>([])
 
 export const selectedDataset = ref<Dataset>()

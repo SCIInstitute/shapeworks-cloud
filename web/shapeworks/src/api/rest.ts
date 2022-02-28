@@ -20,10 +20,14 @@ export async function getSubject(subjectId: string): Promise<Subject>{
 }
 
 export async function getDataObjectsForSubject(subjectId: number): Promise<DataObject[]> {
-    const dataTypes = ['images', 'segmentations', 'meshes']
+    const dataTypes = ['image', 'segmentation', 'mesh']
     return (await Promise.all(dataTypes.map((type) => {
-        return apiClient.get(`/${type}/`, {
+        return apiClient.get(`/${type}${type == 'mesh' ?'es' :'s'}/`, {
             params: {subject: subjectId}
         })
-    }))).map((response) => response.data.results).flat(2)
+    }))).map((response, index) => {
+        return response.data.results.map((result: DataObject) => Object.assign(
+            result, {type: dataTypes[index]}
+        ))
+    }).flat(2)
 }

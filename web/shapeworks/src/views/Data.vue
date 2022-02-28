@@ -1,7 +1,12 @@
 <script lang="ts">
 import { getDataObjectsForSubject } from '@/api/rest';
-import { defineComponent, onMounted } from '@vue/composition-api';
-import { selectedDataset, selectedSubject, allDataObjectsForSubject } from '../store';
+import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import {
+    selectedDataset,
+    selectedSubject,
+    allDataObjectsForSubject,
+    selectedDataObjects,
+} from '../store';
 
 
 export default defineComponent({
@@ -11,9 +16,28 @@ export default defineComponent({
             allDataObjectsForSubject.value = await getDataObjectsForSubject(selectedSubject.value.id)
         })
 
+        const mini = ref(false);
+        const search = ref('');
+        const headers = [
+            {text: 'ID', sortable: true, value: 'id'},
+            {text: 'Type', sortable: true, value: 'type'},
+            {text: 'File Name', sortable: true, value: 'file'},
+        ]
+
+        function shortFileName(file: string) {
+            const split = file.split('?')[0].split('/')
+            return split[split.length-1]
+        }
+
         return {
+            mini,
+            search,
+            headers,
             selectedDataset,
             selectedSubject,
+            allDataObjectsForSubject,
+            selectedDataObjects,
+            shortFileName,
         }
     }
 })
@@ -21,7 +45,7 @@ export default defineComponent({
 
 
 <template>
-    <div>
+    <div style="height: 100%">
         <div class="context-card">
             <div>
                 <div class="text-overline">
@@ -42,6 +66,58 @@ export default defineComponent({
         </div>
         <v-divider />
 
+        <div class='content-area'>
+            <v-navigation-drawer :mini-variant.sync="mini" width="500" absolute>
+                <v-list-item>
+                    <v-btn
+                        icon
+                        @click.stop="mini=false"
+                        class="pr-3"
+                    >
+                    <v-icon large>mdi-database</v-icon>
+                    </v-btn>
+                    <v-list-item-title class="text-h6">
+                        Data Objects
+                    </v-list-item-title>
+                    <v-btn
+                        icon
+                        v-if="!mini"
+                        @click.stop="mini=true"
+                    >
+                    <v-icon large>mdi-chevron-left</v-icon>
+                    </v-btn>
+                </v-list-item>
+                <v-list-item>
+                    <v-icon />
+                    <div>
+                        <v-text-field
+                            v-model="search"
+                            append-icon="mdi-magnify"
+                            label="Search"
+                            single-line
+                            hide-details
+                            class="pa-5"
+                        ></v-text-field>
+                        <v-data-table
+                            v-model="selectedDataObjects"
+                            :headers="headers"
+                            :items="allDataObjectsForSubject"
+                            :search="search"
+                            show-select
+                        >
+                            <!-- eslint-disable-next-line -->
+                            <template v-slot:item.file="{ item }">
+                                <span>{{ shortFileName(item.file) }}</span>
+                            </template>
+                        </v-data-table>
+                    </div>
+                </v-list-item>
+            </v-navigation-drawer>
+
+            <div class="pa-5 render-area" :style="mini ?'margin-left: 80px' :'margin-left:520px'">
+                <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -50,6 +126,15 @@ export default defineComponent({
     display: flex;
     column-gap: 40px;
     padding: 10px 20px;
-    width: 100%
+    width: 100%;
+    height: 80px;
+}
+.content-area {
+    position: relative;
+    min-height: calc(100vh - 161px);
+}
+.render-area {
+    display: flex;
+    justify-content: space-around;
 }
 </style>

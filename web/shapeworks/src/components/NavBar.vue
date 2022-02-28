@@ -47,7 +47,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <v-app-bar app>
+  <v-app-bar app height="80px">
     <div class="d-flex align-center px-5">
       <v-img
         alt="Shapeworks Logo"

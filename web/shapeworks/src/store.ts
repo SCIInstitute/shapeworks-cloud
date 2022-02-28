@@ -12,3 +12,5 @@ export const allSubjectsForDataset = ref<Subject[]>([])
 export const selectedSubject = ref<Subject>()
 
 export const allDataObjectsForSubject = ref<DataObject[]>([])
+
+export const selectedDataObjects = ref<DataObject[]>([])

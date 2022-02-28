@@ -27,6 +27,7 @@ export interface Subject {
 }
 
 export interface DataObject {
+    type: string,
     id: number,
     subject: number,
     file: string,

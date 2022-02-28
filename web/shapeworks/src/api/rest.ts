@@ -18,3 +18,10 @@ export async function getSubjectsForDataset(datasetId: number): Promise<Subject[
 export async function getSubject(subjectId: string): Promise<Subject>{
     return (await apiClient.get(`/subjects/${subjectId}`)).data
 }
+
+export async function getDataObjectsForSubject(subjectId: number) {
+    const dataObjects = []
+    console.log((await apiClient.get(`/images/`, {
+        params: {subject: subjectId}
+    })).data.results)
+}

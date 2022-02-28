@@ -22,19 +22,21 @@ export default defineComponent({
             });
             loadingState.value = false;
         }
-        onMounted(async () => {
-            if(!selectedDataset.value) await getAllDatasets()
-        })
+
+        async function fetchAllSubjects(datasetId: number) {
+            loadingState.value = true;
+            allSubjectsForDataset.value = (await getSubjectsForDataset(datasetId)).sort((a, b) => {
+                if(a.created < b.created) return 1;
+                if(a.created > b.created) return -1;
+                return 0;
+            });
+            loadingState.value = false;
+        }
+
         async function selectOrDeselectDataset (dataset: Dataset) {
             if(!selectedDataset.value){
                 selectedDataset.value = dataset;
-                loadingState.value = true;
-                allSubjectsForDataset.value = (await getSubjectsForDataset(dataset.id)).sort((a, b) => {
-                    if(a.created < b.created) return 1;
-                    if(a.created > b.created) return -1;
-                    return 0;
-                });
-                loadingState.value = false;
+                await fetchAllSubjects(dataset.id)
             } else {
                 selectedDataset.value = undefined;
                 allSubjectsForDataset.value = [];
@@ -42,12 +44,25 @@ export default defineComponent({
                 await getAllDatasets();
             }
         }
+
         async function selectSubject (subject: Subject) {
             if(!selectedDataset.value) return;
             selectedSubject.value = subject;
-            const newRoute = `/data/dataset_${selectedDataset.value.id}/subject_${selectedSubject.value.id}`
+            const newRoute = `/data?dataset=${selectedDataset.value.id}&subject=${selectedSubject.value.id}`
             router.push(newRoute)
         }
+
+        onMounted(async () => {
+            await getAllDatasets();
+            if(selectedDataset.value){
+                const datasetId = selectedDataset.value.id;
+                // reset selectedDataset to maintain updates from latest fetch of all datasets
+                selectedDataset.value = allDatasets.value.find(
+                    (d) => d.id == datasetId
+                )
+                await fetchAllSubjects(datasetId)
+            }
+        })
 
         return {
             allDatasets,

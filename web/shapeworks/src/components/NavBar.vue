@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, onMounted } from '@vue/composition-api'
+import { defineComponent, onMounted, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
 import { selectedDataset, selectedSubject, loadingState } from '../store';
 import router from '@/router';
@@ -9,14 +9,21 @@ import { getDataset, getSubject } from '@/api/rest';
 export default defineComponent({
     setup() {
         onMounted(async () => {
-            if (!router.currentRoute.params) return;
+            let datasetId: string = router.currentRoute.query.dataset as string;
+            let subjectId: string = router.currentRoute.query.subject as string;
+            if (!(datasetId && subjectId)) return;
             loadingState.value = true;
-            let { datasetId, subjectId } = router.currentRoute.params;
-            datasetId = datasetId.split('_')[1]
-            subjectId = subjectId.split('_')[1]
             selectedDataset.value = await getDataset(datasetId);
             selectedSubject.value = await getSubject(subjectId);
             loadingState.value = false;
+        })
+
+        const queryParams = computed(() => {
+          if(selectedDataset.value && selectedSubject.value){
+            `?dataset=${selectedDataset.value.id}}&subject=${selectedSubject.value.id}`
+          } else {
+            return '';
+          }
         })
 
         const logInOrOut = async() => {
@@ -30,6 +37,7 @@ export default defineComponent({
 
         return {
             oauthClient,
+            queryParams,
             logInOrOut,
             selectedDataset,
             selectedSubject,

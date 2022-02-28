@@ -11,27 +11,27 @@ Vue.use(VueRouter)
 
 const routes: Array<RouteConfig> = [
   {
-    path: '/data/:datasetId?/:subjectId?',
+    path: '/data',
     name: 'data',
     component: Data
   },
   {
-    path: '/groom:datasetId?/:subjectId?',
+    path: '/groom',
     name: 'groom',
     component: Groom
   },
   {
-    path: '/optimize:datasetId?/:subjectId?',
+    path: '/optimize',
     name: 'optimize',
     component: Optimize
   },
   {
-    path: '/analyze:datasetId?/:subjectId?',
+    path: '/analyze',
     name: 'analyze',
     component: Analyze,
   },
   {
-    path: '/demo:datasetId?/:subjectId?',
+    path: '/demo',
     name: 'demo',
     component: Demo,
   },

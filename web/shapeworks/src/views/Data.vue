@@ -1,4 +1,5 @@
 <script lang="ts">
+import { getDataObjectsForSubject } from '@/api/rest';
 import { defineComponent, onMounted } from '@vue/composition-api';
 import { selectedDataset, selectedSubject } from '../store';
 
@@ -7,6 +8,7 @@ export default defineComponent({
     setup() {
         onMounted(async () => {
             if (!selectedSubject.value) return;
+            await getDataObjectsForSubject(selectedSubject.value.id)
         })
 
         return {

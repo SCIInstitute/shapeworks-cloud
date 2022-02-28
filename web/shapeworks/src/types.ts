@@ -25,3 +25,11 @@ export interface Subject {
     created: string,
     modified: string,
 }
+
+export interface DataObject {
+    id: number,
+    subject: number,
+    file: string,
+    modality: string,
+    anatomy_type: string,
+}

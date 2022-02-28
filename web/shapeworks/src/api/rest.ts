@@ -1,4 +1,4 @@
-import { Dataset, Subject } from "@/types";
+import { DataObject, Dataset, Subject } from "@/types";
 import { apiClient } from "./auth";
 
 export async function getDatasets(): Promise<Dataset[]>{
@@ -19,9 +19,11 @@ export async function getSubject(subjectId: string): Promise<Subject>{
     return (await apiClient.get(`/subjects/${subjectId}`)).data
 }
 
-export async function getDataObjectsForSubject(subjectId: number) {
-    const dataObjects = []
-    console.log((await apiClient.get(`/images/`, {
-        params: {subject: subjectId}
-    })).data.results)
+export async function getDataObjectsForSubject(subjectId: number): Promise<DataObject[]> {
+    const dataTypes = ['images', 'segmentations', 'meshes']
+    return (await Promise.all(dataTypes.map((type) => {
+        return apiClient.get(`/${type}/`, {
+            params: {subject: subjectId}
+        })
+    }))).map((response) => response.data.results).flat(2)
 }

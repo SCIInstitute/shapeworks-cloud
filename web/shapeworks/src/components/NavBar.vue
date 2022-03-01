@@ -1,30 +1,15 @@
 <script lang="ts">
-import { defineComponent, onMounted, computed } from '@vue/composition-api'
+import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
-import { selectedDataset, selectedSubject, loadingState } from '../store';
-import router from '@/router';
-import { getDataset, getSubject } from '@/api/rest';
+import { selectedDataset, selectedSubject } from '../store';
 
 
 export default defineComponent({
     setup() {
-        onMounted(async () => {
-            let datasetId: string = router.currentRoute.query.dataset as string;
-            let subjectId: string = router.currentRoute.query.subject as string;
-            if (!(datasetId && subjectId)) return;
-            loadingState.value = true;
-            selectedDataset.value = await getDataset(datasetId);
-            selectedSubject.value = await getSubject(subjectId);
-            loadingState.value = false;
-        })
-
-        const queryParams = computed(() => {
-          if(selectedDataset.value && selectedSubject.value){
-            `?dataset=${selectedDataset.value.id}}&subject=${selectedSubject.value.id}`
-          } else {
-            return '';
-          }
-        })
+        const params = computed(() => ({
+          dataset: selectedDataset.value?.id,
+          subject: selectedSubject.value?.id,
+        }))
 
         const logInOrOut = async() => {
             if (oauthClient.isLoggedIn) {
@@ -37,7 +22,7 @@ export default defineComponent({
 
         return {
             oauthClient,
-            queryParams,
+            params,
             logInOrOut,
             selectedDataset,
             selectedSubject,
@@ -61,16 +46,16 @@ export default defineComponent({
       <v-tab to="/">
         Select
       </v-tab>
-      <v-tab to="/data" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'data', params}" v-if="selectedDataset && selectedSubject">
         Data
       </v-tab>
-      <v-tab to="/groom" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'groom', params}" v-if="selectedDataset && selectedSubject">
         Groom
       </v-tab>
-      <v-tab to="/optimize" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'optimize', params}" v-if="selectedDataset && selectedSubject">
         Optimize
       </v-tab>
-      <v-tab to="/analyze" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'analyze', params}" v-if="selectedDataset && selectedSubject">
         Analyze
       </v-tab>
       <v-tab to="/demo">

@@ -1,16 +1,25 @@
 <script lang="ts">
+import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
+
+import imageReader from '../reader/image';
 import { getDataObjectsForSubject } from '@/api/rest';
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
+import { ShapeData } from '../types';
+import ShapeViewer from '../components/ShapeViewer.vue';
 import {
     selectedDataset,
     selectedSubject,
     loadDatasetAndSubject,
     allDataObjectsForSubject,
     selectedDataObjects,
+    loadingState,
 } from '../store';
 
 
 export default defineComponent({
+    components: {
+        ShapeViewer,
+    },
     props: {
         dataset: {
             type: Number,
@@ -35,16 +44,49 @@ export default defineComponent({
             {text: 'Type', sortable: true, value: 'type'},
             {text: 'File Name', sortable: true, value: 'file'},
         ]
+        const rows = ref<number>(1);
+        const cols = ref<number>(1);
+        const renderData = ref<ShapeData[]>([]);
+
+
+        async function fetchDataObjects() {
+            if (!selectedSubject.value) return;
+            loadingState.value = true;
+            allDataObjectsForSubject.value = await getDataObjectsForSubject(selectedSubject.value.id)
+            renderData.value = []
+            loadingState.value = false;
+        }
 
         function shortFileName(file: string) {
             const split = file.split('?')[0].split('/')
             return split[split.length-1]
         }
 
+        onMounted(async () => {
+            fetchDataObjects();
+        })
+
+        watch(selectedSubject, fetchDataObjects)
+
+        watch(selectedDataObjects, async () => {
+            renderData.value = []
+            renderData.value = (await Promise.all(selectedDataObjects.value.map(
+                (dataObject) => imageReader(
+                    dataObject.file,
+                    shortFileName(dataObject.file)
+                )
+            ))).map(
+                (shape) => ({ shape, points: vtkPolyData.newInstance() })
+            );
+        })
+
         return {
             mini,
             search,
             headers,
+            rows,
+            cols,
+            renderData,
             selectedDataset,
             selectedSubject,
             allDataObjectsForSubject,
@@ -126,8 +168,15 @@ export default defineComponent({
                 </v-list-item>
             </v-navigation-drawer>
 
-            <div class="pa-5 render-area" :style="mini ?'margin-left: 80px' :'margin-left:520px'">
+            <div :class="mini ?'pa-5 render-area maximize' :'pa-5 render-area'">
                 <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
+                <shape-viewer
+                    v-else
+                    :data="renderData"
+                    :rows="rows"
+                    :columns="cols"
+                    :glyph-size="1.5"
+                />
             </div>
         </div>
     </div>
@@ -146,7 +195,18 @@ export default defineComponent({
     min-height: calc(100vh - 161px);
 }
 .render-area {
+    position: absolute;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
+    left: 500px;
+    width: calc(100% - 500px);
+    height: 100%;
+}
+.render-area.maximize {
+    left: 60px;
+    width: calc(100% - 60px);
+}
+.render-area > * {
+    flex-grow: 1;
 }
 </style>

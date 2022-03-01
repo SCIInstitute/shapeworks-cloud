@@ -1,12 +1,13 @@
 <template>
   <div
-    class="full-screen"
     ref="vtk"
     v-resize="resize"
   />
 </template>
 
 <script>
+import 'vtk.js/Sources/Rendering/Profiles/All';
+
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkCalculator from 'vtk.js/Sources/Filters/General/Calculator';
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera';
@@ -231,7 +232,6 @@ export default {
           this.vtk.renderers.push(this.createRenderer(this.grid[i], this.data[i].points, this.data[i].shape));
         }
       }
-
       this.render();
     },
     render() {
@@ -240,9 +240,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.full-screen {
-  height: calc(100vh - 64px);
-}
-</style>

@@ -75,6 +75,7 @@ export default defineComponent({
             selectOrDeselectDataset,
             allSubjectsForDataset,
             selectSubject,
+            loadingState,
         }
     }
 })
@@ -82,6 +83,9 @@ export default defineComponent({
 
 <template>
     <div class="flex-container pa-5">
+        <v-card v-if="allDatasets.length === 0 && !loadingState" width="100%">
+            <v-card-title>No datasets.</v-card-title>
+        </v-card>
         <v-card
             v-for="dataset in allDatasets"
             :key="'dataset_'+dataset.id"
@@ -154,7 +158,7 @@ export default defineComponent({
 .flex-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: stretch;
     column-gap: 15px;
     row-gap: 15px;
     overflow: auto;

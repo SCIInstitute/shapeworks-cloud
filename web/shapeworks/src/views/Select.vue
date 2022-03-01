@@ -48,8 +48,13 @@ export default defineComponent({
         async function selectSubject (subject: Subject) {
             if(!selectedDataset.value) return;
             selectedSubject.value = subject;
-            const newRoute = `/data?dataset=${selectedDataset.value.id}&subject=${selectedSubject.value.id}`
-            router.push(newRoute)
+            router.push({
+                name: 'data',
+                params: {
+                    dataset: String(selectedDataset.value.id),
+                    subject: String(selectedSubject.value.id)
+                }
+            });
         }
 
         onMounted(async () => {

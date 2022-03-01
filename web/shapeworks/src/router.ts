@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import VueRouter, { RouteConfig } from 'vue-router'
+import VueRouter, { Route, RouteConfig } from 'vue-router'
 import Select from './views/Select.vue'
 import Data from './views/Data.vue'
 import Groom from './views/Groom.vue'
@@ -9,25 +9,34 @@ import Demo from './views/Demo.vue'
 
 Vue.use(VueRouter)
 
+const castDatasetAndSubjectProps = (route: Route) => ({
+  dataset: parseInt(route.params.dataset),
+  subject: parseInt(route.params.subject),
+});
+
 const routes: Array<RouteConfig> = [
   {
-    path: '/data',
+    path: '/dataset/:dataset/subject/:subject/data',
     name: 'data',
+    props: castDatasetAndSubjectProps,
     component: Data
   },
   {
-    path: '/groom',
+    path: '/dataset/:dataset/subject/:subject/groom',
     name: 'groom',
+    props: castDatasetAndSubjectProps,
     component: Groom
   },
   {
-    path: '/optimize',
+    path: '/dataset/:dataset/subject/:subject/optimize',
     name: 'optimize',
+    props: castDatasetAndSubjectProps,
     component: Optimize
   },
   {
-    path: '/analyze',
+    path: '/dataset/:dataset/subject/:subject/analyze',
     name: 'analyze',
+    props: castDatasetAndSubjectProps,
     component: Analyze,
   },
   {

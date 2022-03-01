@@ -4,14 +4,26 @@ import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import {
     selectedDataset,
     selectedSubject,
+    loadDatasetAndSubject,
     allDataObjectsForSubject,
     selectedDataObjects,
 } from '../store';
 
 
 export default defineComponent({
-    setup() {
+    props: {
+        dataset: {
+            type: Number,
+            required: true,
+        },
+        subject: {
+            type: Number,
+            required: true,
+        },
+    },
+    setup(props) {
         onMounted(async () => {
+            await loadDatasetAndSubject(props.dataset, props.subject);
             if (!selectedSubject.value) return;
             allDataObjectsForSubject.value = await getDataObjectsForSubject(selectedSubject.value.id)
         })

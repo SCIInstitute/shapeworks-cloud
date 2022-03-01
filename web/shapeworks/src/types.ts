@@ -1,10 +1,11 @@
 
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 
 
 export interface ShapeData {
     points: vtkPolyData,
-    shape: number,
+    shape: vtkPolyData | vtkImageData,
 }
 
 export interface Dataset {

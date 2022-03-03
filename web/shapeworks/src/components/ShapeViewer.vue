@@ -215,7 +215,7 @@ export default {
 
       this.vtk.renderWindow.addRenderer(renderer);
 
-      this.addPoints(renderer, points);
+      // this.addPoints(renderer, points);
       this.addShape(renderer, shape);
       renderer.resetCamera();
       return renderer;

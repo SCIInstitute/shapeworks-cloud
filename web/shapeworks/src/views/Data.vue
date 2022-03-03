@@ -78,6 +78,16 @@ export default defineComponent({
             ))).map(
                 (shape) => ({ shape, points: vtkPolyData.newInstance() })
             );
+            const n = renderData.value.length;
+            const sqrt = Math.ceil(Math.sqrt(n));
+            if(sqrt <= 5) {
+                rows.value = Math.ceil(n / sqrt);
+                cols.value = sqrt;
+            } else {
+                rows.value = Math.ceil(n / 5);
+                cols.value = 5;
+            }
+
         })
 
         return {

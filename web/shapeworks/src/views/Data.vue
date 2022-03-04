@@ -39,11 +39,7 @@ export default defineComponent({
 
         const mini = ref(false);
         const search = ref('');
-        const headers = [
-            {text: 'ID', sortable: true, value: 'id'},
-            {text: 'Type', sortable: true, value: 'type'},
-            {text: 'File Name', sortable: true, value: 'file'},
-        ]
+        const headers = ref()
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<ShapeData[]>([]);
@@ -62,13 +58,46 @@ export default defineComponent({
             return split[split.length-1]
         }
 
+        function displayLocation(id: number){
+            const selectedObjectIds = selectedDataObjects.value.map((obj) => obj.id)
+            if(selectedObjectIds.includes(id)){
+                const index = selectedObjectIds.indexOf(id);
+                const i = index % cols.value;
+                const j = Math.floor(index / cols.value)
+
+                return "ABCDE".charAt(i)+(j+1).toString();
+            }
+            return '';
+        }
+
+        function updateDisplayLocations() {
+            allDataObjectsForSubject.value = allDataObjectsForSubject.value.map(
+                (obj) => Object.assign(obj, {'display': displayLocation(obj.id)})
+            )
+        }
+
+        function setTableHeaders() {
+            headers.value = [
+                {text: 'ID', sortable: true, value: 'id'},
+                {text: 'Type', sortable: true, value: 'type'},
+                {text: 'File Name', sortable: true, value: 'file'},
+
+            ]
+            if(selectedDataObjects.value.length > 0){
+                headers.value.push(
+                    {text: 'Display', sortable: true, value: 'display'}
+                )
+            }
+        }
+
         onMounted(async () => {
             fetchDataObjects();
+            setTableHeaders();
         })
 
         watch(selectedSubject, fetchDataObjects)
 
-        watch(selectedDataObjects, async () => {
+        watch(selectedDataObjects, async (currentValue, oldValue) => {
             renderData.value = []
             renderData.value = (await Promise.all(selectedDataObjects.value.map(
                 (dataObject) => imageReader(
@@ -87,7 +116,10 @@ export default defineComponent({
                 rows.value = Math.ceil(n / 5);
                 cols.value = 5;
             }
-
+            if(currentValue.length !== oldValue.length){
+                updateDisplayLocations();
+                setTableHeaders();
+            }
         })
 
         return {
@@ -180,13 +212,24 @@ export default defineComponent({
 
             <div :class="mini ?'pa-5 render-area maximize' :'pa-5 render-area'">
                 <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
+                <template v-else>
                 <shape-viewer
-                    v-else
                     :data="renderData"
                     :rows="rows"
                     :columns="cols"
                     :glyph-size="1.5"
                 />
+                <div class="column-index labels">
+                    <div v-for="i in Array(cols).keys()" v-bind:key="i">
+                        {{"ABCDE".charAt(i)}}
+                    </div>
+                </div>
+                <div class="row-index labels">
+                    <div v-for="j in Array(rows).keys()" v-bind:key="j">
+                        {{j+1}}
+                    </div>
+                </div>
+                </template>
             </div>
         </div>
     </div>
@@ -218,5 +261,18 @@ export default defineComponent({
 }
 .render-area > * {
     flex-grow: 1;
+}
+.labels {
+    position: absolute;
+    display: flex;
+    justify-content: space-around;
+}
+.column-index {
+    width: calc(100% - 40px);
+    flex-direction: row;
+}
+.row-index {
+    height: calc(100% - 40px);
+    flex-direction: column;
 }
 </style>

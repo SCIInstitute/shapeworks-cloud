@@ -4,6 +4,7 @@ import vtkPLYReader from 'vtk.js/Sources/IO/Geometry/PLYReader';
 import readImageArrayBuffer from 'itk/readImageArrayBuffer';
 import ITKHelper from 'vtk.js/Sources/Common/DataModel/ITKHelper';
 import axios from 'axios';
+import shapeReader from './shape'
 
 const { convertItkToVtkImage } = ITKHelper;
 
@@ -21,6 +22,8 @@ export default async function (
     } else if (filename.toLowerCase().endsWith('nrrd')) {
         const { image } = await readImageArrayBuffer(null, arrayBuffer, filename)
         return convertItkToVtkImage(image)
+    } else if (filename.toLowerCase().endsWith('vtp')) {
+        return shapeReader(url)
     }
     return vtkImageData.newInstance()
   }

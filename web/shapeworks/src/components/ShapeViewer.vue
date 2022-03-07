@@ -19,6 +19,7 @@ import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
 import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
+import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
@@ -197,25 +198,54 @@ export default {
       this.vtk.pointMappers.push(mapper);
     },
     addShape(renderer, shape) {
-      const mapper = vtkMapper.newInstance({
-        colorMode: ColorMode.MAP_SCALARS,
-      });
-      const actor = vtkActor.newInstance();
-      actor.getProperty().setColor(1, 1, 1);
-      actor.getProperty().setOpacity(1);
 
-      actor.setMapper(mapper);
-      mapper.setInputData(shape);
-      renderer.addActor(actor);
+      if (shape.getClassName() == 'vtkPolyData'){
+        const mapper = vtkMapper.newInstance({
+          colorMode: ColorMode.MAP_SCALARS,
+        });
+        const actor = vtkActor.newInstance();
+        actor.getProperty().setColor(1, 1, 1);
+        actor.getProperty().setOpacity(1);
+        actor.setMapper(mapper);
+        mapper.setInputData(shape);
+        renderer.addActor(actor)
+      } else {
+        const mapper = vtkMapper.newInstance({
+          colorMode: ColorMode.MAP_SCALARS,
+        });
+        const actor = vtkActor.newInstance();
+        actor.getProperty().setColor(1, 1, 1);
+        actor.getProperty().setOpacity(1);
+        actor.setMapper(mapper);
+
+        // TODO: Can we get this smoother with an ImageOutlineFilter?
+        const marchingCube = vtkImageMarchingCubes.newInstance({
+          contourValue: 0.0,
+          computeNormals: true,
+          mergePoints: true,
+        });
+        marchingCube.setInputData(shape)
+        mapper.setInputConnection(marchingCube.getOutputPort());
+        marchingCube.setContourValue(0.0001);
+
+        // const outline = vtkGeometryFilter.newInstance();
+        // outline.setInputData(shape);
+        // mapper.setInputData(outline.getOutputData());
+        // mapper.setInputData(shape);
+        // console.log('actor', actor)
+
+        renderer.addActor(actor);
+      }
     },
     createRenderer(viewport, points, shape) {
+      console.log(shape.getClassName(), shape)
       const renderer = vtkRenderer.newInstance();
       renderer.setViewport.apply(renderer, viewport);
       renderer.setActiveCamera(this.vtk.camera);
 
       this.vtk.renderWindow.addRenderer(renderer);
 
-      // this.addPoints(renderer, points);
+      if(points.getNumberOfPoints() > 0) this.addPoints(renderer, points);
       this.addShape(renderer, shape);
       renderer.resetCamera();
       return renderer;
@@ -227,10 +257,11 @@ export default {
       this.vtk.renderers = [];
       this.vtk.pointMappers = [];
 
-      for (let i = 0; i < this.grid.length; i += 1) {
-        if (i < this.data.length) {
-          this.vtk.renderers.push(this.createRenderer(this.grid[i], this.data[i].points, this.data[i].shape));
-        }
+      for (let i = 0; i < this.grid.length && i < this.data.length; i += 1) {
+        const newRenderer =  this.createRenderer(
+          this.grid[i], this.data[i].points, this.data[i].shape
+        )
+        this.vtk.renderers.push(newRenderer);
       }
       this.render();
     },

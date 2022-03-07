@@ -7,6 +7,7 @@ import {
     allSubjectsForDataset,
     selectedSubject,
     loadingState,
+    selectedDataObjects,
 } from '../store';
 import { Dataset, Subject } from '@/types';
 import router from '@/router';
@@ -41,6 +42,7 @@ export default defineComponent({
                 selectedDataset.value = undefined;
                 allSubjectsForDataset.value = [];
                 selectedSubject.value = undefined;
+                selectedDataObjects.value = [];
                 await getAllDatasets();
             }
         }

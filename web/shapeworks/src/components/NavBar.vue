@@ -1,31 +1,38 @@
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api'
+import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
-import { selectedDataset } from '../store/index';
+import { selectedDataset, selectedSubject } from '../store';
 
 
 export default defineComponent({
-  setup() {
-    const logInOrOut = async() => {
-      if (oauthClient.isLoggedIn) {
-        await logout();
-        window.location.reload();
-      } else {
-        oauthClient.redirectToLogin();
-      }
-    }
+    setup() {
+        const params = computed(() => ({
+          dataset: selectedDataset.value?.id,
+          subject: selectedSubject.value?.id,
+        }))
 
-    return {
-      oauthClient,
-      logInOrOut,
-      selectedDataset,
+        const logInOrOut = async() => {
+            if (oauthClient.isLoggedIn) {
+              await logout();
+              window.location.reload();
+            } else {
+              oauthClient.redirectToLogin();
+            }
+        }
+
+        return {
+            oauthClient,
+            params,
+            logInOrOut,
+            selectedDataset,
+            selectedSubject,
+        }
     }
-  }
 })
 </script>
 
 <template>
-  <v-app-bar app>
+  <v-app-bar app height="80px">
     <div class="d-flex align-center px-5">
       <v-img
         alt="Shapeworks Logo"
@@ -39,16 +46,16 @@ export default defineComponent({
       <v-tab to="/">
         Select
       </v-tab>
-      <v-tab to="/data" v-if="selectedDataset">
+      <v-tab :to="{name: 'data', params}" v-if="selectedDataset && selectedSubject">
         Data
       </v-tab>
-      <v-tab to="/groom" v-if="selectedDataset">
+      <v-tab :to="{name: 'groom', params}" v-if="selectedDataset && selectedSubject">
         Groom
       </v-tab>
-      <v-tab to="/optimize" v-if="selectedDataset">
+      <v-tab :to="{name: 'optimize', params}" v-if="selectedDataset && selectedSubject">
         Optimize
       </v-tab>
-      <v-tab to="/analyze" v-if="selectedDataset">
+      <v-tab :to="{name: 'analyze', params}" v-if="selectedDataset && selectedSubject">
         Analyze
       </v-tab>
       <v-tab to="/demo">

@@ -17,3 +17,20 @@ export interface Dataset {
     description: string,
     acknowledgement: string
 }
+
+export interface Subject {
+    id: number,
+    name: string,
+    dataset: number,
+    created: string,
+    modified: string,
+}
+
+export interface DataObject {
+    type: string,
+    id: number,
+    subject: number,
+    file: string,
+    modality: string,
+    anatomy_type: string,
+}

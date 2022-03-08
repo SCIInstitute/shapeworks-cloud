@@ -198,27 +198,16 @@ export default {
       this.vtk.pointMappers.push(mapper);
     },
     addShape(renderer, shape) {
-
+      const mapper = vtkMapper.newInstance({
+        colorMode: ColorMode.MAP_SCALARS,
+      });
+      const actor = vtkActor.newInstance();
+      actor.getProperty().setColor(1, 1, 1);
+      actor.getProperty().setOpacity(1);
+      actor.setMapper(mapper);
       if (shape.getClassName() == 'vtkPolyData'){
-        const mapper = vtkMapper.newInstance({
-          colorMode: ColorMode.MAP_SCALARS,
-        });
-        const actor = vtkActor.newInstance();
-        actor.getProperty().setColor(1, 1, 1);
-        actor.getProperty().setOpacity(1);
-        actor.setMapper(mapper);
         mapper.setInputData(shape);
-        renderer.addActor(actor)
       } else {
-        const mapper = vtkMapper.newInstance({
-          colorMode: ColorMode.MAP_SCALARS,
-        });
-        const actor = vtkActor.newInstance();
-        actor.getProperty().setColor(1, 1, 1);
-        actor.getProperty().setOpacity(1);
-        actor.setMapper(mapper);
-
-        // TODO: Can we get this smoother with an ImageOutlineFilter?
         const marchingCube = vtkImageMarchingCubes.newInstance({
           contourValue: 0.0,
           computeNormals: true,
@@ -227,18 +216,10 @@ export default {
         marchingCube.setInputData(shape)
         mapper.setInputConnection(marchingCube.getOutputPort());
         marchingCube.setContourValue(0.0001);
-
-        // const outline = vtkGeometryFilter.newInstance();
-        // outline.setInputData(shape);
-        // mapper.setInputData(outline.getOutputData());
-        // mapper.setInputData(shape);
-        // console.log('actor', actor)
-
-        renderer.addActor(actor);
       }
+      renderer.addActor(actor);
     },
     createRenderer(viewport, points, shape) {
-      console.log(shape.getClassName(), shape)
       const renderer = vtkRenderer.newInstance();
       renderer.setViewport.apply(renderer, viewport);
       renderer.setActiveCamera(this.vtk.camera);

@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import { loadDatasetAndSubject } from "@/store";
+import { loadDataset } from "@/store";
 import { defineComponent, onMounted } from "@vue/composition-api";
 
 export default defineComponent({
@@ -12,14 +12,10 @@ export default defineComponent({
           type: Number,
           required: true,
       },
-      subject: {
-          type: Number,
-          required: true,
-      },
   },
   setup(props) {
     onMounted(async () => {
-      await loadDatasetAndSubject(props.dataset, props.subject);
+      await loadDataset(props.dataset);
     });
   }
 });

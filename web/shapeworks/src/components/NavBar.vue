@@ -1,14 +1,13 @@
 <script lang="ts">
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
-import { selectedDataset, selectedSubject } from '../store';
+import { selectedDataset } from '../store';
 
 
 export default defineComponent({
     setup() {
         const params = computed(() => ({
           dataset: selectedDataset.value?.id,
-          subject: selectedSubject.value?.id,
         }))
 
         const logInOrOut = async() => {
@@ -25,7 +24,6 @@ export default defineComponent({
             params,
             logInOrOut,
             selectedDataset,
-            selectedSubject,
         }
     }
 })
@@ -46,16 +44,16 @@ export default defineComponent({
       <v-tab to="/">
         Select
       </v-tab>
-      <v-tab :to="{name: 'data', params}" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'data', params}" v-if="selectedDataset">
         Data
       </v-tab>
-      <v-tab :to="{name: 'groom', params}" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'groom', params}" v-if="selectedDataset">
         Groom
       </v-tab>
-      <v-tab :to="{name: 'optimize', params}" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'optimize', params}" v-if="selectedDataset">
         Optimize
       </v-tab>
-      <v-tab :to="{name: 'analyze', params}" v-if="selectedDataset && selectedSubject">
+      <v-tab :to="{name: 'analyze', params}" v-if="selectedDataset">
         Analyze
       </v-tab>
       <v-tab to="/demo">

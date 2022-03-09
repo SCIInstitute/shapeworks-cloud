@@ -92,6 +92,6 @@ See [https://app.shapeworks-cloud.org/](https://app.shapeworks-cloud.org/).
 
 There is some sample data at [https://girder.shapeworks-cloud.org/](https://girder.shapeworks-cloud.org/).
 
-## Shapeworks
+## ShapeWorks
 
-See [Shapeworks](http://sciinstitute.github.io/ShapeWorks/) for more details
+See [ShapeWorks](http://sciinstitute.github.io/ShapeWorks/) for more details

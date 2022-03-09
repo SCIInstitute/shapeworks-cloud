@@ -4,7 +4,6 @@ import { getDatasets } from '@/api/rest'
 import {
     allDatasets,
     selectedDataset,
-    allSubjectsForDataset,
     loadingState,
     selectedDataObjects,
 } from '../store';
@@ -35,7 +34,6 @@ export default defineComponent({
                 });
             } else {
                 selectedDataset.value = undefined;
-                allSubjectsForDataset.value = [];
                 selectedDataObjects.value = [];
                 await getAllDatasets();
             }
@@ -56,7 +54,6 @@ export default defineComponent({
             allDatasets,
             selectedDataset,
             selectOrDeselectDataset,
-            allSubjectsForDataset,
             loadingState,
         }
     }

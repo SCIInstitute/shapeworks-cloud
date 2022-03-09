@@ -10,18 +10,15 @@ export const selectedDataset = ref<Dataset>()
 
 export const allSubjectsForDataset = ref<Subject[]>([])
 
-export const selectedSubject = ref<Subject>()
-
-export const allDataObjectsForSubject = ref<DataObject[]>([])
+export const allDataObjectsInDataset = ref<DataObject[]>([])
 
 export const selectedDataObjects = ref<DataObject[]>([])
 
-export const loadDatasetAndSubject = async (datasetId: number, subjectId: number) => {
+export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
-    if (selectedDataset.value?.id != datasetId || selectedSubject.value?.id != subjectId) { 
+    if (selectedDataset.value?.id != datasetId) {
         loadingState.value = true;
         selectedDataset.value = await getDataset(datasetId);
-        selectedSubject.value = await getSubject(subjectId);
         loadingState.value = false;
     }
 }

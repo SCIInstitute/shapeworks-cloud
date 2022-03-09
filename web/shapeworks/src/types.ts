@@ -30,7 +30,7 @@ export interface Subject {
 export interface DataObject {
     type: string,
     id: number,
-    subject: number,
+    subject: Subject,
     file: string,
     modality: string,
     anatomy_type: string,

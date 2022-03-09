@@ -4,16 +4,18 @@ import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import imageReader from '../reader/image';
 import { getDataObjectsForSubject } from '@/api/rest';
 import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
-import { ShapeData } from '../types';
+import { DataObject, ShapeData, Subject } from '../types';
+import { getSubjectsForDataset } from '@/api/rest'
 import ShapeViewer from '../components/ShapeViewer.vue';
 import {
     selectedDataset,
-    selectedSubject,
-    loadDatasetAndSubject,
-    allDataObjectsForSubject,
+    allSubjectsForDataset,
+    loadDataset,
+    allDataObjectsInDataset,
     selectedDataObjects,
     loadingState,
 } from '../store';
+import router from '@/router';
 
 
 export default defineComponent({
@@ -25,16 +27,48 @@ export default defineComponent({
             type: Number,
             required: true,
         },
-        subject: {
-            type: Number,
-            required: true,
-        },
     },
     setup(props) {
+        async function fetchData(datasetId: number) {
+            loadingState.value = true;
+            allSubjectsForDataset.value = (await getSubjectsForDataset(datasetId)).sort((a, b) => {
+                if(a.created < b.created) return 1;
+                if(a.created > b.created) return -1;
+                return 0;
+            });
+            allDataObjectsInDataset.value =  (await Promise.all(allSubjectsForDataset.value.map(
+                async (subject: Subject) => (await getDataObjectsForSubject(subject.id)).map(
+                    (dataObject: DataObject) => Object.assign(dataObject, {subject})
+                ))
+            )).flat()
+            loadingState.value = false;
+        }
+
+        function setTableHeaders() {
+            headers.value = [
+                {text: 'ID', sortable: true, value: 'id'},
+                {text: 'Type', sortable: true, value: 'type'},
+                {text: 'Subject', value: 'subject'},
+                {text: 'File Name', sortable: true, value: 'file', cellClass: 'file-column'},
+
+            ]
+            if(selectedDataObjects.value.length > 0){
+                headers.value.push(
+                    {text: 'Display', sortable: true, value: 'display'}
+                )
+            }
+        }
+
         onMounted(async () => {
-            await loadDatasetAndSubject(props.dataset, props.subject);
-            if (!selectedSubject.value) return;
-            allDataObjectsForSubject.value = await getDataObjectsForSubject(selectedSubject.value.id)
+            await loadDataset(props.dataset);
+            if(!selectedDataset.value) {
+                router.push({
+                    name: 'select',
+                });
+                return;
+            }
+            await fetchData(selectedDataset.value.id)
+            setTableHeaders();
         })
 
         const mini = ref(false);
@@ -44,18 +78,13 @@ export default defineComponent({
         const cols = ref<number>(1);
         const renderData = ref<ShapeData[]>([]);
 
-
-        async function fetchDataObjects() {
-            if (!selectedSubject.value) return;
-            loadingState.value = true;
-            allDataObjectsForSubject.value = await getDataObjectsForSubject(selectedSubject.value.id)
-            renderData.value = []
-            loadingState.value = false;
-        }
-
         function shortFileName(file: string) {
             const split = file.split('?')[0].split('/')
             return split[split.length-1]
+        }
+
+        function shortDateString(date: string) {
+            return date.split('T')[0]
         }
 
         function displayLocation(id: number){
@@ -71,31 +100,10 @@ export default defineComponent({
         }
 
         function updateDisplayLocations() {
-            allDataObjectsForSubject.value = allDataObjectsForSubject.value.map(
+            allDataObjectsInDataset.value = allDataObjectsInDataset.value.map(
                 (obj) => Object.assign(obj, {'display': displayLocation(obj.id)})
             )
         }
-
-        function setTableHeaders() {
-            headers.value = [
-                {text: 'ID', sortable: true, value: 'id'},
-                {text: 'Type', sortable: true, value: 'type'},
-                {text: 'File Name', sortable: true, value: 'file'},
-
-            ]
-            if(selectedDataObjects.value.length > 0){
-                headers.value.push(
-                    {text: 'Display', sortable: true, value: 'display'}
-                )
-            }
-        }
-
-        onMounted(async () => {
-            fetchDataObjects();
-            setTableHeaders();
-        })
-
-        watch(selectedSubject, fetchDataObjects)
 
         watch(selectedDataObjects, async (currentValue, oldValue) => {
             renderData.value = []
@@ -130,10 +138,10 @@ export default defineComponent({
             cols,
             renderData,
             selectedDataset,
-            selectedSubject,
-            allDataObjectsForSubject,
+            allDataObjectsInDataset,
             selectedDataObjects,
             shortFileName,
+            shortDateString,
         }
     }
 })
@@ -151,19 +159,11 @@ export default defineComponent({
                     {{ selectedDataset.name }}
                 </v-list-item-title>
             </div>
-            <div>
-                <div class="text-overline">
-                    SUBJECT ({{ selectedSubject.created.split('T')[0] }})
-                </div>
-                <v-list-item-title class="text-h6 mb-1">
-                    {{ selectedSubject.name }}
-                </v-list-item-title>
-            </div>
         </div>
         <v-divider />
 
         <div class='content-area'>
-            <v-navigation-drawer :mini-variant.sync="mini" width="500" absolute>
+            <v-navigation-drawer :mini-variant.sync="mini" width="650" absolute>
                 <v-list-item>
                     <v-btn
                         icon
@@ -197,10 +197,34 @@ export default defineComponent({
                         <v-data-table
                             v-model="selectedDataObjects"
                             :headers="headers"
-                            :items="allDataObjectsForSubject"
+                            :items="allDataObjectsInDataset"
                             :search="search"
+                            group-by="subject"
+                            disable-pagination
                             show-select
+                            dense
                         >
+                            <!-- eslint-disable-next-line -->
+                            <template v-slot:group.header="{ group, headers, toggle, isOpen }">
+                            <td :colspan="headers.length">
+                                <v-btn @click="toggle" x-small icon :ref="group">
+                                    <v-icon v-if="isOpen">mdi-plus</v-icon>
+                                    <v-icon v-else>mdi-minus</v-icon>
+                                </v-btn>
+                                <v-tooltip bottom>
+                                <template v-slot:activator="{ on, attrs }">
+                                    <span
+                                        class="mx-5 font-weight-bold"
+                                        v-bind="attrs"
+                                        v-on="on"
+                                    >
+                                        Subject: {{ group.name }}
+                                    </span>
+                                </template>
+                                <span>ID: {{ group.id }} | Created: {{ shortDateString(group.created) }} | Modified: {{ shortDateString(group.modified) }}</span>
+                                </v-tooltip>
+                            </td>
+                            </template>
                             <!-- eslint-disable-next-line -->
                             <template v-slot:item.file="{ item }">
                                 <span>{{ shortFileName(item.file) }}</span>
@@ -235,13 +259,18 @@ export default defineComponent({
     </div>
 </template>
 
-<style scoped>
+<style>
 .context-card {
     display: flex;
     column-gap: 40px;
     padding: 10px 20px;
     width: 100%;
     height: 80px;
+}
+.file-column {
+    max-width: 40px!important;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .content-area {
     position: relative;
@@ -251,8 +280,8 @@ export default defineComponent({
     position: absolute;
     display: flex;
     justify-content: space-between;
-    left: 500px;
-    width: calc(100% - 500px);
+    left: 650px;
+    width: calc(100% - 650px);
     height: 100%;
 }
 .render-area.maximize {

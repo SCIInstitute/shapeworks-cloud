@@ -45,4 +45,4 @@ jobs:
           git add --force docs
           git status
           git commit -m "Build web application for deployment"
-          git push --force origin web
+          git push origin web

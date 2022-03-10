@@ -12,6 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup git identity
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
       - name: Checkout web branch
         uses: actions/checkout@v3
         with:
@@ -35,10 +39,6 @@ jobs:
       - name: Build web app
         run: yarn build --dest ../../docs
         working-directory: web/shapeworks
-      - name: Setup git identity
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "<>"
       - name: Commit build artifacts
         run: |
           git status

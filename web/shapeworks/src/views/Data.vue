@@ -73,7 +73,7 @@ export default defineComponent({
             renderData.value = Object.fromEntries(
                 await Promise.all(Object.entries(groupedSelections).map(
                     async ([subjectId, dataObjects]) => [
-                        "Subject: "+subjects.value[subjectId].name,
+                        subjects.value[subjectId].name,
                         (await Promise.all(dataObjects.map(
                             (dataObject) => imageReader(
                                 dataObject.file,

@@ -2,8 +2,19 @@
   <div
     ref="vtk"
     v-resize="resize"
-  />
+    style="position: relative;"
+  >
+  <canvas class="labels-canvas" ref="labels"/>
+  </div>
 </template>
+
+<style scoped>
+.labels-canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+</style>
 
 <script>
 import 'vtk.js/Sources/Rendering/Profiles/All';
@@ -79,6 +90,12 @@ export default {
       }
       return grid;
     },
+    labelCanvas() {
+      return this.$refs.labels;
+    },
+    labelCanvasContext() {
+      return this.labelCanvas.getContext("2d");
+    }
   },
   watch: {
     data() {
@@ -224,12 +241,28 @@ export default {
         }
       )
     },
-    populateRenderer(renderer, label, shapes) {
-      console.log(label)
+    prepareLabelCanvas() {
+      const { clientWidth, clientHeight } = this.$refs.vtk;
+      // increase the resolution of the canvas so text isn't blurry
+      this.labelCanvas.width = clientWidth;
+      this.labelCanvas.height = clientHeight;
+
+      this.labelCanvasContext.clearRect(0, 0, this.labelCanvas.width, this.labelCanvas.height)
+      this.labelCanvasContext.font = "16px Arial";
+      this.labelCanvasContext.fillStyle = "white";
+    },
+    populateRenderer(renderer, label, bounds, shapes) {
+      this.labelCanvasContext.fillText(
+        label,
+        this.labelCanvas.width * bounds[0],
+        this.labelCanvas.height * (1 - bounds[1]) - 20
+      );
+      console.log(this.labelCanvas.height /2, 'vs', this.labelCanvas.height * bounds[1])
 
       this.addShapes(renderer, shapes.map(({shape}) => shape));
     },
     renderGrid() {
+      this.prepareLabelCanvas();
       for (let i = 0; i < this.vtk.renderers.length; i += 1) {
         this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
       }
@@ -240,7 +273,7 @@ export default {
       for (let i = 0; i < this.grid.length; i += 1) {
         let newRenderer = vtkRenderer.newInstance({ background: [0.07, 0.07, 0.07] });
         if(i < data.length){
-          this.populateRenderer(newRenderer, data[i][0], data[i][1])
+          this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
         }
         newRenderer.setViewport.apply(newRenderer, this.grid[i]);
         newRenderer.setActiveCamera(this.vtk.camera);

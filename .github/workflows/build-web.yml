@@ -8,12 +8,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+      - name: Checkout web branch
+        uses: actions/checkout@v3
+        with:
+          ref: web
       - name: Reset web branch
         # TODO git reset --hard master
         run: |
-          git status
-          git checkout web
           git status
           git reset --hard build-test
           git status

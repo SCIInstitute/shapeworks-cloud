@@ -24,6 +24,10 @@ jobs:
       - name: Build web app
         run: yarn build --dest ../../dist
         working-directory: web/shapeworks
+      - name: Setup git identity
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
       - name: Commit build artifacts
         run: |
           git add --force dist

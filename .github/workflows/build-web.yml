@@ -12,7 +12,9 @@ jobs:
       - name: Reset web branch
         # TODO git reset --hard master
         run: |
+          git status
           git checkout web
+          git status
           git reset --hard build-test
           git status
       - name: Debugging

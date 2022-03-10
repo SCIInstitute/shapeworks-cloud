@@ -44,7 +44,7 @@ const COLORS = [
 export default {
   props: {
     data: {
-      type: Array,
+      type: Object,
       required: true,
     },
     rows: {
@@ -197,37 +197,40 @@ export default {
       renderer.addActor(actor);
       this.vtk.pointMappers.push(mapper);
     },
-    addShape(renderer, shape) {
+    addShapes(renderer, shapes) {
       const mapper = vtkMapper.newInstance({
         colorMode: ColorMode.MAP_SCALARS,
       });
-      const actor = vtkActor.newInstance();
-      actor.getProperty().setColor(1, 1, 1);
-      actor.getProperty().setOpacity(1);
-      actor.setMapper(mapper);
-      if (shape.getClassName() == 'vtkPolyData'){
-        mapper.setInputData(shape);
-      } else {
-        const marchingCube = vtkImageMarchingCubes.newInstance({
-          contourValue: 0.0,
-          computeNormals: true,
-          mergePoints: true,
-        });
-        marchingCube.setInputData(shape)
-        mapper.setInputConnection(marchingCube.getOutputPort());
-        marchingCube.setContourValue(0.0001);
-      }
-      renderer.addActor(actor);
+
+      shapes.forEach(
+        (shape) => {
+          const actor = vtkActor.newInstance();
+          actor.getProperty().setColor(1, 1, 1);
+          actor.getProperty().setOpacity(1);
+          actor.setMapper(mapper);
+          if (shape.getClassName() == 'vtkPolyData'){
+            mapper.setInputData(shape);
+          } else {
+            const marchingCube = vtkImageMarchingCubes.newInstance({
+              contourValue: 0.0,
+              computeNormals: true,
+              mergePoints: true,
+            });
+            marchingCube.setInputData(shape)
+            mapper.setInputConnection(marchingCube.getOutputPort());
+            marchingCube.setContourValue(0.0001);
+          }
+          renderer.addActor(actor);
+        }
+      )
     },
-    createRenderer(viewport, points, shape) {
-      const renderer = vtkRenderer.newInstance();
+    createRenderer(viewport, label, shapes) {
+      const renderer = vtkRenderer.newInstance({ background: [0.07, 0.07, 0.07] });
       renderer.setViewport.apply(renderer, viewport);
       renderer.setActiveCamera(this.vtk.camera);
+      console.log(label)
 
-      this.vtk.renderWindow.addRenderer(renderer);
-
-      if(points.getNumberOfPoints() > 0) this.addPoints(renderer, points);
-      this.addShape(renderer, shape);
+      this.addShapes(renderer, shapes.map(({shape}) => shape));
       renderer.resetCamera();
       return renderer;
     },
@@ -238,11 +241,13 @@ export default {
       this.vtk.renderers = [];
       this.vtk.pointMappers = [];
 
-      for (let i = 0; i < this.grid.length && i < this.data.length; i += 1) {
+      const data = Object.entries(this.data)
+      for (let i = 0; i < this.grid.length && i < data.length; i += 1) {
         const newRenderer =  this.createRenderer(
-          this.grid[i], this.data[i].points, this.data[i].shape
+          this.grid[i], data[i][0], data[i][1]
         )
         this.vtk.renderers.push(newRenderer);
+        this.vtk.renderWindow.addRenderer(newRenderer);
       }
       this.render();
     },

@@ -17,4 +17,13 @@ module "django" {
   additional_django_vars = {
     DJANGO_SENTRY_DSN = "https://e5943c702c4347b2aa1b4a3726d243df@o267860.ingest.sentry.io/5615130"
   }
+  django_cors_origin_whitelist = ["https://www.shapeworks-cloud.org"]
+}
+
+resource "aws_route53_record" "heroku" {
+  zone_id = data.aws_route53_zone.shapeworks_cloud.zone_id
+  name    = "www"
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["girder.github.io."]
 }

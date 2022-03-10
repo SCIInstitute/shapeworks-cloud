@@ -35,10 +35,10 @@ export default defineComponent({
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
         const headers =  [
-            {text: 'ID', sortable: true, value: 'id'},
-            {text: 'Type', sortable: true, value: 'type'},
+            {text: 'ID', value: 'id'},
+            {text: 'Type', value: 'type'},
             {text: 'Subject', value: 'subject'},
-            {text: 'File Name', sortable: true, value: 'file', cellClass: 'file-column'},
+            {text: 'File Name', value: 'file', cellClass: 'file-column'},
         ];
 
         async function fetchData(datasetId: number) {
@@ -56,24 +56,6 @@ export default defineComponent({
             loadingState.value = false;
         }
 
-        function displayLocation(id: number){
-            const selectedObjectIds = selectedDataObjects.value.map((obj) => obj.id)
-            if(selectedObjectIds.includes(id)){
-                const index = selectedObjectIds.indexOf(id);
-                const i = index % cols.value;
-                const j = Math.floor(index / cols.value)
-
-                return "ABCDE".charAt(i)+(j+1).toString();
-            }
-            return '';
-        }
-
-        function updateDisplayLocations() {
-            allDataObjectsInDataset.value = allDataObjectsInDataset.value.map(
-                (obj) => Object.assign(obj, {'display': displayLocation(obj.id)})
-            )
-        }
-
         onMounted(async () => {
             await loadDataset(props.dataset);
             if(!selectedDataset.value) {
@@ -85,13 +67,13 @@ export default defineComponent({
             await fetchData(selectedDataset.value.id)
         })
 
-        watch(selectedDataObjects, async (currentValue, oldValue) => {
+        watch(selectedDataObjects, async () => {
             renderData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
             renderData.value = Object.fromEntries(
                 await Promise.all(Object.entries(groupedSelections).map(
                     async ([subjectId, dataObjects]) => [
-                        subjects.value[subjectId].name,
+                        "Subject: "+subjects.value[subjectId].name,
                         (await Promise.all(dataObjects.map(
                             (dataObject) => imageReader(
                                 dataObject.file,
@@ -110,9 +92,6 @@ export default defineComponent({
             } else {
                 rows.value = Math.ceil(n / 5);
                 cols.value = 5;
-            }
-            if(currentValue.length !== oldValue.length){
-                updateDisplayLocations();
             }
         })
 
@@ -233,16 +212,6 @@ export default defineComponent({
                     :columns="cols"
                     :glyph-size="1.5"
                 />
-                <div class="column-index labels">
-                    <div v-for="i in Array(cols).keys()" v-bind:key="i">
-                        {{"ABCDE".charAt(i)}}
-                    </div>
-                </div>
-                <div class="row-index labels">
-                    <div v-for="j in Array(rows).keys()" v-bind:key="j">
-                        {{j+1}}
-                    </div>
-                </div>
                 </template>
             </div>
         </div>
@@ -262,6 +231,13 @@ export default defineComponent({
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.v-data-table td {
+    border-bottom: none !important;
+}
+.v-row-group__header {
+    background: none !important;
+    border-top: 1px solid white !important;
+}
 .content-area {
     position: relative;
     min-height: calc(100vh - 161px);
@@ -280,18 +256,5 @@ export default defineComponent({
 }
 .render-area > * {
     flex-grow: 1;
-}
-.labels {
-    position: absolute;
-    display: flex;
-    justify-content: space-around;
-}
-.column-index {
-    width: calc(100% - 40px);
-    flex-direction: row;
-}
-.row-index {
-    height: calc(100% - 40px);
-    flex-direction: column;
 }
 </style>

@@ -224,15 +224,10 @@ export default {
         }
       )
     },
-    createRenderer(viewport, label, shapes) {
-      const renderer = vtkRenderer.newInstance({ background: [0.07, 0.07, 0.07] });
-      renderer.setViewport.apply(renderer, viewport);
-      renderer.setActiveCamera(this.vtk.camera);
+    populateRenderer(renderer, label, shapes) {
       console.log(label)
 
       this.addShapes(renderer, shapes.map(({shape}) => shape));
-      renderer.resetCamera();
-      return renderer;
     },
     renderGrid() {
       for (let i = 0; i < this.vtk.renderers.length; i += 1) {
@@ -242,10 +237,14 @@ export default {
       this.vtk.pointMappers = [];
 
       const data = Object.entries(this.data)
-      for (let i = 0; i < this.grid.length && i < data.length; i += 1) {
-        const newRenderer =  this.createRenderer(
-          this.grid[i], data[i][0], data[i][1]
-        )
+      for (let i = 0; i < this.grid.length; i += 1) {
+        let newRenderer = vtkRenderer.newInstance({ background: [0.07, 0.07, 0.07] });
+        if(i < data.length){
+          this.populateRenderer(newRenderer, data[i][0], data[i][1])
+        }
+        newRenderer.setViewport.apply(newRenderer, this.grid[i]);
+        newRenderer.setActiveCamera(this.vtk.camera);
+        newRenderer.resetCamera();
         this.vtk.renderers.push(newRenderer);
         this.vtk.renderWindow.addRenderer(newRenderer);
       }

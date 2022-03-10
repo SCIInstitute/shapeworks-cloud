@@ -1,0 +1,48 @@
+name: Build web app
+on:
+  push:
+    branches:
+      - master
+env:
+  VUE_APP_OAUTH_CLIENT_ID: kNREkFvALDHTgTInKEdtNbvd6k9XUNN3dBytvaSr
+  VUE_APP_API_ROOT: https://app.shapeworks-cloud.org/
+  VUE_APP_OAUTH_API_ROOT: https://app.shapeworks-cloud.org/oauth/
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout web branch
+        uses: actions/checkout@v3
+        with:
+          ref: web
+          fetch-depth: 0
+      - name: Setup git identity
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+      - name: Reset web branch
+        run: git reset --hard origin/master
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+          cache: 'yarn'
+          cache-dependency-path: web/shapeworks/yarn.lock
+      - name: Install web app
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile --prefer-offline
+        working-directory: web/shapeworks
+      - name: Lint web app
+        run: yarn run lint
+        working-directory: web/shapeworks
+      - name: Build web app
+        run: yarn build --dest ../../docs
+        working-directory: web/shapeworks
+      - name: Copy CNAME file
+        run: cp CNAME docs/CNAME
+      - name: Commit build artifacts
+        run: |
+          git status
+          git add --force docs
+          git status
+          git commit -m "Build web application for deployment"
+          git push --force origin web

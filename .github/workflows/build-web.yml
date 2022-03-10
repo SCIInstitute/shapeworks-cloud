@@ -4,6 +4,10 @@ on:
     branches:
       # TODO - master
       - build-test
+env:
+  # nodeversion >=17 deprecated some OpenSSL algorithms which a dependency is still using
+  # https://nodejs.org/en/blog/release/v17.0.0/
+  NODE_OPTIONS: --openssl-legacy-provider
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -20,7 +20,7 @@ module "django" {
   django_cors_origin_whitelist = ["https://www.shapeworks-cloud.org"]
 }
 
-resource "aws_route53_record" "heroku" {
+resource "aws_route53_record" "github-pages" {
   zone_id = data.aws_route53_zone.shapeworks_cloud.zone_id
   name    = "www"
   type    = "CNAME"

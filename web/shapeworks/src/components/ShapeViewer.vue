@@ -257,7 +257,6 @@ export default {
         this.labelCanvas.width * bounds[0],
         this.labelCanvas.height * (1 - bounds[1]) - 20
       );
-      console.log(this.labelCanvas.height /2, 'vs', this.labelCanvas.height * bounds[1])
 
       this.addShapes(renderer, shapes.map(({shape}) => shape));
     },

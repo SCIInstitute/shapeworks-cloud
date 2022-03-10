@@ -259,6 +259,8 @@ export default {
       );
 
       this.addShapes(renderer, shapes.map(({shape}) => shape));
+      const points = shapes.map(({points}) => points)
+      if(points.length > 0) this.addPoints(renderer, points[0]);
     },
     renderGrid() {
       this.prepareLabelCanvas();

@@ -14,6 +14,9 @@ jobs:
         run: |
           git checkout web
           git reset --hard build-test
+          git status
+      - name: Debugging
+        run: git status
       - uses: actions/setup-node@v2
         with:
           node-version: '16.x'

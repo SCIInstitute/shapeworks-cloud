@@ -17,9 +17,9 @@ jobs:
         with:
           ref: web
           fetch-depth: 0
-      - name: Reset web branch
-        # TODO git reset --hard master
-        run: git reset --hard origin/build-test
+      - name: Update web branch
+        # TODO git merge origin/master
+        run: git merge origin/build-test
       - uses: actions/setup-node@v2
         with:
           node-version: '16.x'

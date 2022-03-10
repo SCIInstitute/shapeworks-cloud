@@ -21,9 +21,9 @@ jobs:
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-      - name: Update web branch
-        # TODO git merge origin/master
-        run: git merge origin/build-test
+      - name: Reset web branch
+        # TODO git reset --hard master
+        run: git reset --hard origin/build-test
       - uses: actions/setup-node@v2
         with:
           node-version: '16.x'
@@ -39,10 +39,12 @@ jobs:
       - name: Build web app
         run: yarn build --dest ../../docs
         working-directory: web/shapeworks
+      - name: Copy CNAME file
+        run: cp CNAME docs/CNAME
       - name: Commit build artifacts
         run: |
           git status
           git add --force docs
           git status
           git commit -m "Build web application for deployment"
-          git push origin web
+          git push --force origin web

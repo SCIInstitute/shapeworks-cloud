@@ -17,7 +17,7 @@ jobs:
         # TODO git reset --hard master
         run: |
           git status
-          git reset --hard build-test
+          git reset --hard origin/build-test
           git status
       - name: Debugging
         run: git status

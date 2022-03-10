@@ -1,0 +1,31 @@
+name: Build web app
+on:
+  push:
+    branches:
+      # TODO - master
+      - build-test
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+          cache: 'yarn'
+          cache-dependency-path: web/shapeworks/yarn.lock
+      - name: Install web app
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile --prefer-offline
+        working-directory: web/shapeworks
+      - name: Lint web app
+        run: yarn run lint
+        working-directory: web/shapeworks
+      - name: Build web app
+        run: yarn build --dest ../../dist
+        working-directory: web/shapeworks
+      - name: Commit build artifacts
+        run: |
+          git add dist
+          git commit -m "Build web application for deployment"
+          git push origin build-test
+

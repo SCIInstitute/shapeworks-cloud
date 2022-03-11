@@ -35,12 +35,12 @@ export default defineComponent({
   <v-app-bar app height="80px">
     <div class="d-flex align-center px-5">
       <v-img
-        alt="Shapeworks Logo"
+        alt="ShapeWorks Logo"
         src="favicon.ico"
         transition="scale-transition"
         width="55px"
       />
-      <v-toolbar-title class="text-h6">Shapeworks</v-toolbar-title>
+      <v-toolbar-title class="text-h6">ShapeWorks</v-toolbar-title>
     </div>
     <v-tabs>
       <v-tab to="/">

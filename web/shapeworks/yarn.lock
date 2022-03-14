@@ -8993,10 +8993,10 @@ vm-browserify@^1.0.1:
   resolved "https://registry.npmjs.org/vm-browserify/-/vm-browserify-1.1.2.tgz"
   integrity sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==
 
-vtk.js@^22.0.0:
-  version "22.5.10"
-  resolved "https://registry.npmjs.org/vtk.js/-/vtk.js-22.5.10.tgz"
-  integrity sha512-d883Tz9jXnCmXS7QAI0IH7Wf6SQTOCpehAH2YLkNWOkfkizx9mdHBXZ4SfydKXCN3G6ezPKUGBdoI8sFh2XSlQ==
+vtk.js@*:
+  version "23.0.1"
+  resolved "https://registry.yarnpkg.com/vtk.js/-/vtk.js-23.0.1.tgz#560be43adbca1bc5815e0a1dc4e8acd25250489f"
+  integrity sha512-Fi/MvBz4KwCdAva5ooWcrg4kyu9Cg2HPzfJJqBEd1UHK6/zUMSbotb9xrRulfNvdJFgxuje6l2sdVlQTkfO2Nw==
   dependencies:
     "@babel/runtime" "7.16.7"
     commander "8.3.0"

@@ -426,6 +426,7 @@ class Dataset(ApiModel):
         root = file.parent
         subjects: Dict[str, Subject] = {}
 
+        found = False
         for row in data:
             subject = None
             for i, cell in enumerate(row):
@@ -450,12 +451,15 @@ class Dataset(ApiModel):
                         subject.add_segmentation(file=shape_file, anatomy_type=domain)
                     elif data_type == Mesh:
                         subject.add_mesh(file=shape_file, anatomy_type=domain)
-
+                    found = True
                 elif file_type == 'image':
                     image_file = file_path
                     if not image_file.exists():
                         raise Exception(f'Could not find image file at "{image_file}"')
                     subject.add_image(file=image_file, modality=domain)
+                    found = True
+        if not found:
+            raise Exception('Did not find any shape or image files in data sheet')
 
     def download(self, path: Union[Path, str]):
         self.assert_remote()

@@ -260,7 +260,7 @@ export default {
 
       this.addShapes(renderer, shapes.map(({shape}) => shape));
       const points = shapes.map(({points}) => points)
-      if(points.length > 0) this.addPoints(renderer, points[0]);
+      if(points.length > 0 && points[0].getNumberOfPoints() > 0) this.addPoints(renderer, points[0]);
     },
     renderGrid() {
       this.prepareLabelCanvas();

@@ -52,17 +52,17 @@ export default defineComponent({
     const glyphSize = 1.5
 
 
-    const shapeData= ref<ShapeData[]>([])
+    const shapeData= ref<Record<string, ShapeData[]>>({})
     onMounted(async () => {
       const shapes = await Promise.all(SHAPE_URLS.map(shapeReader));
       const points = await Promise.all(POINTS_URLS.map(pointsReader));
 
-      shapeData.value = [];
+      shapeData.value = {};
       for (let i = 0; i < 15; i += 1) {
-        shapeData.value.push({
+        shapeData.value["sub_"+i] = [{
           points: points[i],
           shape: shapes[i],
-        });
+        }];
       }
     });
 

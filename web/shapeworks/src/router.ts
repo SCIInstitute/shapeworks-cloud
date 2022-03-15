@@ -16,25 +16,25 @@ const castDatasetAndSubjectProps = (route: Route) => ({
 
 const routes: Array<RouteConfig> = [
   {
-    path: '/dataset/:dataset/subject/:subject/data',
+    path: '/dataset/:dataset/data',
     name: 'data',
     props: castDatasetAndSubjectProps,
     component: Data
   },
   {
-    path: '/dataset/:dataset/subject/:subject/groom',
+    path: '/dataset/:dataset/groom',
     name: 'groom',
     props: castDatasetAndSubjectProps,
     component: Groom
   },
   {
-    path: '/dataset/:dataset/subject/:subject/optimize',
+    path: '/dataset/:dataset/optimize',
     name: 'optimize',
     props: castDatasetAndSubjectProps,
     component: Optimize
   },
   {
-    path: '/dataset/:dataset/subject/:subject/analyze',
+    path: '/dataset/:dataset/analyze',
     name: 'analyze',
     props: castDatasetAndSubjectProps,
     component: Analyze,

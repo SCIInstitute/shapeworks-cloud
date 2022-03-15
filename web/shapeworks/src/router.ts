@@ -22,7 +22,7 @@ const routes: Array<RouteConfig> = [
     component: Data
   },
   {
-    path: '/dataset/:dataset//groom',
+    path: '/dataset/:dataset/groom',
     name: 'groom',
     props: castDatasetAndSubjectProps,
     component: Groom

@@ -1,10 +1,11 @@
 
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 
 
 export interface ShapeData {
     points: vtkPolyData,
-    shape: number,
+    shape: vtkPolyData | vtkImageData,
 }
 
 export interface Dataset {
@@ -29,7 +30,7 @@ export interface Subject {
 export interface DataObject {
     type: string,
     id: number,
-    subject: number,
+    subject: Subject,
     file: string,
     modality: string,
     anatomy_type: string,

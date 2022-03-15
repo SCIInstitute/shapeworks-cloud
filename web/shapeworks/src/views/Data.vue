@@ -1,55 +1,113 @@
 <script lang="ts">
+import imageReader from '../reader/image';
+import { groupBy, shortDateString, shortFileName } from '../helper';
 import { getDataObjectsForSubject } from '@/api/rest';
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
+import { DataObject, ShapeData, Subject } from '../types';
+import { getSubjectsForDataset } from '@/api/rest'
+import ShapeViewer from '../components/ShapeViewer.vue';
 import {
     selectedDataset,
-    selectedSubject,
-    loadDatasetAndSubject,
-    allDataObjectsForSubject,
+    loadDataset,
+    allDataObjectsInDataset,
     selectedDataObjects,
+    loadingState,
 } from '../store';
+import router from '@/router';
+import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 
 
 export default defineComponent({
+    components: {
+        ShapeViewer,
+    },
     props: {
         dataset: {
             type: Number,
             required: true,
         },
-        subject: {
-            type: Number,
-            required: true,
-        },
     },
     setup(props) {
-        onMounted(async () => {
-            await loadDatasetAndSubject(props.dataset, props.subject);
-            if (!selectedSubject.value) return;
-            allDataObjectsForSubject.value = await getDataObjectsForSubject(selectedSubject.value.id)
-        })
-
         const mini = ref(false);
         const search = ref('');
-        const headers = [
-            {text: 'ID', sortable: true, value: 'id'},
-            {text: 'Type', sortable: true, value: 'type'},
-            {text: 'File Name', sortable: true, value: 'file'},
-        ]
+        const subjects = ref<Record<string, Subject>>({})
+        const rows = ref<number>(1);
+        const cols = ref<number>(1);
+        const renderData = ref<Record<string, ShapeData[]>>({});
+        const headers =  [
+            {text: 'ID', value: 'id'},
+            {text: 'Type', value: 'type'},
+            {text: 'Subject', value: 'subject'},
+            {text: 'File Name', value: 'file', cellClass: 'file-column'},
+        ];
 
-        function shortFileName(file: string) {
-            const split = file.split('?')[0].split('/')
-            return split[split.length-1]
+        async function fetchData(datasetId: number) {
+            loadingState.value = true;
+            subjects.value = Object.fromEntries((await getSubjectsForDataset(datasetId)).sort((a, b) => {
+                if(a.created < b.created) return 1;
+                if(a.created > b.created) return -1;
+                return 0;
+            }).map((subject: Subject) => [subject.id, subject]));
+            allDataObjectsInDataset.value =  (await Promise.all(
+                Object.values(subjects.value).map(
+                    async (subject: Subject) => await getDataObjectsForSubject(subject.id)
+                )
+            )).flat()
+            loadingState.value = false;
         }
+
+        onMounted(async () => {
+            await loadDataset(props.dataset);
+            if(!selectedDataset.value) {
+                router.push({
+                    name: 'select',
+                });
+                return;
+            }
+            await fetchData(selectedDataset.value.id)
+        })
+
+        watch(selectedDataObjects, async () => {
+            renderData.value = {}
+            const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
+            renderData.value = Object.fromEntries(
+                await Promise.all(Object.entries(groupedSelections).map(
+                    async ([subjectId, dataObjects]) => [
+                        subjects.value[subjectId].name,
+                        (await Promise.all(dataObjects.map(
+                            (dataObject) => imageReader(
+                                dataObject.file,
+                                shortFileName(dataObject.file)
+                            )
+                        ))).map((imageData) => ({shape: imageData, points: vtkPolyData.newInstance()}))
+                    ]
+                )
+            ))
+
+            const n = Object.keys(renderData.value).length;
+            const sqrt = Math.ceil(Math.sqrt(n));
+            if(sqrt <= 5) {
+                rows.value = Math.ceil(n / sqrt);
+                cols.value = sqrt;
+            } else {
+                rows.value = Math.ceil(n / 5);
+                cols.value = 5;
+            }
+        })
 
         return {
             mini,
             search,
             headers,
+            subjects,
+            rows,
+            cols,
+            renderData,
             selectedDataset,
-            selectedSubject,
-            allDataObjectsForSubject,
+            allDataObjectsInDataset,
             selectedDataObjects,
             shortFileName,
+            shortDateString,
         }
     }
 })
@@ -67,19 +125,11 @@ export default defineComponent({
                     {{ selectedDataset.name }}
                 </v-list-item-title>
             </div>
-            <div>
-                <div class="text-overline">
-                    SUBJECT ({{ selectedSubject.created.split('T')[0] }})
-                </div>
-                <v-list-item-title class="text-h6 mb-1">
-                    {{ selectedSubject.name }}
-                </v-list-item-title>
-            </div>
         </div>
         <v-divider />
 
         <div class='content-area'>
-            <v-navigation-drawer :mini-variant.sync="mini" width="500" absolute>
+            <v-navigation-drawer :mini-variant.sync="mini" width="650" absolute>
                 <v-list-item>
                     <v-btn
                         icon
@@ -101,7 +151,7 @@ export default defineComponent({
                 </v-list-item>
                 <v-list-item>
                     <v-icon />
-                    <div>
+                    <div style="width:100%">
                         <v-text-field
                             v-model="search"
                             append-icon="mdi-magnify"
@@ -113,10 +163,36 @@ export default defineComponent({
                         <v-data-table
                             v-model="selectedDataObjects"
                             :headers="headers"
-                            :items="allDataObjectsForSubject"
+                            :items="allDataObjectsInDataset"
                             :search="search"
+                            group-by="subject"
+                            disable-pagination
+                            hide-default-footer
                             show-select
+                            dense
+                            width="100%"
                         >
+                            <!-- eslint-disable-next-line -->
+                            <template v-slot:group.header="{ group, headers, toggle, isOpen }">
+                                <td :colspan="headers.length">
+                                    <v-tooltip bottom>
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <span
+                                            class="font-weight-bold"
+                                            v-bind="attrs"
+                                            v-on="on"
+                                        >
+                                            Subject: {{ subjects[group].name }}
+                                        </span>
+                                    </template>
+                                    <span>
+                                        ID: {{ subjects[group].id }} |
+                                        Created: {{ shortDateString(subjects[group].created) }} |
+                                        Modified: {{ shortDateString(subjects[group].modified) }}
+                                    </span>
+                                    </v-tooltip>
+                                </td>
+                            </template>
                             <!-- eslint-disable-next-line -->
                             <template v-slot:item.file="{ item }">
                                 <span>{{ shortFileName(item.file) }}</span>
@@ -124,16 +200,25 @@ export default defineComponent({
                         </v-data-table>
                     </div>
                 </v-list-item>
+                <br/>
             </v-navigation-drawer>
 
-            <div class="pa-5 render-area" :style="mini ?'margin-left: 80px' :'margin-left:520px'">
+            <div :class="mini ?'pa-5 render-area maximize' :'pa-5 render-area'">
                 <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
+                <template v-else>
+                <shape-viewer
+                    :data="renderData"
+                    :rows="rows"
+                    :columns="cols"
+                    :glyph-size="1.5"
+                />
+                </template>
             </div>
         </div>
     </div>
 </template>
 
-<style scoped>
+<style>
 .context-card {
     display: flex;
     column-gap: 40px;
@@ -141,12 +226,35 @@ export default defineComponent({
     width: 100%;
     height: 80px;
 }
+.file-column {
+    max-width: 60px!important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.v-data-table td {
+    border-bottom: none !important;
+}
+.v-row-group__header {
+    background: none !important;
+    border-top: 1px solid white !important;
+}
 .content-area {
     position: relative;
     min-height: calc(100vh - 161px);
 }
 .render-area {
+    position: absolute;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
+    left: 650px;
+    width: calc(100% - 650px);
+    height: 100%;
+}
+.render-area.maximize {
+    left: 60px;
+    width: calc(100% - 60px);
+}
+.render-area > * {
+    flex-grow: 1;
 }
 </style>

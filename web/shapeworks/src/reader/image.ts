@@ -35,6 +35,8 @@ export default async function (
         const reader = vtkPolyDataReader.newInstance();
         await reader.setUrl(url)
         return reader.getOutputData();
+    } else {
+        console.log('Unknown file type for', filename)
+        return vtkPolyData.newInstance()
     }
-    return vtkPolyData.newInstance()
   }

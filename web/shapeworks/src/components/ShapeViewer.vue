@@ -117,13 +117,10 @@ export default {
   },
   created() {
     const renderWindow = vtkRenderWindow.newInstance();
-    const renderer = vtkRenderer.newInstance();
-    renderWindow.addRenderer(renderer);
-    const interactor = vtkRenderWindowInteractor.newInstance();
-
     const openglRenderWindow = vtkOpenGLRenderWindow.newInstance();
     renderWindow.addView(openglRenderWindow);
 
+    const interactor = vtkRenderWindowInteractor.newInstance();
     interactor.setView(openglRenderWindow);
     interactor.initialize();
     interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
@@ -133,7 +130,6 @@ export default {
     this.vtk = {
       camera,
       renderWindow,
-      renderer,
       interactor,
       openglRenderWindow,
       renderers: [],
@@ -146,7 +142,6 @@ export default {
     this.vtk.interactor.bindEvents(el);
 
     this.updateSize();
-    this.vtk.renderer.resetCamera();
     this.renderGrid();
   },
   methods: {
@@ -229,13 +224,12 @@ export default {
             mapper.setInputData(shape);
           } else {
             const marchingCube = vtkImageMarchingCubes.newInstance({
-              contourValue: 0.0,
+              contourValue: 0.001,
               computeNormals: true,
               mergePoints: true,
             });
             marchingCube.setInputData(shape)
             mapper.setInputConnection(marchingCube.getOutputPort());
-            marchingCube.setContourValue(0.0001);
           }
           renderer.addActor(actor);
         }

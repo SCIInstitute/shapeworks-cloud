@@ -29,15 +29,17 @@ export default defineComponent({
     },
     setup(props) {
         const mini = ref(false);
-        const search = ref('');
+        const anatomies = ref<string[]>([]);
+        const selectedAnatomies = ref<string[]>([]);
         const subjects = ref<Record<string, Subject>>({})
+        const selectedSubjects = ref<number[]>([])
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
         const headers =  [
             {text: 'ID', value: 'id'},
+            {text: 'Anatomy', value: 'anatomy_type'},
             {text: 'Type', value: 'type'},
-            {text: 'Subject', value: 'subject'},
             {text: 'File Name', value: 'file', cellClass: 'file-column'},
         ];
 
@@ -50,10 +52,29 @@ export default defineComponent({
             }).map((subject: Subject) => [subject.id, subject]));
             allDataObjectsInDataset.value =  (await Promise.all(
                 Object.values(subjects.value).map(
-                    async (subject: Subject) => await getDataObjectsForSubject(subject.id)
+                    async (subject: Subject) => (await getDataObjectsForSubject(subject.id)).map(
+                        (dataObj) => {
+                            let assignments = {'uid': `${dataObj.type}_${dataObj.id}`}
+                            // TODO: We use anatomy_type and modality interchangeably
+                            if(!dataObj.anatomy_type && dataObj.modality){
+                                assignments = Object.assign(assignments, {'anatomy_type': dataObj.modality})
+                            }
+                            return Object.assign(dataObj, assignments)
+                        }
+                    )
                 )
             )).flat()
+            anatomies.value = Object.keys(groupBy(allDataObjectsInDataset.value, 'anatomy_type'))
             loadingState.value = false;
+        }
+
+        function updateSelectedObjects(){
+            selectedDataObjects.value = allDataObjectsInDataset.value.filter(
+                (dataObject) => {
+                    return selectedAnatomies.value.includes(dataObject.anatomy_type) &&
+                    selectedSubjects.value.includes(dataObject.subject)
+                }
+            )
         }
 
         onMounted(async () => {
@@ -66,6 +87,10 @@ export default defineComponent({
             }
             await fetchData(selectedDataset.value.id)
         })
+
+        watch(selectedAnatomies, updateSelectedObjects)
+
+        watch(selectedSubjects, updateSelectedObjects)
 
         watch(selectedDataObjects, async () => {
             renderData.value = {}
@@ -97,12 +122,14 @@ export default defineComponent({
 
         return {
             mini,
-            search,
-            headers,
+            anatomies,
+            selectedAnatomies,
             subjects,
+            selectedSubjects,
             rows,
             cols,
             renderData,
+            headers,
             selectedDataset,
             allDataObjectsInDataset,
             selectedDataObjects,
@@ -129,17 +156,17 @@ export default defineComponent({
         <v-divider />
 
         <div class='content-area'>
-            <v-navigation-drawer :mini-variant.sync="mini" width="650" absolute>
+            <v-navigation-drawer :mini-variant.sync="mini" width="500" absolute>
                 <v-list-item>
                     <v-btn
                         icon
                         @click.stop="mini=false"
-                        class="pr-3"
+                        class="mr-3"
                     >
                     <v-icon large>mdi-database</v-icon>
                     </v-btn>
                     <v-list-item-title class="text-h6">
-                        Data Objects
+                        Data Objects ({{ allDataObjectsInDataset.length }})
                     </v-list-item-title>
                     <v-btn
                         icon
@@ -152,52 +179,78 @@ export default defineComponent({
                 <v-list-item>
                     <v-icon />
                     <div style="width:100%">
-                        <v-text-field
-                            v-model="search"
-                            append-icon="mdi-magnify"
-                            label="Search"
-                            single-line
-                            hide-details
-                            class="pa-5"
-                        ></v-text-field>
-                        <v-data-table
-                            v-model="selectedDataObjects"
-                            :headers="headers"
-                            :items="allDataObjectsInDataset"
-                            :search="search"
-                            group-by="subject"
-                            disable-pagination
-                            hide-default-footer
-                            show-select
-                            dense
-                            width="100%"
-                        >
-                            <!-- eslint-disable-next-line -->
-                            <template v-slot:group.header="{ group, headers, toggle, isOpen }">
-                                <td :colspan="headers.length">
-                                    <v-tooltip bottom>
-                                    <template v-slot:activator="{ on, attrs }">
-                                        <span
-                                            class="font-weight-bold"
-                                            v-bind="attrs"
-                                            v-on="on"
-                                        >
-                                            Subject: {{ subjects[group].name }}
-                                        </span>
+                        <v-list dense shaped>
+                            <v-subheader>ANATOMIES</v-subheader>
+                            <v-list-item-group>
+                                <v-list-item
+                                    v-for="anatomy_type in anatomies"
+                                    :key="anatomy_type"
+                                >
+                                     <v-checkbox
+                                        color="primary"
+                                        v-model="selectedAnatomies"
+                                        :value="anatomy_type"
+                                    ></v-checkbox>
+                                    <v-list-item-title v-text="anatomy_type"/>
+                                </v-list-item>
+                            </v-list-item-group>
+                            <v-subheader>SUBJECTS</v-subheader>
+                            <v-list-item-group>
+                                <v-list-group
+                                    v-for="subject in Object.values(subjects)"
+                                    :key="subject.id"
+                                    v-model="subject.showDetails"
+                                >
+                                    <template v-slot:activator>
+                                        <v-checkbox
+                                            color="primary"
+                                            v-model="selectedSubjects"
+                                            :value="subject.id"
+                                            @click.native="$event.stopPropagation()"
+                                        ></v-checkbox>
+                                        <v-list-item-title>
+                                            Subject: {{ subject.name }}
+                                        </v-list-item-title>
                                     </template>
-                                    <span>
-                                        ID: {{ subjects[group].id }} |
-                                        Created: {{ shortDateString(subjects[group].created) }} |
-                                        Modified: {{ shortDateString(subjects[group].modified) }}
-                                    </span>
-                                    </v-tooltip>
-                                </td>
-                            </template>
-                            <!-- eslint-disable-next-line -->
-                            <template v-slot:item.file="{ item }">
-                                <span>{{ shortFileName(item.file) }}</span>
-                            </template>
-                        </v-data-table>
+
+                                    <v-data-table
+                                        :headers="headers"
+                                        :items="allDataObjectsInDataset.filter((obj) => obj.subject === subject.id)"
+                                        item-key="uid"
+                                        disable-pagination
+                                        hide-default-footer
+                                        dense
+                                        width="100%"
+                                    >
+                                        <!-- eslint-disable-next-line -->
+                                        <template v-slot:group.header="{ group, headers, toggle, isOpen }">
+                                            <td :colspan="headers.length">
+                                                <v-tooltip bottom>
+                                                <template v-slot:activator="{ on, attrs }">
+                                                    <span
+                                                        class="font-weight-bold"
+                                                        v-bind="attrs"
+                                                        v-on="on"
+                                                    >
+                                                        Subject: {{ subjects[group].name }}
+                                                    </span>
+                                                </template>
+                                                <span>
+                                                    ID: {{ subjects[group].id }} |
+                                                    Created: {{ shortDateString(subjects[group].created) }} |
+                                                    Modified: {{ shortDateString(subjects[group].modified) }}
+                                                </span>
+                                                </v-tooltip>
+                                            </td>
+                                        </template>
+                                        <!-- eslint-disable-next-line -->
+                                        <template v-slot:item.file="{ item }">
+                                            <span>{{ shortFileName(item.file) }}</span>
+                                        </template>
+                                    </v-data-table>
+                                </v-list-group>
+                            </v-list-item-group>
+                        </v-list>
                     </div>
                 </v-list-item>
                 <br/>
@@ -227,7 +280,7 @@ export default defineComponent({
     height: 80px;
 }
 .file-column {
-    max-width: 60px!important;
+    width: 100px!important;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -246,8 +299,8 @@ export default defineComponent({
     position: absolute;
     display: flex;
     justify-content: space-between;
-    left: 650px;
-    width: calc(100% - 650px);
+    left: 500px;
+    width: calc(100% - 500px);
     height: 100%;
 }
 .render-area.maximize {

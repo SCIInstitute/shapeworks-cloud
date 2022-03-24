@@ -8,6 +8,8 @@ export const allDatasets = ref<Dataset[]>([])
 
 export const selectedDataset = ref<Dataset>()
 
+export const allSubjectsForDataset = ref<Subject[]>([])
+
 export const allDataObjectsInDataset = ref<DataObject[]>([])
 
 export const selectedDataObjects = ref<DataObject[]>([])

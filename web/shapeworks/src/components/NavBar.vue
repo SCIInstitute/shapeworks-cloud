@@ -2,6 +2,7 @@
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
 import { selectedDataset } from '../store';
+import router from '@/router';
 
 
 export default defineComponent({
@@ -10,7 +11,7 @@ export default defineComponent({
           dataset: selectedDataset.value?.id,
         }))
 
-        const logInOrOut = async() => {
+        async function logInOrOut() {
             if (oauthClient.isLoggedIn) {
               await logout();
               window.location.reload();
@@ -19,10 +20,17 @@ export default defineComponent({
             }
         }
 
+        function toSelectPage(){
+          router.push({
+              name: 'select',
+          });
+        }
+
         return {
             oauthClient,
             params,
             logInOrOut,
+            toSelectPage,
             selectedDataset,
         }
     }
@@ -30,7 +38,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <v-app-bar app height="80px">
+  <v-app-bar app height="50px">
     <div class="d-flex align-center px-5">
       <v-img
         alt="ShapeWorks Logo"
@@ -38,37 +46,16 @@ export default defineComponent({
         transition="scale-transition"
         width="55px"
       />
-      <v-toolbar-title class="text-h6">ShapeWorks</v-toolbar-title>
+      <v-toolbar-title class="text-h6" @click="toSelectPage">ShapeWorks</v-toolbar-title>
     </div>
-    <v-tabs>
-      <v-tab to="/">
-        Select
-      </v-tab>
-      <v-tab :to="{name: 'data', params}" v-if="selectedDataset">
-        Data
-      </v-tab>
-      <v-tab :to="{name: 'groom', params}" v-if="selectedDataset">
-        Groom
-      </v-tab>
-      <v-tab :to="{name: 'optimize', params}" v-if="selectedDataset">
-        Optimize
-      </v-tab>
-      <v-tab :to="{name: 'analyze', params}" v-if="selectedDataset">
-        Analyze
-      </v-tab>
-      <v-tab to="/demo">
-        Demo
-      </v-tab>
-    </v-tabs>
     <v-spacer />
     <v-btn
-    v-if="oauthClient.isLoggedIn"
+      v-if="oauthClient.isLoggedIn"
       text
       @click="logInOrOut"
     >
       Logout
     </v-btn>
-
   </v-app-bar>
 </template>
 

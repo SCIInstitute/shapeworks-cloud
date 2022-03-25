@@ -52,6 +52,7 @@ export default defineComponent({
             anatomies.value = Object.keys(
                 groupBy(allDataObjectsInDataset.value, 'anatomy_type')
             ).filter((key) => key !== 'undefined')
+            selectedAnatomies.value = anatomies.value;
             loadingState.value = false;
         }
 

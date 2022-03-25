@@ -2,7 +2,6 @@
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
 import { selectedDataset } from '../store';
-import router from '@/router';
 
 
 export default defineComponent({
@@ -20,17 +19,10 @@ export default defineComponent({
             }
         }
 
-        function toSelectPage(){
-          router.push({
-              name: 'select',
-          });
-        }
-
         return {
             oauthClient,
             params,
             logInOrOut,
-            toSelectPage,
             selectedDataset,
         }
     }

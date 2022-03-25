@@ -93,7 +93,7 @@ class OptimizedShapeModelViewSet(BaseViewSet):
 class OptimizedParticlesViewSet(BaseViewSet):
     queryset = models.OptimizedParticles.objects.all()
     serializer_class = serializers.OptimizedParticlesSerializer
-    filterset_class = filters.OptimizedShapeModelFilter
+    filterset_class = filters.OptimizedParticlesFilter
 
 
 class OptimizedSurfaceReconstructionMetaViewSet(BaseViewSet):

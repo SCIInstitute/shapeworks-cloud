@@ -27,7 +27,7 @@ export default defineComponent({
             if(!selectedDataset.value){
                 selectedDataset.value = dataset;
                 router.push({
-                    name: 'data',
+                    name: 'main',
                     params: {
                         dataset: String(selectedDataset.value.id),
                     }

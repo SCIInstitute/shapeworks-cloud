@@ -1,0 +1,175 @@
+<script lang="ts">
+import { groupBy, shortDateString, shortFileName } from '../helper';
+import { getDataObjectsForSubject } from '@/api/rest';
+import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
+import { Subject } from '../types';
+import { getSubjectsForDataset } from '@/api/rest'
+import {
+    selectedDataset,
+    allSubjectsForDataset,
+    allDataObjectsInDataset,
+    selectedDataObjects,
+    loadingState,
+} from '../store';
+import router from '@/router';
+
+
+export default defineComponent({
+    props: {
+        dataset: {
+            type: Number,
+            required: true,
+        },
+    },
+    setup() {
+        const anatomies = ref<string[]>([]);
+        const selectedAnatomies = ref<string[]>([]);
+        const selectedSubjects = ref<number[]>([])
+        const headers =  [
+            {text: 'ID', value: 'id'},
+            {text: 'Anatomy', value: 'anatomy_type'},
+            {text: 'Type', value: 'type'},
+            {text: 'File Name', value: 'file', cellClass: 'file-column'},
+        ];
+
+        async function fetchData(datasetId: number) {
+            loadingState.value = true;
+            allSubjectsForDataset.value = (await getSubjectsForDataset(datasetId)).sort((a, b) => {
+                if(a.created < b.created) return 1;
+                if(a.created > b.created) return -1;
+                return 0;
+            });
+            allDataObjectsInDataset.value =  (await Promise.all(
+                allSubjectsForDataset.value.map(
+                    async (subject: Subject) => (await getDataObjectsForSubject(subject.id)).map(
+                        (dataObj) => {
+                            let assignments = {'uid': `${dataObj.type}_${dataObj.id}`}
+                            return Object.assign(dataObj, assignments)
+                        }
+                    )
+                )
+            )).flat()
+            anatomies.value = Object.keys(groupBy(allDataObjectsInDataset.value, 'anatomy_type'))
+            loadingState.value = false;
+        }
+
+        function updateSelectedObjects(){
+            selectedDataObjects.value = allDataObjectsInDataset.value.filter(
+                (dataObject) => {
+                    return selectedAnatomies.value.includes(dataObject.anatomy_type) &&
+                    selectedSubjects.value.includes(dataObject.subject)
+                }
+            )
+        }
+
+        onMounted(async () => {
+            if(!selectedDataset.value) {
+                router.push({
+                    name: 'select',
+                });
+                return;
+            }
+            await fetchData(selectedDataset.value.id)
+        })
+
+        watch(selectedAnatomies, updateSelectedObjects)
+
+        watch(selectedSubjects, updateSelectedObjects)
+
+        return {
+            anatomies,
+            selectedAnatomies,
+            allSubjectsForDataset,
+            selectedSubjects,
+            headers,
+            allDataObjectsInDataset,
+            selectedDataObjects,
+            shortFileName,
+            shortDateString,
+        }
+    }
+})
+</script>
+
+<template>
+    <div style="width:100%">
+        <v-list dense shaped>
+            <v-subheader>ANATOMIES</v-subheader>
+            <v-list-item-group>
+                <v-list-item
+                    v-for="anatomy_type in anatomies"
+                    :key="anatomy_type"
+                >
+                        <v-checkbox
+                        color="primary"
+                        v-model="selectedAnatomies"
+                        :value="anatomy_type"
+                    ></v-checkbox>
+                    <v-list-item-title v-text="anatomy_type"/>
+                </v-list-item>
+            </v-list-item-group>
+            <v-subheader>SUBJECTS</v-subheader>
+            <v-list-item-group>
+                <v-list-group
+                    v-for="subject in allSubjectsForDataset"
+                    :key="subject.id"
+                    v-model="subject.showDetails"
+                >
+                    <template v-slot:activator>
+                        <v-checkbox
+                            color="primary"
+                            v-model="selectedSubjects"
+                            :value="subject.id"
+                            @click.native="$event.stopPropagation()"
+                        ></v-checkbox>
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-list-item-title
+                                    v-bind="attrs"
+                                    v-on="on"
+                                >
+                                    Subject: {{ subject.name }}
+                                </v-list-item-title>
+                            </template>
+                            <span>
+                                ID: {{ subject.id }} |
+                                Created: {{ shortDateString(subject.created) }} |
+                                Modified: {{ shortDateString(subject.modified) }}
+                            </span>
+                        </v-tooltip>
+                    </template>
+
+                    <v-data-table
+                        :headers="headers"
+                        :items="allDataObjectsInDataset.filter((obj) => obj.subject === subject.id)"
+                        item-key="uid"
+                        disable-pagination
+                        hide-default-footer
+                        dense
+                        width="100%"
+                    >
+                        <!-- eslint-disable-next-line -->
+                        <template v-slot:item.file="{ item }">
+                            <span>{{ shortFileName(item.file) }}</span>
+                        </template>
+                    </v-data-table>
+                </v-list-group>
+            </v-list-item-group>
+        </v-list>
+    </div>
+</template>
+
+<style>
+.file-column {
+    width: 100px!important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.v-data-table td {
+    border-bottom: none !important;
+}
+.v-row-group__header {
+    background: none !important;
+    border-top: 1px solid white !important;
+}
+</style>

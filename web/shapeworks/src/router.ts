@@ -1,11 +1,7 @@
 import Vue from 'vue'
 import VueRouter, { Route, RouteConfig } from 'vue-router'
 import Select from './views/Select.vue'
-import Data from './views/Data.vue'
-import Groom from './views/Groom.vue'
-import Optimize from './views/Optimize.vue'
-import Analyze from './views/Analyze.vue'
-import Demo from './views/Demo.vue'
+import Main from './views/Main.vue'
 
 Vue.use(VueRouter)
 
@@ -16,33 +12,10 @@ const castDatasetAndSubjectProps = (route: Route) => ({
 
 const routes: Array<RouteConfig> = [
   {
-    path: '/dataset/:dataset/data',
-    name: 'data',
+    path: '/dataset/:dataset',
+    name: 'main',
     props: castDatasetAndSubjectProps,
-    component: Data
-  },
-  {
-    path: '/dataset/:dataset/groom',
-    name: 'groom',
-    props: castDatasetAndSubjectProps,
-    component: Groom
-  },
-  {
-    path: '/dataset/:dataset/optimize',
-    name: 'optimize',
-    props: castDatasetAndSubjectProps,
-    component: Optimize
-  },
-  {
-    path: '/dataset/:dataset/analyze',
-    name: 'analyze',
-    props: castDatasetAndSubjectProps,
-    component: Analyze,
-  },
-  {
-    path: '/demo',
-    name: 'demo',
-    component: Demo,
+    component: Main
   },
   {
     path: '/',

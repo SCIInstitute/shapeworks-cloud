@@ -2,7 +2,6 @@
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
 import { selectedDataset } from '../store';
-import router from '@/router';
 
 
 export default defineComponent({
@@ -20,17 +19,10 @@ export default defineComponent({
             }
         }
 
-        function toSelectPage(){
-          router.push({
-              name: 'select',
-          });
-        }
-
         return {
             oauthClient,
             params,
             logInOrOut,
-            toSelectPage,
             selectedDataset,
         }
     }
@@ -39,15 +31,17 @@ export default defineComponent({
 
 <template>
   <v-app-bar app height="50px">
-    <div class="d-flex align-center px-5">
+    <router-link to="/">
+      <div class="d-flex align-center px-5">
       <v-img
         alt="ShapeWorks Logo"
         src="favicon.ico"
         transition="scale-transition"
         width="55px"
       />
-      <v-toolbar-title class="text-h6" @click="toSelectPage">ShapeWorks</v-toolbar-title>
-    </div>
+        <v-toolbar-title class="text-h6">ShapeWorks</v-toolbar-title>
+      </div>
+    </router-link>
     <v-spacer />
     <v-btn
       v-if="oauthClient.isLoggedIn"
@@ -60,4 +54,8 @@ export default defineComponent({
 </template>
 
 <style>
+.router-link-active {
+  color: white!important;
+  text-decoration: none!important;
+}
 </style>

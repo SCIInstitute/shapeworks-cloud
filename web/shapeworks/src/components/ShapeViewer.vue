@@ -72,7 +72,9 @@ export default {
     },
   },
   data() {
-    return {};
+    return {
+      cachedMarchingCubes: {}
+    };
   },
   computed: {
     grid() {
@@ -225,9 +227,9 @@ export default {
       renderer.addActor(actor);
       this.vtk.pointMappers.push(mapper);
     },
-    addShapes(renderer, shapes) {
+    addShapes(renderer, label, shapes) {
       shapes.forEach(
-        (shape) => {
+        (shape, index) => {
           const mapper = vtkMapper.newInstance({
             colorMode: ColorMode.MAP_SCALARS,
           });
@@ -237,6 +239,8 @@ export default {
           actor.setMapper(mapper);
           if (shape.getClassName() == 'vtkPolyData'){
             mapper.setInputData(shape);
+          } else if (this.cachedMarchingCubes[`${label}_${index}`]) {
+            mapper.setInputData(this.cachedMarchingCubes[`${label}_${index}`])
           } else {
             const marchingCube = vtkImageMarchingCubes.newInstance({
               contourValue: 0.001,
@@ -245,6 +249,7 @@ export default {
             });
             marchingCube.setInputData(shape)
             mapper.setInputConnection(marchingCube.getOutputPort());
+            this.cachedMarchingCubes[`${label}_${index}`] = marchingCube.getOutputData()
           }
           renderer.addActor(actor);
         }
@@ -267,7 +272,7 @@ export default {
         this.labelCanvas.height * (1 - bounds[1]) - 20
       );
 
-      this.addShapes(renderer, shapes.map(({shape}) => shape));
+      this.addShapes(renderer, label, shapes.map(({shape}) => shape));
       const points = shapes.map(({points}) => points)
       if(points.length > 0 && points[0].getNumberOfPoints() > 0) this.addPoints(renderer, points[0]);
 

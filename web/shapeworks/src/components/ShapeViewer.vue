@@ -160,28 +160,19 @@ export default {
     syncCameras(animation) {
       const targetRenderer = animation.pokedRenderer;
       const targetCamera = targetRenderer.getActiveCamera();
-      const positionDelta = targetCamera.getReferenceByName('position').map(
-        (datum, index) => datum - targetRenderer.__proto__.initialCameraPosition[index]
-      )
-      const newFocalPoint = targetCamera.getReferenceByName('focalPoint');
+      const newPosition = targetCamera.getReferenceByName('position');
       const newViewUp = targetCamera.getReferenceByName('viewUp');
       const newViewAngle = targetCamera.getReferenceByName('viewAngle');
+      const newClippingRange = targetCamera.getClippingRange();
       const otherRenderers = this.vtk.renderers.filter(
         (renderer) => renderer.getActiveCamera() !== targetCamera
       )
       otherRenderers.forEach((renderer) => {
         const camera = renderer.getActiveCamera();
-        const newPosition = renderer.__proto__.initialCameraPosition.map(
-          (datum, index) => datum + positionDelta[index]
-        )
         camera.setPosition(...newPosition)
-        camera.setFocalPoint(...newFocalPoint)
         camera.setViewUp(...newViewUp)
         camera.setViewAngle(newViewAngle)
-        // TODO: resetting the camera here means that renderers
-        // won't share pan and zoom
-        // but taking this off results in origin offset and clipping plane problems
-        renderer.resetCamera()
+        camera.setClippingRange(...newClippingRange)
       })
     },
     createColorFilter() {
@@ -283,7 +274,6 @@ export default {
       const camera = vtkCamera.newInstance();
       renderer.setActiveCamera(camera);
       renderer.resetCamera();
-      renderer.__proto__.initialCameraPosition = [...camera.getReferenceByName('position')]
     },
     renderGrid() {
       this.prepareLabelCanvas();

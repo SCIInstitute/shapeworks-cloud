@@ -124,11 +124,9 @@ export default {
     interactor.setView(openglRenderWindow);
     interactor.initialize();
     interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
-
-    const camera = vtkCamera.newInstance();
+    interactor.onAnimation(this.syncCameras)
 
     this.vtk = {
-      camera,
       renderWindow,
       interactor,
       openglRenderWindow,
@@ -158,6 +156,33 @@ export default {
         this.vtk.openglRenderWindow.setSize(width, height);
         this.render();
       }
+    },
+    syncCameras(animation) {
+      const targetRenderer = animation.pokedRenderer;
+      const targetCamera = targetRenderer.getActiveCamera();
+      const positionDelta = targetCamera.getReferenceByName('position').map(
+        (datum, index) => datum - targetRenderer.__proto__.initialCameraPosition[index]
+      )
+      const newFocalPoint = targetCamera.getReferenceByName('focalPoint');
+      const newViewUp = targetCamera.getReferenceByName('viewUp');
+      const newViewAngle = targetCamera.getReferenceByName('viewAngle');
+      const otherRenderers = this.vtk.renderers.filter(
+        (renderer) => renderer.getActiveCamera() !== targetCamera
+      )
+      otherRenderers.forEach((renderer) => {
+        const camera = renderer.getActiveCamera();
+        const newPosition = renderer.__proto__.initialCameraPosition.map(
+          (datum, index) => datum + positionDelta[index]
+        )
+        camera.setPosition(...newPosition)
+        camera.setFocalPoint(...newFocalPoint)
+        camera.setViewUp(...newViewUp)
+        camera.setViewAngle(newViewAngle)
+        // TODO: resetting the camera here means that renderers
+        // won't share pan and zoom
+        // but taking this off results in origin offset and clipping plane problems
+        renderer.resetCamera()
+      })
     },
     createColorFilter() {
       const filter = vtkCalculator.newInstance()
@@ -210,12 +235,11 @@ export default {
       this.vtk.pointMappers.push(mapper);
     },
     addShapes(renderer, shapes) {
-      const mapper = vtkMapper.newInstance({
-        colorMode: ColorMode.MAP_SCALARS,
-      });
-
       shapes.forEach(
         (shape) => {
+          const mapper = vtkMapper.newInstance({
+            colorMode: ColorMode.MAP_SCALARS,
+          });
           const actor = vtkActor.newInstance();
           actor.getProperty().setColor(1, 1, 1);
           actor.getProperty().setOpacity(1);
@@ -255,6 +279,11 @@ export default {
       this.addShapes(renderer, shapes.map(({shape}) => shape));
       const points = shapes.map(({points}) => points)
       if(points.length > 0 && points[0].getNumberOfPoints() > 0) this.addPoints(renderer, points[0]);
+
+      const camera = vtkCamera.newInstance();
+      renderer.setActiveCamera(camera);
+      renderer.resetCamera();
+      renderer.__proto__.initialCameraPosition = [...camera.getReferenceByName('position')]
     },
     renderGrid() {
       this.prepareLabelCanvas();
@@ -271,8 +300,6 @@ export default {
           this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
         }
         newRenderer.setViewport.apply(newRenderer, this.grid[i]);
-        newRenderer.setActiveCamera(this.vtk.camera);
-        newRenderer.resetCamera();
         this.vtk.renderers.push(newRenderer);
         this.vtk.renderWindow.addRenderer(newRenderer);
       }

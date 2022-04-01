@@ -1,5 +1,6 @@
 <script lang="ts">
 import imageReader from '../reader/image';
+import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
 import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
 import { DataObject, ShapeData } from '../types';
@@ -10,8 +11,8 @@ import {
     allSubjectsForDataset,
     selectedDataObjects,
     loadDataset,
+    particlesForOriginalDataObjects,
 } from '../store';
-import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import router from '@/router';
 
 
@@ -58,11 +59,17 @@ export default defineComponent({
                             if (subject) subjectName = subject.name
                         }
                         const shapeDatas = (await Promise.all(dataObjects.map(
-                            (dataObject) => imageReader(
-                                dataObject.file,
-                                shortFileName(dataObject.file)
-                            )
-                        ))).map((imageData) => ({shape: imageData, points: vtkPolyData.newInstance()}))
+                            (dataObject) => Promise.all([
+                                imageReader(
+                                    dataObject.file,
+                                    shortFileName(dataObject.file)
+                                ),
+                                pointsReader(
+                                    particlesForOriginalDataObjects.value[dataObject.type][dataObject.id][0].local,
+                                )
+                            ])
+                        )))
+                        .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
                         return [
                             subjectName, shapeDatas
                         ]

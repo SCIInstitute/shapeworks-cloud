@@ -72,7 +72,9 @@ export default {
     },
   },
   data() {
-    return {};
+    return {
+      cachedMarchingCubes: {}
+    };
   },
   computed: {
     grid() {
@@ -124,11 +126,9 @@ export default {
     interactor.setView(openglRenderWindow);
     interactor.initialize();
     interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
-
-    const camera = vtkCamera.newInstance();
+    interactor.onAnimation(this.syncCameras)
 
     this.vtk = {
-      camera,
       renderWindow,
       interactor,
       openglRenderWindow,
@@ -158,6 +158,24 @@ export default {
         this.vtk.openglRenderWindow.setSize(width, height);
         this.render();
       }
+    },
+    syncCameras(animation) {
+      const targetRenderer = animation.pokedRenderer;
+      const targetCamera = targetRenderer.getActiveCamera();
+      const newPosition = targetCamera.getReferenceByName('position');
+      const newViewUp = targetCamera.getReferenceByName('viewUp');
+      const newViewAngle = targetCamera.getReferenceByName('viewAngle');
+      const newClippingRange = targetCamera.getClippingRange();
+      const otherRenderers = this.vtk.renderers.filter(
+        (renderer) => renderer.getActiveCamera() !== targetCamera
+      )
+      otherRenderers.forEach((renderer) => {
+        const camera = renderer.getActiveCamera();
+        camera.setPosition(...newPosition)
+        camera.setViewUp(...newViewUp)
+        camera.setViewAngle(newViewAngle)
+        camera.setClippingRange(...newClippingRange)
+      })
     },
     createColorFilter() {
       const filter = vtkCalculator.newInstance()
@@ -209,19 +227,20 @@ export default {
       renderer.addActor(actor);
       this.vtk.pointMappers.push(mapper);
     },
-    addShapes(renderer, shapes) {
-      const mapper = vtkMapper.newInstance({
-        colorMode: ColorMode.MAP_SCALARS,
-      });
-
+    addShapes(renderer, label, shapes) {
       shapes.forEach(
-        (shape) => {
+        (shape, index) => {
+          const mapper = vtkMapper.newInstance({
+            colorMode: ColorMode.MAP_SCALARS,
+          });
           const actor = vtkActor.newInstance();
           actor.getProperty().setColor(1, 1, 1);
           actor.getProperty().setOpacity(1);
           actor.setMapper(mapper);
           if (shape.getClassName() == 'vtkPolyData'){
             mapper.setInputData(shape);
+          } else if (this.cachedMarchingCubes[`${label}_${index}`]) {
+            mapper.setInputData(this.cachedMarchingCubes[`${label}_${index}`])
           } else {
             const marchingCube = vtkImageMarchingCubes.newInstance({
               contourValue: 0.001,
@@ -230,6 +249,7 @@ export default {
             });
             marchingCube.setInputData(shape)
             mapper.setInputConnection(marchingCube.getOutputPort());
+            this.cachedMarchingCubes[`${label}_${index}`] = marchingCube.getOutputData()
           }
           renderer.addActor(actor);
         }
@@ -252,9 +272,13 @@ export default {
         this.labelCanvas.height * (1 - bounds[1]) - 20
       );
 
-      this.addShapes(renderer, shapes.map(({shape}) => shape));
+      this.addShapes(renderer, label, shapes.map(({shape}) => shape));
       const points = shapes.map(({points}) => points)
       if(points.length > 0 && points[0].getNumberOfPoints() > 0) this.addPoints(renderer, points[0]);
+
+      const camera = vtkCamera.newInstance();
+      renderer.setActiveCamera(camera);
+      renderer.resetCamera();
     },
     renderGrid() {
       this.prepareLabelCanvas();
@@ -271,8 +295,6 @@ export default {
           this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
         }
         newRenderer.setViewport.apply(newRenderer, this.grid[i]);
-        newRenderer.setActiveCamera(this.vtk.camera);
-        newRenderer.resetCamera();
         this.vtk.renderers.push(newRenderer);
         this.vtk.renderWindow.addRenderer(newRenderer);
       }

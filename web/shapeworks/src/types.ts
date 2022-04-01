@@ -35,3 +35,13 @@ export interface DataObject {
     modality: string,
     anatomy_type: string,
 }
+
+export interface Particles {
+    id: number,
+    groomed_mesh: number,
+    groomed_segmentation: number,
+    shape_model: number,
+    local: string,
+    transform: string,
+    world: string,
+}

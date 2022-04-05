@@ -11,8 +11,10 @@ const { convertItkToVtkImage } = ITKHelper;
 
 
 export default async function (
-    url: string, filename=''
+    url: string | undefined, filename=''
 ): Promise<vtkImageData | vtkPolyData> {
+    if(!url) return vtkPolyData.newInstance()
+
     const arrayBuffer = (await axios.get(url, {
         responseType: 'arraybuffer'
     })).data;

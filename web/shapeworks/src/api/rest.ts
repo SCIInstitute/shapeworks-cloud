@@ -39,9 +39,10 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
 }
 
 export async function getOptimizedParticlesForDataObject(type: string, id: number){
-    const particles = (await apiClient.get('/optimized-particles', {
+    let particles = (await apiClient.get('/optimized-particles', {
         params: {[`original_${type}`]: id}
     })).data.results
+    if (particles.length > 0) particles = particles[0]
     if(!particlesForOriginalDataObjects.value[type]){
         particlesForOriginalDataObjects.value[type] = {}
     }

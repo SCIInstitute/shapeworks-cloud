@@ -65,7 +65,7 @@ export default defineComponent({
                                     shortFileName(dataObject.file)
                                 ),
                                 pointsReader(
-                                    particlesForOriginalDataObjects.value[dataObject.type][dataObject.id][0].local,
+                                    particlesForOriginalDataObjects.value[dataObject.type][dataObject.id].local,
                                 )
                             ])
                         )))

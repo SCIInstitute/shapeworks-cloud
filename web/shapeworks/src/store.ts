@@ -1,5 +1,5 @@
 import { DataObject, Dataset, Subject, Particles } from '@/types'
-import { getDataset } from '@/api/rest';
+import { getDataset, getOptimizedParticlesForDataObject } from '@/api/rest';
 import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
@@ -29,4 +29,13 @@ export const loadDataset = async (datasetId: number) => {
         selectedDataset.value = await getDataset(datasetId);
         loadingState.value = false;
     }
+}
+
+export const loadParticlesForObject = async (type: string, id: number) => {
+    let particles = await getOptimizedParticlesForDataObject(type, id)
+    if (particles.length > 0) particles = particles[0]
+    if(!particlesForOriginalDataObjects.value[type]){
+        particlesForOriginalDataObjects.value[type] = {}
+    }
+    particlesForOriginalDataObjects.value[type][id] = particles
 }

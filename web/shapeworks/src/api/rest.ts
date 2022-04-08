@@ -1,6 +1,6 @@
 import { DataObject, Dataset, Subject } from "@/types";
 import { apiClient } from "./auth";
-import { particlesForOriginalDataObjects } from "@/store";
+import { loadParticlesForObject } from "@/store";
 
 export async function getDatasets(): Promise<Dataset[]>{
     return (await apiClient.get('/datasets')).data.results
@@ -31,7 +31,7 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
             const type = dataTypes[index]
             if(type !== 'image'){
                 // don't await this, let particles load in after
-                getOptimizedParticlesForDataObject(type, result.id)
+                loadParticlesForObject(type, result.id)
             }
             return Object.assign(result, {type})
         })
@@ -39,12 +39,7 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
 }
 
 export async function getOptimizedParticlesForDataObject(type: string, id: number){
-    let particles = (await apiClient.get('/optimized-particles', {
+    return (await apiClient.get('/optimized-particles', {
         params: {[`original_${type}`]: id}
     })).data.results
-    if (particles.length > 0) particles = particles[0]
-    if(!particlesForOriginalDataObjects.value[type]){
-        particlesForOriginalDataObjects.value[type] = {}
-    }
-    particlesForOriginalDataObjects.value[type][id] = particles
 }

@@ -1,6 +1,6 @@
 import { DataObject, Dataset, Subject } from "@/types";
 import { apiClient } from "./auth";
-import { loadParticlesForObject } from "@/store";
+import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
 export async function getDatasets(): Promise<Dataset[]>{
     return (await apiClient.get('/datasets')).data.results
@@ -30,8 +30,9 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
         return response.data.results.map((result: DataObject) => {
             const type = dataTypes[index]
             if(type !== 'image'){
-                // don't await this, let particles load in after
+                // don't await this, let particles and groomed shapes load in after
                 loadParticlesForObject(type, result.id)
+                loadGroomedShapeForObject(type, result.id)
             }
             return Object.assign(result, {type})
         })
@@ -41,5 +42,12 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
 export async function getOptimizedParticlesForDataObject(type: string, id: number){
     return (await apiClient.get('/optimized-particles', {
         params: {[`original_${type}`]: id}
+    })).data.results
+}
+
+export async function getGroomedShapeForDataObject(type: string, id: number) {
+    const plural = `${type}${type == 'mesh' ?'es' :'s'}`
+    return (await apiClient.get(`/groomed-${plural}`, {
+        params: {[type]: id}
     })).data.results
 }

@@ -1,5 +1,5 @@
-import { DataObject, Dataset, Subject, Particles } from '@/types'
-import { getDataset, getOptimizedParticlesForDataObject } from '@/api/rest';
+import { DataObject, Dataset, Subject, Particles, GroomedShape } from '@/types'
+import { getDataset, getGroomedShapeForDataObject, getOptimizedParticlesForDataObject } from '@/api/rest';
 import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
@@ -20,6 +20,8 @@ export const particleSize = ref<number>(2)
 
 export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles>>>({})
 
+export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape>>>({})
+
 export const geometryShown = ref<string>("Original")
 
 export const loadDataset = async (datasetId: number) => {
@@ -38,4 +40,13 @@ export const loadParticlesForObject = async (type: string, id: number) => {
         particlesForOriginalDataObjects.value[type] = {}
     }
     particlesForOriginalDataObjects.value[type][id] = particles
+}
+
+export const loadGroomedShapeForObject = async (type: string, id: number) => {
+    let groomed = await getGroomedShapeForDataObject(type, id)
+    if (groomed.length > 0) groomed = groomed[0]
+    if(!groomedShapesForOriginalDataObjects.value[type]){
+        groomedShapesForOriginalDataObjects.value[type] = {}
+    }
+    groomedShapesForOriginalDataObjects.value[type][id] = groomed
 }

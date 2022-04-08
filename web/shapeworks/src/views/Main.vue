@@ -15,6 +15,7 @@ import {
     particleSize,
     particlesForOriginalDataObjects,
     geometryShown,
+    groomedShapesForOriginalDataObjects,
 } from '../store';
 import router from '@/router';
 
@@ -69,7 +70,12 @@ export default defineComponent({
                                 let shapeURL = undefined
 
                                 if(geometryShown.value === "Original") shapeURL = dataObject.file
-                                // TODO include else ifs for Groomed and Reconstructed
+                                else if(geometryShown.value === "Groomed"){
+                                    shapeURL = groomedShapesForOriginalDataObjects.value[
+                                        dataObject.type
+                                    ][dataObject.id].file
+                                }
+                                // TODO include else if for Reconstructed
 
                                 return Promise.all([
                                     imageReader(

@@ -45,3 +45,13 @@ export interface Particles {
     transform: string,
     world: string,
 }
+
+export interface GroomedShape {
+    id: number,
+    file: string,
+    pre_alignment: string,
+    pre_cropping: string,
+    project: number,
+    segmentation: number,
+    mesh: number,
+}

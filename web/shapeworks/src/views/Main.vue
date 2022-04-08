@@ -11,7 +11,10 @@ import {
     allSubjectsForDataset,
     selectedDataObjects,
     loadDataset,
+    showParticles,
+    particleSize,
     particlesForOriginalDataObjects,
+    geometryShown,
 } from '../store';
 import router from '@/router';
 
@@ -33,6 +36,9 @@ export default defineComponent({
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
+        const geometryOptions = [
+            "Original", "Groomed", "Reconstructed", "None"
+        ]
 
         onMounted(async () => {
             await loadDataset(props.dataset);
@@ -44,8 +50,7 @@ export default defineComponent({
                 name: 'select',
             });
         }
-
-        watch(selectedDataObjects, async () => {
+        async function refreshRender() {
             renderData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
             renderData.value = Object.fromEntries(
@@ -59,15 +64,21 @@ export default defineComponent({
                             if (subject) subjectName = subject.name
                         }
                         const shapeDatas = (await Promise.all(dataObjects.map(
-                            (dataObject) => Promise.all([
-                                imageReader(
-                                    dataObject.file,
-                                    shortFileName(dataObject.file)
-                                ),
-                                pointsReader(
-                                    particlesForOriginalDataObjects.value[dataObject.type][dataObject.id].local,
-                                )
-                            ])
+                            (dataObject) => {
+                                const particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
+                                let shapeURL = undefined
+
+                                if(geometryShown.value === "Original") shapeURL = dataObject.file
+                                // TODO include else ifs for Groomed and Reconstructed
+
+                                return Promise.all([
+                                    imageReader(
+                                        shapeURL,
+                                        shortFileName(dataObject.file)
+                                    ),
+                                    pointsReader(particleURL)
+                                ])
+                            }
                         )))
                         .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
                         return [
@@ -86,7 +97,11 @@ export default defineComponent({
                 rows.value = Math.ceil(n / 5);
                 cols.value = 5;
             }
-        })
+        }
+
+        watch(selectedDataObjects, refreshRender)
+        watch(showParticles, refreshRender)
+        watch(geometryShown, refreshRender)
 
         return {
             mini,
@@ -96,6 +111,10 @@ export default defineComponent({
             renderData,
             selectedDataset,
             selectedDataObjects,
+            showParticles,
+            particleSize,
+            geometryOptions,
+            geometryShown,
             toSelectPage,
         }
     }
@@ -161,16 +180,41 @@ export default defineComponent({
                 </v-list-item>
                 <br>
         </v-navigation-drawer>
+        <v-card
+            :class="mini ?'render-control-bar px-5 width-change maximize' :'render-control-bar width-change px-5'"
+        >
+            <v-checkbox
+                v-model="showParticles"
+                label="Show particles"
+            />
+            <v-text-field
+                v-model="particleSize"
+                v-if="showParticles"
+                label="Particle Size"
+                type="number"
+                style="width: 80px"
+                step="0.5"
+                min="0.5"
+                max="10"
+                hide-details
+            />
+            <v-select
+                v-model="geometryShown"
+                :items="geometryOptions"
+                label="Geometry shown"
+                style="width: 150px"
+            />
+        </v-card>
 
-        <div :class="mini ?'pa-5 render-area maximize' :'pa-5 render-area'">
+        <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">
             <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
             <template v-else>
-            <shape-viewer
-                :data="renderData"
-                :rows="rows"
-                :columns="cols"
-                :glyph-size="1.5"
-            />
+                <shape-viewer
+                    :data="renderData"
+                    :rows="rows"
+                    :columns="cols"
+                    :glyph-size="particleSize"
+                />
             </template>
         </div>
     </div>
@@ -188,19 +232,32 @@ export default defineComponent({
     position: relative;
     min-height: calc(100vh - 161px);
 }
-.render-area {
+.width-change {
     position: absolute;
-    display: flex;
-    justify-content: space-between;
     left: 650px;
     width: calc(100% - 650px);
-    height: 100%;
 }
-.render-area.maximize {
+.maximize {
     left: 60px;
     width: calc(100% - 60px);
 }
+.render-area {
+    display: flex;
+    top: 70px;
+    height: calc(100% - 70px);
+}
 .render-area > * {
     flex-grow: 1;
+}
+.render-control-bar {
+    display: flex;
+    justify-content: space-between;
+}
+.render-control-bar > * {
+    flex-grow: 0;
+}
+.render-control-bar.maximize {
+    left: 60px;
+    width: calc(100% - 60px);
 }
 </style>

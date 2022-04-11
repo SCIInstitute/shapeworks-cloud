@@ -1,5 +1,6 @@
 import { DataObject, Dataset, Subject } from "@/types";
 import { apiClient } from "./auth";
+import { loadParticlesForObject } from "@/store";
 
 export async function getDatasets(): Promise<Dataset[]>{
     return (await apiClient.get('/datasets')).data.results
@@ -26,8 +27,19 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
             params: {subject: subjectId}
         })
     }))).map((response, index) => {
-        return response.data.results.map((result: DataObject) => Object.assign(
-            result, {type: dataTypes[index]}
-        ))
+        return response.data.results.map((result: DataObject) => {
+            const type = dataTypes[index]
+            if(type !== 'image'){
+                // don't await this, let particles load in after
+                loadParticlesForObject(type, result.id)
+            }
+            return Object.assign(result, {type})
+        })
     }).flat(2)
+}
+
+export async function getOptimizedParticlesForDataObject(type: string, id: number){
+    return (await apiClient.get('/optimized-particles', {
+        params: {[`original_${type}`]: id}
+    })).data.results
 }

@@ -82,7 +82,7 @@ export default defineComponent({
                         )))
                         .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
                         return [
-                            subjectName, shapeDatas
+                            `${subjectName} - ${geometryShown.value}`, shapeDatas
                         ]
                     }
                 )

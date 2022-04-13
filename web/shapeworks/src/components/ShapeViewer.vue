@@ -239,6 +239,7 @@ export default {
             (layer) => layer.name !== 'Particles'
           ).length
           if(numLayers > 0) opacity /= numLayers
+          const cacheLabel = `${label}_${layerName}_${index}`
 
           const mapper = vtkMapper.newInstance({
             colorMode: ColorMode.MAP_SCALARS,
@@ -249,8 +250,8 @@ export default {
           actor.setMapper(mapper);
           if (shape.getClassName() == 'vtkPolyData'){
             mapper.setInputData(shape);
-          } else if (this.cachedMarchingCubes[`${label}_${index}`]) {
-            mapper.setInputData(this.cachedMarchingCubes[`${label}_${index}`])
+          } else if (this.cachedMarchingCubes[cacheLabel]) {
+            mapper.setInputData(this.cachedMarchingCubes[cacheLabel])
           } else {
             const marchingCube = vtkImageMarchingCubes.newInstance({
               contourValue: 0.001,
@@ -259,7 +260,7 @@ export default {
             });
             marchingCube.setInputData(shape)
             mapper.setInputConnection(marchingCube.getOutputPort());
-            this.cachedMarchingCubes[`${label}_${index}`] = marchingCube.getOutputData()
+            this.cachedMarchingCubes[cacheLabel] = marchingCube.getOutputData()
           }
           renderer.addActor(actor);
         }

@@ -29,7 +29,7 @@ export default defineComponent({
             small-chips
             item-text="name"
         >
-            <template #selection="{ item }">
+            <template #selection="{ item, index }">
                 <v-chip
                     close
                     @click:close="layersShown.splice(index, 1)"

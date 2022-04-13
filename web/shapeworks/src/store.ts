@@ -14,15 +14,13 @@ export const allDataObjectsInDataset = ref<DataObject[]>([])
 
 export const selectedDataObjects = ref<DataObject[]>([])
 
-export const showParticles = ref<boolean>(true)
-
 export const particleSize = ref<number>(2)
 
 export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles>>>({})
 
 export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape>>>({})
 
-export const geometryShown = ref<string>("Original")
+export const layersShown = ref<string[]>(["Original"])
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed

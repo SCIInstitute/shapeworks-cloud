@@ -2,20 +2,17 @@
 import { defineComponent } from '@vue/composition-api';
 import {
     particleSize,
+    layers,
     layersShown,
 } from '../store';
 
 
 export default defineComponent({
     setup() {
-        const layersOptions = [
-            "Original", "Groomed", "Reconstructed", "Particles"
-        ]
-
         return {
             particleSize,
             layersShown,
-            layersOptions,
+            layers,
         }
     }
 })
@@ -23,14 +20,26 @@ export default defineComponent({
 
 <template>
     <div class="render-control-bar">
-        <v-combobox
+        <v-select
             v-model="layersShown"
-            :items="layersOptions"
+            :items="layers"
             label="Layers shown"
-            style="width: 250px"
+            style="width: 500px"
             multiple
             small-chips
-        />
+            item-text="name"
+        >
+            <template #selection="{ item }">
+                <v-chip
+                    close
+                    @click:close="layersShown.splice(index, 1)"
+                    :color="item.color"
+                    :text-color="item.color === 'white' ? 'black' : 'white'"
+                >
+                    {{ item.name }}
+                </v-chip>
+            </template>
+        </v-select>
         <v-text-field
             v-model.number="particleSize"
             v-if="layersShown.includes('Particles')"
@@ -49,6 +58,7 @@ export default defineComponent({
 .render-control-bar {
     display: flex;
     width: 100%;
+    height: 70px;
     justify-content: space-between;
 }
 .render-control-bar > * {

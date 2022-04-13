@@ -20,6 +20,13 @@ export const particlesForOriginalDataObjects = ref<Record<string, Record<number,
 
 export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape>>>({})
 
+export const layers = [
+    { name: 'Original', color: 'white', rgb: [1, 1, 1] },
+    { name: 'Groomed', color: 'green', rgb: [0, 1, 0] },
+    { name: 'Reconstructed', color: 'red', rgb: [1, 0, 0] },
+    { name: 'Particles', color: undefined, rgb: undefined }
+]
+
 export const layersShown = ref<string[]>(["Original"])
 
 export const loadDataset = async (datasetId: number) => {

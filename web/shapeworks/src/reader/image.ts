@@ -11,9 +11,10 @@ const { convertItkToVtkImage } = ITKHelper;
 
 
 export default async function (
-    url: string | undefined, filename=''
+    url: string | undefined, filename='', type="Original",
 ): Promise<vtkImageData | vtkPolyData> {
-    if(!url) return vtkPolyData.newInstance()
+    let shape: vtkImageData | vtkPolyData = vtkPolyData.newInstance()
+    if(!url) return shape
 
     const arrayBuffer = (await axios.get(url, {
         responseType: 'arraybuffer'
@@ -23,22 +24,24 @@ export default async function (
         filename.toLowerCase().endsWith('ply')){
         const reader = vtkPLYReader.newInstance();
         await reader.parseAsArrayBuffer(arrayBuffer)
-        return reader.getOutputData();
+        shape =  reader.getOutputData();
     } else if (
         filename.toLowerCase().endsWith('nrrd') ||
         filename.toLowerCase().endsWith('nii') ||
         filename.toLowerCase().endsWith('nii.gz')
     ) {
         const { image } = await readImageArrayBuffer(null, arrayBuffer, filename)
-        return convertItkToVtkImage(image)
+        shape = convertItkToVtkImage(image)
     } else if (filename.toLowerCase().endsWith('vtp')) {
-        return shapeReader(url)
+        shape = await shapeReader(url)
     } else if (filename.toLowerCase().endsWith('vtk')) {
         const reader = vtkPolyDataReader.newInstance();
         await reader.setUrl(url)
-        return reader.getOutputData();
+        shape = reader.getOutputData();
     } else {
         console.log('Unknown file type for', filename)
-        return vtkPolyData.newInstance()
+        shape = vtkPolyData.newInstance()
     }
+    shape.getFieldData().set({type});
+    return shape
   }

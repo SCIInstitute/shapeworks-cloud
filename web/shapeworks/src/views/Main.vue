@@ -64,26 +64,35 @@ export default defineComponent({
                         }
                         const shapeDatas = (await Promise.all(dataObjects.map(
                             (dataObject) => {
-                                let shapeURL;
-                                console.log(layersShown.value)
-                                // TODO: make each layer shown
-                                if(layersShown.value.includes("Original")) shapeURL = dataObject.file
-                                else if(layersShown.value.includes("Groomed")){
-                                    shapeURL = groomedShapesForOriginalDataObjects.value[
+                                const shapePromises = [];
+                                if(layersShown.value.includes("Original")){
+                                  shapePromises.push(
+                                      imageReader(
+                                        dataObject.file,
+                                        shortFileName(dataObject.file),
+                                    )
+                                  )
+                                }
+                                if(layersShown.value.includes("Groomed")){
+                                    const shapeURL = groomedShapesForOriginalDataObjects.value[
                                         dataObject.type
                                     ][dataObject.id].file
+                                    shapePromises.push(
+                                      imageReader(
+                                        shapeURL,
+                                        shortFileName(shapeURL),
+                                        "Groomed",
+                                    )
+                                  )
                                 }
-                                // TODO include else if for Reconstructed
+                                // TODO include Reconstructed
 
                                 let particleURL;
                                 if(layersShown.value.includes("Particles")){
                                     particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
                                 }
                                 return Promise.all([
-                                    imageReader(
-                                        shapeURL,
-                                        shortFileName(dataObject.file)
-                                    ),
+                                    Promise.all(shapePromises),
                                     pointsReader(particleURL)
                                 ])
                             }
@@ -227,7 +236,7 @@ export default defineComponent({
 }
 .render-area {
     display: flex;
-    top: 70px;
+    top: 75px;
     height: calc(100% - 70px);
 }
 .render-area > * {

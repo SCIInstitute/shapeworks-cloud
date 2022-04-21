@@ -18,6 +18,7 @@ import {
     groomedShapesForOriginalDataObjects,
 } from '../store';
 import router from '@/router';
+import TabForm from '@/components/TabForm.vue';
 
 
 export default defineComponent({
@@ -25,6 +26,7 @@ export default defineComponent({
         ShapeViewer,
         DataList,
         RenderControls,
+        TabForm,
     },
     props: {
         dataset: {
@@ -175,11 +177,11 @@ export default defineComponent({
                     <v-tabs v-model="tab" fixed-tabs>
                         <v-tab href="#data">Data</v-tab>
                         <v-tab-item value="data">
-                            <DataList :dataset="dataset"/>
+                            <data-list :dataset="dataset"/>
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">
-                            Groom
+                            <tab-form formFile="groom.json" />
                         </v-tab-item>
                         <v-tab href="#optimize">Optimize</v-tab>
                         <v-tab-item value="optimize">

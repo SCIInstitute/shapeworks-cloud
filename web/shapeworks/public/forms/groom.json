@@ -1,0 +1,266 @@
+{
+    "id": "groom",
+    "type": "object",
+    "description": "TODO: Grooming description",
+    "properties": {
+        "section_1": {
+            "title": "Image Grooming Options",
+            "type": "object",
+            "properties": {
+                "isotropism": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "isotropic": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "title": "Isotropic"
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "isotropic"
+                                ],
+                                "properties": {
+                                    "isotropic": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "isotropic_value": {
+                                        "type": "number",
+                                        "default": 0.625,
+                                        "title": "XYZ"
+                                    }
+                                }
+                            },
+                            "else": {
+                                "type": "object",
+                                "properties": {
+                                    "anisotropic_x": {
+                                        "type": "number",
+                                        "default": 0.625,
+                                        "title": "X"
+                                    },
+                                    "anisotropic_y": {
+                                        "type": "number",
+                                        "default": 0.625,
+                                        "title": "Y"
+                                    },
+                                    "anisotropic_z": {
+                                        "type": "number",
+                                        "default": 2.5,
+                                        "title": "Z"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "pad": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "title": "Pad",
+                                    "x-cols": 6
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "amount": {
+                                        "type": "integer",
+                                        "default": 10,
+                                        "title": "Amount",
+                                        "x-cols": 6
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "antialias": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "title": "Antialias",
+                                    "x-cols": 6
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "iterations": {
+                                        "type": "integer",
+                                        "default": 10,
+                                        "title": "Iterations",
+                                        "x-cols": 6
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "blur": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "title": "Blur",
+                                    "x-cols": 6
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "sigma": {
+                                        "type": "number",
+                                        "default": 2.00,
+                                        "title": "Sigma",
+                                        "x-cols": 6
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "isolate": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Isolate"
+                },
+                "fill_holes": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Fill Holes"
+                },
+                "crop": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Crop"
+                },
+                "resample": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Resample"
+                },
+                "distance_transform": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Distance Transform"
+                },
+                "convert_to_mesh": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Convert to mesh"
+                }
+            }
+        },
+        "section_2": {
+            "title": "Alignment Options",
+            "type": "object",
+            "properties": {
+                "reflect": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Reflect"
+                },
+                "alignment": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "title": "Alignment",
+                                    "x-cols": 6
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "align": {
+                                        "type": "string",
+                                        "default": "Center",
+                                        "title": "Align",
+                                        "x-cols": 6,
+                                        "enum": [
+                                            "Center",
+                                            "Iterative Closest Point"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

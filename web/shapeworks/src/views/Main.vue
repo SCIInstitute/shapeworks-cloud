@@ -181,7 +181,7 @@ export default defineComponent({
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">
-                            <tab-form formFile="groom.json" />
+                            <tab-form form="groom" />
                         </v-tab-item>
                         <v-tab href="#optimize">Optimize</v-tab>
                         <v-tab-item value="optimize">

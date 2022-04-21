@@ -7,13 +7,13 @@
             "title": "Image Grooming Options",
             "type": "object",
             "properties": {
-                "isotropism": {
+                "isotropic": {
                     "type": "object",
                     "allOf": [
                         {
                             "type": "object",
                             "properties": {
-                                "isotropic": {
+                                "value": {
                                     "type": "boolean",
                                     "default": true,
                                     "title": "Isotropic"
@@ -22,10 +22,10 @@
                             "if": {
                                 "type": "object",
                                 "required": [
-                                    "isotropic"
+                                    "value"
                                 ],
                                 "properties": {
-                                    "isotropic": {
+                                    "value": {
                                         "const": true
                                     }
                                 }
@@ -33,7 +33,7 @@
                             "then": {
                                 "type": "object",
                                 "properties": {
-                                    "isotropic_value": {
+                                    "isotropic_xyz": {
                                         "type": "number",
                                         "default": 0.625,
                                         "title": "XYZ"

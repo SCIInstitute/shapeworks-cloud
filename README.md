@@ -88,7 +88,11 @@ some (but not all) of the style checks, run `tox -e format`.
 
 ## Deployed Instance
 
-See [https://app.shapeworks-cloud.org/](https://app.shapeworks-cloud.org/).
+See [https://shapeworks-cloud.org/](https://shapeworks-cloud.org/).
+
+For admins, visit [https://app.shapeworks-cloud.org/admin](https://app.shapeworks-cloud.org/admin).
+
+Or, access the OpenAPI REST interface at [https://app.shapeworks-cloud.org/api/docs/swagger/](https://app.shapeworks-cloud.org/api/docs/swagger/).
 
 There is some sample data at [https://girder.shapeworks-cloud.org/](https://girder.shapeworks-cloud.org/).
 

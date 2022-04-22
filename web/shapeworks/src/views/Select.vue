@@ -1,14 +1,13 @@
 <script lang="ts">
 import { defineComponent, onMounted } from '@vue/composition-api';
-import { getDatasets, getSubjectsForDataset } from '@/api/rest'
+import { getDatasets } from '@/api/rest'
 import {
     allDatasets,
     selectedDataset,
-    allSubjectsForDataset,
-    selectedSubject,
     loadingState,
+    selectedDataObjects,
 } from '../store';
-import { Dataset, Subject } from '@/types';
+import { Dataset } from '@/types';
 import router from '@/router';
 
 export default defineComponent({
@@ -23,38 +22,21 @@ export default defineComponent({
             loadingState.value = false;
         }
 
-        async function fetchAllSubjects(datasetId: number) {
-            loadingState.value = true;
-            allSubjectsForDataset.value = (await getSubjectsForDataset(datasetId)).sort((a, b) => {
-                if(a.created < b.created) return 1;
-                if(a.created > b.created) return -1;
-                return 0;
-            });
-            loadingState.value = false;
-        }
 
         async function selectOrDeselectDataset (dataset: Dataset) {
             if(!selectedDataset.value){
                 selectedDataset.value = dataset;
-                await fetchAllSubjects(dataset.id)
+                router.push({
+                    name: 'main',
+                    params: {
+                        dataset: String(selectedDataset.value.id),
+                    }
+                });
             } else {
                 selectedDataset.value = undefined;
-                allSubjectsForDataset.value = [];
-                selectedSubject.value = undefined;
+                selectedDataObjects.value = [];
                 await getAllDatasets();
             }
-        }
-
-        async function selectSubject (subject: Subject) {
-            if(!selectedDataset.value) return;
-            selectedSubject.value = subject;
-            router.push({
-                name: 'data',
-                params: {
-                    dataset: String(selectedDataset.value.id),
-                    subject: String(selectedSubject.value.id)
-                }
-            });
         }
 
         onMounted(async () => {
@@ -65,7 +47,6 @@ export default defineComponent({
                 selectedDataset.value = allDatasets.value.find(
                     (d) => d.id == datasetId
                 )
-                await fetchAllSubjects(datasetId)
             }
         })
 
@@ -73,8 +54,7 @@ export default defineComponent({
             allDatasets,
             selectedDataset,
             selectOrDeselectDataset,
-            allSubjectsForDataset,
-            selectSubject,
+            loadingState,
         }
     }
 })
@@ -82,6 +62,9 @@ export default defineComponent({
 
 <template>
     <div class="flex-container pa-5">
+        <v-card v-if="allDatasets.length === 0 && !loadingState" width="100%">
+            <v-card-title>No datasets.</v-card-title>
+        </v-card>
         <v-card
             v-for="dataset in allDatasets"
             :key="'dataset_'+dataset.id"
@@ -109,42 +92,6 @@ export default defineComponent({
                     {{ selectedDataset ?'Deselect' :'Select' }}
                 </v-btn>
                 </v-card-actions>
-                <span
-                    v-if="selectedDataset == dataset"
-                    class="text-overline mt-15"
-                >
-                    Select a subject associated with this dataset
-                </span>
-                <div
-                    v-if="selectedDataset == dataset"
-                    class="flex-container pa-5"
-                    style="justify-content: flex-start"
-                >
-                    <v-card
-                        v-for="subject in allSubjectsForDataset"
-                        :key="'subject_'+subject.id"
-                        class="selectable-card"
-                        color="secondary"
-                        raised
-                    >
-                        <div class="text-overline mb-4">
-                            SUBJECT ({{ subject.created.split('T')[0] }})
-                        </div>
-                        <v-list-item-title class="text-h6 mb-1">
-                            {{ subject.name }}
-                        </v-list-item-title>
-                        <v-card-actions class="action-buttons">
-                        <v-btn
-                            outlined
-                            rounded
-                            text
-                            @click="() => selectSubject(subject)"
-                        >
-                            Select
-                        </v-btn>
-                        </v-card-actions>
-                    </v-card>
-                </div>
             </div>
         </v-card>
     </div>
@@ -154,7 +101,7 @@ export default defineComponent({
 .flex-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: stretch;
     column-gap: 15px;
     row-gap: 15px;
     overflow: auto;

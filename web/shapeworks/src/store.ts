@@ -1,5 +1,5 @@
-import { DataObject, Dataset, Subject } from '@/types'
-import { getDataset, getSubject } from '@/api/rest';
+import { DataObject, Dataset, Subject, Particles } from '@/types'
+import { getDataset, getOptimizedParticlesForDataObject } from '@/api/rest';
 import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
@@ -10,18 +10,32 @@ export const selectedDataset = ref<Dataset>()
 
 export const allSubjectsForDataset = ref<Subject[]>([])
 
-export const selectedSubject = ref<Subject>()
-
-export const allDataObjectsForSubject = ref<DataObject[]>([])
+export const allDataObjectsInDataset = ref<DataObject[]>([])
 
 export const selectedDataObjects = ref<DataObject[]>([])
 
-export const loadDatasetAndSubject = async (datasetId: number, subjectId: number) => {
+export const showParticles = ref<boolean>(true)
+
+export const particleSize = ref<number>(2)
+
+export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles>>>({})
+
+export const geometryShown = ref<string>("Original")
+
+export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
-    if (selectedDataset.value?.id != datasetId || selectedSubject.value?.id != subjectId) { 
+    if (selectedDataset.value?.id != datasetId) {
         loadingState.value = true;
         selectedDataset.value = await getDataset(datasetId);
-        selectedSubject.value = await getSubject(subjectId);
         loadingState.value = false;
     }
+}
+
+export const loadParticlesForObject = async (type: string, id: number) => {
+    let particles = await getOptimizedParticlesForDataObject(type, id)
+    if (particles.length > 0) particles = particles[0]
+    if(!particlesForOriginalDataObjects.value[type]){
+        particlesForOriginalDataObjects.value[type] = {}
+    }
+    particlesForOriginalDataObjects.value[type][id] = particles
 }

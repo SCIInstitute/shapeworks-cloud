@@ -5,7 +5,7 @@ data "heroku_team" "heroku" {
 
 module "django" {
   source  = "girder/django/heroku"
-  version = "0.8.0"
+  version = "0.10.0"
 
   project_slug     = "shapeworks-cloud"
   route53_zone_id  = data.aws_route53_zone.shapeworks_cloud.zone_id
@@ -14,6 +14,12 @@ module "django" {
 
   heroku_postgresql_plan      = "hobby-basic"
   heroku_worker_dyno_quantity = 0
+
+  ec2_worker_instance_type     = "m4.large"
+  ec2_worker_instance_quantity = 1
+  ec2_worker_ssh_public_key    = var.ec2_worker_ssh_public_key
+  ec2_worker_volume_size       = 40
+
   additional_django_vars = {
     DJANGO_SENTRY_DSN = "https://e5943c702c4347b2aa1b4a3726d243df@o267860.ingest.sentry.io/5615130"
   }

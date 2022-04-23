@@ -185,11 +185,11 @@ export default defineComponent({
                         </v-tab-item>
                         <v-tab href="#optimize">Optimize</v-tab>
                         <v-tab-item value="optimize">
-                            Optimize
+                            <tab-form form="optimize" />
                         </v-tab-item>
                         <v-tab href="#analyze">Analyze</v-tab>
                         <v-tab-item value="analyze">
-                            Analyze
+                            <tab-form form="analyze" />
                         </v-tab-item>
                     </v-tabs>
                 </v-list-item>

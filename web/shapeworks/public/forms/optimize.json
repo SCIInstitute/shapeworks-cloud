@@ -1,0 +1,178 @@
+{
+    "id": "optimize",
+    "type": "object",
+    "description": "TODO: Optimize description",
+    "properties": {
+        "section_1": {
+            "title": "Particle System Parameters",
+            "type": "object",
+            "properties": {
+                "number_of_particles": {
+                    "type": "integer",
+                    "default": 512,
+                    "title": "Number of particles"
+                },
+                "initial_relative_weighting": {
+                    "type": "number",
+                    "default": 0.05,
+                    "title": "Initial relative weighting"
+                },
+                "relative_weighting": {
+                    "type": "number",
+                    "default": 1,
+                    "title": "Relative weighting"
+                },
+                "starting_regularization": {
+                    "type": "integer",
+                    "default": 1000,
+                    "title": "Starting regularization"
+                },
+                "ending_regularization": {
+                    "type": "integer",
+                    "default": 10,
+                    "title": "Ending regularization"
+                },
+                "iterations_per_split": {
+                    "type": "integer",
+                    "default": 1000,
+                    "title": "Iterations per split"
+                },
+                "optimization_iterations": {
+                    "type": "integer",
+                    "default": 1000,
+                    "title": "Optimization iterations"
+                },
+                "geodesic_distance": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Geodesic distance"
+                },
+                "normals": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "title": "Normals",
+                                    "x-cols": 6
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "strength": {
+                                        "type": "integer",
+                                        "default": 10,
+                                        "title": "Strength",
+                                        "x-cols": 6
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "multiscale_mode": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "title": "Multiscale mode",
+                                    "x-cols": 6
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "start": {
+                                        "type": "integer",
+                                        "default": 32,
+                                        "title": "Start",
+                                        "x-cols": 6
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "procrustes": {
+                    "type": "object",
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "title": "Procrustes",
+                                    "x-cols": 4
+                                }
+                            },
+                            "if": {
+                                "type": "object",
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "object",
+                                "properties": {
+                                    "scaling": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "title": "Scaling",
+                                        "x-cols": 4
+                                    },
+                                    "interval": {
+                                        "type": "integer",
+                                        "default": 10,
+                                        "title": "Interval",
+                                        "x-cols": 4
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "narrow_band": {
+                    "type": "integer",
+                    "default": 4,
+                    "title": "Narrow band"
+                }
+            }
+        }
+    }
+}

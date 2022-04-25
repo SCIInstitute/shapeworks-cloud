@@ -49,6 +49,9 @@ export default defineComponent({
             rootDisplay: "expansion-panels",
             autoFocus: true,
             ajv,
+            sliderProps: {
+                thumbLabel: true
+            }
         }
 
         function resetForm () {
@@ -89,8 +92,9 @@ export default defineComponent({
         <!-- TODO: figure out recursive slot definition -->
         <template slot="custom-conditional" slot-scope="context">
             <v-jsf
-                v-bind="context"
                 v-if="evaluateExpression(context.schema['x-display-if'])"
+                v-model="formData[context.fullKey.split('.')[0]][context.fullKey.split('.')[1]]"
+                v-bind="context"
             >
                  <template slot="custom-readonly" slot-scope="context">
                     <div style="display: flex; width: 100%; justify-content: space-between;">

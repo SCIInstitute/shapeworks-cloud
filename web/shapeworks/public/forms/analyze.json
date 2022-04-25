@@ -40,6 +40,7 @@
                                 "All samples",
                                 "Single sample"
                             ],
+                            "default": "All samples",
                             "x-cols": 6,
                             "x-display": "radio",
                             "title": "Sample selection"

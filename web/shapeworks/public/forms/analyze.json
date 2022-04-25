@@ -22,9 +22,10 @@
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_1.view === 'Group'",
                     "properties": {
-                        "stringProp3": {
-                            "type": "string",
-                            "title": "I'm a property"
+                        "overall_mean": {
+                            "type": "boolean",
+                            "title": "Overall mean",
+                            "default": false
                         }
                     }
                 },

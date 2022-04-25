@@ -8,174 +8,79 @@
             "type": "object",
             "properties": {
                 "isotropic": {
-                    "type": "object",
-                    "allOf": [
-                        {
-                            "type": "object",
-                            "properties": {
-                                "value": {
-                                    "type": "boolean",
-                                    "default": true,
-                                    "title": "Isotropic"
-                                }
-                            },
-                            "if": {
-                                "type": "object",
-                                "required": [
-                                    "value"
-                                ],
-                                "properties": {
-                                    "value": {
-                                        "const": true
-                                    }
-                                }
-                            },
-                            "then": {
-                                "type": "object",
-                                "properties": {
-                                    "isotropic_xyz": {
-                                        "type": "number",
-                                        "default": 0.625,
-                                        "title": "XYZ"
-                                    }
-                                }
-                            },
-                            "else": {
-                                "type": "object",
-                                "properties": {
-                                    "anisotropic_x": {
-                                        "type": "number",
-                                        "default": 0.625,
-                                        "title": "X"
-                                    },
-                                    "anisotropic_y": {
-                                        "type": "number",
-                                        "default": 0.625,
-                                        "title": "Y"
-                                    },
-                                    "anisotropic_z": {
-                                        "type": "number",
-                                        "default": 2.5,
-                                        "title": "Z"
-                                    }
-                                }
-                            }
-                        }
-                    ]
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Isotropic"
+                },
+                "isotropic_xyz": {
+                    "type": "number",
+                    "default": 0.625,
+                    "title": "XYZ",
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.isotropic"
+                },
+                "anisotropic_x": {
+                    "type": "number",
+                    "default": 0.625,
+                    "title": "X",
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => !model.section_1.isotropic"
+                },
+                "anisotropic_y": {
+                    "type": "number",
+                    "default": 0.625,
+                    "title": "Y",
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => !model.section_1.isotropic"
+                },
+                "anisotropic_z": {
+                    "type": "number",
+                    "default": 2.5,
+                    "title": "Z",
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => !model.section_1.isotropic"
                 },
                 "pad": {
-                    "type": "object",
-                    "allOf": [
-                        {
-                            "type": "object",
-                            "properties": {
-                                "value": {
-                                    "type": "boolean",
-                                    "default": true,
-                                    "title": "Pad",
-                                    "x-cols": 6
-                                }
-                            },
-                            "if": {
-                                "type": "object",
-                                "required": [
-                                    "value"
-                                ],
-                                "properties": {
-                                    "value": {
-                                        "const": true
-                                    }
-                                }
-                            },
-                            "then": {
-                                "type": "object",
-                                "properties": {
-                                    "amount": {
-                                        "type": "integer",
-                                        "default": 10,
-                                        "title": "Amount",
-                                        "x-cols": 6
-                                    }
-                                }
-                            }
-                        }
-                    ]
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Pad",
+                    "x-cols": 6
+                },
+                "pad_amount": {
+                    "type": "integer",
+                    "default": 10,
+                    "title": "Amount",
+                    "x-cols": 6,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.pad"
                 },
                 "antialias": {
-                    "type": "object",
-                    "allOf": [
-                        {
-                            "type": "object",
-                            "properties": {
-                                "value": {
-                                    "type": "boolean",
-                                    "default": true,
-                                    "title": "Antialias",
-                                    "x-cols": 6
-                                }
-                            },
-                            "if": {
-                                "type": "object",
-                                "required": [
-                                    "value"
-                                ],
-                                "properties": {
-                                    "value": {
-                                        "const": true
-                                    }
-                                }
-                            },
-                            "then": {
-                                "type": "object",
-                                "properties": {
-                                    "iterations": {
-                                        "type": "integer",
-                                        "default": 10,
-                                        "title": "Iterations",
-                                        "x-cols": 6
-                                    }
-                                }
-                            }
-                        }
-                    ]
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Antialias",
+                    "x-cols": 6
+                },
+                "antialias_iterations": {
+                    "type": "integer",
+                    "default": 10,
+                    "title": "Iterations",
+                    "x-cols": 6,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.antialias"
                 },
                 "blur": {
-                    "type": "object",
-                    "allOf": [
-                        {
-                            "type": "object",
-                            "properties": {
-                                "value": {
-                                    "type": "boolean",
-                                    "default": true,
-                                    "title": "Blur",
-                                    "x-cols": 6
-                                }
-                            },
-                            "if": {
-                                "type": "object",
-                                "required": [
-                                    "value"
-                                ],
-                                "properties": {
-                                    "value": {
-                                        "const": true
-                                    }
-                                }
-                            },
-                            "then": {
-                                "type": "object",
-                                "properties": {
-                                    "sigma": {
-                                        "type": "number",
-                                        "default": 2.00,
-                                        "title": "Sigma",
-                                        "x-cols": 6
-                                    }
-                                }
-                            }
-                        }
-                    ]
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Blur",
+                    "x-cols": 6
+                },
+                "blur_sigma": {
+                    "type": "number",
+                    "default": 2.00,
+                    "title": "Sigma",
+                    "x-cols": 6,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.blur"
                 },
                 "isolate": {
                     "type": "boolean",
@@ -219,46 +124,22 @@
                     "title": "Reflect"
                 },
                 "alignment": {
-                    "type": "object",
-                    "allOf": [
-                        {
-                            "type": "object",
-                            "properties": {
-                                "value": {
-                                    "type": "boolean",
-                                    "default": true,
-                                    "title": "Alignment",
-                                    "x-cols": 6
-                                }
-                            },
-                            "if": {
-                                "type": "object",
-                                "required": [
-                                    "value"
-                                ],
-                                "properties": {
-                                    "value": {
-                                        "const": true
-                                    }
-                                }
-                            },
-                            "then": {
-                                "type": "object",
-                                "properties": {
-                                    "align": {
-                                        "type": "string",
-                                        "default": "Center",
-                                        "title": "Align",
-                                        "x-cols": 6,
-                                        "enum": [
-                                            "Center",
-                                            "Iterative Closest Point"
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    ]
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Alignment",
+                    "x-cols": 6
+                },
+                "align_selection": {
+                    "type": "string",
+                    "default": "Center",
+                    "title": "Align",
+                    "x-cols": 6,
+                    "enum": [
+                        "Center",
+                        "Iterative Closest Point"
+                    ],
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_2.alignment"
                 }
             }
         }

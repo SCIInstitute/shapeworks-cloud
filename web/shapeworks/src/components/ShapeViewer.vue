@@ -35,6 +35,8 @@ import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingC
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
+import { layers, layersShown } from '../store';
+
 
 const SPHERE_RESOLUTION = 32;
 const COLORS = [
@@ -228,19 +230,28 @@ export default {
       this.vtk.pointMappers.push(mapper);
     },
     addShapes(renderer, label, shapes) {
-      shapes.forEach(
+      shapes.flat().forEach(
         (shape, index) => {
+          const layerName = shape.getFieldData().get('type').type
+          const type = layers.value.find((layer) => layer.name === layerName)
+          let opacity = 1;
+          const numLayers = layersShown.value.filter(
+            (layer) => layer.name !== 'Particles'
+          ).length
+          if(numLayers > 0) opacity /= numLayers
+          const cacheLabel = `${label}_${layerName}_${index}`
+
           const mapper = vtkMapper.newInstance({
             colorMode: ColorMode.MAP_SCALARS,
           });
           const actor = vtkActor.newInstance();
-          actor.getProperty().setColor(1, 1, 1);
-          actor.getProperty().setOpacity(1);
+          actor.getProperty().setColor(...type.rgb);
+          actor.getProperty().setOpacity(opacity);
           actor.setMapper(mapper);
           if (shape.getClassName() == 'vtkPolyData'){
             mapper.setInputData(shape);
-          } else if (this.cachedMarchingCubes[`${label}_${index}`]) {
-            mapper.setInputData(this.cachedMarchingCubes[`${label}_${index}`])
+          } else if (this.cachedMarchingCubes[cacheLabel]) {
+            mapper.setInputData(this.cachedMarchingCubes[cacheLabel])
           } else {
             const marchingCube = vtkImageMarchingCubes.newInstance({
               contourValue: 0.001,
@@ -249,7 +260,7 @@ export default {
             });
             marchingCube.setInputData(shape)
             mapper.setInputConnection(marchingCube.getOutputPort());
-            this.cachedMarchingCubes[`${label}_${index}`] = marchingCube.getOutputData()
+            this.cachedMarchingCubes[cacheLabel] = marchingCube.getOutputData()
           }
           renderer.addActor(actor);
         }

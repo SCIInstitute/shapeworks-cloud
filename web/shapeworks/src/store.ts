@@ -1,5 +1,5 @@
-import { DataObject, Dataset, Subject, Particles } from '@/types'
-import { getDataset, getOptimizedParticlesForDataObject } from '@/api/rest';
+import { DataObject, Dataset, Subject, Particles, GroomedShape } from '@/types'
+import { getDataset, getGroomedShapeForDataObject, getOptimizedParticlesForDataObject } from '@/api/rest';
 import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
@@ -14,13 +14,20 @@ export const allDataObjectsInDataset = ref<DataObject[]>([])
 
 export const selectedDataObjects = ref<DataObject[]>([])
 
-export const showParticles = ref<boolean>(true)
-
 export const particleSize = ref<number>(2)
 
 export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles>>>({})
 
-export const geometryShown = ref<string>("Original")
+export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape>>>({})
+
+export const layers = ref<Record<string, any>[]>([
+    { name: 'Original', color: 'white', rgb: [1, 1, 1] },
+    { name: 'Groomed', color: 'green', rgb: [0, 1, 0] },
+    { name: 'Reconstructed', color: 'red', rgb: [1, 0, 0] },
+    { name: 'Particles', color: undefined, rgb: undefined }
+])
+
+export const layersShown = ref<string[]>(["Original"])
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
@@ -38,4 +45,13 @@ export const loadParticlesForObject = async (type: string, id: number) => {
         particlesForOriginalDataObjects.value[type] = {}
     }
     particlesForOriginalDataObjects.value[type][id] = particles
+}
+
+export const loadGroomedShapeForObject = async (type: string, id: number) => {
+    let groomed = await getGroomedShapeForDataObject(type, id)
+    if (groomed.length > 0) groomed = groomed[0]
+    if(!groomedShapesForOriginalDataObjects.value[type]){
+        groomedShapesForOriginalDataObjects.value[type] = {}
+    }
+    groomedShapesForOriginalDataObjects.value[type][id] = groomed
 }

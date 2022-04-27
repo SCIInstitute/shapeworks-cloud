@@ -6,15 +6,16 @@ import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
 import { DataObject, ShapeData } from '../types';
 import ShapeViewer from '../components/ShapeViewer.vue';
 import DataList from '../components/DataList.vue'
+import RenderControls from '../components/RenderControls.vue'
 import {
     selectedDataset,
     allSubjectsForDataset,
     selectedDataObjects,
     loadDataset,
-    showParticles,
     particleSize,
     particlesForOriginalDataObjects,
-    geometryShown,
+    layersShown,
+    groomedShapesForOriginalDataObjects,
 } from '../store';
 import router from '@/router';
 
@@ -23,6 +24,7 @@ export default defineComponent({
     components: {
         ShapeViewer,
         DataList,
+        RenderControls,
     },
     props: {
         dataset: {
@@ -36,9 +38,6 @@ export default defineComponent({
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
-        const geometryOptions = [
-            "Original", "Groomed", "Reconstructed", "None"
-        ]
 
         onMounted(async () => {
             await loadDataset(props.dataset);
@@ -65,24 +64,42 @@ export default defineComponent({
                         }
                         const shapeDatas = (await Promise.all(dataObjects.map(
                             (dataObject) => {
-                                const particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
-                                let shapeURL = undefined
-
-                                if(geometryShown.value === "Original") shapeURL = dataObject.file
-                                // TODO include else ifs for Groomed and Reconstructed
-
-                                return Promise.all([
-                                    imageReader(
+                                const shapePromises = [];
+                                if(layersShown.value.includes("Original")){
+                                  shapePromises.push(
+                                      imageReader(
+                                        dataObject.file,
+                                        shortFileName(dataObject.file),
+                                    )
+                                  )
+                                }
+                                if(layersShown.value.includes("Groomed")){
+                                    const shapeURL = groomedShapesForOriginalDataObjects.value[
+                                        dataObject.type
+                                    ][dataObject.id].file
+                                    shapePromises.push(
+                                      imageReader(
                                         shapeURL,
-                                        shortFileName(dataObject.file)
-                                    ),
+                                        shortFileName(shapeURL),
+                                        "Groomed",
+                                    )
+                                  )
+                                }
+                                // TODO include Reconstructed
+
+                                let particleURL;
+                                if(layersShown.value.includes("Particles")){
+                                    particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
+                                }
+                                return Promise.all([
+                                    Promise.all(shapePromises),
                                     pointsReader(particleURL)
                                 ])
                             }
                         )))
                         .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
                         return [
-                            `${subjectName} - ${geometryShown.value}`, shapeDatas
+                            subjectName, shapeDatas
                         ]
                     }
                 )
@@ -100,8 +117,7 @@ export default defineComponent({
         }
 
         watch(selectedDataObjects, refreshRender)
-        watch(showParticles, refreshRender)
-        watch(geometryShown, refreshRender)
+        watch(layersShown, refreshRender)
 
         return {
             mini,
@@ -111,11 +127,8 @@ export default defineComponent({
             renderData,
             selectedDataset,
             selectedDataObjects,
-            showParticles,
-            particleSize,
-            geometryOptions,
-            geometryShown,
             toSelectPage,
+            particleSize
         }
     }
 })
@@ -181,29 +194,9 @@ export default defineComponent({
                 <br>
         </v-navigation-drawer>
         <v-card
-            :class="mini ?'render-control-bar px-5 width-change maximize' :'render-control-bar width-change px-5'"
+            :class="mini ?'px-5 width-change maximize' :'width-change px-5'"
         >
-            <v-checkbox
-                v-model="showParticles"
-                label="Show particles"
-            />
-            <v-text-field
-                v-model="particleSize"
-                v-if="showParticles"
-                label="Particle Size"
-                type="number"
-                style="width: 80px"
-                step="0.5"
-                min="0.5"
-                max="10"
-                hide-details
-            />
-            <v-select
-                v-model="geometryShown"
-                :items="geometryOptions"
-                label="Geometry shown"
-                style="width: 150px"
-            />
+            <render-controls/>
         </v-card>
 
         <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">
@@ -243,21 +236,10 @@ export default defineComponent({
 }
 .render-area {
     display: flex;
-    top: 70px;
+    top: 75px;
     height: calc(100% - 70px);
 }
 .render-area > * {
     flex-grow: 1;
-}
-.render-control-bar {
-    display: flex;
-    justify-content: space-between;
-}
-.render-control-bar > * {
-    flex-grow: 0;
-}
-.render-control-bar.maximize {
-    left: 60px;
-    width: calc(100% - 60px);
 }
 </style>

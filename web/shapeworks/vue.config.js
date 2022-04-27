@@ -9,6 +9,9 @@ module.exports = {
       errors: false,
     },
   },
+  transpileDependencies: [
+    "vuetify", "@koumoul/vjsf"
+  ],
   configureWebpack: {
     plugins: [
       new CopyPlugin([

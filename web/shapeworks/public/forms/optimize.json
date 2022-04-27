@@ -1,0 +1,108 @@
+{
+    "id": "optimize",
+    "type": "object",
+    "description": "TODO: Optimize description",
+    "properties": {
+        "section_1": {
+            "title": "Particle System Parameters",
+            "type": "object",
+            "properties": {
+                "number_of_particles": {
+                    "type": "integer",
+                    "default": 512,
+                    "title": "Number of particles"
+                },
+                "initial_relative_weighting": {
+                    "type": "number",
+                    "default": 0.05,
+                    "title": "Initial relative weighting"
+                },
+                "relative_weighting": {
+                    "type": "number",
+                    "default": 1,
+                    "title": "Relative weighting"
+                },
+                "starting_regularization": {
+                    "type": "integer",
+                    "default": 1000,
+                    "title": "Starting regularization"
+                },
+                "ending_regularization": {
+                    "type": "integer",
+                    "default": 10,
+                    "title": "Ending regularization"
+                },
+                "iterations_per_split": {
+                    "type": "integer",
+                    "default": 1000,
+                    "title": "Iterations per split"
+                },
+                "optimization_iterations": {
+                    "type": "integer",
+                    "default": 1000,
+                    "title": "Optimization iterations"
+                },
+                "geodesic_distance": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Geodesic distance"
+                },
+                "normals": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Normals",
+                    "x-cols": 6
+                },
+                "normals_strength": {
+                    "type": "integer",
+                    "default": 10,
+                    "title": "Strength",
+                    "x-cols": 6,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.normals"
+                },
+                "multiscale_mode": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Multiscale mode",
+                    "x-cols": 6
+                },
+                "multiscale_start": {
+                    "type": "integer",
+                    "default": 32,
+                    "title": "Start",
+                    "x-cols": 6,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.multiscale_mode"
+                },
+                "procrustes": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Procrustes",
+                    "x-cols": 4
+                },
+                "procrustes_scaling": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Scaling",
+                    "x-cols": 4,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.procrustes"
+                },
+                "procrustes_interval": {
+                    "type": "integer",
+                    "default": 10,
+                    "title": "Interval",
+                    "x-cols": 4,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.procrustes"
+                },
+                "narrow_band": {
+                    "type": "integer",
+                    "default": 4,
+                    "title": "Narrow band"
+                }
+            }
+        }
+    }
+}

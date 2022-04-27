@@ -55,3 +55,10 @@ export const loadGroomedShapeForObject = async (type: string, id: number) => {
     }
     groomedShapesForOriginalDataObjects.value[type][id] = groomed
 }
+
+export function submitForm(action:string, payload: Record<string, any>){
+    if (Object.keys(payload).every((key) => key.includes("section"))) {
+        payload = Object.assign({}, ...Object.values(payload))
+    }
+    console.log(action, payload)
+}

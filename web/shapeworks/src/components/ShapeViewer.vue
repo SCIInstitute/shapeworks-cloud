@@ -233,7 +233,7 @@ export default {
       shapes.flat().forEach(
         (shape, index) => {
           const layerName = shape.getFieldData().get('type').type
-          const type = layers.find((layer) => layer.name === layerName)
+          const type = layers.value.find((layer) => layer.name === layerName)
           let opacity = 1;
           const numLayers = layersShown.value.filter(
             (layer) => layer.name !== 'Particles'

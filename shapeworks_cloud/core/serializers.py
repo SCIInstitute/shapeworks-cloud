@@ -90,6 +90,7 @@ class OptimizedParticlesSerializer(serializers.ModelSerializer):
     world = S3FileSerializerField()
     local = S3FileSerializerField()
     transform = S3FileSerializerField()
+    constraints = S3FileSerializerField(required=False, allow_null=True)
 
     class Meta:
         model = models.OptimizedParticles

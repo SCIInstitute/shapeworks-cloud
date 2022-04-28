@@ -10,9 +10,9 @@ RUN apt-get update && \
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN curl -L -o /tmp/shapeworks.zip https://github.com/SCIInstitute/ShapeWorks/releases/download/v6.0.0/ShapeWorks-v6.0.0-linux.zip && \
+RUN curl -L -o /tmp/shapeworks.zip https://github.com/SCIInstitute/ShapeWorks/releases/download/v6.2.1/ShapeWorks-v6.2.1-linux.zip && \
     unzip -d /opt /tmp/shapeworks.zip && rm /tmp/shapeworks.zip
-ENV PATH $PATH:/opt/ShapeWorks-v6.0.0-linux/bin
+ENV PATH $PATH:/opt/ShapeWorks-v6.2.1-linux/bin
 
 # Only copy the setup.py, it will still force all install_requires to be installed,
 # but find_packages() will find nothing (which is fine). When Docker Compose mounts the real source

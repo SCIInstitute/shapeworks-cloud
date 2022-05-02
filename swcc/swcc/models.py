@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import logging
 from pathlib import Path, PurePath
 import re
@@ -620,39 +621,58 @@ class Project(ApiModel):
                 raise Exception(f'`{sheet_name}` sheet not found')
 
         shape_model = self._parse_optimize_sheet(xls['optimize'].values)
-        self._parse_data_sheet(segmentations, meshes, shape_model, xls['data'].values, root)
+        self._parse_data_sheet(segmentations, meshes, shape_model, xls['data'], root)
 
         return self
 
     def _iter_data_sheet(
         self, sheet: Any, root: Path
-    ) -> Iterator[Tuple[Path, Path, str, Path, Path]]:
-        expected = (
-            'shape_file',
-            'groomed_file',
-            'alignment_file',
-            'local_particles_file',
-            'world_particles_file',
-        )
-        headers = next(sheet)
-        if headers[: len(expected)] != expected:
+    ) -> Iterator[Tuple[Path, Path, str, Path, Path, Path]]:
+        # The old style ended in _file.  The newer style ends in an integer
+        # (_1, _2, ...).  These can be in different orders
+        # ##DWM::
+        required = [
+            'shape',
+            'groomed',
+            'alignment',
+            'local_particles',
+            'world_particles',
+        ]
+        optional = [
+            'procrustes',
+            'constraints',
+        ]
+        headers = next(sheet.values)
+        if not any(all(k + suffix in headers for k in required) for suffix in ('_file', '_1')):
             raise Exception(
-                'Unknown spreadsheet format - expected headers to be %r, found %r'
-                % (expected, headers[: len(expected)])
+                'Unknown spreadsheet format - expected headers to include %r '
+                'with a suffix of either _file or _1, found %r' % (required, headers)
             )
-
-        for row in sheet:
-            shape_file, groomed_file, alignment_file, local, world = row
-            if not shape_file:
-                # It's possible to get XLSX files with empty rows where every column is None
+        for idx in itertools.count():
+            suffix = '_file' if not idx else '_%d' % idx
+            if not all(k + suffix in headers for k in required):
+                if idx >= 1:
+                    break
                 continue
+            col = {
+                k: headers.index(k + suffix) for k in required + optional if k + suffix in headers
+            }
+            rows = sheet.values
+            next(rows)  # skip header
+            for rowrec in rows:
+                row = {k: rowrec[col[k]] for k in col}
+                if not row['shape']:
+                    # It's possible to get XLSX files with empty rows where every column is None
+                    continue
 
-            shape_file = root / shape_file
-            groomed_file = root / groomed_file
-            local = root / local
-            world = root / world
+                shape_file = root / row['shape']
+                groomed_file = root / row['groomed']
+                local = root / row['local_particles']
+                world = root / row['world_particles']
+                alignment_file = row['alignment']
+                constraints = (root / row['constraints']) if 'constraints' in row else None
 
-            yield shape_file, groomed_file, alignment_file, local, world
+                yield shape_file, groomed_file, alignment_file, local, world, constraints
 
     def _parse_optimize_sheet(self, sheet: Any) -> OptimizedShapeModel:
         expected = ('key', 'value')
@@ -682,9 +702,14 @@ class Project(ApiModel):
         sheet: Any,
         root: Path,
     ):
-        for shape_file, groomed_file, alignment_file, local, world in self._iter_data_sheet(
-            sheet, root
-        ):
+        for (
+            shape_file,
+            groomed_file,
+            alignment_file,
+            local,
+            world,
+            constraints,
+        ) in self._iter_data_sheet(sheet, root):
             groomed_segmentation = None
             groomed_mesh = None
             data_type = shape_file_type(shape_file)
@@ -716,13 +741,14 @@ class Project(ApiModel):
                     transform=transform,
                     groomed_segmentation=groomed_segmentation,
                     groomed_mesh=groomed_mesh,
+                    constraints=constraints,
                 )
 
     def download(self, path: Union[Path, str]):
         path = Path(path)
         project_file = self.file.download(path)
         xls = load_workbook(str(project_file), read_only=True)
-        sheet = xls['data'].values
+        sheet = xls['data']
 
         shape_model = next(self.shape_models)
         groomed_segmentations = {
@@ -731,13 +757,15 @@ class Project(ApiModel):
         local_files = {PurePath(p.local.name).stem: p for p in shape_model.particles}
 
         # TODO: Do we detect if alignment_file (transform) is a path?
-        for _, groomed_file, _, local, world in self._iter_data_sheet(sheet, path):
+        for _, groomed_file, _, local, world, constraints in self._iter_data_sheet(sheet, path):
             gs = groomed_segmentations[groomed_file.stem]
             gs.file.download(groomed_file.parent)
 
             particles = local_files[local.stem]
             particles.local.download(local.parent)
             particles.world.download(world.parent)
+            if particles.constraints and constraints:
+                particles.constraints.download(constraints.parent)
 
 
 class GroomedSegmentation(ApiModel):
@@ -779,6 +807,7 @@ class OptimizedShapeModel(ApiModel):
         transform: Path,
         groomed_segmentation: Optional[GroomedSegmentation],
         groomed_mesh: Optional[GroomedMesh],
+        constraints: Path,
     ) -> OptimizedParticles:
         return OptimizedParticles(
             world=world,
@@ -787,6 +816,7 @@ class OptimizedShapeModel(ApiModel):
             shape_model=self,
             groomed_segmentation=groomed_segmentation,
             groomed_mesh=groomed_mesh,
+            constraints=constraints,
         ).create()
 
 
@@ -799,6 +829,7 @@ class OptimizedParticles(ApiModel):
     shape_model: OptimizedShapeModel
     groomed_segmentation: Optional[GroomedSegmentation]
     groomed_mesh: Optional[GroomedMesh]
+    constraints: Optional[FileType[Literal['core.OptimizedParticles.constraints']]] = None
 
 
 class OptimizedPCAModel(ApiModel):

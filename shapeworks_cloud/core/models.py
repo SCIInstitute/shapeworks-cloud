@@ -101,6 +101,7 @@ class OptimizedParticles(models.Model):
     world = S3FileField()
     local = S3FileField()
     transform = S3FileField()
+    constraints = S3FileField(null=True)
 
     shape_model = models.ForeignKey(
         OptimizedShapeModel,

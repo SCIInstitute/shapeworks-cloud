@@ -4,15 +4,79 @@ import {
     particleSize,
     layers,
     layersShown,
+    orientationIndicator,
 } from '../store';
 
 
 export default defineComponent({
-    setup() {
+    setup(props, context) {
+        orientationIndicator.value.setDefaultStyle({
+            fontStyle: 'bold',
+            fontFamily: 'Arial',
+            fontColor: 'black',
+            faceColor: '#ffffff',
+            faceRotation: 0,
+            edgeThickness: 0.1,
+            edgeColor: 'black',
+            resolution: 400,
+        })
+
+        const axisSystemOptions = [
+            {
+                text: 'XYZ',
+                value: 'xyz',
+                xPlus: '+X',
+                xMinus: '-X',
+                yPlus: '+Y',
+                yMinus: '-Y',
+                zPlus: '+Z',
+                zMinus: '-Z',
+            },
+            {
+                text: 'Medical',
+                value: 'slp',
+                xPlus: 'L',
+                xMinus: 'R',
+                yPlus: 'P',
+                yMinus: 'A',
+                zPlus: 'S',
+                zMinus: 'I',
+            }
+        ]
+
+        function changeAxisSystem(newSystemValue: string){
+            const newSystem = axisSystemOptions.find(
+                (system) => system.value == newSystemValue
+            )
+            if(newSystem){
+                orientationIndicator.value.setXPlusFaceProperty({
+                    text: newSystem.xPlus
+                })
+                orientationIndicator.value.setXMinusFaceProperty({
+                    text: newSystem.xMinus
+                })
+                orientationIndicator.value.setYPlusFaceProperty({
+                    text: newSystem.yPlus
+                })
+                orientationIndicator.value.setYMinusFaceProperty({
+                    text: newSystem.yMinus
+                })
+                orientationIndicator.value.setZPlusFaceProperty({
+                    text: newSystem.zPlus
+                })
+                orientationIndicator.value.setZMinusFaceProperty({
+                    text: newSystem.zMinus
+                })
+                context.emit("change")
+            }
+        }
+
         return {
             particleSize,
             layersShown,
             layers,
+            axisSystemOptions,
+            changeAxisSystem,
         }
     }
 })
@@ -50,6 +114,13 @@ export default defineComponent({
             min="0.5"
             max="10"
             hide-details
+        />
+        <v-select
+            :items="axisSystemOptions"
+            value="xyz"
+            @change="changeAxisSystem"
+            label="Axis System"
+            style="width: 150px"
         />
     </div>
 </template>

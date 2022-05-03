@@ -1,3 +1,4 @@
+import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
 import { DataObject, Dataset, Subject, Particles, GroomedShape } from '@/types'
 import { getDataset, getGroomedShapeForDataObject, getOptimizedParticlesForDataObject } from '@/api/rest';
 import { ref } from '@vue/composition-api'
@@ -13,6 +14,8 @@ export const allSubjectsForDataset = ref<Subject[]>([])
 export const allDataObjectsInDataset = ref<DataObject[]>([])
 
 export const selectedDataObjects = ref<DataObject[]>([])
+
+export const orientationIndicator = ref<vtkAnnotatedCubeActor>(vtkAnnotatedCubeActor.newInstance())
 
 export const particleSize = ref<number>(2)
 

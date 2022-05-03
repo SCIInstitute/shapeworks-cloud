@@ -130,6 +130,7 @@ export default defineComponent({
             selectedDataset,
             selectedDataObjects,
             toSelectPage,
+            refreshRender,
             particleSize
         }
     }
@@ -139,7 +140,7 @@ export default defineComponent({
 
 <template>
     <div class='content-area' style='height: 100%'>
-        <v-navigation-drawer :mini-variant.sync="mini" width="650" absolute>
+        <v-navigation-drawer :mini-variant.sync="mini" width="650" permanent absolute>
                 <v-list-item>
                     <v-btn
                         icon
@@ -198,7 +199,7 @@ export default defineComponent({
         <v-card
             :class="mini ?'px-5 width-change maximize' :'width-change px-5'"
         >
-            <render-controls/>
+            <render-controls @change="refreshRender"/>
         </v-card>
 
         <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">

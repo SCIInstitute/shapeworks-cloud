@@ -1,0 +1,65 @@
+# Run: ansible-playbook -i hosts playbook.yml
+
+- name: Deploy Celery worker
+  hosts: all
+  remote_user: ubuntu
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - role: girder.celery
+      vars:
+        celery_app: shapeworks_cloud.celery
+        celery_repository_url: https://github.com/girder/shapeworks-cloud.git
+        celery_environment: "{{ django_vars }}"
+  tasks:
+    - name: Download shapeworks studio
+      get_url:
+        url: https://github.com/SCIInstitute/ShapeWorks/releases/download/v6.2.1/ShapeWorks-v6.2.1-linux.zip
+        dest: /tmp/shapeworks.zip
+    - name: Install unzip
+      apt:
+        name: unzip
+      become: true
+      become_user: root
+    - name: Unarchive shapeworks studio
+      unarchive:
+        src: /tmp/shapeworks.zip
+        dest: /tmp/
+        remote_src: yes
+      become: true
+      become_user: root
+    - name: Install shapeworks studio into /opt/shapeworks
+      copy:
+        src: /tmp/ShapeWorks-v6.2.1-linux/bin
+        dest: /opt/shapeworks
+        owner: celery
+        group: celery
+        remote_src: yes
+      become: true
+      become_user: root
+    # This is required because composed_configurations attempts to create the staticfiles directory in the python installation directory while being imported.
+    # The python installation on the EC2 worker belongs to root, but the Celery worker runs as celery, so it does not have permission to create the directory.
+    # The (dumb) solution is to create the directory with the correct permissions in advance.
+    - name: Create necessary files for composed_configuration
+      file:
+        path: /opt/celery/lib/python3.8/site-packages/staticfiles
+        owner: celery
+        group: celery
+        state: directory
+      become: true
+      become_user: root
+    - name: Setup authorized keys for developers
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ item }}"
+      with_items:
+        - "{{ lookup('file', 'anne.pub') }}"
+        - "{{ lookup('file', 'daniel.pub') }}"
+    - name: Restart celery service to pick up any changes
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: celery
+      become: true
+      become_user: root

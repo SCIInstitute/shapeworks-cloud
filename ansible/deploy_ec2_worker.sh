@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+# The SSH credentials can be bootstrapped by specifying the ec2_worker_ssh_public_key env var in terraform cloud.
 # Requires jq to be installed
 
 # Get dynamic parameters from Terraform

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent, ref } from '@vue/composition-api';
 import {
     particleSize,
     layers,
@@ -43,6 +43,9 @@ export default defineComponent({
                 zMinus: 'I',
             }
         ]
+        const axisSystem = ref(axisSystemOptions.find(
+            (system) => system.value === 'xyz'
+        ))
 
         function changeAxisSystem(newSystemValue: string){
             const newSystem = axisSystemOptions.find(
@@ -70,11 +73,13 @@ export default defineComponent({
                 context.emit("change")
             }
         }
+        changeAxisSystem('xyz')
 
         return {
             particleSize,
             layersShown,
             layers,
+            axisSystem,
             axisSystemOptions,
             changeAxisSystem,
         }
@@ -116,8 +121,8 @@ export default defineComponent({
             hide-details
         />
         <v-select
+            v-bind="axisSystem"
             :items="axisSystemOptions"
-            value="xyz"
             @change="changeAxisSystem"
             label="Axis System"
             style="width: 150px"

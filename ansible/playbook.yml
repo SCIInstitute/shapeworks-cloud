@@ -12,6 +12,9 @@
         celery_repository_url: https://github.com/girder/shapeworks-cloud.git
         celery_environment: "{{ django_vars }}"
   tasks:
+    - name: Install swcc
+    pip:
+      name: swcc
     - name: Download shapeworks studio
       get_url:
         url: https://github.com/SCIInstitute/ShapeWorks/releases/download/v6.2.1/ShapeWorks-v6.2.1-linux.zip

@@ -22,6 +22,7 @@ module "django" {
 
   additional_django_vars = {
     DJANGO_SENTRY_DSN = "https://e5943c702c4347b2aa1b4a3726d243df@o267860.ingest.sentry.io/5615130"
+    DJANGO_API_URL    = "https://app.shapeworks-cloud.org/api/v1"
   }
   django_cors_origin_whitelist = ["https://www.shapeworks-cloud.org"]
 }

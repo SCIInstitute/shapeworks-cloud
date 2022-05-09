@@ -30,9 +30,11 @@ services:
     ]
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
-    env_file: ./dev/.env.docker-compose
+    env_file: ./dev/.env.celery.docker-compose
     volumes:
       - .:/opt/django-project
+    # Use host mode so that celery can use the localhost:8000 API in dev deployments
+    network_mode: host
     depends_on:
       - postgres
       - rabbitmq

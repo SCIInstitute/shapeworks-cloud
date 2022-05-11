@@ -1,5 +1,5 @@
 from pathlib import Path
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
 
 from celery import shared_task
@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
 from swcc.api import swcc_session
-from swcc.models import Dataset, Project
+from swcc.models import Project
 
 # TODO generate an empty project if necessary so that a fresh dataset can be groomed
 # The groom command needs a project spreadsheet to run

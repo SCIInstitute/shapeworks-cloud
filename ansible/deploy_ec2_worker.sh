@@ -23,6 +23,10 @@ ansible-galaxy install \
   --roles-path=./roles \
   girder.celery
 
+ansible-galaxy collection install \
+  --force \
+  ansible.posix
+
 # Run Ansible playbook
 export ANSIBLE_HOST_KEY_CHECKING=False
 echo "Running playbook"

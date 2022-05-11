@@ -10,6 +10,7 @@ from composed_configuration import (
     ProductionBaseConfiguration,
     TestingBaseConfiguration,
 )
+from configurations import values
 
 
 class ShapeworksCloudMixin(ConfigMixin):
@@ -17,6 +18,8 @@ class ShapeworksCloudMixin(ConfigMixin):
     ROOT_URLCONF = 'shapeworks_cloud.urls'
 
     BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
+
+    API_URL = values.URLValue(environ_required=True)
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:

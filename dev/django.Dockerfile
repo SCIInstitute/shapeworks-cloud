@@ -11,16 +11,20 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN curl -L -o /tmp/shapeworks.zip https://github.com/SCIInstitute/ShapeWorks/releases/download/v6.2.1/ShapeWorks-v6.2.1-linux.zip && \
-    unzip -d /opt /tmp/shapeworks.zip && rm /tmp/shapeworks.zip
-ENV PATH $PATH:/opt/ShapeWorks-v6.2.1-linux/bin
+    unzip -d /tmp /tmp/shapeworks.zip && \
+    mv /tmp/ShapeWorks-v6.2.1-linux /opt/shapeworks && \
+    rm /tmp/shapeworks.zip
+ENV PATH $PATH:/opt/shapeworks/bin
 
 # Only copy the setup.py, it will still force all install_requires to be installed,
 # but find_packages() will find nothing (which is fine). When Docker Compose mounts the real source
 # over top of this directory, the .egg-link in site-packages resolves to the mounted directory
 # and all package modules are importable.
 COPY ./setup.py /opt/django-project/setup.py
-RUN pip install -U pip
-RUN pip install --editable /opt/django-project[dev]
+COPY ./swcc/setup.py /opt/django-project/swcc/setup.py
+RUN pip install -U pip && \
+    pip install --editable /opt/django-project[dev] && \
+    pip install --editable /opt/django-project/swcc
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.
 WORKDIR /opt/django-project

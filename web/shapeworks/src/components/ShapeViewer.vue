@@ -31,11 +31,12 @@ import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindo
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
+import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
-import { layers, layersShown } from '../store';
+import { layers, layersShown, orientationIndicator } from '../store';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -236,7 +237,7 @@ export default {
           const type = layers.value.find((layer) => layer.name === layerName)
           let opacity = 1;
           const numLayers = layersShown.value.filter(
-            (layer) => layer.name !== 'Particles'
+            (layer) => layer.rgb
           ).length
           if(numLayers > 0) opacity /= numLayers
           const cacheLabel = `${label}_${layerName}_${index}`
@@ -309,6 +310,19 @@ export default {
         this.vtk.renderers.push(newRenderer);
         this.vtk.renderWindow.addRenderer(newRenderer);
       }
+
+      const orientationWidget = vtkOrientationMarkerWidget.newInstance({
+        actor: orientationIndicator.value,
+        interactor: this.vtk.interactor,
+      });
+      orientationWidget.setEnabled(true);
+      orientationWidget.setViewportCorner(
+        vtkOrientationMarkerWidget.Corners.TOP_RIGHT
+      );
+      orientationWidget.setViewportSize(0.10);
+      orientationWidget.setMinPixelSize(100);
+      orientationWidget.setMaxPixelSize(300);
+
       this.render();
     },
     render() {

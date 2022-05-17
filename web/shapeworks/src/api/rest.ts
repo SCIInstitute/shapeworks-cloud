@@ -51,3 +51,7 @@ export async function getGroomedShapeForDataObject(type: string, id: number) {
         params: {[type]: id}
     })).data.results
 }
+
+export async function groomProject(projectId: number, formData: Record<string, any>){
+    return (await apiClient.post(`/projects/${projectId}/groom/`, formData))
+}

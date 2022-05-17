@@ -36,7 +36,7 @@ import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/Orien
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
-import { layers, layersShown, orientationIndicator } from '../store';
+import { layers, layersShown, orientationIndicator, cachedMarchingCubes } from '../store';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -76,7 +76,6 @@ export default {
   },
   data() {
     return {
-      cachedMarchingCubes: {}
     };
   },
   computed: {
@@ -237,7 +236,7 @@ export default {
           const type = layers.value.find((layer) => layer.name === layerName)
           let opacity = 1;
           const numLayers = layersShown.value.filter(
-            (layer) => layer.rgb
+            (layerName) => layers.value.find((layer) => layer.name == layerName).rgb
           ).length
           if(numLayers > 0) opacity /= numLayers
           const cacheLabel = `${label}_${layerName}_${index}`
@@ -251,8 +250,8 @@ export default {
           actor.setMapper(mapper);
           if (shape.getClassName() == 'vtkPolyData'){
             mapper.setInputData(shape);
-          } else if (this.cachedMarchingCubes[cacheLabel]) {
-            mapper.setInputData(this.cachedMarchingCubes[cacheLabel])
+          } else if (cachedMarchingCubes.value[cacheLabel]) {
+            mapper.setInputData(cachedMarchingCubes.value[cacheLabel])
           } else {
             const marchingCube = vtkImageMarchingCubes.newInstance({
               contourValue: 0.001,
@@ -261,7 +260,7 @@ export default {
             });
             marchingCube.setInputData(shape)
             mapper.setInputConnection(marchingCube.getOutputPort());
-            this.cachedMarchingCubes[cacheLabel] = marchingCube.getOutputData()
+            cachedMarchingCubes.value[cacheLabel] = marchingCube.getOutputData()
           }
           renderer.addActor(actor);
         }

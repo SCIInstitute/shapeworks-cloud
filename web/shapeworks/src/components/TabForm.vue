@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
@@ -7,7 +7,7 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { submitForm } from '../store';
+import { pollJobResults, spawnJob, jobAlreadyDone } from '../store';
 
 Vue.use(Vuetify)
 
@@ -22,13 +22,17 @@ export default defineComponent({
     components: {
       VJsf,
     },
-    setup(props) {
+    setup(props, context) {
         const ajv = new Ajv();
         const formDefaults = ref();
         const formData = ref({});
         const formSchema = ref();
         const formValid = ref(false);
         const refreshing = ref(false);
+        const showSubmissionConfirmation = ref(false);
+        const messages = ref('');
+        const resultsPoll = ref();
+        const alreadyDone = ref(jobAlreadyDone(props.form))
 
         async function fetchFormSchema() {
             formSchema.value = await (await fetch( `forms/${props.form}.json`)).json()
@@ -36,11 +40,11 @@ export default defineComponent({
         }
         fetchFormSchema()
 
-        function evaluateExpression (expression) {
+        function evaluateExpression (expression: string) {
             if(expression){
                 // The shemas are trusted source code
-                expression = eval(expression)
-                return expression(formData.value)
+                const expressionFunc = eval(expression)
+                return expressionFunc(formData.value)
             }
             return true;
         }
@@ -60,6 +64,35 @@ export default defineComponent({
             setTimeout(() => { refreshing.value = false; }, 1)
         }
 
+        async function submitForm(_: Event, confirmed=false){
+            if(alreadyDone.value && !confirmed){
+                showSubmissionConfirmation.value = true
+                return
+            }
+            const success = await spawnJob(props.form, formData.value)
+            if(success){
+                messages.value = `Successfully submitted ${props.form} job. Awaiting results...`
+                resultsPoll.value = setInterval(
+                    async () => {
+                        const pollMessage = await pollJobResults(props.form)
+                        if(pollMessage){
+                            messages.value = pollMessage
+                            setTimeout(() => messages.value = '', 5000)
+                            clearInterval(resultsPoll.value)
+                            context.emit("change")
+                            alreadyDone.value = jobAlreadyDone(props.form)
+                            resultsPoll.value = undefined
+                            context.emit("change")
+                        }
+                    },
+                    5000,
+                )
+            } else {
+                messages.value = `Failed to submit ${props.form} job.`
+                setTimeout(() => messages.value = '', 5000)
+            }
+        }
+
         return {
             props,
             formData,
@@ -67,9 +100,12 @@ export default defineComponent({
             formSchema,
             formValid,
             refreshing,
+            showSubmissionConfirmation,
+            messages,
             resetForm,
             submitForm,
             evaluateExpression,
+            alreadyDone,
         }
     },
 })
@@ -78,10 +114,19 @@ export default defineComponent({
 
 <template>
 <v-form v-model="formValid" class="pa-3" >
+    <div class="messages-box pa-3" v-if="messages.length">
+        {{ messages }}
+        <v-progress-circular
+            v-if="messages.includes('wait')"
+            indeterminate
+            color="primary"
+        ></v-progress-circular>
+    </div>
     <div style="display: flex; width: 100%; justify-content: space-between;">
         <v-btn @click="resetForm">Restore defaults</v-btn>
-        <v-btn color="primary" @click="() => { submitForm(props.form, formData) }">{{ props.form }}</v-btn>
-    </div>
+        <v-btn color="primary" @click="submitForm">
+            {{ alreadyDone ? 're': '' }}{{ props.form }}
+        </v-btn>    </div>
     <br />
     <v-jsf
       v-if="formSchema && !refreshing"
@@ -108,8 +153,51 @@ export default defineComponent({
     <br />
     <div style="display: flex; width: 100%; justify-content: space-between;">
         <v-btn @click="resetForm">Restore defaults</v-btn>
-        <v-btn color="primary" @click="() => { submitForm(props.form, formData) }">{{ props.form }}</v-btn>
+        <v-btn color="primary" @click="submitForm">
+            {{ alreadyDone ? 're': '' }}{{ props.form }}
+        </v-btn>
     </div>
     <br>
+    <v-dialog
+      v-model="showSubmissionConfirmation"
+      width="500"
+    >
+        <v-card>
+            <v-card-title>
+            Confirmation
+            </v-card-title>
+
+            <v-card-text>
+            Are you sure you want to re-run the {{ props.form }} job?
+            The previous results will be overwritten.
+            </v-card-text>
+
+            <v-divider></v-divider>
+
+            <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+                text
+                @click="() => {showSubmissionConfirmation = false}"
+            >
+                Cancel
+            </v-btn>
+            <v-btn
+                color="primary"
+                text
+                @click="() => {showSubmissionConfirmation = false, submitForm(undefined, confirmed=true)}"
+            >
+                Yes, Rerun
+            </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 </v-form>
 </template>
+
+<style scoped>
+.messages-box {
+    text-align: center;
+    color: #2196f3;
+}
+</style>

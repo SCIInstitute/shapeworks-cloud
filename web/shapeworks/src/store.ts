@@ -1,6 +1,6 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
 import { DataObject, Dataset, Subject, Particles, GroomedShape } from '@/types'
-import { getDataset, getGroomedShapeForDataObject, getOptimizedParticlesForDataObject } from '@/api/rest';
+import { getDataset, getGroomedShapeForDataObject, getOptimizedParticlesForDataObject, groomProject } from '@/api/rest';
 import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
@@ -24,13 +24,41 @@ export const particlesForOriginalDataObjects = ref<Record<string, Record<number,
 export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape>>>({})
 
 export const layers = ref<Record<string, any>[]>([
-    { name: 'Original', color: 'white', rgb: [1, 1, 1] },
-    { name: 'Groomed', color: 'green', rgb: [0, 1, 0] },
-    { name: 'Reconstructed', color: 'red', rgb: [1, 0, 0] },
-    { name: 'Particles', color: undefined, rgb: undefined }
+    {
+        name: 'Original',
+        color: 'white',
+        rgb: [1, 1, 1],
+        available: () => true,
+    },
+    {
+        name: 'Groomed',
+        color: 'green',
+        rgb: [0, 1, 0],
+        available: () => {
+            return Object.values(groomedShapesForOriginalDataObjects.value)
+            .map((obj) => Object.values(obj).flat()).flat().length > 0
+        }
+    },
+    {
+        name: 'Reconstructed',
+        color: 'red',
+        rgb: [1, 0, 0],
+        available: () => false,
+    },
+    {
+        name: 'Particles',
+        color: undefined,
+        rgb: undefined,
+        available: () => {
+            return Object.values(particlesForOriginalDataObjects.value)
+            .map((obj) => Object.values(obj).flat()).flat().length > 0
+        }
+    }
 ])
 
 export const layersShown = ref<string[]>(["Original"])
+
+export const cachedMarchingCubes = ref({})
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
@@ -59,9 +87,91 @@ export const loadGroomedShapeForObject = async (type: string, id: number) => {
     groomedShapesForOriginalDataObjects.value[type][id] = groomed
 }
 
-export function submitForm(action:string, payload: Record<string, any>){
+export function jobAlreadyDone(action: string): Boolean {
+    let layer;
+    switch(action){
+        case 'groom':
+            layer = layers.value?.find((layer) => layer.name === 'Groomed')
+            return layer ? layer.available() : false
+        case 'optimize':
+            break;
+        case 'analyze':
+            break;
+        default:
+            break;
+    }
+    return false;
+}
+
+export async function spawnJob(action: string, payload: Record<string, any>): Promise<Boolean>{
     if (Object.keys(payload).every((key) => key.includes("section"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
-    console.log(action, payload)
+    const projectId = selectedDataset.value?.projects[0]?.id;
+    if(!projectId) return false
+    switch(action){
+        case 'groom':
+            return (await groomProject(projectId, payload)).status === 204
+        case 'optimize':
+            break;
+        case 'analyze':
+            break;
+        default:
+            break;
+    }
+    return false;
+}
+
+export async function pollJobResults(action: string): Promise<string | undefined> {
+    let resultsFound = false;
+    let targetStorage = undefined;
+    let testFunction: Function | undefined = undefined;
+    let loadFunction: Function | undefined = undefined;
+    let successFunction: Function | undefined = undefined;
+    switch(action){
+        case 'groom':
+            targetStorage = groomedShapesForOriginalDataObjects
+            testFunction = async (type: string, id: number) => {
+                if(jobAlreadyDone(action)) {
+                    return (await getGroomedShapeForDataObject(type, id)).filter(
+                        (result: GroomedShape) => {
+                            // only consider updated objects as successful results
+                            return groomedShapesForOriginalDataObjects.value[type][id].file !== result.file
+                        }
+                    )
+                }
+                return await getGroomedShapeForDataObject(type, id)
+            }
+            loadFunction = loadGroomedShapeForObject
+            successFunction = () => {
+                cachedMarchingCubes.value = Object.fromEntries(
+                    Object.entries(cachedMarchingCubes.value).filter(
+                        ([cachedLabel]) => !cachedLabel.includes('Groomed')
+                    )
+                )
+                if(!layersShown.value.includes('Groomed')) layersShown.value.push('Groomed')
+            }
+            break;
+        case 'optimize':
+            break;
+        case 'analyze':
+            break;
+        default:
+            break;
+    }
+    const testObject = allDataObjectsInDataset.value[0]
+    if(testObject && targetStorage && testFunction && loadFunction && successFunction) {
+        resultsFound = (await testFunction(testObject.type, testObject.id)).length > 0
+        if(resultsFound) {
+            targetStorage.value = {}
+            await Promise.all(allDataObjectsInDataset.value.map(
+                (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
+            ))
+            if(successFunction) successFunction()
+            return `Received results for ${action} job.`
+        }
+    } else {
+        return `Error polling for ${action} results. Try refreshing the page.`
+    }
+    return undefined
 }

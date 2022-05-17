@@ -136,7 +136,7 @@ export async function pollJobResults(action: string): Promise<string | undefined
                     return (await getGroomedShapeForDataObject(type, id)).filter(
                         (result: GroomedShape) => {
                             // only consider updated objects as successful results
-                            return groomedShapesForOriginalDataObjects.value[type][id].file !== result.file
+                            return groomedShapesForOriginalDataObjects.value[type][id].modified !== result.modified
                         }
                     )
                 }

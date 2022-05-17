@@ -25,19 +25,19 @@ class Subject(TimeStampedModel, models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='subjects')
 
 
-class Segmentation(models.Model):
+class Segmentation(TimeStampedModel, models.Model):
     file = S3FileField()
     anatomy_type = models.CharField(max_length=255)  # choices?
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='segmentations')
 
 
-class Mesh(models.Model):
+class Mesh(TimeStampedModel, models.Model):
     file = S3FileField()
     anatomy_type = models.CharField(max_length=255)  # choices?
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='meshes')
 
 
-class Image(models.Model):
+class Image(TimeStampedModel, models.Model):
     file = S3FileField()
     modality = models.CharField(max_length=255)  # choices?
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='images')
@@ -50,7 +50,7 @@ class Project(TimeStampedModel, models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
 
 
-class GroomedSegmentation(models.Model):
+class GroomedSegmentation(TimeStampedModel, models.Model):
     # The contents of the nrrd file
     file = S3FileField()
 
@@ -70,7 +70,7 @@ class GroomedSegmentation(models.Model):
     )
 
 
-class GroomedMesh(models.Model):
+class GroomedMesh(TimeStampedModel, models.Model):
     # The contents of the nrrd file
     file = S3FileField()
 
@@ -88,7 +88,7 @@ class GroomedMesh(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='groomed_meshes')
 
 
-class OptimizedShapeModel(models.Model):
+class OptimizedShapeModel(TimeStampedModel, models.Model):
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
@@ -97,7 +97,7 @@ class OptimizedShapeModel(models.Model):
     parameters = models.JSONField(default=dict)
 
 
-class OptimizedParticles(models.Model):
+class OptimizedParticles(TimeStampedModel, models.Model):
     world = S3FileField()
     local = S3FileField()
     transform = S3FileField()
@@ -124,7 +124,7 @@ class OptimizedParticles(models.Model):
     )
 
 
-class OptimizedSurfaceReconstructionMeta(models.Model):
+class OptimizedSurfaceReconstructionMeta(TimeStampedModel, models.Model):
     method = models.CharField(max_length=255)  # TODO: Should be choices
     reconstruction_params = S3FileField()
     template_reconstruction = S3FileField()
@@ -136,7 +136,7 @@ class OptimizedSurfaceReconstructionMeta(models.Model):
     )
 
 
-class OptimizedSurfaceReconstruction(models.Model):
+class OptimizedSurfaceReconstruction(TimeStampedModel, models.Model):
     particles = models.OneToOneField(
         OptimizedParticles,
         on_delete=models.CASCADE,
@@ -146,7 +146,7 @@ class OptimizedSurfaceReconstruction(models.Model):
     sample_reconstruction = S3FileField()
 
 
-class OptimizedPCAModel(models.Model):
+class OptimizedPCAModel(TimeStampedModel, models.Model):
     shape_model = models.OneToOneField(
         OptimizedShapeModel,
         on_delete=models.CASCADE,

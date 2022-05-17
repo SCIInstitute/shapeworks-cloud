@@ -4,8 +4,17 @@ from s3_file_field.rest_framework import S3FileSerializerField
 from shapeworks_cloud.core import models
 
 
+class ProjectSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Project
+        fields = '__all__'
+
+
 class DatasetSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField(required=False, allow_null=True)
+    projects = ProjectSerializer(required=False, many=True)
 
     class Meta:
         model = models.Dataset
@@ -39,14 +48,6 @@ class ImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Image
-        fields = '__all__'
-
-
-class ProjectSerializer(serializers.ModelSerializer):
-    file = S3FileSerializerField()
-
-    class Meta:
-        model = models.Project
         fields = '__all__'
 
 

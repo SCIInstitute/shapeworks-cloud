@@ -1,13 +1,16 @@
 from typing import Dict, Type
 
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins
+from rest_framework import mixins, status
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
+from .tasks import groom
 
 
 class Pagination(PageNumberPagination):
@@ -70,6 +73,18 @@ class ProjectViewSet(BaseViewSet):
     queryset = models.Project.objects.all()
     serializer_class = serializers.ProjectSerializer
     filterset_class = filters.ProjectFilter
+
+    @action(
+        detail=True,
+        url_path='groom',
+        url_name='groom',
+        methods=['POST'],
+    )
+    def groom(self, request, **kwargs):
+        project = self.get_object()
+        form_data = request.data
+        groom.delay(request.user.id, project.id, form_data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GroomedSegmentationViewSet(BaseViewSet):

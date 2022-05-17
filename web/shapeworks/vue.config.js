@@ -8,6 +8,7 @@ module.exports = {
       warnings: false,
       errors: false,
     },
+    progress: false,
   },
   transpileDependencies: [
     "vuetify", "@koumoul/vjsf"

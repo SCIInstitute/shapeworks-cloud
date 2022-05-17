@@ -59,6 +59,8 @@ setup(
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',
+            'openpyxl',
+            'pandas',
             'tox',
         ]
     },

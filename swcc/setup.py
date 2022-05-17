@@ -29,13 +29,14 @@ setup(
     python_requires='>=3.8',
     packages=find_packages(exclude=['tests']),
     install_requires=[
-        'click<8',  # celery depends on click<8, pin for now
+        'click<9',  # celery depends on click<9, pin for now
         'click-pathlib',
         'django-s3-file-field-client',
         # if you override and install in python 3.7
         'importlib_metadata ; python_version < "3.8"',
         'openpyxl',
         'packaging',
+        'pandas',
         'pydantic',
         'pyxdg',
         'requests',

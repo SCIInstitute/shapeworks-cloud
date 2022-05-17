@@ -92,6 +92,8 @@ export default defineComponent({
         <v-select
             v-model="layersShown"
             :items="layers"
+            :item-disabled="(layer) => !layer.available()"
+            item-value="name"
             label="Layers shown"
             style="width: 500px"
             multiple

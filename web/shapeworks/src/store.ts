@@ -1,6 +1,10 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
 import { DataObject, Dataset, Subject, Particles, GroomedShape } from '@/types'
-import { getDataset, getGroomedShapeForDataObject, getOptimizedParticlesForDataObject, groomProject } from '@/api/rest';
+import {
+    getDataset,
+    getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
+    groomProject, optimizeProject
+} from '@/api/rest';
 import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
@@ -94,13 +98,13 @@ export function jobAlreadyDone(action: string): Boolean {
             layer = layers.value?.find((layer) => layer.name === 'Groomed')
             return layer ? layer.available() : false
         case 'optimize':
-            break;
+            layer = layers.value?.find((layer) => layer.name === 'Particles')
+            return layer ? layer.available() : false
         case 'analyze':
-            break;
+            return false;
         default:
-            break;
+            return false;
     }
-    return false;
 }
 
 export async function spawnJob(action: string, payload: Record<string, any>): Promise<Boolean>{
@@ -113,7 +117,7 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
         case 'groom':
             return (await groomProject(projectId, payload)).status === 204
         case 'optimize':
-            break;
+            return (await optimizeProject(projectId, payload)).status === 204
         case 'analyze':
             break;
         default:
@@ -153,6 +157,27 @@ export async function pollJobResults(action: string): Promise<string | undefined
             }
             break;
         case 'optimize':
+            targetStorage = particlesForOriginalDataObjects
+            testFunction = async (type: string, id: number) => {
+                if(jobAlreadyDone(action)) {
+                    return (await getOptimizedParticlesForDataObject(type, id)).filter(
+                        (result: Particles) => {
+                            // only consider updated objects as successful results
+                            return particlesForOriginalDataObjects.value[type][id].modified !== result.modified
+                        }
+                    )
+                }
+                return await getOptimizedParticlesForDataObject(type, id)
+            }
+            loadFunction = loadParticlesForObject
+            successFunction = () => {
+                cachedMarchingCubes.value = Object.fromEntries(
+                    Object.entries(cachedMarchingCubes.value).filter(
+                        ([cachedLabel]) => !cachedLabel.includes('Particles')
+                    )
+                )
+                if(!layersShown.value.includes('Particles')) layersShown.value.push('Particles')
+            }
             break;
         case 'analyze':
             break;

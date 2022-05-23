@@ -9,28 +9,32 @@
             "properties": {
                 "number_of_particles": {
                     "type": "integer",
-                    "default": 512,
+                    "default": 128,
                     "title": "Number of particles"
+                },
+                "relative_weighting": {
+                    "type": "number",
+                    "default": 0.05,
+                    "title": "Relative weighting",
+                    "x-cols": 6
                 },
                 "initial_relative_weighting": {
                     "type": "number",
                     "default": 0.05,
-                    "title": "Initial relative weighting"
-                },
-                "relative_weighting": {
-                    "type": "number",
-                    "default": 1,
-                    "title": "Relative weighting"
+                    "title": "Initial",
+                    "x-cols": 6
                 },
                 "starting_regularization": {
                     "type": "integer",
                     "default": 1000,
-                    "title": "Starting regularization"
+                    "title": "Starting regularization",
+                    "x-cols": 6
                 },
                 "ending_regularization": {
                     "type": "integer",
                     "default": 10,
-                    "title": "Ending regularization"
+                    "title": "Ending regularization",
+                    "x-cols": 6
                 },
                 "iterations_per_split": {
                     "type": "integer",
@@ -42,12 +46,26 @@
                     "default": 1000,
                     "title": "Optimization iterations"
                 },
-                "geodesic_distance": {
+                "use_landmarks": {
                     "type": "boolean",
                     "default": false,
-                    "title": "Geodesic distance"
+                    "title": "Landmarks"
                 },
-                "normals": {
+                "use_geodesic_distance": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Geodesic distance",
+                    "x-cols": 6
+                },
+                "geodesic_cache_multiplier": {
+                    "type": "integer",
+                    "default": 20,
+                    "title": "Cache multiplier",
+                    "x-cols": 6,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.use_geodesic_distance"
+                },
+                "use_normals": {
                     "type": "boolean",
                     "default": false,
                     "title": "Normals",
@@ -59,33 +77,33 @@
                     "title": "Strength",
                     "x-cols": 6,
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.normals"
+                    "x-display-if": "(model) => model.section_1.use_normals"
                 },
-                "multiscale_mode": {
+                "multiscale": {
                     "type": "boolean",
                     "default": false,
-                    "title": "Multiscale mode",
+                    "title": "Multiscale",
                     "x-cols": 6
                 },
-                "multiscale_start": {
+                "multiscale_particles": {
                     "type": "integer",
                     "default": 32,
-                    "title": "Start",
+                    "title": "Particles",
                     "x-cols": 6,
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.multiscale_mode"
+                    "x-display-if": "(model) => model.section_1.multiscale"
                 },
                 "procrustes": {
                     "type": "boolean",
                     "default": false,
                     "title": "Procrustes",
-                    "x-cols": 4
+                    "x-cols": 3
                 },
                 "procrustes_scaling": {
                     "type": "boolean",
                     "default": false,
                     "title": "Scaling",
-                    "x-cols": 4,
+                    "x-cols": 2,
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_1.procrustes"
                 },
@@ -93,6 +111,14 @@
                     "type": "integer",
                     "default": 10,
                     "title": "Interval",
+                    "x-cols": 3,
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => model.section_1.procrustes"
+                },
+                "procrustes_rotation_translation": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Rotation/Translation",
                     "x-cols": 4,
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_1.procrustes"
@@ -101,6 +127,13 @@
                     "type": "integer",
                     "default": 4,
                     "title": "Narrow band"
+                },
+                "optimize_output_prefix": {
+                    "type": "string",
+                    "default": "particles",
+                    "title": "Output prefix",
+                    "x-display": "custom-conditional",
+                    "x-display-if": "(model) => false"
                 }
             }
         }

@@ -666,11 +666,15 @@ class Project(ApiModel):
                     continue
 
                 shape_file = root / row['shape']
-                groomed_file = root / row['groomed']
-                local = root / row['local_particles']
-                world = root / row['world_particles']
+                groomed_file = (root / row['groomed']) if row['groomed'] else None
+                local = (root / row['local_particles']) if row['local_particles'] else None
+                world = (root / row['world_particles']) if row['world_particles'] else None
                 alignment_file = row['alignment']
-                constraints = (root / row['constraints']) if 'constraints' in row else None
+                constraints = (
+                    (root / row['constraints'])
+                    if 'constraints' in row and row['constraints']
+                    else None
+                )
 
                 yield shape_file, groomed_file, alignment_file, local, world, constraints
 
@@ -713,36 +717,39 @@ class Project(ApiModel):
             groomed_segmentation = None
             groomed_mesh = None
             data_type = shape_file_type(shape_file)
-            if data_type == Segmentation:
-                segmentation = segmentations.get(shape_file.stem)
-                if not segmentation:
-                    raise Exception(f'Could not find segmentation for "{shape_file}"')
-                groomed_segmentation = self.add_groomed_segmentation(
-                    file=groomed_file,
-                    segmentation=segmentation,
-                )
-            elif data_type == Mesh:
-                mesh = meshes.get(shape_file.stem)
-                if not mesh:
-                    raise Exception(f'Could not find mesh for "{shape_file}"')
-                groomed_mesh = self.add_groomed_mesh(
-                    file=groomed_file,
-                    mesh=mesh,
-                )
 
-            with TemporaryDirectory() as dir:
-                transform = Path(dir) / f'{shape_file.stem}.transform'
-                with transform.open('w') as f:
-                    f.write(alignment_file)
+            if groomed_file:
+                if data_type == Segmentation:
+                    segmentation = segmentations.get(shape_file.stem)
+                    if not segmentation:
+                        raise Exception(f'Could not find segmentation for "{shape_file}"')
+                    groomed_segmentation = self.add_groomed_segmentation(
+                        file=groomed_file,
+                        segmentation=segmentation,
+                    )
+                elif data_type == Mesh:
+                    mesh = meshes.get(shape_file.stem)
+                    if not mesh:
+                        raise Exception(f'Could not find mesh for "{shape_file}"')
+                    groomed_mesh = self.add_groomed_mesh(
+                        file=groomed_file,
+                        mesh=mesh,
+                    )
 
-                shape_model.add_particles(
-                    world=world,
-                    local=local,
-                    transform=transform,
-                    groomed_segmentation=groomed_segmentation,
-                    groomed_mesh=groomed_mesh,
-                    constraints=constraints,
-                )
+            if alignment_file and local and world:
+                with TemporaryDirectory() as dir:
+                    transform = Path(dir) / f'{shape_file.stem}.transform'
+                    with transform.open('w') as f:
+                        f.write(alignment_file)
+
+                    shape_model.add_particles(
+                        world=world,
+                        local=local,
+                        transform=transform,
+                        groomed_segmentation=groomed_segmentation,
+                        groomed_mesh=groomed_mesh,
+                        constraints=constraints,
+                    )
 
     def download(self, path: Union[Path, str]):
         path = Path(path)
@@ -758,14 +765,15 @@ class Project(ApiModel):
 
         # TODO: Do we detect if alignment_file (transform) is a path?
         for _, groomed_file, _, local, world, constraints in self._iter_data_sheet(sheet, path):
-            gs = groomed_segmentations[groomed_file.stem]
-            gs.file.download(groomed_file.parent)
-
-            particles = local_files[local.stem]
-            particles.local.download(local.parent)
-            particles.world.download(world.parent)
-            if particles.constraints and constraints:
-                particles.constraints.download(constraints.parent)
+            if groomed_file and groomed_file.stem in groomed_segmentations:
+                gs = groomed_segmentations[groomed_file.stem]
+                gs.file.download(groomed_file.parent)
+            if local and world:
+                particles = local_files[local.stem]
+                particles.local.download(local.parent)
+                particles.world.download(world.parent)
+                if particles.constraints and constraints:
+                    particles.constraints.download(constraints.parent)
 
 
 class GroomedSegmentation(ApiModel):

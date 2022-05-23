@@ -8,6 +8,16 @@ export interface ShapeData {
     shape: vtkPolyData | vtkImageData,
 }
 
+export interface Project {
+    id: number,
+    file: string,
+    created: string,
+    modified: string,
+    keywords: string,
+    description: string,
+    dataset: number,
+}
+
 export interface Dataset {
     id: number,
     file: string,
@@ -16,7 +26,8 @@ export interface Dataset {
     name: string,
     license: string,
     description: string,
-    acknowledgement: string
+    acknowledgement: string,
+    projects: Project[],
 }
 
 export interface Subject {
@@ -34,6 +45,8 @@ export interface DataObject {
     file: string,
     modality: string,
     anatomy_type: string,
+    created: string,
+    modified: string,
 }
 
 export interface Particles {
@@ -44,6 +57,8 @@ export interface Particles {
     local: string,
     transform: string,
     world: string,
+    created: string,
+    modified: string,
 }
 
 export interface GroomedShape {
@@ -54,4 +69,6 @@ export interface GroomedShape {
     project: number,
     segmentation: number,
     mesh: number,
+    created: string,
+    modified: string,
 }

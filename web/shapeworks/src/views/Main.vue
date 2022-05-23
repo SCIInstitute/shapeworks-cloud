@@ -3,7 +3,7 @@ import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
 import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
-import { DataObject, ShapeData } from '../types';
+import { DataObject, ShapeData } from '@/types';
 import ShapeViewer from '../components/ShapeViewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
@@ -182,15 +182,15 @@ export default defineComponent({
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">
-                            <tab-form form="groom" />
+                            <tab-form form="groom" @change="refreshRender"/>
                         </v-tab-item>
                         <v-tab href="#optimize">Optimize</v-tab>
                         <v-tab-item value="optimize">
-                            <tab-form form="optimize" />
+                            <tab-form form="optimize" @change="refreshRender"/>
                         </v-tab-item>
                         <v-tab href="#analyze">Analyze</v-tab>
                         <v-tab-item value="analyze">
-                            <tab-form form="analyze" />
+                            <tab-form form="analyze" @change="refreshRender"/>
                         </v-tab-item>
                     </v-tabs>
                 </v-list-item>

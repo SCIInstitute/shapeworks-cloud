@@ -111,8 +111,9 @@ def save_dfs_to_project_spreadsheet(
     download_dir,
     project_dfs,
     project_filename,
-    update_columns={},
+    update_columns=None,
 ):
+    update_columns = update_columns or {}
     for sheet_name, columns in update_columns.items():
         for column_name in columns:
             # update project_dfs according to change after operation

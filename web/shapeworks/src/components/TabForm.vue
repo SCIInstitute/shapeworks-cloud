@@ -17,7 +17,15 @@ export default defineComponent({
         form: {
             type: String,
             required: true,
-        }
+        },
+        prerequisite: {
+            type: Function,
+            default: () => true
+        },
+        prerequisite_unfulfilled: {
+            type: String,
+            required: false,
+        },
     },
     components: {
       VJsf,
@@ -113,86 +121,93 @@ export default defineComponent({
 
 
 <template>
-<v-form v-model="formValid" class="pa-3" >
-    <div class="messages-box pa-3" v-if="messages.length">
-        {{ messages }}
-        <v-progress-circular
-            v-if="messages.includes('wait')"
-            indeterminate
-            color="primary"
-        ></v-progress-circular>
+    <div>
+        <div v-if="props.prerequisite()">
+            <v-form v-model="formValid" class="pa-3">
+                <div class="messages-box pa-3" v-if="messages.length">
+                    {{ messages }}
+                    <v-progress-circular
+                        v-if="messages.includes('wait')"
+                        indeterminate
+                        color="primary"
+                    ></v-progress-circular>
+                </div>
+                <div style="display: flex; width: 100%; justify-content: space-between;">
+                    <v-btn @click="resetForm">Restore defaults</v-btn>
+                    <v-btn color="primary" @click="submitForm">
+                        {{ alreadyDone ? 're': '' }}{{ props.form }}
+                    </v-btn>    </div>
+                <br />
+                <v-jsf
+                v-if="formSchema && !refreshing"
+                v-model="formData"
+                :schema="formSchema"
+                :options="schemaOptions"
+                >
+                    <!-- TODO: figure out recursive slot definition -->
+                    <template slot="custom-conditional" slot-scope="context">
+                        <v-jsf
+                            v-if="evaluateExpression(context.schema['x-display-if'])"
+                            v-model="formData[context.fullKey.split('.')[0]][context.fullKey.split('.')[1]]"
+                            v-bind="context"
+                        >
+                            <template slot="custom-readonly" slot-scope="context">
+                                <div style="display: flex; width: 100%; justify-content: space-between;">
+                                    <p>{{ context.label }}</p>
+                                    <p>{{ context.value }}{{ context.schema['x-display-append'] }}</p>
+                                </div>
+                            </template>
+                        </v-jsf>
+                    </template>
+                </v-jsf>
+                <br />
+                <div style="display: flex; width: 100%; justify-content: space-between;">
+                    <v-btn @click="resetForm">Restore defaults</v-btn>
+                    <v-btn color="primary" @click="submitForm">
+                        {{ alreadyDone ? 're': '' }}{{ props.form }}
+                    </v-btn>
+                </div>
+                <br>
+                <v-dialog
+                v-model="showSubmissionConfirmation"
+                width="500"
+                >
+                    <v-card>
+                        <v-card-title>
+                        Confirmation
+                        </v-card-title>
+
+                        <v-card-text>
+                        Are you sure you want to re-run the {{ props.form }} job?
+                        The previous results will be overwritten.
+                        </v-card-text>
+
+                        <v-divider></v-divider>
+
+                        <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn
+                            text
+                            @click="() => {showSubmissionConfirmation = false}"
+                        >
+                            Cancel
+                        </v-btn>
+                        <v-btn
+                            color="primary"
+                            text
+                            @click="() => {showSubmissionConfirmation = false, submitForm(undefined, confirmed=true)}"
+                        >
+                            Yes, Rerun
+                        </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
+            </v-form>
+        </div>
+        <div v-else-if="props.prerequisite_unfulfilled" class="pa-5">
+            {{ props.prerequisite_unfulfilled }}
+        </div>
     </div>
-    <div style="display: flex; width: 100%; justify-content: space-between;">
-        <v-btn @click="resetForm">Restore defaults</v-btn>
-        <v-btn color="primary" @click="submitForm">
-            {{ alreadyDone ? 're': '' }}{{ props.form }}
-        </v-btn>    </div>
-    <br />
-    <v-jsf
-      v-if="formSchema && !refreshing"
-      v-model="formData"
-      :schema="formSchema"
-      :options="schemaOptions"
-    >
-        <!-- TODO: figure out recursive slot definition -->
-        <template slot="custom-conditional" slot-scope="context">
-            <v-jsf
-                v-if="evaluateExpression(context.schema['x-display-if'])"
-                v-model="formData[context.fullKey.split('.')[0]][context.fullKey.split('.')[1]]"
-                v-bind="context"
-            >
-                 <template slot="custom-readonly" slot-scope="context">
-                    <div style="display: flex; width: 100%; justify-content: space-between;">
-                        <p>{{ context.label }}</p>
-                        <p>{{ context.value }}{{ context.schema['x-display-append'] }}</p>
-                    </div>
-                </template>
-            </v-jsf>
-        </template>
-    </v-jsf>
-    <br />
-    <div style="display: flex; width: 100%; justify-content: space-between;">
-        <v-btn @click="resetForm">Restore defaults</v-btn>
-        <v-btn color="primary" @click="submitForm">
-            {{ alreadyDone ? 're': '' }}{{ props.form }}
-        </v-btn>
-    </div>
-    <br>
-    <v-dialog
-      v-model="showSubmissionConfirmation"
-      width="500"
-    >
-        <v-card>
-            <v-card-title>
-            Confirmation
-            </v-card-title>
-
-            <v-card-text>
-            Are you sure you want to re-run the {{ props.form }} job?
-            The previous results will be overwritten.
-            </v-card-text>
-
-            <v-divider></v-divider>
-
-            <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-                text
-                @click="() => {showSubmissionConfirmation = false}"
-            >
-                Cancel
-            </v-btn>
-            <v-btn
-                color="primary"
-                text
-                @click="() => {showSubmissionConfirmation = false, submitForm(undefined, confirmed=true)}"
-            >
-                Yes, Rerun
-            </v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
-</v-form>
 </template>
 
 <style scoped>

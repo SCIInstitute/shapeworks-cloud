@@ -19,6 +19,7 @@ import {
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
+import { jobAlreadyDone } from '../store';
 
 
 export default defineComponent({
@@ -131,7 +132,8 @@ export default defineComponent({
             selectedDataObjects,
             toSelectPage,
             refreshRender,
-            particleSize
+            jobAlreadyDone,
+            particleSize,
         }
     }
 })
@@ -186,7 +188,12 @@ export default defineComponent({
                         </v-tab-item>
                         <v-tab href="#optimize">Optimize</v-tab>
                         <v-tab-item value="optimize">
-                            <tab-form form="optimize" @change="refreshRender"/>
+                            <tab-form
+                                form="optimize"
+                                @change="refreshRender"
+                                :prerequisite="() => jobAlreadyDone('groom')"
+                                prerequisite_unfulfilled="Perform a groom operation before optimizing."
+                            />
                         </v-tab-item>
                         <v-tab href="#analyze">Analyze</v-tab>
                         <v-tab-item value="analyze">

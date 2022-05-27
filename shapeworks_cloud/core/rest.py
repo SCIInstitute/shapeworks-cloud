@@ -10,7 +10,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from .tasks import groom
+from .tasks import groom, optimize
 
 
 class Pagination(PageNumberPagination):
@@ -84,6 +84,18 @@ class ProjectViewSet(BaseViewSet):
         project = self.get_object()
         form_data = request.data
         groom.delay(request.user.id, project.id, form_data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        url_path='optimize',
+        url_name='optimize',
+        methods=['POST'],
+    )
+    def optimize(self, request, **kwargs):
+        project = self.get_object()
+        form_data = request.data
+        optimize.delay(request.user.id, project.id, form_data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

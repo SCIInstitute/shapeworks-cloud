@@ -757,18 +757,20 @@ class Project(ApiModel):
         xls = load_workbook(str(project_file), read_only=True)
         sheet = xls['data']
 
-        shape_model = next(self.shape_models)
+        shape_model = next(self.shape_models) if any(True for _ in self.shape_models) else None
         groomed_segmentations = {
             PurePath(gs.file.name).stem: gs for gs in self.groomed_segmentations
         }
-        local_files = {PurePath(p.local.name).stem: p for p in shape_model.particles}
+        local_files = (
+            {PurePath(p.local.name).stem: p for p in shape_model.particles} if shape_model else {}
+        )
 
         # TODO: Do we detect if alignment_file (transform) is a path?
         for _, groomed_file, _, local, world, constraints in self._iter_data_sheet(sheet, path):
             if groomed_file and groomed_file.stem in groomed_segmentations:
                 gs = groomed_segmentations[groomed_file.stem]
                 gs.file.download(groomed_file.parent)
-            if local and world:
+            if local and world and local.stem in local_files:
                 particles = local_files[local.stem]
                 particles.local.download(local.parent)
                 particles.world.download(world.parent)

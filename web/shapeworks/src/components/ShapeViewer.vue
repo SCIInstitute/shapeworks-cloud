@@ -113,7 +113,7 @@ export default {
         mapper.setScaleFactor(this.glyphSize);
       });
       this.render();
-    },
+    }
   },
   beforeDestroy() {
     this.vtk.interactor.unbindEvents();
@@ -160,6 +160,16 @@ export default {
         this.vtk.openglRenderWindow.setSize(width, height);
         this.render();
       }
+    },
+    updateOrientationCube(){
+      this.orientationCube = vtkOrientationMarkerWidget.newInstance({
+        actor: orientationIndicator.value,
+        interactor: this.vtk.interactor,
+        viewportSize: 0.1,
+        minPixelSize: 100,
+        maxPixelSize: 300,
+        viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
+      });
     },
     syncCameras(animation) {
       const targetRenderer = animation.pokedRenderer;
@@ -296,6 +306,7 @@ export default {
       for (let i = 0; i < this.vtk.renderers.length; i += 1) {
         this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
       }
+      if(this.orientationCube) this.orientationCube.setEnabled(false)
       this.vtk.renderers = [];
       this.vtk.pointMappers = [];
 
@@ -310,17 +321,9 @@ export default {
         this.vtk.renderWindow.addRenderer(newRenderer);
       }
 
-      const orientationWidget = vtkOrientationMarkerWidget.newInstance({
-        actor: orientationIndicator.value,
-        interactor: this.vtk.interactor,
-      });
-      orientationWidget.setEnabled(true);
-      orientationWidget.setViewportCorner(
-        vtkOrientationMarkerWidget.Corners.TOP_RIGHT
-      );
-      orientationWidget.setViewportSize(0.10);
-      orientationWidget.setMinPixelSize(100);
-      orientationWidget.setMaxPixelSize(300);
+      this.updateOrientationCube()
+      this.orientationCube.setParentRenderer(this.vtk.renderers[this.columns - 1])
+      this.orientationCube.setEnabled(true);
 
       this.render();
     },

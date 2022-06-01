@@ -171,22 +171,43 @@ export default {
         viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
       });
     },
+    initializeCameras(){
+      this.initialCameraStates = {
+        position: {},
+        viewUp: {},
+      }
+      this.vtk.renderers.forEach((renderer) => {
+        const camera = renderer.getActiveCamera();
+        this.initialCameraStates.position[renderer] = [...camera.getReferenceByName('position')]
+        this.initialCameraStates.viewUp[renderer] = [...camera.getReferenceByName('viewUp')]
+      })
+    },
     syncCameras(animation) {
       const targetRenderer = animation.pokedRenderer;
       const targetCamera = targetRenderer.getActiveCamera();
-      const newPosition = targetCamera.getReferenceByName('position');
-      const newViewUp = targetCamera.getReferenceByName('viewUp');
-      const newViewAngle = targetCamera.getReferenceByName('viewAngle');
-      const newClippingRange = targetCamera.getClippingRange();
-      const otherRenderers = this.vtk.renderers.filter(
-        (renderer) => renderer.getActiveCamera() !== targetCamera
+
+      const positionDelta = [...targetCamera.getReferenceByName('position')].map(
+        (num, index) => num - this.initialCameraStates.position[targetRenderer][index]
       )
-      otherRenderers.forEach((renderer) => {
+      const viewUpDelta = [...targetCamera.getReferenceByName('viewUp')].map(
+        (num, index) => num - this.initialCameraStates.viewUp[targetRenderer][index]
+      )
+
+      this.vtk.renderers.filter(
+        (renderer) => renderer!== targetRenderer
+      ).forEach((renderer) => {
         const camera = renderer.getActiveCamera();
-        camera.setPosition(...newPosition)
-        camera.setViewUp(...newViewUp)
-        camera.setViewAngle(newViewAngle)
-        camera.setClippingRange(...newClippingRange)
+        camera.setPosition(
+          ...this.initialCameraStates.position[renderer].map(
+            (old, index) => old + positionDelta[index]
+          )
+        )
+        camera.setViewUp(
+          ...this.initialCameraStates.viewUp[renderer].map(
+            (old, index) => old + viewUpDelta[index]
+          )
+        )
+        camera.setClippingRange(0.1, 1000)
       })
     },
     createColorFilter() {
@@ -329,6 +350,7 @@ export default {
     },
     render() {
       this.vtk.renderWindow.render();
+      this.initializeCameras()
     },
   },
 };

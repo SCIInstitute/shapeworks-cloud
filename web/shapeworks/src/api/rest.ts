@@ -1,4 +1,4 @@
-import { DataObject, Dataset, Subject } from "@/types";
+import { DataObject, Dataset, Project, Subject } from "@/types";
 import { apiClient } from "./auth";
 import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
@@ -14,6 +14,10 @@ export async function getSubjectsForDataset(datasetId: number): Promise<Subject[
     return (await apiClient.get('/subjects', {
         params: {dataset: datasetId}
     })).data.results
+}
+
+export async function getProjectsForDataset(datasetId: number): Promise<Project[]>{
+    return (await apiClient.get(`/projects?dataset=${datasetId}`)).data?.results
 }
 
 export async function getSubject(subjectId: number): Promise<Subject>{

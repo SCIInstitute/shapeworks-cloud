@@ -1,8 +1,9 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
-import { DataObject, Dataset, Subject, Particles, GroomedShape } from '@/types'
+import { DataObject, Dataset, Subject, Particles, GroomedShape, Project } from '@/types'
 import {
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
+    getProjectsForDataset,
     groomProject, optimizeProject
 } from '@/api/rest';
 import { ref } from '@vue/composition-api'
@@ -12,6 +13,10 @@ export const loadingState = ref<boolean>(false)
 export const allDatasets = ref<Dataset[]>([])
 
 export const selectedDataset = ref<Dataset>()
+
+export const allProjectsForDataset = ref<Project[]>([])
+
+export const selectedProject = ref<Project>()
 
 export const allSubjectsForDataset = ref<Subject[]>([])
 
@@ -73,6 +78,13 @@ export const loadDataset = async (datasetId: number) => {
     }
 }
 
+export const loadProjectForDataset = async (projectId: number, datasetId: number) => {
+    allProjectsForDataset.value = await getProjectsForDataset(datasetId);
+    selectedProject.value = allProjectsForDataset.value.find(
+        (project: Project) => project.id == projectId,
+    )
+}
+
 export const loadParticlesForObject = async (type: string, id: number) => {
     let particles = await getOptimizedParticlesForDataObject(type, id)
     if (particles.length > 0) particles = particles[0]
@@ -111,7 +123,7 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
     if (Object.keys(payload).every((key) => key.includes("section"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
-    const projectId = selectedDataset.value?.projects[0]?.id;
+    const projectId = selectedProject.value?.id;
     if(!projectId) return false
     switch(action){
         case 'groom':

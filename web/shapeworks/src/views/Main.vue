@@ -16,6 +16,8 @@ import {
     particlesForOriginalDataObjects,
     layersShown,
     groomedShapesForOriginalDataObjects,
+    selectedProject,
+    loadProjectForDataset
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -34,6 +36,10 @@ export default defineComponent({
             type: Number,
             required: true,
         },
+        project: {
+            type: Number,
+            required: true,
+        }
     },
     setup(props) {
         const mini = ref(false);
@@ -44,14 +50,16 @@ export default defineComponent({
 
         onMounted(async () => {
             await loadDataset(props.dataset);
+            await loadProjectForDataset(props.project, props.dataset);
         })
 
-        function toSelectPage(){
-            selectedDataset.value = undefined;
+        async function toSelectPage() {
+            selectedProject.value = undefined;
             router.push({
                 name: 'select',
             });
         }
+
         async function refreshRender() {
             renderData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
@@ -152,7 +160,6 @@ export default defineComponent({
                         <v-icon large>mdi-menu</v-icon>
                     </v-btn>
                     <v-list-item-title class="text-h6">
-                        Dataset: {{ selectedDataset.name }}
                         <v-tooltip bottom>
                         <template v-slot:activator="{ on, attrs }">
                             <v-icon
@@ -161,11 +168,12 @@ export default defineComponent({
                             v-on="on"
                             @click="toSelectPage"
                             >
-                            mdi-close
+                            mdi-arrow-left
                             </v-icon>
                         </template>
-                        <span>Return to dataset selection</span>
+                        <span>Return to dataset/project selection</span>
                         </v-tooltip>
+                        Dataset: {{ selectedDataset.name }}
                     </v-list-item-title>
                     <v-btn
                         icon

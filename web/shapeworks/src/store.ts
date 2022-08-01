@@ -3,6 +3,7 @@ import { DataObject, Dataset, Subject, Particles, GroomedShape, Project } from '
 import {
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
+    getProjectsForDataset,
     groomProject, optimizeProject
 } from '@/api/rest';
 import { ref } from '@vue/composition-api'
@@ -75,6 +76,13 @@ export const loadDataset = async (datasetId: number) => {
         selectedDataset.value = await getDataset(datasetId);
         loadingState.value = false;
     }
+}
+
+export const loadProjectForDataset = async (projectId: number, datasetId: number) => {
+    allProjectsForDataset.value = await getProjectsForDataset(datasetId);
+    selectedProject.value = allProjectsForDataset.value.find(
+        (project: Project) => project.id == projectId,
+    )
 }
 
 export const loadParticlesForObject = async (type: string, id: number) => {

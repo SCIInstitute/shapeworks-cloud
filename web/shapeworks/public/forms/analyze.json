@@ -1,7 +1,7 @@
 {
     "id": "analyze",
     "type": "object",
-    "description": "TODO: Analyze description",
+    "description": "Examine the generated outputs and metrics",
     "properties": {
         "view": {
             "type": "string",
@@ -17,7 +17,8 @@
                 "overall_mean": {
                     "type": "boolean",
                     "title": "Overall mean",
-                    "default": false
+                    "default": false,
+                    "description": "Display overall mean shape"
                 }
             }
         },
@@ -30,12 +31,14 @@
                     "type": "string",
                     "enum": [
                         "All samples",
-                        "Single sample"
+                        "Single sample",
+                        "Median"
                     ],
                     "default": "All samples",
                     "x-cols": 6,
                     "x-display": "radio",
-                    "title": "Sample selection"
+                    "title": "Sample selection",
+                    "description": "All samples: Show all samples\nSingle sample: show a single sample\nMedian: Show median sample"
                 }
             }
         },
@@ -56,7 +59,8 @@
                 "animate": {
                     "type": "boolean",
                     "title": "Animate",
-                    "default": false
+                    "default": false,
+                    "description": "Standard deviation animation"
                 },
                 "lambda": {
                     "type": "number",

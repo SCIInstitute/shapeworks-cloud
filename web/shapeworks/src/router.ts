@@ -12,7 +12,7 @@ const castDatasetAndSubjectProps = (route: Route) => ({
 
 const routes: Array<RouteConfig> = [
   {
-    path: '/dataset/:dataset',
+    path: '/dataset/:dataset/project/:project',
     name: 'main',
     props: castDatasetAndSubjectProps,
     component: Main

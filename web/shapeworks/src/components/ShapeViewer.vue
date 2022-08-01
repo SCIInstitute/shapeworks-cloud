@@ -113,7 +113,7 @@ export default {
         mapper.setScaleFactor(this.glyphSize);
       });
       this.render();
-    },
+    }
   },
   beforeDestroy() {
     this.vtk.interactor.unbindEvents();
@@ -161,22 +161,53 @@ export default {
         this.render();
       }
     },
+    updateOrientationCube(){
+      this.orientationCube = vtkOrientationMarkerWidget.newInstance({
+        actor: orientationIndicator.value,
+        interactor: this.vtk.interactor,
+        viewportSize: 0.1,
+        minPixelSize: 100,
+        maxPixelSize: 300,
+        viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
+      });
+    },
+    initializeCameras(){
+      this.initialCameraStates = {
+        position: {},
+        viewUp: {},
+      }
+      this.vtk.renderers.forEach((renderer) => {
+        const camera = renderer.getActiveCamera();
+        this.initialCameraStates.position[renderer] = [...camera.getReferenceByName('position')]
+        this.initialCameraStates.viewUp[renderer] = [...camera.getReferenceByName('viewUp')]
+      })
+    },
     syncCameras(animation) {
       const targetRenderer = animation.pokedRenderer;
       const targetCamera = targetRenderer.getActiveCamera();
-      const newPosition = targetCamera.getReferenceByName('position');
-      const newViewUp = targetCamera.getReferenceByName('viewUp');
-      const newViewAngle = targetCamera.getReferenceByName('viewAngle');
-      const newClippingRange = targetCamera.getClippingRange();
-      const otherRenderers = this.vtk.renderers.filter(
-        (renderer) => renderer.getActiveCamera() !== targetCamera
+
+      const positionDelta = [...targetCamera.getReferenceByName('position')].map(
+        (num, index) => num - this.initialCameraStates.position[targetRenderer][index]
       )
-      otherRenderers.forEach((renderer) => {
+      const viewUpDelta = [...targetCamera.getReferenceByName('viewUp')].map(
+        (num, index) => num - this.initialCameraStates.viewUp[targetRenderer][index]
+      )
+
+      this.vtk.renderers.filter(
+        (renderer) => renderer!== targetRenderer
+      ).forEach((renderer) => {
         const camera = renderer.getActiveCamera();
-        camera.setPosition(...newPosition)
-        camera.setViewUp(...newViewUp)
-        camera.setViewAngle(newViewAngle)
-        camera.setClippingRange(...newClippingRange)
+        camera.setPosition(
+          ...this.initialCameraStates.position[renderer].map(
+            (old, index) => old + positionDelta[index]
+          )
+        )
+        camera.setViewUp(
+          ...this.initialCameraStates.viewUp[renderer].map(
+            (old, index) => old + viewUpDelta[index]
+          )
+        )
+        camera.setClippingRange(0.1, 1000)
       })
     },
     createColorFilter() {
@@ -296,6 +327,7 @@ export default {
       for (let i = 0; i < this.vtk.renderers.length; i += 1) {
         this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
       }
+      if(this.orientationCube) this.orientationCube.setEnabled(false)
       this.vtk.renderers = [];
       this.vtk.pointMappers = [];
 
@@ -310,22 +342,15 @@ export default {
         this.vtk.renderWindow.addRenderer(newRenderer);
       }
 
-      const orientationWidget = vtkOrientationMarkerWidget.newInstance({
-        actor: orientationIndicator.value,
-        interactor: this.vtk.interactor,
-      });
-      orientationWidget.setEnabled(true);
-      orientationWidget.setViewportCorner(
-        vtkOrientationMarkerWidget.Corners.TOP_RIGHT
-      );
-      orientationWidget.setViewportSize(0.10);
-      orientationWidget.setMinPixelSize(100);
-      orientationWidget.setMaxPixelSize(300);
+      this.updateOrientationCube()
+      this.orientationCube.setParentRenderer(this.vtk.renderers[this.columns - 1])
+      this.orientationCube.setEnabled(true);
 
       this.render();
     },
     render() {
       this.vtk.renderWindow.render();
+      this.initializeCameras()
     },
   },
 };

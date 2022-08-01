@@ -16,6 +16,7 @@ import {
     particlesForOriginalDataObjects,
     layersShown,
     groomedShapesForOriginalDataObjects,
+    selectedProject,
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -48,6 +49,7 @@ export default defineComponent({
 
         function toSelectPage(){
             selectedDataset.value = undefined;
+            selectedProject.value = undefined;
             router.push({
                 name: 'select',
             });

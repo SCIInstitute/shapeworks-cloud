@@ -1,13 +1,15 @@
 <script lang="ts">
 import { defineComponent, onMounted } from '@vue/composition-api';
-import { getDatasets } from '@/api/rest'
+import { getDatasets, getProjectsForDataset } from '@/api/rest'
 import {
     allDatasets,
     selectedDataset,
     loadingState,
     selectedDataObjects,
+    allProjectsForDataset,
+    selectedProject,
 } from '../store';
-import { Dataset } from '@/types';
+import { Dataset, Project } from '@/types';
 import router from '@/router';
 
 export default defineComponent({
@@ -22,18 +24,32 @@ export default defineComponent({
             loadingState.value = false;
         }
 
+        async function fetchProjectsForDataset(dataset: Dataset) {
+            allProjectsForDataset.value = await getProjectsForDataset(dataset.id);
+        }
 
         async function selectOrDeselectDataset (dataset: Dataset) {
             if(!selectedDataset.value){
                 selectedDataset.value = dataset;
+                fetchProjectsForDataset(dataset)
+            } else {
+                selectedDataset.value = undefined;
+                selectedDataObjects.value = [];
+                await getAllDatasets();
+            }
+        }
+
+        async function selectOrDeselectProject (project: Project) {
+            if(!selectedProject.value){
+                selectedProject.value = project;
                 router.push({
                     name: 'main',
                     params: {
-                        dataset: String(selectedDataset.value.id),
+                        dataset: String(selectedDataset.value?.id),
+                        project: String(project.id),
                     }
                 });
-            } else {
-                selectedDataset.value = undefined;
+            } else {selectedProject.value = undefined;
                 selectedDataObjects.value = [];
                 await getAllDatasets();
             }
@@ -53,7 +69,10 @@ export default defineComponent({
         return {
             allDatasets,
             selectedDataset,
+            allProjectsForDataset,
+            selectedProject,
             selectOrDeselectDataset,
+            selectOrDeselectProject,
             loadingState,
         }
     }
@@ -61,18 +80,21 @@ export default defineComponent({
 </script>
 
 <template>
-    <div class="flex-container pa-5">
-        <v-card v-if="allDatasets.length === 0 && !loadingState" width="100%">
-            <v-card-title>No datasets.</v-card-title>
-        </v-card>
-        <v-card
-            v-for="dataset in allDatasets"
-            :key="'dataset_'+dataset.id"
-            v-show="!selectedDataset || selectedDataset == dataset"
-            class="selectable-card"
-            :width="selectedDataset == dataset ? '100%' :''"
+    <div>
+        <div
+            v-if="!selectedDataset"
+            class="flex-container pa-5"
         >
-            <div v-show="!selectedDataset || selectedDataset == dataset">
+            <v-card v-if="allDatasets.length === 0 && !loadingState" width="100%">
+                <v-card-title>No datasets.</v-card-title>
+            </v-card>
+            <v-card
+                v-for="dataset in allDatasets"
+                :key="'dataset_'+dataset.id"
+                class="selectable-card"
+                v-show="!selectedDataset || selectedDataset == dataset"
+                :width="selectedDataset == dataset ? '100%' :''"
+            >
                 <div class="text-overline mb-4">
                     DATASET ({{ dataset.created.split('T')[0] }})
                 </div>
@@ -92,8 +114,49 @@ export default defineComponent({
                     {{ selectedDataset ?'Deselect' :'Select' }}
                 </v-btn>
                 </v-card-actions>
+            </v-card>
+        </div>
+        <div v-else class="flex-container pa-5">
+            <div style="width:100%">
+                <v-icon @click="() => selectOrDeselectDataset(selectedDataset)">
+                    mdi-arrow-left
+                </v-icon>
             </div>
-        </v-card>
+            <v-card v-if="allProjectsForDataset.length === 0 && !loadingState" width="100%">
+                <v-card-title>No projects.</v-card-title>
+            </v-card>
+            <v-card
+                v-for="project in allProjectsForDataset"
+                :key="'project_'+project.id"
+                class="selectable-card"
+                v-show="!selectedProject || selectedProject == project"
+                :width="selectedProject == project ? '100%' :''"
+            >
+                <div class="text-overline mb-4">
+                    PROJECT ({{ project.created.split('T')[0] }})
+                    FOR DATASET {{ selectedDataset.id }}
+                </div>
+                <v-list-item-title class="text-h5 mb-1">
+                    Project {{ project.id }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                    {{ project.description }}
+                </v-list-item-subtitle>
+                <v-list-item-subtitle>
+                    {{ project.keywords }}
+                </v-list-item-subtitle>
+                <v-card-actions class="action-buttons">
+                <v-btn
+                    outlined
+                    rounded
+                    text
+                    @click="() => selectOrDeselectProject(project)"
+                >
+                    {{ selectedProject ?'Deselect' :'Select' }}
+                </v-btn>
+                </v-card-actions>
+            </v-card>
+        </div>
     </div>
 </template>
 

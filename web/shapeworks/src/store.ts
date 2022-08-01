@@ -1,5 +1,5 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
-import { DataObject, Dataset, Subject, Particles, GroomedShape } from '@/types'
+import { DataObject, Dataset, Subject, Particles, GroomedShape, Project } from '@/types'
 import {
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
@@ -12,6 +12,10 @@ export const loadingState = ref<boolean>(false)
 export const allDatasets = ref<Dataset[]>([])
 
 export const selectedDataset = ref<Dataset>()
+
+export const allProjectsForDataset = ref<Project[]>([])
+
+export const selectedProject = ref<Project>()
 
 export const allSubjectsForDataset = ref<Subject[]>([])
 
@@ -111,7 +115,7 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
     if (Object.keys(payload).every((key) => key.includes("section"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
-    const projectId = selectedDataset.value?.projects[0]?.id;
+    const projectId = selectedProject.value?.id;
     if(!projectId) return false
     switch(action){
         case 'groom':

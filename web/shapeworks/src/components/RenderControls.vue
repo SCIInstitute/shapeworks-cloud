@@ -75,6 +75,10 @@ export default defineComponent({
         }
         changeAxisSystem('xyz')
 
+        function resetView() {
+            context.emit("change")
+        }
+
         return {
             particleSize,
             layersShown,
@@ -82,6 +86,7 @@ export default defineComponent({
             axisSystem,
             axisSystemOptions,
             changeAxisSystem,
+            resetView,
         }
     }
 })
@@ -129,6 +134,12 @@ export default defineComponent({
             label="Axis System"
             style="width: 150px"
         />
+        <v-btn
+            class="my-5"
+            @click="resetView"
+        >
+            Reset view
+        </v-btn>
     </div>
 </template>
 

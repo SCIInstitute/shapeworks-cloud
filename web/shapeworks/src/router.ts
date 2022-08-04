@@ -7,7 +7,7 @@ Vue.use(VueRouter)
 
 const castDatasetAndSubjectProps = (route: Route) => ({
   dataset: parseInt(route.params.dataset),
-  subject: parseInt(route.params.subject),
+  project: parseInt(route.params.project),
 });
 
 const routes: Array<RouteConfig> = [

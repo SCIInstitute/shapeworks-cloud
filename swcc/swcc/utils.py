@@ -57,7 +57,7 @@ def upload_path(session: SwccSession, path: Path, field: str, name=None) -> str:
     if name is None:
         name = path.name
     with path.open('rb') as f:
-        return session.s3ff.upload_file(f, name, field)['field_value']
+        return session.s3ff.upload_file(f, name, field)
 
 
 def update_config_value(filename: str, key: str, value: Any) -> None:

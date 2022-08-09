@@ -306,7 +306,7 @@
                     ],
                     "x-class": "float-right pl-5",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_3.alignment",
+                    "x-display-if": "(model) => model.section_3.alignment_enabled",
                     "description": "Option to align with centering (center of mass), iterative closest point (translation and rotation), or landmarks (best fit, when specified)"
                 }
             }

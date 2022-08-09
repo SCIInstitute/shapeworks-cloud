@@ -58,7 +58,8 @@
                 "use_landmarks": {
                     "type": "boolean",
                     "default": false,
-                    "title": "Landmarks"
+                    "title": "Landmarks",
+                    "description": "Use landmarks as initial particles"
                 },
                 "use_geodesic_distance": {
                     "type": "boolean",

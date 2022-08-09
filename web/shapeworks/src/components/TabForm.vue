@@ -63,6 +63,10 @@ export default defineComponent({
             ajv,
             sliderProps: {
                 thumbLabel: true
+            },
+            tooltipProps: {
+                openOnHover: true,
+                top: true
             }
         }
 
@@ -132,11 +136,15 @@ export default defineComponent({
                         color="primary"
                     ></v-progress-circular>
                 </div>
-                <div style="display: flex; width: 100%; justify-content: space-between;">
+                <div
+                    v-if="props.form !== 'analyze'"
+                    style="display: flex; width: 100%; justify-content: space-between;"
+                >
                     <v-btn @click="resetForm">Restore defaults</v-btn>
                     <v-btn color="primary" @click="submitForm">
                         {{ alreadyDone ? 're': '' }}{{ props.form }}
-                    </v-btn>    </div>
+                    </v-btn>
+                </div>
                 <br />
                 <v-jsf
                 v-if="formSchema && !refreshing"
@@ -144,7 +152,6 @@ export default defineComponent({
                 :schema="formSchema"
                 :options="schemaOptions"
                 >
-                    <!-- TODO: figure out recursive slot definition -->
                     <template slot="custom-conditional" slot-scope="context">
                         <v-jsf
                             v-if="evaluateExpression(context.schema['x-display-if'])"
@@ -161,7 +168,10 @@ export default defineComponent({
                     </template>
                 </v-jsf>
                 <br />
-                <div style="display: flex; width: 100%; justify-content: space-between;">
+                <div
+                    v-if="props.form !== 'analyze'"
+                    style="display: flex; width: 100%; justify-content: space-between;"
+                >
                     <v-btn @click="resetForm">Restore defaults</v-btn>
                     <v-btn color="primary" @click="submitForm">
                         {{ alreadyDone ? 're': '' }}{{ props.form }}
@@ -210,9 +220,12 @@ export default defineComponent({
     </div>
 </template>
 
-<style scoped>
+<style lang="css">
 .messages-box {
     text-align: center;
     color: #2196f3;
+}
+.float-right {
+    float: right;
 }
 </style>

@@ -1,7 +1,7 @@
 {
     "id": "groom",
     "type": "object",
-    "description": "TODO: Grooming description",
+    "description": "Pre-process and prepare input data for the optimization process",
     "properties": {
         "section_1": {
             "title": "Image Grooming Options",
@@ -10,104 +10,123 @@
                 "resample": {
                     "type": "boolean",
                     "default": true,
-                    "title": "Resample"
+                    "title": "Resample",
+                    "description": "Resample image spacing either to isotropic (recommended) or any given spacing"
                 },
                 "isotropic": {
                     "type": "boolean",
                     "default": true,
                     "title": "Isotropic",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.resample"
+                    "x-display-if": "(model) => model.section_1.resample",
+                    "description": "Enable isotropic resampling"
                 },
                 "iso_spacing": {
                     "type": "number",
                     "default": 0.625,
                     "title": "XYZ",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.resample && model.section_1.isotropic"
+                    "x-display-if": "(model) => model.section_1.resample && model.section_1.isotropic",
+                    "description": "Spacing for isotropic resampling"
                 },
                 "anisotropic_x": {
                     "type": "number",
                     "default": 0.625,
                     "title": "X",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.resample && !model.section_1.isotropic"
+                    "x-display-if": "(model) => model.section_1.resample && !model.section_1.isotropic",
+                    "description": "Spacing for X direction in anisotropic mode"
                 },
                 "anisotropic_y": {
                     "type": "number",
                     "default": 0.625,
                     "title": "Y",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.resample && !model.section_1.isotropic"
+                    "x-display-if": "(model) => model.section_1.resample && !model.section_1.isotropic",
+                    "description": "Spacing for Y direction in anisotropic mode"
                 },
                 "anisotropic_z": {
                     "type": "number",
                     "default": 2.5,
                     "title": "Z",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.resample && !model.section_1.isotropic"
+                    "x-display-if": "(model) => model.section_1.resample && !model.section_1.isotropic",
+                    "description": "Spacing for Z direction in anisotropic mode"
                 },
                 "pad": {
                     "type": "boolean",
                     "default": true,
                     "title": "Pad",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Add padding around the edges of the image"
                 },
                 "pad_value": {
                     "type": "integer",
                     "default": 10,
                     "title": "Amount",
                     "x-cols": 6,
+                    "x-class": "float-right pl-5",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.pad"
+                    "x-display-if": "(model) => model.section_1.pad",
+                    "description": "Number of voxels in each direction to pad"
                 },
                 "antialias": {
                     "type": "boolean",
                     "default": true,
                     "title": "Antialias",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Perform anti-aliasing to reduce segmentation stair step effect"
                 },
                 "antialias_amount": {
                     "type": "integer",
                     "default": 10,
                     "title": "Iterations",
                     "x-cols": 6,
+                    "x-class": "float-right pl-5",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.antialias"
+                    "x-display-if": "(model) => model.section_1.antialias",
+                    "description": "Number of antialias iterations. Increase iterations for more anti-aliasing"
                 },
                 "blur": {
                     "type": "boolean",
                     "default": true,
                     "title": "Blur",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Blur/smooth image segmentation"
                 },
                 "blur_sigma": {
                     "type": "number",
                     "default": 2.00,
                     "title": "Sigma",
                     "x-cols": 6,
+                    "x-class": "float-right pl-5",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.blur"
+                    "x-display-if": "(model) => model.section_1.blur",
+                    "description": "Gaussian blur sigma"
                 },
                 "isolate": {
                     "type": "boolean",
                     "default": true,
-                    "title": "Isolate"
+                    "title": "Isolate",
+                    "description": "Isolate the largest object in the image segmentation"
                 },
                 "fill_holes": {
                     "type": "boolean",
                     "default": true,
-                    "title": "Fill Holes"
+                    "title": "Fill Holes",
+                    "description": "Fill small holes in the image segmentation"
                 },
                 "crop": {
                     "type": "boolean",
                     "default": true,
-                    "title": "Crop"
+                    "title": "Crop",
+                    "description": "Crop image down to region of interest within segmentation"
                 },
                 "fastmarching": {
                     "type": "boolean",
                     "default": true,
-                    "title": "Distance Transform"
+                    "title": "Distance Transform",
+                    "description": "Create a distance transform for image based optimization.  Required for image based optimizations unless input data is already a distance transform."
                 },
                 "groom_output_prefix": {
                     "type": "string",
@@ -125,21 +144,24 @@
                 "convert_to_mesh": {
                     "type": "boolean",
                     "default": false,
-                    "title": "Convert to mesh"
+                    "title": "Convert to mesh",
+                    "description": "Optionally convert to mesh at the end of Image Grooming.  This enables the Mesh Grooming pipeline and will run the optimization on meshes"
                 },
                 "fill_mesh_holes": {
                     "type": "boolean",
                     "default": true,
                     "title": "Fill Holes",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_2.convert_to_mesh"
+                    "x-display-if": "(model) => model.section_2.convert_to_mesh",
+                    "description": "Fill small holes in the mesh"
                 },
                 "mesh_smooth": {
                     "type": "boolean",
                     "default": true,
                     "title": "Smooth",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_2.convert_to_mesh"
+                    "x-display-if": "(model) => model.section_2.convert_to_mesh",
+                    "description": "Enable mesh smoothing"
                 },
                 "mesh_smoothing_method": {
                     "type": "string",
@@ -150,7 +172,8 @@
                     "default": "Laplacian",
                     "title": "Smoothing Method",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.mesh_smooth"
+                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.mesh_smooth",
+                    "description": "Mesh smoothing type: Laplacian or Windowed Sinc"
                 },
                 "mesh_smoothing_vtk_laplacian_iterations": {
                     "type": "integer",
@@ -158,7 +181,8 @@
                     "title": "Iterations",
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.mesh_smoothing_method === 'Laplacian'",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Number of iterations of laplacian smoothing.  More iterations provides more smoothing."
                 },
                 "mesh_smoothing_vtk_laplacian_relaxation": {
                     "type": "integer",
@@ -166,7 +190,8 @@
                     "title": "Relaxation",
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.mesh_smoothing_method === 'Laplacian'",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Relaxation controls the amount of smoothing in each iteration."
                 },
                 "mesh_smoothing_vtk_windowed_sinc_iterations": {
                     "type": "integer",
@@ -174,7 +199,8 @@
                     "title": "Iterations",
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.mesh_smoothing_method === 'WindowedSinc'",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Number of iterations of windowed sinc smoothing.  More iterations provides more smoothing."
                 },
                 "mesh_smoothing_vtk_windowed_sinc_passband": {
                     "type": "number",
@@ -182,7 +208,8 @@
                     "title": "Pass Band",
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.mesh_smoothing_method === 'WindowedSinc'",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Passband parameter alters how much smoothing each iteration performs."
                 },
                 "remesh": {
                     "type": "boolean",
@@ -190,7 +217,8 @@
                     "title": "Remesh",
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_2.convert_to_mesh",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Enable remeshing to create a more uniform adaptive mesh. Also fixes many mesh problems"
                 },
                 "remesh_percent_mode": {
                     "type": "boolean",
@@ -198,28 +226,32 @@
                     "title": "Use percentage",
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Check this box to set the number of vertices based on a percentage of the mesh's current number of vertices"
                 },
                 "remesh_percent": {
                     "type": "number",
                     "default": 75.0,
                     "title": "Number of vertices",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh && model.section_2.remesh_percent_mode"
+                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh && model.section_2.remesh_percent_mode",
+                    "description": "Set the target number of vertices as a percentage of the current number of vertices"
                 },
                 "remesh_num_vertices": {
                     "type": "integer",
                     "default": 3000,
                     "title": "Number of vertices",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh && !model.section_2.remesh_percent_mode"
+                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh && !model.section_2.remesh_percent_mode",
+                    "description": "Set the desired number of vertices directly"
                 },
                 "remesh_gradation": {
                     "type": "number",
                     "default": 1,
                     "title": "Adaptivity",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh"
+                    "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh",
+                    "description": "Curvature adaptivity of remeshing (0 = uniform, 2.0 most adaptive).  This allocates more triangles/vertices to areas of higher curvature"
                 }
             }
         },
@@ -230,7 +262,8 @@
                 "reflect": {
                     "type": "boolean",
                     "default": false,
-                    "title": "Reflect"
+                    "title": "Reflect",
+                    "description": "Option to reflect some shapes over a given axis if a given column matches a given value (e.g. reflect 'side' over 'Y' if 'left')"
                 },
                 "reflect_column": {
                     "type": "string",
@@ -241,7 +274,8 @@
                     "default": "shape_1",
                     "x-cols": 6,
                     "x-display": "custom-conditional",
-                    "x-display-if":"(model) => model.section_2.reflect"
+                    "x-display-if":"(model) => model.section_3.reflect",
+                    "description": "Choice of spreadsheet column to determine which subjects should be reflected"
                 },
                 "reflect_axis": {
                     "type": "string",
@@ -251,13 +285,15 @@
                     "default": "X",
                     "x-cols": 6,
                     "x-display": "custom-conditional",
-                    "x-display-if":"(model) => model.section_2.reflect"
+                    "x-display-if":"(model) => model.section_3.reflect",
+                    "description": "Axis of reflection"
                 },
                 "alignment_enabled": {
                     "type": "boolean",
                     "default": true,
                     "title": "Alignment",
-                    "x-cols": 6
+                    "x-cols": 6,
+                    "description": "Enable/Disable alignment"
                 },
                 "alignment_method": {
                     "type": "string",
@@ -268,8 +304,10 @@
                         "Center",
                         "Iterative Closest Point"
                     ],
+                    "x-class": "float-right pl-5",
                     "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_2.alignment"
+                    "x-display-if": "(model) => model.section_3.alignment_enabled",
+                    "description": "Option to align with centering (center of mass), iterative closest point (translation and rotation), or landmarks (best fit, when specified)"
                 }
             }
         }

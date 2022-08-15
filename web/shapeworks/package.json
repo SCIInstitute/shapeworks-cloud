@@ -10,7 +10,6 @@
   "dependencies": {
     "@girder/oauth-client": "^0.7.8",
     "@koumoul/vjsf": "^2.11.3",
-    "@sentry/vue": "^6.17.7",
     "@vue/composition-api": "^1.4.6",
     "ajv": "^8.11.0",
     "core-js": "^3.6.5",

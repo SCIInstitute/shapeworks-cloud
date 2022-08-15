@@ -1,126 +1,103 @@
 {
     "id": "analyze",
     "type": "object",
-    "description": "TODO: Analyze description",
+    "description": "Examine the generated outputs and metrics",
     "properties": {
-        "section_1": {
-            "title": "View parameters",
+        "view": {
+            "type": "string",
+            "title": "View",
+            "default": "PCA",
+            "x-display": "custom-readonly"
+        },
+        "group": {
             "type": "object",
+            "x-display": "custom-conditional",
+            "x-display-if": "(model) => model.view === 'Group'",
             "properties": {
-                "view": {
-                    "type": "string",
-                    "title": "View",
-                    "default": "Group",
-                    "enum": [
-                        "Group",
-                        "Samples",
-                        "PCA"
-                    ]
-                },
-                "group": {
-                    "type": "object",
-                    "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.view === 'Group'",
-                    "properties": {
-                        "overall_mean": {
-                            "type": "boolean",
-                            "title": "Overall mean",
-                            "default": false
-                        }
-                    }
-                },
-                "samples": {
-                    "type": "object",
-                    "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.view === 'Samples'",
-                    "properties": {
-                        "selection": {
-                            "type": "string",
-                            "enum": [
-                                "All samples",
-                                "Single sample"
-                            ],
-                            "default": "All samples",
-                            "x-cols": 6,
-                            "x-display": "radio",
-                            "title": "Sample selection"
-                        }
-                    }
-                },
-                "pca": {
-                    "type": "object",
-                    "x-display": "custom-conditional",
-                    "x-display-if": "(model) => model.section_1.view === 'PCA'",
-                    "properties": {
-                        "std_dev": {
-                            "type": "number",
-                            "title": "Standard deviation",
-                            "default": 0,
-                            "minimum": -2,
-                            "maximum": 2,
-                            "step": 0.1,
-                            "x-display": "slider"
-                        },
-                        "animate": {
-                            "type": "boolean",
-                            "title": "Animate",
-                            "default": false
-                        },
-                        "lambda": {
-                            "type": "number",
-                            "title": "Lambda",
-                            "default": -30,
-                            "x-display": "custom-readonly"
-                        },
-                        "mode": {
-                            "type": "integer",
-                            "title": "Mode",
-                            "default": 1,
-                            "minimum": 1
-                        },
-                        "eigenvalue": {
-                            "type": "number",
-                            "title": "Eigenvalue",
-                            "default": 1500,
-                            "x-display": "custom-readonly"
-                        },
-                        "explained_variance": {
-                            "type": "number",
-                            "title": "Explained variance",
-                            "default": 30,
-                            "minimum": 0,
-                            "maximum": 100,
-                            "x-display": "custom-readonly",
-                            "x-display-append": "%"
-                        },
-                        "cumulative_variance": {
-                            "type": "number",
-                            "title": "Cumulative variance",
-                            "default": 30,
-                            "minimum": 0,
-                            "maximum": 100,
-                            "x-display": "custom-readonly",
-                            "x-display-append": "%"
-                        }
-                    }
+                "overall_mean": {
+                    "type": "boolean",
+                    "title": "Overall mean",
+                    "default": false,
+                    "description": "Display overall mean shape"
                 }
             }
         },
-        "section_2": {
-            "title": "Surface reconstruction",
+        "samples": {
             "type": "object",
+            "x-display": "custom-conditional",
+            "x-display-if": "(model) => model.view === 'Samples'",
             "properties": {
-                "method": {
+                "selection": {
                     "type": "string",
-                    "title": "Method",
-                    "default": "Mesh warping based",
                     "enum": [
-                      "Legacy",
-                      "Mesh warping based",
-                      "Distance transform based"
+                        "All samples",
+                        "Single sample",
+                        "Median"
                     ],
-                    "x-display": "radio"
-                  }
+                    "default": "All samples",
+                    "x-cols": 6,
+                    "x-display": "radio",
+                    "title": "Sample selection",
+                    "description": "All samples: Show all samples\nSingle sample: show a single sample\nMedian: Show median sample"
+                }
+            }
+        },
+        "pca": {
+            "type": "object",
+            "x-display": "custom-conditional",
+            "x-display-if": "(model) => model.view === 'PCA'",
+            "properties": {
+                "std_dev": {
+                    "type": "number",
+                    "title": "Standard deviation",
+                    "default": 0,
+                    "minimum": -2,
+                    "maximum": 2,
+                    "step": 0.1,
+                    "x-display": "slider"
+                },
+                "animate": {
+                    "type": "boolean",
+                    "title": "Animate",
+                    "default": false,
+                    "description": "Standard deviation animation"
+                },
+                "lambda": {
+                    "type": "number",
+                    "title": "Lambda",
+                    "default": -30,
+                    "x-display": "custom-readonly"
+                },
+                "mode": {
+                    "type": "integer",
+                    "title": "Mode",
+                    "default": 1,
+                    "minimum": 1
+                },
+                "eigenvalue": {
+                    "type": "number",
+                    "title": "Eigenvalue",
+                    "default": 1500,
+                    "x-display": "custom-readonly"
+                },
+                "explained_variance": {
+                    "type": "number",
+                    "title": "Explained variance",
+                    "default": 30,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "x-display": "custom-readonly",
+                    "x-display-append": "%"
+                },
+                "cumulative_variance": {
+                    "type": "number",
+                    "title": "Cumulative variance",
+                    "default": 30,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "x-display": "custom-readonly",
+                    "x-display-append": "%"
+                }
             }
         }
     }

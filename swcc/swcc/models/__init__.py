@@ -12,8 +12,6 @@ from .other_models import (
 from .project import Project
 from .subject import Subject
 
-OptimizedShapeModel.update_forward_refs()
-
 __all__ = [
     'Dataset',
     'GroomedMesh',

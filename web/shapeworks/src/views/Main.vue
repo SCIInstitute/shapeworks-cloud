@@ -149,7 +149,7 @@ export default defineComponent({
 
 
 <template>
-    <div class='content-area' style='height: 100%'>
+    <div class='content-area' style='height: 100%' v-if="selectedDataset">
         <v-navigation-drawer :mini-variant.sync="mini" width="650" permanent absolute>
                 <v-list-item>
                     <v-btn

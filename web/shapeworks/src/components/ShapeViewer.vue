@@ -342,11 +342,14 @@ export default {
         this.vtk.renderWindow.addRenderer(newRenderer);
       }
 
+      const targetRenderer = this.vtk.renderers[this.columns - 1]
       this.updateOrientationCube()
-      this.orientationCube.setParentRenderer(this.vtk.renderers[this.columns - 1])
-      this.orientationCube.setEnabled(true);
+      if (targetRenderer) {
+        this.orientationCube.setParentRenderer(targetRenderer)
+        this.orientationCube.setEnabled(true);
 
-      this.render();
+        this.render();
+      }
     },
     render() {
       this.vtk.renderWindow.render();

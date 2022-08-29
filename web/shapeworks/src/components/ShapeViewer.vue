@@ -263,7 +263,7 @@ export default {
     addShapes(renderer, label, shapes) {
       shapes.flat().forEach(
         (shape, index) => {
-          const layerName = shape.getFieldData().get('type').type
+          const layerName = shape.getFieldData().getArrayByName('type').getData()
           const type = layers.value.find((layer) => layer.name === layerName)
           let opacity = 1;
           const numLayers = layersShown.value.filter(

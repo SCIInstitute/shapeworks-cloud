@@ -2,6 +2,7 @@ import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import vtkPLYReader from 'vtk.js/Sources/IO/Geometry/PLYReader';
 import vtkPolyDataReader from 'vtk.js/Sources/IO/Legacy/PolyDataReader';
+import vtkStringArray from 'vtk.js/Sources/Common/Core/StringArray'
 import readImageArrayBuffer from 'itk/readImageArrayBuffer';
 import ITKHelper from 'vtk.js/Sources/Common/DataModel/ITKHelper';
 import axios from 'axios';
@@ -42,6 +43,13 @@ export default async function (
         console.log('Unknown file type for', filename)
         shape = vtkPolyData.newInstance()
     }
-    shape.getFieldData().set({type});
+
+    const typeValue = vtkStringArray.newInstance({
+        name: 'type',
+        numberOfComponents: 1,
+        size: 1,
+    });
+    typeValue.setData(type, 1)
+    shape.getFieldData().addArray(typeValue);
     return shape
   }

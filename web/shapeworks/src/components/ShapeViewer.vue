@@ -176,38 +176,46 @@ export default {
         position: {},
         viewUp: {},
       }
-      this.vtk.renderers.forEach((renderer) => {
+      this.vtk.renderers.forEach((renderer, index) => {
         const camera = renderer.getActiveCamera();
-        this.initialCameraStates.position[renderer] = [...camera.getReferenceByName('position')]
-        this.initialCameraStates.viewUp[renderer] = [...camera.getReferenceByName('viewUp')]
+        camera.setClippingRange(0.1, 1000)
+        this.initialCameraStates.position[`renderer_${index}`] = [...camera.getReferenceByName('position')]
+        this.initialCameraStates.viewUp[`renderer_${index}`] = [...camera.getReferenceByName('viewUp')]
       })
     },
     syncCameras(animation) {
       const targetRenderer = animation.pokedRenderer;
       const targetCamera = targetRenderer.getActiveCamera();
 
-      const positionDelta = [...targetCamera.getReferenceByName('position')].map(
-        (num, index) => num - this.initialCameraStates.position[targetRenderer][index]
+      const targetRendererID = `renderer_${this.vtk.renderers.indexOf(targetRenderer)}`
+      const initialPosition = this.initialCameraStates.position[targetRendererID]
+      const initialViewUp = this.initialCameraStates.viewUp[targetRendererID]
+      const newPosition = targetCamera.getReferenceByName('position')
+      const newViewUp = targetCamera.getReferenceByName('viewUp')
+
+
+      const positionDelta = [...newPosition].map(
+        (num, index) => num - initialPosition[index]
       )
-      const viewUpDelta = [...targetCamera.getReferenceByName('viewUp')].map(
-        (num, index) => num - this.initialCameraStates.viewUp[targetRenderer][index]
+      const viewUpDelta = [...newViewUp].map(
+        (num, index) => num - initialViewUp[index]
       )
 
       this.vtk.renderers.filter(
         (renderer) => renderer!== targetRenderer
       ).forEach((renderer) => {
         const camera = renderer.getActiveCamera();
+        const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
         camera.setPosition(
-          ...this.initialCameraStates.position[renderer].map(
+          ...this.initialCameraStates.position[rendererID].map(
             (old, index) => old + positionDelta[index]
           )
         )
         camera.setViewUp(
-          ...this.initialCameraStates.viewUp[renderer].map(
+          ...this.initialCameraStates.viewUp[rendererID].map(
             (old, index) => old + viewUpDelta[index]
           )
         )
-        camera.setClippingRange(0.1, 1000)
       })
     },
     createColorFilter() {

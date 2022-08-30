@@ -178,7 +178,6 @@ export default {
       }
       this.vtk.renderers.forEach((renderer, index) => {
         const camera = renderer.getActiveCamera();
-        camera.setClippingRange(0.1, 1000)
         this.initialCameraStates.position[`renderer_${index}`] = [...camera.getReferenceByName('position')]
         this.initialCameraStates.viewUp[`renderer_${index}`] = [...camera.getReferenceByName('viewUp')]
       })
@@ -216,6 +215,7 @@ export default {
             (old, index) => old + viewUpDelta[index]
           )
         )
+        camera.setClippingRange(0.1, 1000)
       })
     },
     createColorFilter() {

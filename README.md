@@ -88,7 +88,7 @@ some (but not all) of the style checks, run `tox -e format`.
 
 ## Deployed Instance
 
-See [https://shapeworks-cloud.org/](https://shapeworks-cloud.org/).
+See [https://www.shapeworks-cloud.org/](https://www.shapeworks-cloud.org/).
 
 For admins, visit [https://app.shapeworks-cloud.org/admin](https://app.shapeworks-cloud.org/admin).
 

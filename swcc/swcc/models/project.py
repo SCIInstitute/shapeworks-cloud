@@ -44,7 +44,7 @@ class ProjectFileIO(BaseModel, FileIO):
             return
         file = self.project.file.path
         data = None
-        if str(file).endswith('xlsx'):
+        if str(file).endswith('xlsx') or str(file).endswith('xlsx'):
             data, optimize = self.load_data_from_excel(file)
         elif str(file).endswith('json'):
             data, optimize = self.load_data_from_json(file)
@@ -121,7 +121,7 @@ class ProjectFileIO(BaseModel, FileIO):
 
     def interpret_optimize(self, data, root):
         expected = ('key', 'value')
-        headers = next(data)
+        headers = next(data.values)
         if headers[: len(expected)] != expected:
             raise Exception(
                 'Unknown spreadsheet format - expected headers to be %r, found %r'
@@ -129,7 +129,7 @@ class ProjectFileIO(BaseModel, FileIO):
             )
 
         params: Dict[str, Union[str, float]] = {}
-        for row in data:
+        for row in data.values:
             key, value = row
             try:
                 value = float(value)

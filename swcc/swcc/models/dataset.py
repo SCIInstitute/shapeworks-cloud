@@ -39,7 +39,8 @@ class DataFileIO(BaseModel, FileIO):
             return
         file = self.dataset.file.path
         data = None
-        if str(file).endswith('xlsx'):
+        if str(file).endswith('xlsx') or str(file).endswith('xls'):
+            # openpyxl does not support CSV
             data = self.load_data_from_excel(file)
         elif str(file).endswith('json'):
             data = self.load_data_from_json(file)

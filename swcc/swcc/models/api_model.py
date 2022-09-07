@@ -98,7 +98,7 @@ class ApiModel(BaseModel):
         session = current_session()
 
         self.assert_local()
-        json = self.__dict__
+        json = self.__dict__.copy()
         if 'file_io' in json:
             del json['file_io']
         for key, value in self:

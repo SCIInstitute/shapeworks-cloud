@@ -91,7 +91,7 @@ class ProjectFactory(Factory):
     class Meta:
         model = models.Project
 
-    file = Faker('file', extension='csv')
+    file = './tests/test_data/empty_project.xlsx'
     keywords = Faker('word')
     description = Faker('sentence')
     dataset = SubFactory(DatasetFactory)

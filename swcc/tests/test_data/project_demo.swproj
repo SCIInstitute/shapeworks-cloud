@@ -1,0 +1,134 @@
+{
+    "data": [
+        {
+            "name": "LA_04",
+            "shape_1": "LA_04.vtk",
+            "groomed_1": "groomed/LA_04_groomed.vtk",
+            "local_particles_1": "project_demo_particles/LA_04_groomed_local.particles",
+            "world_particles_1": "project_demo_particles/LA_04_groomed_world.particles",
+            "alignment_1": "0.973236 0.093433 0.209959 13.704221 -0.122920 0.983589 0.132076 38.924663 -0.194173 -0.154349 0.968748 3.464001 0.000000 0.000000 0.000000 1.000000",
+            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+        },
+        {
+            "name": "LA_03",
+            "shape_1": "LA_03.vtk",
+            "groomed_1": "groomed/LA_03_groomed.vtk",
+            "local_particles_1": "project_demo_particles/LA_03_groomed_local.particles",
+            "world_particles_1": "project_demo_particles/LA_03_groomed_world.particles",
+            "alignment_1": "0.971895 0.231026 0.045252 17.747530 -0.231372 0.972862 0.002501 -1.128621 -0.043446 -0.012900 0.998972 -83.856225 0.000000 0.000000 0.000000 1.000000",
+            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+        },
+        {
+            "name": "LA_02",
+            "shape_1": "LA_02.vtk",
+            "groomed_1": "groomed/LA_02_groomed.vtk",
+            "local_particles_1": "project_demo_particles/LA_02_groomed_local.particles",
+            "world_particles_1": "project_demo_particles/LA_02_groomed_world.particles",
+            "alignment_1": "0.963827 0.248433 0.096532 3.973339 -0.256333 0.963239 0.080393 36.697682 -0.073011 -0.102230 0.992078 -59.838894 0.000000 0.000000 0.000000 1.000000",
+            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+        },
+        {
+            "name": "LA_01",
+            "shape_1": "LA_01.vtk",
+            "groomed_1": "groomed/LA_01_groomed.vtk",
+            "local_particles_1": "project_demo_particles/LA_01_groomed_local.particles",
+            "world_particles_1": "project_demo_particles/LA_01_groomed_world.particles",
+            "alignment_1": "1.000000 0.000000 0.000000 -11.174815 0.000000 1.000000 0.000000 35.754910 0.000000 0.000000 1.000000 12.026655 0.000000 0.000000 0.000000 1.000000",
+            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+        }
+    ],
+    "groom": {
+        "1": {
+            "alignment_enabled": "true",
+            "alignment_method": "Iterative Closest Point",
+            "antialias": "true",
+            "antialias_amount": "10",
+            "blur": "true",
+            "blur_sigma": "2.000000",
+            "convert_to_mesh": "false",
+            "crop": "true",
+            "fastmarching": "true",
+            "fill_holes": "true",
+            "fill_mesh_holes": "false",
+            "groom_all_domains_the_same": "true",
+            "groom_output_prefix": "groomed",
+            "iso_spacing": "0.000000",
+            "isolate": "true",
+            "isotropic": "true",
+            "mesh_smooth": "true",
+            "mesh_smoothing_method": "Laplacian",
+            "mesh_smoothing_vtk_laplacian_iterations": "10",
+            "mesh_smoothing_vtk_laplacian_relaxation": "1.000000",
+            "mesh_smoothing_vtk_windowed_sinc_iterations": "10",
+            "mesh_smoothing_vtk_windowed_sinc_passband": "0.050000",
+            "pad": "true",
+            "pad_value": "10",
+            "reflect": "false",
+            "reflect_axis": "X",
+            "reflect_choice": "LA_04",
+            "reflect_column": "name",
+            "remesh": "true",
+            "remesh_gradation": "1.000000",
+            "remesh_num_vertices": "3000",
+            "remesh_percent": "47.000000",
+            "remesh_percent_mode": "true",
+            "resample": "true",
+            "spacing": "0 0 0"
+        }
+    },
+    "optimize": {
+        "ending_regularization": "10.000000",
+        "geodesic_cache_multiplier": "0",
+        "initial_relative_weighting": "0.050000",
+        "iterations_per_split": "1000",
+        "multiscale": "false",
+        "multiscale_particles": "32",
+        "narrow_band": "4.000000",
+        "normals_strength": "10.000000",
+        "number_of_particles": "128",
+        "optimization_iterations": "1000",
+        "optimize_output_prefix": "<project>_particles",
+        "procrustes": "false",
+        "procrustes_interval": "10",
+        "procrustes_rotation_translation": "true",
+        "procrustes_scaling": "false",
+        "relative_weighting": "1.000000",
+        "starting_regularization": "1000.000000",
+        "use_geodesic_distance": "false",
+        "use_landmarks": "false",
+        "use_normals": "0"
+    },
+    "studio": {
+        "analysis_mode": "mean",
+        "feature_map": "-none-",
+        "image_axis": "Z",
+        "notes": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:'.AppleSystemUIFont'; font-size:13pt; font-weight:400; font-style:normal;\">\n<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>",
+        "tool_state": "analysis",
+        "view_state": "Reconstructed",
+        "zoom_state": "0"
+    },
+    "project": {
+        "version": "2"
+    },
+    "analysis": {
+        "reconstruction_clusters": "3",
+        "reconstruction_decimation": "0.300000",
+        "reconstruction_max_angle": "60.000000"
+    },
+    "deepssm": {
+        "aug_num_dims": "3",
+        "aug_num_samples": "3",
+        "aug_percent_variability": "0.950000",
+        "aug_sampler_type": "Gaussian",
+        "testing_split": "20.000000",
+        "train_batch_size": "8",
+        "train_decay_learning_rate": "true",
+        "train_epochs": "100",
+        "train_fine_tuning": "true",
+        "train_fine_tuning_epochs": "2",
+        "train_fine_tuning_learning_rate": "0.001000",
+        "train_learning_rate": "0.001000",
+        "validation_split": "20.000000"
+    },
+    "landmarks": []
+}

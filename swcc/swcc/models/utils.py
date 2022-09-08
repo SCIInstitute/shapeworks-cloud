@@ -1,18 +1,62 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from datetime import datetime
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
 import click
+from pydantic import StrictStr
 import requests
 import toml
 from tqdm import tqdm
 from xdg import BaseDirectory
 
-from swcc.api import SwccSession
+from ..api import SwccSession
+
+logger = logging.getLogger(__name__)
+
+
+class FileIO(ABC):
+    @abstractmethod
+    def load_data(self, interpret=True):
+        pass
+
+    @abstractmethod
+    def load_data_from_excel(self, file):
+        pass
+
+    @abstractmethod
+    def load_data_from_json(self, file):
+        pass
+
+    @abstractmethod
+    def interpret_data(self, data, root):
+        pass
+
+
+class NonEmptyString(StrictStr):
+    min_length = 1
+
+
+def shape_file_type(path: Path):
+    """
+    Determine the type of the shape file.
+
+    As described in https://github.com/SCIInstitute/ShapeWorks/blob/3344bbfd42cb83eea50d01c06218e3034b5c67aa/Libs/Mesh/Mesh.h#L212,
+    Meshes are of file type "vtk", "vtp", "ply", "stl", "obj", while Segmentations are any other
+    file type.
+    """  # noqa: E501
+    from .other_models import Mesh, Segmentation
+
+    file_type = path.suffix
+    if file_type in ['.vtk', '.vtp', '.ply', '.stl', '.obj']:
+        return Mesh
+    else:
+        return Segmentation
 
 
 def raise_for_status(response: requests.Response):

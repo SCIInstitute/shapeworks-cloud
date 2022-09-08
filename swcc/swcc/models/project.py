@@ -119,9 +119,8 @@ class ProjectFileIO(BaseModel, FileIO):
                         file=project_root / shape_file,
                         anatomy_type='shape',
                         subject=Subject(
-                            name=shape_file.stem,
-                            dataset=self.project.dataset
-                        ).create()
+                            name=shape_file.stem, dataset=self.project.dataset
+                        ).create(),
                     ).create()
                 groomed_segmentation = self.project.add_groomed_segmentation(
                     file=project_root / groomed_file,
@@ -134,9 +133,8 @@ class ProjectFileIO(BaseModel, FileIO):
                         file=project_root / shape_file,
                         anatomy_type='shape',
                         subject=Subject(
-                            name=shape_file.stem,
-                            dataset=self.project.dataset
-                        ).create()
+                            name=shape_file.stem, dataset=self.project.dataset
+                        ).create(),
                     ).create()
                 groomed_mesh = self.project.add_groomed_mesh(
                     file=project_root / groomed_file,
@@ -155,7 +153,7 @@ class ProjectFileIO(BaseModel, FileIO):
                     transform=transform,
                     groomed_segmentation=groomed_segmentation,
                     groomed_mesh=groomed_mesh,
-                    constraints=None
+                    constraints=None,
                 )
 
 

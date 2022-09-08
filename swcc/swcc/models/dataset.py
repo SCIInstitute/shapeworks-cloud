@@ -42,10 +42,8 @@ class DataFileIO(BaseModel, FileIO):
         if str(file).endswith('xlsx') or str(file).endswith('xls'):
             # openpyxl does not support CSV
             data = self.load_data_from_excel(file)
-        elif str(file).endswith('json'):
-            data = self.load_data_from_json(file)
         else:
-            raise Exception(f'Unknown spreadsheet format in {file} - expected .xlsx or .json')
+            raise Exception(f'Unknown spreadsheet format in {file} - expected .xlsx or .xls')
         if interpret and data is not None:
             self.interpret_data(data, file.parent)
         return data
@@ -56,9 +54,6 @@ class DataFileIO(BaseModel, FileIO):
             raise Exception('`data` sheet not found')
 
         return xls['data'].values
-
-    def load_data_from_json(self, file):
-        return None, None
 
     def interpret_data(self, data, root):
         from .other_models import Mesh, Segmentation

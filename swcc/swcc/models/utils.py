@@ -26,14 +26,6 @@ class FileIO(ABC):
         pass
 
     @abstractmethod
-    def load_data_from_excel(self, file):
-        pass
-
-    @abstractmethod
-    def load_data_from_json(self, file):
-        pass
-
-    @abstractmethod
     def interpret_data(self, data, root):
         pass
 

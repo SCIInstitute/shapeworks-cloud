@@ -49,7 +49,7 @@ export default async function (
         numberOfComponents: 1,
         size: 1,
     });
-    typeValue.setData(type, 1)
+    typeValue.setData([type], 1)
     shape.getFieldData().addArray(typeValue);
     return shape
   }

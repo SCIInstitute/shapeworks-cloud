@@ -43,7 +43,7 @@ class DataFileIO(BaseModel, FileIO):
             # openpyxl does not support CSV
             data = self.load_data_from_excel(file)
         else:
-            raise Exception(f'Unknown spreadsheet format in {file} - expected .xlsx or .xls')
+            raise Exception(f'Unknown format for {file} - expected .xlsx or .xls')
         if interpret and data is not None:
             self.interpret_data(data, file.parent)
         return data

@@ -49,7 +49,7 @@ class ProjectFileIO(BaseModel, FileIO):
             data, optimize = self.load_data_from_json(file)
         else:
             raise Exception(
-                f'Unknown spreadsheet format in {file} - expected .xlsx, .xls, .swproj, or .json'
+                f'Unknown format for {file} - expected .xlsx, .xls, .swproj, or .json'
             )
 
     def load_data_from_json(self, file):

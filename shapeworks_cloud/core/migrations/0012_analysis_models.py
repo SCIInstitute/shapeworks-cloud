@@ -16,7 +16,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CachedAnalysisModePCA',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('pca_value', models.FloatField()),
                 ('lambda_value', models.FloatField()),
                 ('file', s3_file_field.fields.S3FileField()),
@@ -25,7 +30,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CachedAnalysisMode',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('mode', models.IntegerField()),
                 ('eigen_value', models.FloatField()),
                 ('explained_variance', models.FloatField()),
@@ -36,9 +46,24 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CachedAnalysis',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('mean_shape', s3_file_field.fields.S3FileField()),
                 ('charts', models.JSONField()),
                 ('modes', models.ManyToManyField(to='core.CachedAnalysisMode')),
@@ -51,6 +76,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='project',
             name='last_cached_analysis',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to='core.cachedanalysis'),
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.PROTECT, to='core.cachedanalysis'
+            ),
         ),
     ]

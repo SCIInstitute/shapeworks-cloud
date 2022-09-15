@@ -30,8 +30,14 @@ router.register(
     'optimized-pca-model', rest.OptimizedPCAModelViewSet, basename='optimized_pca_model'
 )
 router.register('cached-analysis', rest.CachedAnalysisViewSet, basename='cached_analysis')
-router.register('cached-analysis-mode', rest.CachedAnalysisModeViewSet, basename='cached_analysis_mode')
-router.register('cached-analysis-mode-pca', rest.CachedAnalysisModePCAViewSet, basename='cached_analysis_mode_pca')
+router.register(
+    'cached-analysis-mode', rest.CachedAnalysisModeViewSet, basename='cached_analysis_mode'
+)
+router.register(
+    'cached-analysis-mode-pca',
+    rest.CachedAnalysisModePCAViewSet,
+    basename='cached_analysis_mode_pca',
+)
 
 
 # OpenAPI generation

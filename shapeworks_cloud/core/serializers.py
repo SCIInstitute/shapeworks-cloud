@@ -4,8 +4,31 @@ from s3_file_field.rest_framework import S3FileSerializerField
 from shapeworks_cloud.core import models
 
 
+class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisModePCA
+        fields = '__all__'
+
+
+class CachedAnalysisModeSerializer(serializers.ModelSerializer):
+    pca_values = CachedAnalysisModePCASerializer(many=True)
+
+    class Meta:
+        model = models.CachedAnalysisMode
+        fields = '__all__'
+
+
+class CachedAnalysisSerializer(serializers.ModelSerializer):
+    modes = CachedAnalysisModeSerializer(many=True)
+
+    class Meta:
+        model = models.CachedAnalysis
+        fields = '__all__'
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
+    last_cached_analysis = CachedAnalysisSerializer(allow_null=True)
 
     class Meta:
         model = models.Project
@@ -127,21 +150,3 @@ class OptimizedPCAModelSerializer(serializers.ModelSerializer):
 
     def get_id(self, obj) -> int:
         return obj.shape_model.id
-
-
-class CachedAnalysisSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.CachedAnalysis
-        fields = '__all__'
-
-
-class CachedAnalysisModeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.CachedAnalysisMode
-        fields = '__all__'
-
-
-class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.CachedAnalysisModePCA
-        fields = '__all__'

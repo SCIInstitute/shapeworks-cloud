@@ -24,14 +24,14 @@ from .api_model import ApiModel
 from .dataset import Dataset
 from .file_type import FileType
 from .other_models import (
+    CachedAnalysis,
+    CachedAnalysisMode,
+    CachedAnalysisModePCA,
     GroomedMesh,
     GroomedSegmentation,
     Mesh,
     OptimizedShapeModel,
     Segmentation,
-    CachedAnalysis,
-    CachedAnalysisMode,
-    CachedAnalysisModePCA
 )
 from .subject import Subject
 from .utils import FileIO, shape_file_type
@@ -57,9 +57,7 @@ class ProjectFileIO(BaseModel, FileIO):
         elif str(file).endswith('json') or str(file).endswith('swproj'):
             data, optimize = self.load_data_from_json(file)
         else:
-            raise Exception(
-                f'Unknown format for {file} - expected .xlsx, .xls, .swproj, or .json'
-            )
+            raise Exception(f'Unknown format for {file} - expected .xlsx, .xls, .swproj, or .json')
 
     def load_data_from_json(self, file):
         contents = json.load(open(file))
@@ -179,17 +177,17 @@ class ProjectFileIO(BaseModel, FileIO):
                     CachedAnalysisModePCA(
                         pca_value=pca['pca_value'],
                         lambda_value=pca['lambda'],
-                        file=analysis_file_location.parent / Path(pca['meshes'][0])
+                        file=analysis_file_location.parent / Path(pca['meshes'][0]),
                     ).create()
                     for pca in mode['pca_values']
-                ]
+                ],
             ).create()
             for mode in contents['modes']
         ]
         return CachedAnalysis(
             mean_shape=analysis_file_location.parent / Path(mean_shape_path),
             modes=modes,
-            charts=contents['charts']
+            charts=contents['charts'],
         ).create()
 
 
@@ -247,7 +245,8 @@ class Project(ApiModel):
 
     def create(self) -> Project:
         file_io = self.get_file_io()
-        self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
+        if self.last_cached_analysis:
+            self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
 
         result = super().create()
         if self.file:

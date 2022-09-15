@@ -115,7 +115,7 @@ class OptimizedSurfaceReconstructionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class OptimizedPCSModelSerializer(serializers.ModelSerializer):
+class OptimizedPCAModelSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     mean_particles = S3FileSerializerField()
     pca_modes = S3FileSerializerField()
@@ -127,3 +127,21 @@ class OptimizedPCSModelSerializer(serializers.ModelSerializer):
 
     def get_id(self, obj) -> int:
         return obj.shape_model.id
+
+
+class CachedAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysis
+        fields = '__all__'
+
+
+class CachedAnalysisModeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisMode
+        fields = '__all__'
+
+
+class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisModePCA
+        fields = '__all__'

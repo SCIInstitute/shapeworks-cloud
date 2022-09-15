@@ -23,7 +23,16 @@ from pydantic import BaseModel
 from .api_model import ApiModel
 from .dataset import Dataset
 from .file_type import FileType
-from .other_models import GroomedMesh, GroomedSegmentation, Mesh, OptimizedShapeModel, Segmentation
+from .other_models import (
+    GroomedMesh,
+    GroomedSegmentation,
+    Mesh,
+    OptimizedShapeModel,
+    Segmentation,
+    CachedAnalysis,
+    CachedAnalysisMode,
+    CachedAnalysisModePCA
+)
 from .subject import Subject
 from .utils import FileIO, shape_file_type
 
@@ -141,20 +150,47 @@ class ProjectFileIO(BaseModel, FileIO):
                     mesh=mesh,
                 )
 
-        if alignment_file and local and world:
-            with TemporaryDirectory() as dir:
-                transform = Path(dir) / f'{shape_file.stem}.transform'
-                with transform.open('w') as f:
-                    f.write(str(project_root / alignment_file))
+        with TemporaryDirectory() as dir:
+            transform = Path(dir) / f'{shape_file.stem}.transform'
+            with transform.open('w') as f:
+                f.write(str(project_root / alignment_file))
 
-                shape_model.add_particles(
-                    world=project_root / world,
-                    local=project_root / local,
-                    transform=transform,
-                    groomed_segmentation=groomed_segmentation,
-                    groomed_mesh=groomed_mesh,
-                    constraints=None,
-                )
+            shape_model.add_particles(
+                world=project_root / world,
+                local=project_root / local,
+                transform=transform,
+                groomed_segmentation=groomed_segmentation,
+                groomed_mesh=groomed_mesh,
+                constraints=None,
+            )
+
+    def load_analysis_from_json(self, file_path):
+        project_root = Path(str(self.project.file.path)).parent
+        analysis_file_location = project_root / Path(file_path)
+        contents = json.load(open(analysis_file_location))
+        mean_shape_path = list(contents['mean'].values())[0][0]
+        modes = [
+            CachedAnalysisMode(
+                mode=mode['mode'],
+                eigen_value=mode['eigen_value'],
+                explained_variance=mode['explained_variance'],
+                cumulative_explained_variance=mode['cumulative_explained_variance'],
+                pca_values=[
+                    CachedAnalysisModePCA(
+                        pca_value=pca['pca_value'],
+                        lambda_value=pca['lambda'],
+                        file=analysis_file_location.parent / Path(pca['meshes'][0])
+                    ).create()
+                    for pca in mode['pca_values']
+                ]
+            ).create()
+            for mode in contents['modes']
+        ]
+        return CachedAnalysis(
+            mean_shape=analysis_file_location.parent / Path(mean_shape_path),
+            modes=modes,
+            charts=contents['charts']
+        ).create()
 
 
 class Project(ApiModel):
@@ -164,6 +200,7 @@ class Project(ApiModel):
     keywords: str = ''
     description: str = ''
     dataset: Dataset
+    last_cached_analysis: Optional[str]
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
@@ -209,9 +246,13 @@ class Project(ApiModel):
         ).create()
 
     def create(self) -> Project:
+        file_io = self.get_file_io()
+        self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
+
         result = super().create()
         if self.file:
-            self.get_file_io().load_data()
+            file_io.load_data()
+
         # Load the new dataset so we get an appropriate file field
         assert result.id
         return Project.from_id(result.id)

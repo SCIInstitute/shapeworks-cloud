@@ -43,11 +43,32 @@ class Image(TimeStampedModel, models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='images')
 
 
+class CachedAnalysisModePCA(models.Model):
+    pca_value = models.FloatField()
+    lambda_value = models.FloatField()
+    file = S3FileField()
+
+
+class CachedAnalysisMode(models.Model):
+    mode = models.IntegerField()
+    eigen_value = models.FloatField()
+    explained_variance = models.FloatField()
+    cumulative_explained_variance = models.FloatField()
+    pca_values = models.ManyToManyField(CachedAnalysisModePCA)
+
+
+class CachedAnalysis(TimeStampedModel, models.Model):
+    mean_shape = S3FileField()
+    modes = models.ManyToManyField(CachedAnalysisMode)
+    charts = models.JSONField()
+
+
 class Project(TimeStampedModel, models.Model):
     file = S3FileField()
     keywords = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
+    last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.PROTECT, null=True)
 
 
 class GroomedSegmentation(TimeStampedModel, models.Model):

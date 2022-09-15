@@ -215,6 +215,7 @@ class Dataset(ApiModel):
             keywords=keywords,
             description=description,
             dataset=self,
+            last_cached_analysis=None,
         ).create()
 
     @classmethod

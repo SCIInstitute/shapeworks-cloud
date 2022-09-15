@@ -198,7 +198,8 @@ class Project(ApiModel):
     keywords: str = ''
     description: str = ''
     dataset: Dataset
-    last_cached_analysis: Optional[str]
+    # sent in as a filepath string, interpreted as CachedAnalysis object
+    last_cached_analysis: Any
 
     def get_file_io(self):
         return ProjectFileIO(project=self)

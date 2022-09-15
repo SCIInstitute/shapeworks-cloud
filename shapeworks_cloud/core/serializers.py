@@ -11,16 +11,12 @@ class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
 
 
 class CachedAnalysisModeSerializer(serializers.ModelSerializer):
-    pca_values = CachedAnalysisModePCASerializer(many=True)
-
     class Meta:
         model = models.CachedAnalysisMode
         fields = '__all__'
 
 
 class CachedAnalysisSerializer(serializers.ModelSerializer):
-    modes = CachedAnalysisModeSerializer(many=True)
-
     class Meta:
         model = models.CachedAnalysis
         fields = '__all__'
@@ -28,7 +24,31 @@ class CachedAnalysisSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
-    last_cached_analysis = CachedAnalysisSerializer(allow_null=True)
+
+    class Meta:
+        model = models.Project
+        fields = '__all__'
+
+
+class CachedAnalysisModeReadSerializer(serializers.ModelSerializer):
+    pca_values = CachedAnalysisModePCASerializer(many=True)
+
+    class Meta:
+        model = models.CachedAnalysisMode
+        fields = '__all__'
+
+
+class CachedAnalysisReadSerializer(serializers.ModelSerializer):
+    modes = CachedAnalysisModeReadSerializer(many=True)
+
+    class Meta:
+        model = models.CachedAnalysis
+        fields = '__all__'
+
+
+class ProjectReadSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+    last_cached_analysis = CachedAnalysisReadSerializer(allow_null=True)
 
     class Meta:
         model = models.Project

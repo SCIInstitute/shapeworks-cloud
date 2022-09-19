@@ -108,6 +108,14 @@ class ApiModel(BaseModel):
                 if value.id is None:
                     value.create()
                 json[key] = value.id
+            if isinstance(value, list) and len(value) > 0 and isinstance(value[0], ApiModel):
+                ids = []
+                for item in value:
+                    if item.id is None:
+                        ids.append(item.create().id)
+                    else:
+                        ids.append(item.id)
+                json[key] = ids
 
         r: requests.Response = session.post(f'{self._endpoint}/', json=json)
         raise_for_status(r)

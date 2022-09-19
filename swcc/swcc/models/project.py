@@ -1,31 +1,39 @@
 from __future__ import annotations
 
-import itertools
+import json
 from pathlib import Path, PurePath
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, Literal, Optional, Tuple, Union
+    from typing import Any, Dict, Iterator, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
         Optional,
-        Tuple,
         Union,
     )
     from typing_extensions import (  # type: ignore
         Literal,
     )
 
-from openpyxl import load_workbook
 from pydantic import BaseModel
 
 from .api_model import ApiModel
 from .dataset import Dataset
 from .file_type import FileType
-from .other_models import GroomedMesh, GroomedSegmentation, Mesh, OptimizedShapeModel, Segmentation
+from .other_models import (
+    CachedAnalysis,
+    CachedAnalysisMode,
+    CachedAnalysisModePCA,
+    GroomedMesh,
+    GroomedSegmentation,
+    Mesh,
+    OptimizedShapeModel,
+    Segmentation,
+)
+from .subject import Subject
 from .utils import FileIO, shape_file_type
 
 
@@ -35,7 +43,7 @@ class ProjectFileIO(BaseModel, FileIO):
     class Config:
         arbitrary_types_allowed = True
 
-    def load_data(self, interpret=True):
+    def load_data(self):
         if (
             not self.project.file
             or not hasattr(self.project.file, 'path')
@@ -45,151 +53,142 @@ class ProjectFileIO(BaseModel, FileIO):
         file = self.project.file.path
         data = None
         if str(file).endswith('xlsx') or str(file).endswith('xlsx'):
-            data, optimize = self.load_data_from_excel(file)
-        elif str(file).endswith('json'):
+            raise NotImplementedError('Convert spreadsheet file to excel before parsing')
+        elif str(file).endswith('json') or str(file).endswith('swproj'):
             data, optimize = self.load_data_from_json(file)
         else:
-            raise Exception(f'Unknown spreadsheet format in {file} - expected .xlsx or .json')
-        if interpret and data is not None and optimize is not None:
-            shape_model = self.interpret_optimize(optimize, file.parent)
-            self.interpret_data(data, file.parent, shape_model)
-        return data, optimize
-
-    def load_data_from_excel(self, file):
-        assert file  # should be guaranteed by assert_local
-        xls = load_workbook(str(file), read_only=True)
-
-        for sheet_name in ['data', 'optimize']:
-            if sheet_name not in xls:
-                raise Exception(f'`{sheet_name}` sheet not found')
-
-        return xls['data'], xls['optimize']
+            raise Exception(f'Unknown format for {file} - expected .xlsx, .xls, .swproj, or .json')
 
     def load_data_from_json(self, file):
+        contents = json.load(open(file))
+        shape_model = self.project.add_shape_model(contents['optimize'])
+        self.interpret_data(contents['data'], shape_model)
         return None, None
 
-    def _iter_data_sheet(
-        self, sheet: Any, root: Path
-    ) -> Iterator[Tuple[Path, Path, str, Path, Path, Path]]:
-
-        required = [
-            'shape',
-            'groomed',
-            'alignment',
-            'local_particles',
-            'world_particles',
-        ]
-        optional = [
-            'procrustes',
-            'constraints',
-        ]
-        headers = next(sheet.values)
-        if not any(all(k + suffix in headers for k in required) for suffix in ('_file', '_1')):
-            raise Exception(
-                'Unknown spreadsheet format - expected headers to include %r '
-                'with a suffix of either _file or _1, found %r' % (required, headers)
-            )
-        for idx in itertools.count():
-            suffix = '_file' if not idx else '_%d' % idx
-            if not all(k + suffix in headers for k in required):
-                if idx >= 1:
-                    break
-                continue
-            col = {
-                k: headers.index(k + suffix) for k in required + optional if k + suffix in headers
-            }
-            rows = sheet.values
-            next(rows)  # skip header
-            for rowrec in rows:
-                row = {k: rowrec[col[k]] for k in col}
-                if not row['shape']:
-                    # It's possible to get XLSX files with empty rows where every column is None
-                    continue
-
-                shape_file = root / row['shape']
-                groomed_file = (root / row['groomed']) if row['groomed'] else None
-                local = (root / row['local_particles']) if row['local_particles'] else None
-                world = (root / row['world_particles']) if row['world_particles'] else None
-                alignment_file = row['alignment']
-                constraints = (
-                    (root / row['constraints'])
-                    if 'constraints' in row and row['constraints']
-                    else None
-                )
-
-                yield shape_file, groomed_file, alignment_file, local, world, constraints
-
-    def interpret_optimize(self, data, root):
-        expected = ('key', 'value')
-        headers = next(data.values)
-        if headers[: len(expected)] != expected:
-            raise Exception(
-                'Unknown spreadsheet format - expected headers to be %r, found %r'
-                % (expected, headers[: len(expected)])
-            )
-
-        params: Dict[str, Union[str, float]] = {}
-        for row in data.values:
-            key, value = row
-            try:
-                value = float(value)
-            except ValueError:
-                pass
-            params[key] = value
-
-        return self.project.add_shape_model(params)
-
-    def interpret_data(self, data, root, shape_model):
+    def interpret_data(self, data, shape_model):
         segmentations = {
             PurePath(segmentation.file.name).stem: segmentation
             for segmentation in self.project.dataset.segmentations
         }
         meshes = {PurePath(mesh.file.name).stem: mesh for mesh in self.project.dataset.meshes}
 
-        for (
-            shape_file,
-            groomed_file,
-            alignment_file,
-            local,
-            world,
-            constraints,
-        ) in self._iter_data_sheet(data, root):
-            groomed_segmentation = None
-            groomed_mesh = None
-            data_type = shape_file_type(shape_file)
-
-            if groomed_file:
-                if data_type == Segmentation:
-                    segmentation = segmentations.get(shape_file.stem)
-                    if not segmentation:
-                        raise Exception(f'Could not find segmentation for "{shape_file}"')
-                    groomed_segmentation = self.project.add_groomed_segmentation(
-                        file=groomed_file,
-                        segmentation=segmentation,
+        expected_key_prefixes = [
+            'name',
+            'shape',
+            'groomed',
+            'local_particles',
+            'world_particles',
+            'alignment',
+            'procrustes',
+        ]
+        for entry in data:
+            entry_values = {}
+            for key in entry.keys():
+                if not any(key.startswith(prefix) for prefix in expected_key_prefixes):
+                    raise Exception(
+                        f'Unexpected key "{key}" in data section, '
+                        f'expected all keys to start with one of {expected_key_prefixes}'
                     )
-                elif data_type == Mesh:
-                    mesh = meshes.get(shape_file.stem)
-                    if not mesh:
-                        raise Exception(f'Could not find mesh for "{shape_file}"')
-                    groomed_mesh = self.project.add_groomed_mesh(
-                        file=groomed_file,
-                        mesh=mesh,
-                    )
+                prefix = [p for p in expected_key_prefixes if key.startswith(p)][0]
+                entry_values[prefix] = entry[key]
+            self.interpret_data_row(
+                segmentations,
+                meshes,
+                shape_model,
+                Path(str(entry_values.get('shape'))),
+                Path(str(entry_values.get('groomed'))),
+                Path(str(entry_values.get('alignment'))),
+                Path(str(entry_values.get('local_particles'))),
+                Path(str(entry_values.get('world_particles'))),
+            )
 
-            if alignment_file and local and world:
-                with TemporaryDirectory() as dir:
-                    transform = Path(dir) / f'{shape_file.stem}.transform'
-                    with transform.open('w') as f:
-                        f.write(alignment_file)
+    def interpret_data_row(
+        self,
+        segmentations,
+        meshes,
+        shape_model,
+        shape_file,
+        groomed_file,
+        alignment_file,
+        local,
+        world,
+    ):
+        groomed_segmentation = None
+        groomed_mesh = None
+        data_type = shape_file_type(shape_file)
+        project_root = Path(str(self.project.file.path)).parent
 
-                    shape_model.add_particles(
-                        world=world,
-                        local=local,
-                        transform=transform,
-                        groomed_segmentation=groomed_segmentation,
-                        groomed_mesh=groomed_mesh,
-                        constraints=constraints,
-                    )
+        if groomed_file:
+            if data_type == Segmentation:
+                segmentation = segmentations.get(shape_file.stem)
+                if not segmentation:
+                    segmentation = Segmentation(
+                        file=project_root / shape_file,
+                        anatomy_type='shape',
+                        subject=Subject(
+                            name=shape_file.stem, dataset=self.project.dataset
+                        ).create(),
+                    ).create()
+                groomed_segmentation = self.project.add_groomed_segmentation(
+                    file=project_root / groomed_file,
+                    segmentation=segmentation,
+                )
+            elif data_type == Mesh:
+                mesh = meshes.get(shape_file.stem)
+                if not mesh:
+                    mesh = Mesh(
+                        file=project_root / shape_file,
+                        anatomy_type='shape',
+                        subject=Subject(
+                            name=shape_file.stem, dataset=self.project.dataset
+                        ).create(),
+                    ).create()
+                groomed_mesh = self.project.add_groomed_mesh(
+                    file=project_root / groomed_file,
+                    mesh=mesh,
+                )
+
+        with TemporaryDirectory() as dir:
+            transform = Path(dir) / f'{shape_file.stem}.transform'
+            with transform.open('w') as f:
+                f.write(str(project_root / alignment_file))
+
+            shape_model.add_particles(
+                world=project_root / world,
+                local=project_root / local,
+                transform=transform,
+                groomed_segmentation=groomed_segmentation,
+                groomed_mesh=groomed_mesh,
+                constraints=None,
+            )
+
+    def load_analysis_from_json(self, file_path):
+        project_root = Path(str(self.project.file.path)).parent
+        analysis_file_location = project_root / Path(file_path)
+        contents = json.load(open(analysis_file_location))
+        mean_shape_path = list(contents['mean'].values())[0][0]
+        modes = [
+            CachedAnalysisMode(
+                mode=mode['mode'],
+                eigen_value=mode['eigen_value'],
+                explained_variance=mode['explained_variance'],
+                cumulative_explained_variance=mode['cumulative_explained_variance'],
+                pca_values=[
+                    CachedAnalysisModePCA(
+                        pca_value=pca['pca_value'],
+                        lambda_value=pca['lambda'],
+                        file=analysis_file_location.parent / Path(pca['meshes'][0]),
+                    ).create()
+                    for pca in mode['pca_values']
+                ],
+            ).create()
+            for mode in contents['modes']
+        ]
+        return CachedAnalysis(
+            mean_shape=analysis_file_location.parent / Path(mean_shape_path),
+            modes=modes,
+            charts=contents['charts'],
+        ).create()
 
 
 class Project(ApiModel):
@@ -199,6 +198,8 @@ class Project(ApiModel):
     keywords: str = ''
     description: str = ''
     dataset: Dataset
+    # sent in as a filepath string, interpreted as CachedAnalysis object
+    last_cached_analysis: Any
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
@@ -244,9 +245,14 @@ class Project(ApiModel):
         ).create()
 
     def create(self) -> Project:
+        file_io = self.get_file_io()
+        if self.last_cached_analysis:
+            self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
+
         result = super().create()
         if self.file:
-            self.get_file_io().load_data()
+            file_io.load_data()
+
         # Load the new dataset so we get an appropriate file field
         assert result.id
         return Project.from_id(result.id)

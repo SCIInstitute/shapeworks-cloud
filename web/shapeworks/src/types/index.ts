@@ -16,6 +16,7 @@ export interface Project {
     keywords: string,
     description: string,
     dataset: number,
+    last_cached_analysis: Object | undefined,
 }
 
 export interface Dataset {

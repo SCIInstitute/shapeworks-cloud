@@ -3,12 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 try:
-    from typing import Any, Dict, Iterator, Literal, Optional
+    from typing import Any, Dict, Iterator, List, Literal, Optional
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
+        List,
         Optional,
     )
     from typing_extensions import (  # type: ignore
@@ -115,6 +116,32 @@ class OptimizedPCAModel(ApiModel):
     pca_modes: FileType[Literal['core.OptimizedPCAModel.pca_modes']]
     eigen_spectrum: FileType[Literal['core.OptimizedPCAModel.eigen_spectrum']]
     shape_model: OptimizedShapeModel
+
+
+class CachedAnalysisModePCA(ApiModel):
+    _endpoint = 'cached-analysis-mode-pca'
+
+    pca_value: float
+    lambda_value: float
+    file: FileType[Literal['core.CachedAnalysisModePCA.file']]
+
+
+class CachedAnalysisMode(ApiModel):
+    _endpoint = 'cached-analysis-mode'
+
+    mode: int
+    eigen_value: float
+    explained_variance: float
+    cumulative_explained_variance: float
+    pca_values: List[CachedAnalysisModePCA]
+
+
+class CachedAnalysis(ApiModel):
+    _endpoint = 'cached-analysis'
+
+    mean_shape: FileType[Literal['core.CachedAnalysis.mean_shape']]
+    modes: List[CachedAnalysisMode]
+    charts: List[dict]
 
 
 from .project import Project  # noqa: E402

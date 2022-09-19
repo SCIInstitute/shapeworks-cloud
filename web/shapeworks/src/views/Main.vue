@@ -22,6 +22,7 @@ import {
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import { jobAlreadyDone } from '../store';
+import AnalysisTab from '@/components/AnalysisTab.vue';
 
 
 export default defineComponent({
@@ -30,6 +31,7 @@ export default defineComponent({
         DataList,
         RenderControls,
         TabForm,
+        AnalysisTab,
     },
     props: {
         dataset: {
@@ -205,7 +207,7 @@ export default defineComponent({
                         </v-tab-item>
                         <v-tab href="#analyze">Analyze</v-tab>
                         <v-tab-item value="analyze">
-                            <tab-form form="analyze" @change="refreshRender"/>
+                            <analysis-tab @change="refreshRender"/>
                         </v-tab-item>
                     </v-tabs>
                 </v-list-item>

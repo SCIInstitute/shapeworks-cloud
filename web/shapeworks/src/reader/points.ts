@@ -5,7 +5,7 @@ export default async function (url: string | undefined) {
   const resp = await fetch(url);
   const data = await resp.text();
   const lines = data.trim().split('\n');
-  const pointArray = lines.map((l) => l.trim().split(' ').map((f) => parseFloat(f))).flat();
+  const pointArray = lines.map((l) => l.trim().split(/\s+/).map((f) => parseFloat(f))).flat();
   const points = Float32Array.from(pointArray);
 
   const polyData = vtkPolyData.newInstance();

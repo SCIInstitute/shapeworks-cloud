@@ -4,8 +4,51 @@ from s3_file_field.rest_framework import S3FileSerializerField
 from shapeworks_cloud.core import models
 
 
+class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisModePCA
+        fields = '__all__'
+
+
+class CachedAnalysisModeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisMode
+        fields = '__all__'
+
+
+class CachedAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysis
+        fields = '__all__'
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Project
+        fields = '__all__'
+
+
+class CachedAnalysisModeReadSerializer(serializers.ModelSerializer):
+    pca_values = CachedAnalysisModePCASerializer(many=True)
+
+    class Meta:
+        model = models.CachedAnalysisMode
+        fields = '__all__'
+
+
+class CachedAnalysisReadSerializer(serializers.ModelSerializer):
+    modes = CachedAnalysisModeReadSerializer(many=True)
+
+    class Meta:
+        model = models.CachedAnalysis
+        fields = '__all__'
+
+
+class ProjectReadSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+    last_cached_analysis = CachedAnalysisReadSerializer(allow_null=True)
 
     class Meta:
         model = models.Project
@@ -115,7 +158,7 @@ class OptimizedSurfaceReconstructionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class OptimizedPCSModelSerializer(serializers.ModelSerializer):
+class OptimizedPCAModelSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     mean_particles = S3FileSerializerField()
     pca_modes = S3FileSerializerField()

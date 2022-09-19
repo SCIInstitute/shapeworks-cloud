@@ -71,8 +71,13 @@ class ImageViewSet(BaseViewSet):
 
 class ProjectViewSet(BaseViewSet):
     queryset = models.Project.objects.all()
-    serializer_class = serializers.ProjectSerializer
     filterset_class = filters.ProjectFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.ProjectReadSerializer
+        else:
+            return serializers.ProjectSerializer
 
     @action(
         detail=True,
@@ -135,5 +140,30 @@ class OptimizedSurfaceReconstructionViewSet(BaseViewSet):
 
 class OptimizedPCAModelViewSet(BaseViewSet):
     queryset = models.OptimizedPCAModel.objects.all()
-    serializer_class = serializers.OptimizedPCSModelSerializer
+    serializer_class = serializers.OptimizedPCAModelSerializer
     filterset_class = filters.OptimizedPCAModelFilter
+
+
+class CachedAnalysisViewSet(BaseViewSet):
+    queryset = models.CachedAnalysis.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.CachedAnalysisReadSerializer
+        else:
+            return serializers.CachedAnalysisSerializer
+
+
+class CachedAnalysisModeViewSet(BaseViewSet):
+    queryset = models.CachedAnalysisMode.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.CachedAnalysisModeReadSerializer
+        else:
+            return serializers.CachedAnalysisModeSerializer
+
+
+class CachedAnalysisModePCAViewSet(BaseViewSet):
+    queryset = models.CachedAnalysisModePCA.objects.all()
+    serializer_class = serializers.CachedAnalysisModePCASerializer

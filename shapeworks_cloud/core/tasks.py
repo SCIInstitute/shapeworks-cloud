@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
@@ -6,7 +7,6 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
-import json
 import pandas
 from rest_framework.authtoken.models import Token
 

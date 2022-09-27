@@ -5,12 +5,13 @@ from pathlib import Path, PurePath
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, List, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
+        List,
         Optional,
         Union,
     )
@@ -43,7 +44,7 @@ class ProjectFileIO(BaseModel, FileIO):
     class Config:
         arbitrary_types_allowed = True
 
-    def load_data(self):
+    def load_data(self, interpret=True):
         if (
             not self.project.file
             or not hasattr(self.project.file, 'path')
@@ -51,21 +52,20 @@ class ProjectFileIO(BaseModel, FileIO):
         ):
             return
         file = self.project.file.path
-        data = None
         if str(file).endswith('xlsx') or str(file).endswith('xlsx'):
             raise NotImplementedError('Convert spreadsheet file to excel before parsing')
         elif str(file).endswith('json') or str(file).endswith('swproj'):
-            data, optimize = self.load_data_from_json(file)
+            return self.load_data_from_json(file, interpret)
         else:
             raise Exception(f'Unknown format for {file} - expected .xlsx, .xls, .swproj, or .json')
 
-    def load_data_from_json(self, file):
+    def load_data_from_json(self, file, interpret):
         contents = json.load(open(file))
-        shape_model = self.project.add_shape_model(contents['optimize'])
-        self.interpret_data(contents['data'], shape_model)
-        return None, None
+        if interpret:
+            self.interpret_data(contents['data'])
+        return contents['data'], contents['optimize']
 
-    def interpret_data(self, data, shape_model):
+    def interpret_data(self, data):
         segmentations = {
             PurePath(segmentation.file.name).stem: segmentation
             for segmentation in self.project.dataset.segmentations
@@ -94,7 +94,6 @@ class ProjectFileIO(BaseModel, FileIO):
             self.interpret_data_row(
                 segmentations,
                 meshes,
-                shape_model,
                 Path(str(entry_values.get('shape'))),
                 Path(str(entry_values.get('groomed'))),
                 Path(str(entry_values.get('alignment'))),
@@ -106,7 +105,6 @@ class ProjectFileIO(BaseModel, FileIO):
         self,
         segmentations,
         meshes,
-        shape_model,
         shape_file,
         groomed_file,
         alignment_file,
@@ -264,15 +262,13 @@ class Project(ApiModel):
         return OptimizedParticles.list(project=self)
 
     def add_particles(self, parameters: Dict[str, Any]) -> OptimizedParticles:
-        return OptimizedParticles(
-            project=self,
-            **parameters
-        ).create()
+        return OptimizedParticles(project=self, **parameters).create()
 
     def download(self, path: Union[Path, str]):
         self.file.download(Path(path))
         data, optimize = self.get_file_io().load_data(interpret=False)
-        groomed_shapes = list(self.groomed_meshes) + list(self.groomed_segmentations)
+        groomed_shapes: List[Union[GroomedMesh, GroomedSegmentation]] = list(self.groomed_meshes)
+        groomed_shapes += list(self.groomed_segmentations)
         for data_row in data:
             # TODO: Download related objects
             print(data_row, groomed_shapes)

@@ -30,7 +30,7 @@ from .other_models import (
     GroomedMesh,
     GroomedSegmentation,
     Mesh,
-    OptimizedShapeModel,
+    OptimizedParticles,
     Segmentation,
 )
 from .subject import Subject
@@ -153,14 +153,15 @@ class ProjectFileIO(BaseModel, FileIO):
             with transform.open('w') as f:
                 f.write(str(project_root / alignment_file))
 
-            shape_model.add_particles(
+            OptimizedParticles(
                 world=project_root / world,
                 local=project_root / local,
                 transform=transform,
                 groomed_segmentation=groomed_segmentation,
                 groomed_mesh=groomed_mesh,
                 constraints=None,
-            )
+                project=self.project,
+            ).create()
 
     def load_analysis_from_json(self, file_path):
         project_root = Path(str(self.project.file.path)).parent
@@ -258,40 +259,23 @@ class Project(ApiModel):
         return Project.from_id(result.id)
 
     @property
-    def shape_models(self) -> Iterator[OptimizedShapeModel]:
+    def particles(self) -> Iterator[OptimizedParticles]:
         self.assert_remote()
-        return OptimizedShapeModel.list(project=self)
+        return OptimizedParticles.list(project=self)
 
-    def add_shape_model(self, parameters: Dict[str, Any]) -> OptimizedShapeModel:
-        return OptimizedShapeModel(
+    def add_particles(self, parameters: Dict[str, Any]) -> OptimizedParticles:
+        return OptimizedParticles(
             project=self,
-            parameters=parameters,
+            **parameters
         ).create()
 
     def download(self, path: Union[Path, str]):
         self.file.download(Path(path))
         data, optimize = self.get_file_io().load_data(interpret=False)
-
-        shape_model = next(self.shape_models) if any(True for _ in self.shape_models) else None
-        groomed_segmentations = {
-            PurePath(gs.file.name).stem: gs for gs in self.groomed_segmentations
-        }
-        local_files = (
-            {PurePath(p.local.name).stem: p for p in shape_model.particles} if shape_model else {}
-        )
-
-        for _, groomed_file, _, local, world, constraints in self.get_file_io()._iter_data_sheet(
-            data, Path(path)
-        ):
-            if groomed_file and groomed_file.stem in groomed_segmentations:
-                gs = groomed_segmentations[groomed_file.stem]
-                gs.file.download(groomed_file.parent)
-            if local and world and local.stem in local_files:
-                particles = local_files[local.stem]
-                particles.local.download(local.parent)
-                particles.world.download(world.parent)
-                if particles.constraints and constraints:
-                    particles.constraints.download(constraints.parent)
+        groomed_shapes = list(self.groomed_meshes) + list(self.groomed_segmentations)
+        for data_row in data:
+            # TODO: Download related objects
+            print(data_row, groomed_shapes)
 
 
 ProjectFileIO.update_forward_refs()

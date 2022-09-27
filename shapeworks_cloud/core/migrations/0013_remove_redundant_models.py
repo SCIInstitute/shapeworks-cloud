@@ -30,7 +30,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='optimizedparticles',
             name='project',
-            field=models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, to='core.project'),
+            field=models.ForeignKey(
+                default=None, on_delete=django.db.models.deletion.CASCADE, to='core.project'
+            ),
             preserve_default=False,
         ),
         migrations.DeleteModel(

@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 try:
-    from typing import Any, Dict, Iterator, List, Literal, Optional
+    from typing import List, Literal, Optional
 except ImportError:
     from typing import (
-        Any,
-        Dict,
-        Iterator,
         List,
         Optional,
     )
@@ -67,55 +62,16 @@ class GroomedMesh(ApiModel):
     project: Project
 
 
-class OptimizedShapeModel(ApiModel):
-    _endpoint = 'optimized-shape-models'
-
-    project: Project
-    parameters: Dict[str, Any]
-
-    @property
-    def particles(self) -> Iterator[OptimizedParticles]:
-        return OptimizedParticles.list(shape_model=self)
-
-    def add_particles(
-        self,
-        world: Path,
-        local: Path,
-        transform: Path,
-        groomed_segmentation: Optional[GroomedSegmentation],
-        groomed_mesh: Optional[GroomedMesh],
-        constraints: Path,
-    ) -> OptimizedParticles:
-        return OptimizedParticles(
-            world=world,
-            local=local,
-            transform=transform,
-            shape_model=self,
-            groomed_segmentation=groomed_segmentation,
-            groomed_mesh=groomed_mesh,
-            constraints=constraints,
-        ).create()
-
-
 class OptimizedParticles(ApiModel):
     _endpoint = 'optimized-particles'
 
     world: FileType[Literal['core.OptimizedParticles.world']]
     local: FileType[Literal['core.OptimizedParticles.local']]
     transform: FileType[Literal['core.OptimizedParticles.transform']]
-    shape_model: OptimizedShapeModel
+    project: Project
     groomed_segmentation: Optional[GroomedSegmentation]
     groomed_mesh: Optional[GroomedMesh]
     constraints: Optional[FileType[Literal['core.OptimizedParticles.constraints']]] = None
-
-
-class OptimizedPCAModel(ApiModel):
-    _endpoint = 'optimized-pca-model'
-
-    mean_particles: FileType[Literal['core.OptimizedPCAModel.mean_particles']]
-    pca_modes: FileType[Literal['core.OptimizedPCAModel.pca_modes']]
-    eigen_spectrum: FileType[Literal['core.OptimizedPCAModel.eigen_spectrum']]
-    shape_model: OptimizedShapeModel
 
 
 class CachedAnalysisModePCA(ApiModel):
@@ -152,6 +108,4 @@ Mesh.update_forward_refs()
 Image.update_forward_refs()
 GroomedSegmentation.update_forward_refs()
 GroomedMesh.update_forward_refs()
-OptimizedShapeModel.update_forward_refs()
 OptimizedParticles.update_forward_refs()
-OptimizedPCAModel.update_forward_refs()

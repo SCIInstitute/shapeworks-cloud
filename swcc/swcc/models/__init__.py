@@ -5,8 +5,6 @@ from .other_models import (
     Image,
     Mesh,
     OptimizedParticles,
-    OptimizedPCAModel,
-    OptimizedShapeModel,
     Segmentation,
 )
 from .project import Project
@@ -19,8 +17,6 @@ __all__ = [
     'Image',
     'Mesh',
     'OptimizedParticles',
-    'OptimizedPCAModel',
-    'OptimizedShapeModel',
     'Project',
     'Segmentation',
     'Subject',

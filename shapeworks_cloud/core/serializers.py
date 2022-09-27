@@ -122,14 +122,6 @@ class GroomedMeshSerializer(serializers.ModelSerializer):
         return obj.mesh_id
 
 
-class OptimizedShapeModelSerializer(serializers.ModelSerializer):
-    parameters = serializers.DictField()
-
-    class Meta:
-        model = models.OptimizedShapeModel
-        fields = '__all__'
-
-
 class OptimizedParticlesSerializer(serializers.ModelSerializer):
     world = S3FileSerializerField()
     local = S3FileSerializerField()
@@ -139,34 +131,3 @@ class OptimizedParticlesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OptimizedParticles
         fields = '__all__'
-
-
-class OptimizedSurfaceReconstructionMetaSerializer(serializers.ModelSerializer):
-    reconstruction_params = S3FileSerializerField()
-    template_reconstruction = S3FileSerializerField()
-
-    class Meta:
-        model = models.OptimizedSurfaceReconstructionMeta
-        fields = '__all__'
-
-
-class OptimizedSurfaceReconstructionSerializer(serializers.ModelSerializer):
-    sample_reconstruction = S3FileSerializerField()
-
-    class Meta:
-        model = models.OptimizedSurfaceReconstruction
-        fields = '__all__'
-
-
-class OptimizedPCAModelSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-    mean_particles = S3FileSerializerField()
-    pca_modes = S3FileSerializerField()
-    eigen_spectrum = S3FileSerializerField()
-
-    class Meta:
-        model = models.OptimizedPCAModel
-        fields = '__all__'
-
-    def get_id(self, obj) -> int:
-        return obj.shape_model.id

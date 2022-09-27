@@ -121,14 +121,6 @@ class GroomedMeshFactory(Factory):
     project = SubFactory(ProjectFactory)
 
 
-class OptimizedShapeModelFactory(Factory):
-    class Meta:
-        model = models.OptimizedShapeModel
-
-    project = SubFactory(ProjectFactory)
-    parameters = Faker('pydict', value_types=[str, int, float])
-
-
 class OptimizedParticlesFactory(Factory):
     class Meta:
         model = models.OptimizedParticles
@@ -136,16 +128,6 @@ class OptimizedParticlesFactory(Factory):
     world = Faker('file', extension='txt')
     local = Faker('file', extension='txt')
     transform = Faker('file', extension='txt')
-    shape_model = SubFactory(OptimizedShapeModelFactory)
+    project = SubFactory(ProjectFactory)
     groomed_segmentation = SubFactory(GroomedSegmentationFactory)
     groomed_mesh = SubFactory(GroomedMeshFactory)
-
-
-class OptimizedPCAModelFactory(Factory):
-    class Meta:
-        model = models.OptimizedPCAModel
-
-    mean_particles = Faker('file', extension='txt')
-    pca_modes = Faker('file', extension='txt')
-    eigen_spectrum = Faker('file', extension='txt')
-    shape_model = SubFactory(OptimizedShapeModelFactory)

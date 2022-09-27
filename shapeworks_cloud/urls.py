@@ -21,13 +21,7 @@ router.register(
 )
 router.register('groomed-meshes', rest.GroomedMeshViewSet, basename='groomed_mesh')
 router.register(
-    'optimized-shape-models', rest.OptimizedShapeModelViewSet, basename='optimized_shape_model'
-)
-router.register(
     'optimized-particles', rest.OptimizedParticlesViewSet, basename='optimized_particles'
-)
-router.register(
-    'optimized-pca-model', rest.OptimizedPCAModelViewSet, basename='optimized_pca_model'
 )
 router.register('cached-analysis', rest.CachedAnalysisViewSet, basename='cached_analysis')
 router.register(

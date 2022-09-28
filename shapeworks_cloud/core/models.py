@@ -109,26 +109,13 @@ class GroomedMesh(TimeStampedModel, models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='groomed_meshes')
 
 
-class OptimizedShapeModel(TimeStampedModel, models.Model):
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        related_name='optimized_shape_models',
-    )
-    parameters = models.JSONField(default=dict)
-
-
 class OptimizedParticles(TimeStampedModel, models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     world = S3FileField()
     local = S3FileField()
     transform = S3FileField()
     constraints = S3FileField(null=True)
 
-    shape_model = models.ForeignKey(
-        OptimizedShapeModel,
-        on_delete=models.CASCADE,
-        related_name='particles',
-    )
     groomed_segmentation = models.ForeignKey(
         GroomedSegmentation,
         on_delete=models.CASCADE,
@@ -143,41 +130,3 @@ class OptimizedParticles(TimeStampedModel, models.Model):
         blank=True,
         null=True,
     )
-
-
-class OptimizedSurfaceReconstructionMeta(TimeStampedModel, models.Model):
-    method = models.CharField(max_length=255)  # TODO: Should be choices
-    reconstruction_params = S3FileField()
-    template_reconstruction = S3FileField()
-
-    shape_model = models.ForeignKey(
-        OptimizedShapeModel,
-        on_delete=models.CASCADE,
-        related_name='+',
-    )
-
-
-class OptimizedSurfaceReconstruction(TimeStampedModel, models.Model):
-    particles = models.OneToOneField(
-        OptimizedParticles,
-        on_delete=models.CASCADE,
-        related_name='surface_reconstruction',
-        primary_key=True,
-    )
-    sample_reconstruction = S3FileField()
-
-
-class OptimizedPCAModel(TimeStampedModel, models.Model):
-    shape_model = models.OneToOneField(
-        OptimizedShapeModel,
-        on_delete=models.CASCADE,
-        related_name='pca_model',
-        primary_key=True,
-    )
-
-    mean_particles = S3FileField()
-    pca_modes = S3FileField()
-    eigen_spectrum = S3FileField()
-
-
-# TODO: checkpoints... what about pca model reference?

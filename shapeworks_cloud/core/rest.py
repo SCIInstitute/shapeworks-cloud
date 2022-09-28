@@ -116,32 +116,10 @@ class GroomedMeshViewSet(BaseViewSet):
     filterset_class = filters.GroomedMeshFilter
 
 
-class OptimizedShapeModelViewSet(BaseViewSet):
-    queryset = models.OptimizedShapeModel.objects.all()
-    serializer_class = serializers.OptimizedShapeModelSerializer
-    filterset_class = filters.OptimizedShapeModelFilter
-
-
 class OptimizedParticlesViewSet(BaseViewSet):
     queryset = models.OptimizedParticles.objects.all()
     serializer_class = serializers.OptimizedParticlesSerializer
     filterset_class = filters.OptimizedParticlesFilter
-
-
-class OptimizedSurfaceReconstructionMetaViewSet(BaseViewSet):
-    queryset = models.OptimizedSurfaceReconstructionMeta.objects.all()
-    serializer_class = serializers.OptimizedSurfaceReconstructionMetaSerializer
-
-
-class OptimizedSurfaceReconstructionViewSet(BaseViewSet):
-    queryset = models.OptimizedSurfaceReconstruction.objects.all()
-    serializer_class = serializers.OptimizedSurfaceReconstructionSerializer
-
-
-class OptimizedPCAModelViewSet(BaseViewSet):
-    queryset = models.OptimizedPCAModel.objects.all()
-    serializer_class = serializers.OptimizedPCAModelSerializer
-    filterset_class = filters.OptimizedPCAModelFilter
 
 
 class CachedAnalysisViewSet(BaseViewSet):

@@ -189,7 +189,7 @@ def groom(user_id, project_id, form_data):
 def optimize(user_id, project_id, form_data):
     def pre_command_function():
         # delete any previous results
-        models.OptimizedShapeModel.objects.filter(project=project_id).delete()
+        models.OptimizedParticles.objects.filter(project=project_id).delete()
 
     def post_command_function(project, download_dir, project_dfs, project_filename):
         save_dfs_to_project_spreadsheet(
@@ -211,13 +211,10 @@ def optimize(user_id, project_id, form_data):
             target_mesh = project_groomed_meshes.filter(
                 file__endswith=groomed_filename,
             ).first()
-            result_shape_object = models.OptimizedShapeModel.objects.create(
-                project=project, parameters=form_data
-            )
             result_particles_object = models.OptimizedParticles.objects.create(
                 groomed_segmentation=target_segmentation,
                 groomed_mesh=target_mesh,
-                shape_model=result_shape_object,
+                project=project,
             )
             result_particles_object.world.save(
                 row['world_particles_1'].split('/')[-1],

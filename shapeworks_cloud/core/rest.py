@@ -84,7 +84,9 @@ class ProjectViewSet(BaseViewSet):
         data['dataset'] = models.Dataset.objects.get(id=data['dataset'])
         project = models.Project.objects.create(**data)
         project.create_new_file()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED
+        )
 
     @action(
         detail=True,

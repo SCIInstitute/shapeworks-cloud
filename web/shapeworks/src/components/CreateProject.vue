@@ -27,7 +27,7 @@ export default defineComponent({
             description: description.value,
             keywords: keywords.value,
         }).then((response) => {
-            if(response.status === 204){
+            if(response.status === 201){
                 loadProjectForDataset(undefined, selectedDataset.value.id)
             }
             loadingState.value = false

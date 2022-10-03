@@ -162,14 +162,16 @@ export default {
       }
     },
     updateOrientationCube(){
-      this.orientationCube = vtkOrientationMarkerWidget.newInstance({
-        actor: orientationIndicator.value,
-        interactor: this.vtk.interactor,
-        viewportSize: 0.1,
-        minPixelSize: 100,
-        maxPixelSize: 300,
-        viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
-      });
+      if(this.vtk.interactor){
+        this.orientationCube = vtkOrientationMarkerWidget.newInstance({
+          actor: orientationIndicator.value,
+          interactor: this.vtk.interactor,
+          viewportSize: 0.1,
+          minPixelSize: 100,
+          maxPixelSize: 300,
+          viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
+        });
+      }
     },
     initializeCameras(){
       this.initialCameraStates = {

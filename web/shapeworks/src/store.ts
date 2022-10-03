@@ -78,7 +78,7 @@ export const loadDataset = async (datasetId: number) => {
     }
 }
 
-export const loadProjectForDataset = async (projectId: number, datasetId: number) => {
+export const loadProjectForDataset = async (projectId: number|undefined, datasetId: number) => {
     allProjectsForDataset.value = await getProjectsForDataset(datasetId);
     if(projectId) {
         selectedProject.value = allProjectsForDataset.value.find(

@@ -79,6 +79,13 @@ class ProjectViewSet(BaseViewSet):
         else:
             return serializers.ProjectSerializer
 
+    def create(self, request, **kwargs):
+        data = request.data
+        data['dataset'] = models.Dataset.objects.get(id=data['dataset'])
+        project = models.Project.objects.create(**data)
+        project.create_new_file()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(
         detail=True,
         url_path='groom',

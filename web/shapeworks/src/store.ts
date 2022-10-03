@@ -80,9 +80,11 @@ export const loadDataset = async (datasetId: number) => {
 
 export const loadProjectForDataset = async (projectId: number, datasetId: number) => {
     allProjectsForDataset.value = await getProjectsForDataset(datasetId);
-    selectedProject.value = allProjectsForDataset.value.find(
-        (project: Project) => project.id == projectId,
-    )
+    if(projectId) {
+        selectedProject.value = allProjectsForDataset.value.find(
+            (project: Project) => project.id == projectId,
+        )
+    }
 }
 
 export const loadParticlesForObject = async (type: string, id: number) => {

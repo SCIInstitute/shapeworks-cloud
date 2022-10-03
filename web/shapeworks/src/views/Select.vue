@@ -11,8 +11,10 @@ import {
 } from '../store';
 import { Dataset, Project } from '@/types';
 import router from '@/router';
+import CreateProject from '@/components/CreateProject.vue';
 
 export default defineComponent({
+  components: { CreateProject },
     setup() {
         async function getAllDatasets(){
             loadingState.value = true;
@@ -156,11 +158,12 @@ export default defineComponent({
                 </v-btn>
                 </v-card-actions>
             </v-card>
+            <create-project />
         </div>
     </div>
 </template>
 
-<style scoped>
+<style>
 .flex-container {
     display: flex;
     flex-wrap: wrap;

@@ -1,8 +1,9 @@
+import json
+
 from django.core.files.base import ContentFile
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
-import json
 
 
 class Dataset(TimeStampedModel, models.Model):
@@ -82,9 +83,7 @@ class Project(TimeStampedModel, models.Model):
             'groom': {},
             'optimize': {},
         }
-        self.file.save('project.swproj', ContentFile(
-            json.dumps(file_contents).encode()
-        ))
+        self.file.save('project.swproj', ContentFile(json.dumps(file_contents).encode()))
 
 
 class GroomedSegmentation(TimeStampedModel, models.Model):

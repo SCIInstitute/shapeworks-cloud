@@ -43,16 +43,20 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
     }).flat(2)
 }
 
-export async function getOptimizedParticlesForDataObject(type: string, id: number){
+export async function getOptimizedParticlesForDataObject(
+    type: string, id: number, projectId: number|undefined
+){
     return (await apiClient.get('/optimized-particles', {
-        params: {[`original_${type}`]: id}
+        params: {[`original_${type}`]: id, project: projectId}
     })).data.results
 }
 
-export async function getGroomedShapeForDataObject(type: string, id: number) {
+export async function getGroomedShapeForDataObject(
+    type: string, id: number, projectId: number|undefined
+) {
     const plural = `${type}${type == 'mesh' ?'es' :'s'}`
     return (await apiClient.get(`/groomed-${plural}`, {
-        params: {[type]: id}
+        params: {[type]: id, project: projectId}
     })).data.results
 }
 

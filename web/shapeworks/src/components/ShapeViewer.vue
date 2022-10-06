@@ -141,7 +141,7 @@ export default {
   mounted() {
     const el = this.$refs.vtk;
     this.vtk.openglRenderWindow.setContainer(el);
-    this.vtk.interactor.bindEvents(el);
+    if(this.vtk.renderers.length) this.vtk.interactor.bindEvents(el);
 
     this.updateSize();
     this.renderGrid();

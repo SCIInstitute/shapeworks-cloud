@@ -84,6 +84,7 @@ export const loadProjectForDataset = async (projectId: number|undefined, dataset
         selectedProject.value = allProjectsForDataset.value.find(
             (project: Project) => project.id == projectId,
         )
+        layersShown.value = ["Original"]
     }
 }
 

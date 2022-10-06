@@ -62,7 +62,7 @@ export default defineComponent({
 
         function deleteProj() {
             loadingState.value = true
-            deleteProject(deleting.value).then(
+            deleteProject(deleting.value.id).then(
                 () => {
                     deleting.value = undefined
                     if(selectedDataset.value){
@@ -179,7 +179,7 @@ export default defineComponent({
                     rounded
                     text
                     color="red"
-                    @click="deleting = project.id"
+                    @click="deleting = project"
                 >
                     Delete
                 </v-btn>
@@ -190,13 +190,14 @@ export default defineComponent({
                 :value="deleting"
                 width="500"
             >
-            <v-card>
+            <v-card v-if="deleting">
                 <v-card-title class="text-h5">
                 Confirmation
                 </v-card-title>
 
                 <v-card-text>
-                Are you sure you want to delete project {{deleting}}?
+                Are you sure you want to delete project {{deleting.id}}
+                with description "{{ deleting.description }}"?
                 </v-card-text>
 
                 <v-divider></v-divider>

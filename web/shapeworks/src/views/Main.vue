@@ -221,7 +221,7 @@ export default defineComponent({
 
         <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">
             <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
-            <template v-else>
+            <template>
                 <shape-viewer
                     :data="renderData"
                     :rows="rows"

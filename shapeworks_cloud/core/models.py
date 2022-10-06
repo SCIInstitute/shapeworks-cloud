@@ -1,3 +1,6 @@
+import json
+
+from django.core.files.base import ContentFile
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
@@ -18,6 +21,10 @@ class Dataset(TimeStampedModel, models.Model):
 
     # FK to another table?
     publications = models.TextField(blank=True, default='')
+
+    def get_contents(self):
+        # TODO
+        return []
 
 
 class Subject(TimeStampedModel, models.Model):
@@ -69,6 +76,14 @@ class Project(TimeStampedModel, models.Model):
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
     last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.PROTECT, null=True)
+
+    def create_new_file(self):
+        file_contents = {
+            'data': self.dataset.get_contents(),
+            'groom': {},
+            'optimize': {},
+        }
+        self.file.save('project.swproj', ContentFile(json.dumps(file_contents).encode()))
 
 
 class GroomedSegmentation(TimeStampedModel, models.Model):

@@ -23,15 +23,6 @@ router.register('groomed-meshes', rest.GroomedMeshViewSet, basename='groomed_mes
 router.register(
     'optimized-particles', rest.OptimizedParticlesViewSet, basename='optimized_particles'
 )
-router.register('cached-analysis', rest.CachedAnalysisViewSet, basename='cached_analysis')
-router.register(
-    'cached-analysis-mode', rest.CachedAnalysisModeViewSet, basename='cached_analysis_mode'
-)
-router.register(
-    'cached-analysis-mode-pca',
-    rest.CachedAnalysisModePCAViewSet,
-    basename='cached_analysis_mode_pca',
-)
 
 
 # OpenAPI generation

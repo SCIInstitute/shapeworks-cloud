@@ -36,7 +36,7 @@ import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/Orien
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
-import { layers, layersShown, orientationIndicator, cachedMarchingCubes } from '../store';
+import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType } from '../store';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -271,7 +271,12 @@ export default {
     addShapes(renderer, label, shapes) {
       shapes.flat().forEach(
         (shape, index) => {
-          const layerName = shape.getFieldData().getArrayByName('type').getData()[0]
+          let layerName = Object.entries(vtkShapesByType.value).filter(
+            ([, shapes]) => shapes.includes(shape)
+          ).map(
+            ([layerName,]) => layerName
+          )
+          layerName = layerName.length ? layerName[0] : "Original"
           const type = layers.value.find((layer) => layer.name === layerName)
           let opacity = 1;
           const numLayers = layersShown.value.filter(

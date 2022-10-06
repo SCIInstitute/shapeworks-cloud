@@ -79,6 +79,15 @@ class ProjectViewSet(BaseViewSet):
         else:
             return serializers.ProjectSerializer
 
+    def create(self, request, **kwargs):
+        data = request.data
+        data['dataset'] = models.Dataset.objects.get(id=data['dataset'])
+        project = models.Project.objects.create(**data)
+        project.create_new_file()
+        return Response(
+            serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED
+        )
+
     @action(
         detail=True,
         url_path='groom',
@@ -120,28 +129,3 @@ class OptimizedParticlesViewSet(BaseViewSet):
     queryset = models.OptimizedParticles.objects.all()
     serializer_class = serializers.OptimizedParticlesSerializer
     filterset_class = filters.OptimizedParticlesFilter
-
-
-class CachedAnalysisViewSet(BaseViewSet):
-    queryset = models.CachedAnalysis.objects.all()
-
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return serializers.CachedAnalysisReadSerializer
-        else:
-            return serializers.CachedAnalysisSerializer
-
-
-class CachedAnalysisModeViewSet(BaseViewSet):
-    queryset = models.CachedAnalysisMode.objects.all()
-
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return serializers.CachedAnalysisModeReadSerializer
-        else:
-            return serializers.CachedAnalysisModeSerializer
-
-
-class CachedAnalysisModePCAViewSet(BaseViewSet):
-    queryset = models.CachedAnalysisModePCA.objects.all()
-    serializer_class = serializers.CachedAnalysisModePCASerializer

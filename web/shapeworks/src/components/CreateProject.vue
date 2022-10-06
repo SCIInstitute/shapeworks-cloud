@@ -71,7 +71,7 @@ export default defineComponent({
             <v-text-field label="Keywords" v-model="keywords" />
             <v-card-actions class="action-buttons">
                 <v-btn
-                    v-if="description && keywords"
+                    v-if="description"
                     outlined
                     rounded
                     text

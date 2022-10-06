@@ -43,17 +43,29 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
     }).flat(2)
 }
 
-export async function getOptimizedParticlesForDataObject(type: string, id: number){
+export async function getOptimizedParticlesForDataObject(
+    type: string, id: number, projectId: number|undefined
+){
     return (await apiClient.get('/optimized-particles', {
-        params: {[`original_${type}`]: id}
+        params: {[`original_${type}`]: id, project: projectId}
     })).data.results
 }
 
-export async function getGroomedShapeForDataObject(type: string, id: number) {
+export async function getGroomedShapeForDataObject(
+    type: string, id: number, projectId: number|undefined
+) {
     const plural = `${type}${type == 'mesh' ?'es' :'s'}`
     return (await apiClient.get(`/groomed-${plural}`, {
-        params: {[type]: id}
+        params: {[type]: id, project: projectId}
     })).data.results
+}
+
+export async function createProject(formData: Record<string, any>){
+    return (await apiClient.post(`/projects/`, formData))
+}
+
+export async function deleteProject(projectId: number){
+    return (await apiClient.delete(`/projects/${projectId}/`))
 }
 
 export async function groomProject(projectId: number, formData: Record<string, any>){

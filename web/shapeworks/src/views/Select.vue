@@ -1,19 +1,24 @@
 <script lang="ts">
-import { defineComponent, onMounted } from '@vue/composition-api';
-import { getDatasets, getProjectsForDataset } from '@/api/rest'
+import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import { getDatasets, getProjectsForDataset, deleteProject, } from '@/api/rest'
 import {
     allDatasets,
     selectedDataset,
     loadingState,
     selectedDataObjects,
     allProjectsForDataset,
+    loadProjectForDataset,
     selectedProject,
 } from '../store';
 import { Dataset, Project } from '@/types';
 import router from '@/router';
+import CreateProject from '@/components/CreateProject.vue';
 
 export default defineComponent({
+  components: { CreateProject },
     setup() {
+        const deleting = ref();
+
         async function getAllDatasets(){
             loadingState.value = true;
             allDatasets.value = (await getDatasets()).sort((a, b) => {
@@ -55,6 +60,19 @@ export default defineComponent({
             }
         }
 
+        function deleteProj() {
+            loadingState.value = true
+            deleteProject(deleting.value.id).then(
+                () => {
+                    deleting.value = undefined
+                    if(selectedDataset.value){
+                        loadProjectForDataset(undefined, selectedDataset.value.id)
+                    }
+                    loadingState.value = false
+                }
+            )
+        }
+
         onMounted(async () => {
             await getAllDatasets();
             if(selectedDataset.value){
@@ -73,6 +91,8 @@ export default defineComponent({
             selectedProject,
             selectOrDeselectDataset,
             selectOrDeselectProject,
+            deleting,
+            deleteProj,
             loadingState,
         }
     }
@@ -143,7 +163,7 @@ export default defineComponent({
                     {{ project.description }}
                 </v-list-item-subtitle>
                 <v-list-item-subtitle>
-                    {{ project.keywords }}
+                    <i>{{ project.keywords }}</i>
                 </v-list-item-subtitle>
                 <v-card-actions class="action-buttons">
                 <v-btn
@@ -154,13 +174,57 @@ export default defineComponent({
                 >
                     {{ selectedProject ?'Deselect' :'Select' }}
                 </v-btn>
+                <v-btn
+                    outlined
+                    rounded
+                    text
+                    color="red"
+                    @click="deleting = project"
+                >
+                    Delete
+                </v-btn>
                 </v-card-actions>
             </v-card>
+            <create-project />
+            <v-dialog
+                :value="deleting"
+                width="500"
+            >
+            <v-card v-if="deleting">
+                <v-card-title class="text-h5">
+                Confirmation
+                </v-card-title>
+
+                <v-card-text>
+                Are you sure you want to delete project {{deleting.id}}
+                with description "{{ deleting.description }}"?
+                </v-card-text>
+
+                <v-divider></v-divider>
+
+                <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                    text
+                    @click="deleting = undefined"
+                >
+                    Cancel
+                </v-btn>
+                <v-btn
+                    text
+                    color="red"
+                    @click="deleteProj"
+                >
+                    Delete
+                </v-btn>
+                </v-card-actions>
+            </v-card>
+            </v-dialog>
         </div>
     </div>
 </template>
 
-<style scoped>
+<style>
 .flex-container {
     display: flex;
     flex-wrap: wrap;
@@ -176,7 +240,10 @@ export default defineComponent({
 .action-buttons {
     position: absolute;
     bottom: 10px;
-    left: 5px
+    left: 5px;
+    width: calc(100% - 10px);
+    display: flex;
+    justify-content: space-between;
 }
 .v-list-item__title, .v-list-item__subtitle {
     white-space: normal!important;

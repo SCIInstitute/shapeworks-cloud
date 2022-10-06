@@ -85,15 +85,20 @@ export const loadDataset = async (datasetId: number) => {
     }
 }
 
-export const loadProjectForDataset = async (projectId: number, datasetId: number) => {
+export const loadProjectForDataset = async (projectId: number|undefined, datasetId: number) => {
     allProjectsForDataset.value = await getProjectsForDataset(datasetId);
-    selectedProject.value = allProjectsForDataset.value.find(
-        (project: Project) => project.id == projectId,
-    )
+    if(projectId) {
+        selectedProject.value = allProjectsForDataset.value.find(
+            (project: Project) => project.id == projectId,
+        )
+        layersShown.value = ["Original"]
+    }
 }
 
 export const loadParticlesForObject = async (type: string, id: number) => {
-    let particles = await getOptimizedParticlesForDataObject(type, id)
+    let particles = await getOptimizedParticlesForDataObject(
+        type, id, selectedProject.value?.id
+    )
     if (particles.length > 0) particles = particles[0]
     if(!particlesForOriginalDataObjects.value[type]){
         particlesForOriginalDataObjects.value[type] = {}
@@ -102,7 +107,9 @@ export const loadParticlesForObject = async (type: string, id: number) => {
 }
 
 export const loadGroomedShapeForObject = async (type: string, id: number) => {
-    let groomed = await getGroomedShapeForDataObject(type, id)
+    let groomed = await getGroomedShapeForDataObject(
+        type, id, selectedProject.value?.id
+    )
     if (groomed.length > 0) groomed = groomed[0]
     if(!groomedShapesForOriginalDataObjects.value[type]){
         groomedShapesForOriginalDataObjects.value[type] = {}
@@ -156,14 +163,18 @@ export async function pollJobResults(action: string): Promise<string | undefined
             targetStorage = groomedShapesForOriginalDataObjects
             testFunction = async (type: string, id: number) => {
                 if(jobAlreadyDone(action)) {
-                    return (await getGroomedShapeForDataObject(type, id)).filter(
+                    return (await getGroomedShapeForDataObject(
+                            type, id, selectedProject.value?.id
+                        )).filter(
                         (result: GroomedShape) => {
                             // only consider updated objects as successful results
                             return groomedShapesForOriginalDataObjects.value[type][id].modified !== result.modified
                         }
                     )
                 }
-                return await getGroomedShapeForDataObject(type, id)
+                return await getGroomedShapeForDataObject(
+                    type, id, selectedProject.value?.id
+                )
             }
             loadFunction = loadGroomedShapeForObject
             successFunction = () => {
@@ -179,14 +190,18 @@ export async function pollJobResults(action: string): Promise<string | undefined
             targetStorage = particlesForOriginalDataObjects
             testFunction = async (type: string, id: number) => {
                 if(jobAlreadyDone(action)) {
-                    return (await getOptimizedParticlesForDataObject(type, id)).filter(
+                    return (await getOptimizedParticlesForDataObject(
+                            type, id, selectedProject.value?.id
+                        )).filter(
                         (result: Particles) => {
                             // only consider updated objects as successful results
                             return particlesForOriginalDataObjects.value[type][id].modified !== result.modified
                         }
                     )
                 }
-                return await getOptimizedParticlesForDataObject(type, id)
+                return await getOptimizedParticlesForDataObject(
+                    type, id, selectedProject.value?.id
+                )
             }
             loadFunction = loadParticlesForObject
             successFunction = () => {

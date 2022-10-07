@@ -283,12 +283,13 @@ class Project(ApiModel):
         for part in self.particles:
             if part.groomed_mesh or part.groomed_segmentation:
                 particles[
-                    part.groomed_mesh.mesh.subject.name if part.groomed_mesh
+                    part.groomed_mesh.mesh.subject.name
+                    if part.groomed_mesh
                     else part.groomed_segmentation.segmentation.subject.name
                 ] = part
 
         for data_row in data:
-            if(data_row['name'] in original_shapes):
+            if data_row['name'] in original_shapes:
                 shape_key = [key for key in data_row.keys() if 'shape' in key][0]
                 file = original_shapes[data_row['name']].file
                 if file:
@@ -296,14 +297,14 @@ class Project(ApiModel):
                     file.download(path / destination)
                 print(path / data_row[shape_key])
 
-            if(data_row['name'] in groomed_shapes):
+            if data_row['name'] in groomed_shapes:
                 groomed_key = [key for key in data_row.keys() if 'groomed' in key][0]
                 file = groomed_shapes[data_row['name']].file
                 if file:
                     destination = '/'.join(data_row[groomed_key].split('/')[:-1])
                     file.download(path / destination)
 
-            if(data_row['name'] in particles):
+            if data_row['name'] in particles:
                 local_key = [key for key in data_row.keys() if 'local_particles' in key][0]
                 world_key = [key for key in data_row.keys() if 'world_particles' in key][0]
                 local_file = particles[data_row['name']].local

@@ -8,6 +8,8 @@ import ITKHelper from 'vtk.js/Sources/Common/DataModel/ITKHelper';
 import axios from 'axios';
 import shapeReader from './shape'
 
+import { vtkShapesByType } from '@/store';
+
 const { convertItkToVtkImage } = ITKHelper;
 
 
@@ -44,12 +46,6 @@ export default async function (
         shape = vtkPolyData.newInstance()
     }
 
-    const typeValue = vtkStringArray.newInstance({
-        name: 'type',
-        numberOfComponents: 1,
-        size: 1,
-    });
-    typeValue.setData([type], 1)
-    shape.getFieldData().addArray(typeValue);
+    vtkShapesByType.value[type].push(shape)
     return shape
   }

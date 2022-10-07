@@ -69,6 +69,13 @@ export const layersShown = ref<string[]>(["Original"])
 
 export const cachedMarchingCubes = ref({})
 
+export const vtkShapesByType = ref<Record<string, any[]>>({
+    "Original": [],
+    "Groomed": [],
+    "Reconstructed": [],
+    "Particles": []
+})
+
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
     if (selectedDataset.value?.id != datasetId) {

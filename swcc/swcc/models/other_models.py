@@ -43,7 +43,7 @@ class Image(ApiModel):
 class GroomedSegmentation(ApiModel):
     _endpoint = 'groomed-segmentations'
 
-    file: FileType[Literal['core.GroomedSegmentation.file']]
+    file: Optional[FileType[Literal['core.GroomedSegmentation.file']]]
     pre_cropping: Optional[FileType[Literal['core.GroomedSegmentation.pre_cropping']]] = None
     pre_alignment: Optional[FileType[Literal['core.GroomedSegmentation.pre_alignment']]] = None
 
@@ -54,7 +54,7 @@ class GroomedSegmentation(ApiModel):
 class GroomedMesh(ApiModel):
     _endpoint = 'groomed-meshes'
 
-    file: FileType[Literal['core.GroomedMesh.file']]
+    file: Optional[FileType[Literal['core.GroomedMesh.file']]]
     pre_cropping: Optional[FileType[Literal['core.GroomedMesh.pre_cropping']]] = None
     pre_alignment: Optional[FileType[Literal['core.GroomedMesh.pre_alignment']]] = None
 
@@ -65,9 +65,9 @@ class GroomedMesh(ApiModel):
 class OptimizedParticles(ApiModel):
     _endpoint = 'optimized-particles'
 
-    world: FileType[Literal['core.OptimizedParticles.world']]
-    local: FileType[Literal['core.OptimizedParticles.local']]
-    transform: FileType[Literal['core.OptimizedParticles.transform']]
+    world: Optional[FileType[Literal['core.OptimizedParticles.world']]]
+    local: Optional[FileType[Literal['core.OptimizedParticles.local']]]
+    transform: Optional[FileType[Literal['core.OptimizedParticles.transform']]]
     project: Project
     groomed_segmentation: Optional[GroomedSegmentation]
     groomed_mesh: Optional[GroomedMesh]

@@ -12,13 +12,21 @@ from rest_framework.authtoken.models import Token
 
 from shapeworks_cloud.core import models
 from swcc.api import swcc_session
-from swcc.models import Dataset as SWCCDataset
+from swcc.models import Project as SWCCProject
 
 
 def edit_swproj_section(filename, section_name, new_df):
     with open(filename, 'r') as f:
         data = json.load(f)
-        data[section_name] = new_df.to_dict()
+    new_contents = {
+        item['key']: item['value']
+        for item in new_df.to_dict(orient='records')
+    }
+    if section_name == 'groom':
+        data[section_name] = {}
+        data[section_name]['shape'] = new_contents
+    else:
+        data[section_name] = new_contents
     with open(filename, 'w') as f:
         json.dump(data, f)
 
@@ -65,12 +73,11 @@ def run_shapeworks_command(
             session.set_token(token.key)
             project = models.Project.objects.get(id=project_id)
             project_filename = project.file.name.split('/')[-1]
-            dataset = SWCCDataset.from_id(project.dataset.id)
-            dataset.download(download_dir)
+            SWCCProject.from_id(project.id).download(download_dir)
 
             pre_command_function()
 
-            # write the form data to the project spreadsheet
+            # write the form data to the project file
             form_df = pandas.DataFrame(
                 list(form_data.items()),
                 columns=['key', 'value'],
@@ -81,8 +88,6 @@ def run_shapeworks_command(
                 command,
                 form_df,
             )
-            with open(Path(download_dir, project_filename), 'r') as f:
-                project_data = json.load(f)
 
             # perform command
             process = Popen(
@@ -99,6 +104,8 @@ def run_shapeworks_command(
             # TODO: raise _err to user if not empty
             print(_out, _err)
 
+            with open(Path(download_dir, project_filename), 'r') as f:
+                project_data = json.load(f)
             post_command_function(project, download_dir, project_data, project_filename)
 
 
@@ -140,7 +147,6 @@ def groom(user_id, project_id, form_data):
                     project=project,
                     mesh=target_object,
                 )
-
             result_object.file.save(
                 row['groomed_1'],
                 open(result_file, 'rb'),

@@ -18,10 +18,7 @@ from swcc.models import Project as SWCCProject
 def edit_swproj_section(filename, section_name, new_df):
     with open(filename, 'r') as f:
         data = json.load(f)
-    new_contents = {
-        item['key']: item['value']
-        for item in new_df.to_dict(orient='records')
-    }
+    new_contents = {item['key']: item['value'] for item in new_df.to_dict(orient='records')}
     if section_name == 'groom':
         data[section_name] = {}
         data[section_name]['shape'] = new_contents

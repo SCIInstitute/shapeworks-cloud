@@ -82,7 +82,12 @@ class ProjectViewSet(BaseViewSet):
     def create(self, request, **kwargs):
         data = request.data
         data['dataset'] = models.Dataset.objects.get(id=data['dataset'])
-        data['last_cached_analysis'] = models.CachedAnalysis.objects.get(id=data['last_cached_analysis'])
+        try:
+            data['last_cached_analysis'] = models.CachedAnalysis.objects.get(
+                id=data['last_cached_analysis']
+            )
+        except models.CachedAnalysis.DoesNotExist:
+            data['last_cached_analysis'] = None
         project = models.Project.objects.create(**data)
         if not project.file:
             project.create_new_file()
@@ -99,10 +104,7 @@ class ProjectViewSet(BaseViewSet):
     def groom(self, request, **kwargs):
         project = self.get_object()
         form_data = request.data
-        form_data = {
-            k: str(v)
-            for k, v in form_data.items()
-        }
+        form_data = {k: str(v) for k, v in form_data.items()}
         groom.delay(request.user.id, project.id, form_data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -115,10 +117,7 @@ class ProjectViewSet(BaseViewSet):
     def optimize(self, request, **kwargs):
         project = self.get_object()
         form_data = request.data
-        form_data = {
-            k: str(v)
-            for k, v in form_data.items()
-        }
+        form_data = {k: str(v) for k, v in form_data.items()}
         optimize.delay(request.user.id, project.id, form_data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

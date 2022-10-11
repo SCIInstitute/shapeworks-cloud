@@ -31,19 +31,23 @@ class Dataset(TimeStampedModel, models.Model):
             return filename.split('/')[-1]
 
         def record_shape(shape, groomed, particles):
-            ret.append({
-                "name": shape.subject.name,
-                "shape_1": truncate_filename(shape.file.name),
-                "groomed_1": "groomed/" + truncate_filename(groomed.file.name),
-                "local_particles_1": "particles/" + truncate_filename(particles.local.name),
-                "world_particles_1": "particles/" + truncate_filename(particles.world.name),
-                "alignment_1": "",
-                "procrustes_1": ""
-            })
+            ret.append(
+                {
+                    'name': shape.subject.name,
+                    'shape_1': truncate_filename(shape.file.name),
+                    'groomed_1': 'groomed/' + truncate_filename(groomed.file.name),
+                    'local_particles_1': 'particles/' + truncate_filename(particles.local.name),
+                    'world_particles_1': 'particles/' + truncate_filename(particles.world.name),
+                    'alignment_1': '',
+                    'procrustes_1': '',
+                }
+            )
 
         for shape in Segmentation.objects.filter(subject__dataset=self):
             groomed = GroomedSegmentation.objects.get(segmentation=shape, project=project)
-            particles = OptimizedParticles.objects.get(groomed_segmentation=groomed, project=project)
+            particles = OptimizedParticles.objects.get(
+                groomed_segmentation=groomed, project=project
+            )
             record_shape(shape, groomed, particles)
         for shape in Mesh.objects.filter(subject__dataset=self):
             groomed = GroomedMesh.objects.get(mesh=shape, project=project)

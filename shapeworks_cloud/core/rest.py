@@ -86,7 +86,7 @@ class ProjectViewSet(BaseViewSet):
             data['last_cached_analysis'] = models.CachedAnalysis.objects.get(
                 id=data['last_cached_analysis']
             )
-        except models.CachedAnalysis.DoesNotExist:
+        except (KeyError, models.CachedAnalysis.DoesNotExist):
             data['last_cached_analysis'] = None
         project = models.Project.objects.create(**data)
         if not project.file:

@@ -51,8 +51,14 @@ export default defineComponent({
         const renderData = ref<Record<string, ShapeData[]>>({});
 
         onMounted(async () => {
-            await loadDataset(props.dataset);
-            await loadProjectForDataset(props.project, props.dataset);
+            try {
+                await loadDataset(props.dataset);
+                await loadProjectForDataset(props.project, props.dataset);
+            } catch(e) {
+                router.push({
+                    name: 'select'
+                })
+            }
         })
 
         async function toSelectPage() {

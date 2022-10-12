@@ -80,16 +80,11 @@ class ProjectViewSet(BaseViewSet):
             return serializers.ProjectSerializer
 
     def create(self, request, **kwargs):
-        data = request.data
-        data['dataset'] = models.Dataset.objects.get(id=data['dataset'])
-        try:
-            data['last_cached_analysis'] = models.CachedAnalysis.objects.get(
-                id=data['last_cached_analysis']
-            )
-        except (KeyError, models.CachedAnalysis.DoesNotExist):
-            data['last_cached_analysis'] = None
-        project = models.Project.objects.create(**data)
+        serializer = serializers.ProjectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        project = serializer.save()
         if not project.file:
+            print('create new file')
             project.create_new_file()
         return Response(
             serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED

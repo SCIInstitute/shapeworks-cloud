@@ -104,7 +104,7 @@ class Project(TimeStampedModel, models.Model):
     keywords = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
-    last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.PROTECT, null=True)
+    last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.SET_NULL, null=True)
 
     def create_new_file(self):
         file_contents = {

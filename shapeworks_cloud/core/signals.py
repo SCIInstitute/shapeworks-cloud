@@ -10,8 +10,4 @@ def delete_cached_analysis(sender, instance, using, **kwargs):
         cachedanalysismode__cachedanalysis__project=instance
     ).delete()
     CachedAnalysisMode.objects.filter(cachedanalysis__project=instance).delete()
-    analysis = CachedAnalysis.objects.filter(project=instance).first()
-    instance.last_cached_analysis = None
-    if analysis:
-        analysis.delete()
-    instance.save()
+    CachedAnalysis.objects.filter(project=instance).delete()

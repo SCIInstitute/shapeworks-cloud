@@ -123,10 +123,9 @@ class GroomedSegmentation(TimeStampedModel, models.Model):
     pre_cropping = S3FileField(null=True)
     pre_alignment = S3FileField(null=True)
 
-    segmentation = models.OneToOneField(
+    segmentation = models.ForeignKey(
         Segmentation,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='groomed',
     )
 
@@ -143,10 +142,9 @@ class GroomedMesh(TimeStampedModel, models.Model):
     pre_cropping = S3FileField(null=True)
     pre_alignment = S3FileField(null=True)
 
-    mesh = models.OneToOneField(
+    mesh = models.ForeignKey(
         Mesh,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='groomed',
     )
 

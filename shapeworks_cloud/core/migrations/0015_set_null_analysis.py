@@ -14,6 +14,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='project',
             name='last_cached_analysis',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.cachedanalysis'),
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.cachedanalysis'
+            ),
         ),
     ]

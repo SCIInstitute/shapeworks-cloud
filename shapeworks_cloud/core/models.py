@@ -35,23 +35,33 @@ class Dataset(TimeStampedModel, models.Model):
                 {
                     'name': shape.subject.name,
                     'shape_1': truncate_filename(shape.file.name),
-                    'groomed_1': 'groomed/' + truncate_filename(groomed.file.name),
-                    'local_particles_1': 'particles/' + truncate_filename(particles.local.name),
-                    'world_particles_1': 'particles/' + truncate_filename(particles.world.name),
+                    'groomed_1': 'groomed/' + truncate_filename(groomed.file.name)
+                    if groomed
+                    else '',
+                    'local_particles_1': 'particles/' + truncate_filename(particles.local.name)
+                    if particles
+                    else '',
+                    'world_particles_1': 'particles/' + truncate_filename(particles.world.name)
+                    if particles
+                    else '',
                     'alignment_1': '',
                     'procrustes_1': '',
                 }
             )
 
+        def safe_get(model, **kwargs):
+            try:
+                return model.objects.get(**kwargs)
+            except model.DoesNotExist:
+                return None
+
         for shape in Segmentation.objects.filter(subject__dataset=self):
-            groomed = GroomedSegmentation.objects.get(segmentation=shape, project=project)
-            particles = OptimizedParticles.objects.get(
-                groomed_segmentation=groomed, project=project
-            )
+            groomed = safe_get(GroomedSegmentation, segmentation=shape, project=project)
+            particles = safe_get(OptimizedParticles, groomed_segmentation=groomed, project=project)
             record_shape(shape, groomed, particles)
         for shape in Mesh.objects.filter(subject__dataset=self):
-            groomed = GroomedMesh.objects.get(mesh=shape, project=project)
-            particles = OptimizedParticles.objects.get(groomed_mesh=groomed, project=project)
+            groomed = safe_get(GroomedMesh, mesh=shape, project=project)
+            particles = safe_get(OptimizedParticles, groomed_mesh=groomed, project=project)
             record_shape(shape, groomed, particles)
         return ret
 

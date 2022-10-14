@@ -23,7 +23,7 @@ class CachedAnalysisSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    file = S3FileSerializerField()
+    file = S3FileSerializerField(required=False)
 
     class Meta:
         model = models.Project

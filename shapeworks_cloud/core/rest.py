@@ -84,7 +84,6 @@ class ProjectViewSet(BaseViewSet):
         serializer.is_valid(raise_exception=True)
         project = serializer.save()
         if not project.file:
-            print('create new file')
             project.create_new_file()
         return Response(
             serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED

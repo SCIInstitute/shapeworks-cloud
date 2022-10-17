@@ -80,10 +80,11 @@ class ProjectViewSet(BaseViewSet):
             return serializers.ProjectSerializer
 
     def create(self, request, **kwargs):
-        data = request.data
-        data['dataset'] = models.Dataset.objects.get(id=data['dataset'])
-        project = models.Project.objects.create(**data)
-        project.create_new_file()
+        serializer = serializers.ProjectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        project = serializer.save()
+        if not project.file:
+            project.create_new_file()
         return Response(
             serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED
         )
@@ -97,6 +98,7 @@ class ProjectViewSet(BaseViewSet):
     def groom(self, request, **kwargs):
         project = self.get_object()
         form_data = request.data
+        form_data = {k: str(v) for k, v in form_data.items()}
         groom.delay(request.user.id, project.id, form_data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -109,6 +111,7 @@ class ProjectViewSet(BaseViewSet):
     def optimize(self, request, **kwargs):
         project = self.get_object()
         form_data = request.data
+        form_data = {k: str(v) for k, v in form_data.items()}
         optimize.delay(request.user.id, project.id, form_data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -129,3 +132,28 @@ class OptimizedParticlesViewSet(BaseViewSet):
     queryset = models.OptimizedParticles.objects.all()
     serializer_class = serializers.OptimizedParticlesSerializer
     filterset_class = filters.OptimizedParticlesFilter
+
+
+class CachedAnalysisViewSet(BaseViewSet):
+    queryset = models.CachedAnalysis.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.CachedAnalysisReadSerializer
+        else:
+            return serializers.CachedAnalysisSerializer
+
+
+class CachedAnalysisModeViewSet(BaseViewSet):
+    queryset = models.CachedAnalysisMode.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.CachedAnalysisModeReadSerializer
+        else:
+            return serializers.CachedAnalysisModeSerializer
+
+
+class CachedAnalysisModePCAViewSet(BaseViewSet):
+    queryset = models.CachedAnalysisModePCA.objects.all()
+    serializer_class = serializers.CachedAnalysisModePCASerializer

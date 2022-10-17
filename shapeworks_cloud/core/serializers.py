@@ -23,7 +23,7 @@ class CachedAnalysisSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    file = S3FileSerializerField()
+    file = S3FileSerializerField(required=False)
 
     class Meta:
         model = models.Project
@@ -95,7 +95,6 @@ class ImageSerializer(serializers.ModelSerializer):
 
 
 class GroomedSegmentationSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
     file = S3FileSerializerField()
     pre_cropping = S3FileSerializerField(required=False, allow_null=True)
     pre_alignment = S3FileSerializerField(required=False, allow_null=True)
@@ -104,12 +103,8 @@ class GroomedSegmentationSerializer(serializers.ModelSerializer):
         model = models.GroomedSegmentation
         fields = '__all__'
 
-    def get_id(self, obj) -> int:
-        return obj.segmentation_id
-
 
 class GroomedMeshSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
     file = S3FileSerializerField()
     pre_cropping = S3FileSerializerField(required=False, allow_null=True)
     pre_alignment = S3FileSerializerField(required=False, allow_null=True)
@@ -117,9 +112,6 @@ class GroomedMeshSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.GroomedMesh
         fields = '__all__'
-
-    def get_id(self, obj) -> int:
-        return obj.mesh_id
 
 
 class OptimizedParticlesSerializer(serializers.ModelSerializer):

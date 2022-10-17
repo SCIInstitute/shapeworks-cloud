@@ -5,13 +5,12 @@ from pathlib import Path, PurePath
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, List, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
-        List,
         Optional,
         Union,
     )
@@ -35,7 +34,7 @@ from .other_models import (
     Segmentation,
 )
 from .subject import Subject
-from .utils import FileIO, shape_file_type
+from .utils import FileIO, NonEmptyString, shape_file_type
 
 
 class ProjectFileIO(BaseModel, FileIO):
@@ -50,8 +49,9 @@ class ProjectFileIO(BaseModel, FileIO):
             or not hasattr(self.project.file, 'path')
             or not self.project.file.path
         ):
-            return
-        file = self.project.file.path
+            file = Path(str(self.project.file))
+        else:
+            file = self.project.file.path
         if str(file).endswith('xlsx') or str(file).endswith('xlsx'):
             raise NotImplementedError('Convert spreadsheet file to excel before parsing')
         elif str(file).endswith('json') or str(file).endswith('swproj'):
@@ -265,13 +265,57 @@ class Project(ApiModel):
         return OptimizedParticles(project=self, **parameters).create()
 
     def download(self, path: Union[Path, str]):
-        self.file.download(Path(path))
+        path = Path(path)
+        self.file.download(path)
         data, optimize = self.get_file_io().load_data(interpret=False)
-        groomed_shapes: List[Union[GroomedMesh, GroomedSegmentation]] = list(self.groomed_meshes)
-        groomed_shapes += list(self.groomed_segmentations)
+        original_shapes: Dict[Optional[NonEmptyString], Union[Mesh, Segmentation]] = {}
+        groomed_shapes: Dict[Optional[NonEmptyString], Union[GroomedMesh, GroomedSegmentation]] = {}
+        particles: Dict[Optional[NonEmptyString], OptimizedParticles] = {}
+
+        for seg in self.dataset.segmentations:
+            original_shapes[seg.subject.name] = seg
+        for mesh in self.dataset.meshes:
+            original_shapes[mesh.subject.name] = mesh
+        for gseg in self.groomed_segmentations:
+            groomed_shapes[gseg.segmentation.subject.name] = gseg
+        for gmesh in self.groomed_meshes:
+            groomed_shapes[gmesh.mesh.subject.name] = gmesh
+        for part in self.particles:
+            particles[
+                part.groomed_mesh.mesh.subject.name
+                if part.groomed_mesh
+                else part.groomed_segmentation.segmentation.subject.name
+                if part.groomed_segmentation
+                else None
+            ] = part
+
         for data_row in data:
-            # TODO: Download related objects
-            print(data_row, groomed_shapes)
+            if data_row['name'] in original_shapes:
+                shape_key = [key for key in data_row.keys() if 'shape' in key][0]
+                shape_file = original_shapes[data_row['name']].file
+                if shape_file:
+                    destination = '/'.join(data_row[shape_key].split('/')[:-1])
+                    shape_file.download(path / destination)
+                print(path / data_row[shape_key])
+
+            if data_row['name'] in groomed_shapes:
+                groomed_key = [key for key in data_row.keys() if 'groomed' in key][0]
+                groomed_file = groomed_shapes[data_row['name']].file
+                if groomed_file:
+                    destination = '/'.join(data_row[groomed_key].split('/')[:-1])
+                    groomed_file.download(path / destination)
+
+            if data_row['name'] in particles:
+                local_key = [key for key in data_row.keys() if 'local_particles' in key][0]
+                world_key = [key for key in data_row.keys() if 'world_particles' in key][0]
+                local_file = particles[data_row['name']].local
+                world_file = particles[data_row['name']].world
+                if local_file:
+                    destination = '/'.join(data_row[local_key].split('/')[:-1])
+                    local_file.download(path / destination)
+                if world_file:
+                    destination = '/'.join(data_row[world_key].split('/')[:-1])
+                    world_file.download(path / destination)
 
 
 ProjectFileIO.update_forward_refs()

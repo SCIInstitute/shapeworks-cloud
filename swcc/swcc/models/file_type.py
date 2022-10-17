@@ -122,6 +122,7 @@ class FileType(Generic[FieldId]):
         with path.open('wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
+        self.path = path
         return path
 
     @property

@@ -22,9 +22,48 @@ class Dataset(TimeStampedModel, models.Model):
     # FK to another table?
     publications = models.TextField(blank=True, default='')
 
-    def get_contents(self):
-        # TODO
-        return []
+    def get_contents(self, project=None):
+        ret = []
+        if not project:
+            project = Project.objects.filter(dataset=self).first()
+
+        def truncate_filename(filename):
+            return filename.split('/')[-1]
+
+        def record_shape(shape, groomed, particles):
+            ret.append(
+                {
+                    'name': shape.subject.name,
+                    'shape_1': truncate_filename(shape.file.name),
+                    'groomed_1': 'groomed/' + truncate_filename(groomed.file.name)
+                    if groomed
+                    else '',
+                    'local_particles_1': 'particles/' + truncate_filename(particles.local.name)
+                    if particles
+                    else '',
+                    'world_particles_1': 'particles/' + truncate_filename(particles.world.name)
+                    if particles
+                    else '',
+                    'alignment_1': '',
+                    'procrustes_1': '',
+                }
+            )
+
+        def safe_get(model, **kwargs):
+            try:
+                return model.objects.get(**kwargs)
+            except model.DoesNotExist:
+                return None
+
+        for shape in Segmentation.objects.filter(subject__dataset=self):
+            groomed = safe_get(GroomedSegmentation, segmentation=shape, project=project)
+            particles = safe_get(OptimizedParticles, groomed_segmentation=groomed, project=project)
+            record_shape(shape, groomed, particles)
+        for shape in Mesh.objects.filter(subject__dataset=self):
+            groomed = safe_get(GroomedMesh, mesh=shape, project=project)
+            particles = safe_get(OptimizedParticles, groomed_mesh=groomed, project=project)
+            record_shape(shape, groomed, particles)
+        return ret
 
 
 class Subject(TimeStampedModel, models.Model):
@@ -75,11 +114,11 @@ class Project(TimeStampedModel, models.Model):
     keywords = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
-    last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.PROTECT, null=True)
+    last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.SET_NULL, null=True)
 
     def create_new_file(self):
         file_contents = {
-            'data': self.dataset.get_contents(),
+            'data': self.dataset.get_contents(self),
             'groom': {},
             'optimize': {},
         }
@@ -94,10 +133,9 @@ class GroomedSegmentation(TimeStampedModel, models.Model):
     pre_cropping = S3FileField(null=True)
     pre_alignment = S3FileField(null=True)
 
-    segmentation = models.OneToOneField(
+    segmentation = models.ForeignKey(
         Segmentation,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='groomed',
     )
 
@@ -114,10 +152,9 @@ class GroomedMesh(TimeStampedModel, models.Model):
     pre_cropping = S3FileField(null=True)
     pre_alignment = S3FileField(null=True)
 
-    mesh = models.OneToOneField(
+    mesh = models.ForeignKey(
         Mesh,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='groomed',
     )
 

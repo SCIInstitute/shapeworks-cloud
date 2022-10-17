@@ -51,8 +51,14 @@ export default defineComponent({
         const renderData = ref<Record<string, ShapeData[]>>({});
 
         onMounted(async () => {
-            await loadDataset(props.dataset);
-            await loadProjectForDataset(props.project, props.dataset);
+            try {
+                await loadDataset(props.dataset);
+                await loadProjectForDataset(props.project, props.dataset);
+            } catch(e) {
+                router.push({
+                    name: 'select'
+                })
+            }
         })
 
         async function toSelectPage() {
@@ -221,7 +227,7 @@ export default defineComponent({
 
         <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">
             <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
-            <template>
+            <template v-else>
                 <shape-viewer
                     :data="renderData"
                     :rows="rows"

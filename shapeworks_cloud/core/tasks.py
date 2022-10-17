@@ -107,7 +107,8 @@ def run_shapeworks_command(
             # TODO: raise _err to user if not empty
             print(_out, _err)
 
-            with open(Path(download_dir, project_filename), 'r') as f:
+            result_filename = 'analysis.json' if command == 'analyze' else project_filename
+            with open(Path(download_dir, result_filename), 'r') as f:
                 result_data = json.load(f)
             post_command_function(project, download_dir, result_data, project_filename)
 
@@ -219,8 +220,6 @@ def analyze(user_id, project_id):
         ).delete()
         models.CachedAnalysisMode.objects.filter(cachedanalysis__project=project).delete()
         models.CachedAnalysis.objects.filter(project=project).delete()
-        print('deleted previous results')
-        print(models.CachedAnalysis.objects.count())
 
     def post_command_function(project, download_dir, result_data, project_filename):
         project_fileio = ProjectFileIO(project=SWCCProject.from_id(project.id))
@@ -229,6 +228,10 @@ def analyze(user_id, project_id):
         )
         project.last_cached_analysis = models.CachedAnalysis.objects.get(id=swcc_cached_analysis.id)
         project.save()
+
+        # [['sample_0_0.vtk'], ['sample_1_0.vtk'], ['sample_2_0.vtk'], ['sample_3_0.vtk']]
+        # how can we tell which file belongs to each optimized particles object?
+        print(result_data['reconstructed_samples'])
 
     run_shapeworks_command(
         user_id, project_id, None, 'analyze', pre_command_function, post_command_function

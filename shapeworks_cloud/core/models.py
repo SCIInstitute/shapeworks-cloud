@@ -182,3 +182,13 @@ class OptimizedParticles(TimeStampedModel, models.Model):
         blank=True,
         null=True,
     )
+
+
+class ReconstructedSample(TimeStampedModel, models.Model):
+    file = S3FileField()
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='reconstructed_samples'
+    )
+    particles = models.ForeignKey(
+        OptimizedParticles, on_delete=models.CASCADE, related_name='reconstructed_samples'
+    )

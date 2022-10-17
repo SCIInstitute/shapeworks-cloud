@@ -13,6 +13,7 @@ from rest_framework.authtoken.models import Token
 from shapeworks_cloud.core import models
 from swcc.api import swcc_session
 from swcc.models import Project as SWCCProject
+from swcc.models.project import ProjectFileIO
 
 
 def edit_swproj_section(filename, section_name, new_df):
@@ -74,25 +75,30 @@ def run_shapeworks_command(
 
             pre_command_function()
 
-            # write the form data to the project file
-            form_df = pandas.DataFrame(
-                list(form_data.items()),
-                columns=['key', 'value'],
-            )
-            form_df = interpret_form_df(form_df, command)
-            edit_swproj_section(
-                Path(download_dir, project_filename),
-                command,
-                form_df,
-            )
+            if form_data:
+                # write the form data to the project file
+                form_df = pandas.DataFrame(
+                    list(form_data.items()),
+                    columns=['key', 'value'],
+                )
+                form_df = interpret_form_df(form_df, command)
+                edit_swproj_section(
+                    Path(download_dir, project_filename),
+                    command,
+                    form_df,
+                )
 
             # perform command
+            full_command = [
+                '/opt/shapeworks/bin/shapeworks',
+                command,
+                f'--name={project_filename}',
+            ]
+            if command == 'analyze':
+                full_command.append('--output=analysis.json')
+
             process = Popen(
-                [
-                    '/opt/shapeworks/bin/shapeworks',
-                    command,
-                    f'--name={project_filename}',
-                ],
+                full_command,
                 cwd=download_dir,
                 stdout=PIPE,
                 stderr=PIPE,
@@ -102,8 +108,8 @@ def run_shapeworks_command(
             print(_out, _err)
 
             with open(Path(download_dir, project_filename), 'r') as f:
-                project_data = json.load(f)
-            post_command_function(project, download_dir, project_data, project_filename)
+                result_data = json.load(f)
+            post_command_function(project, download_dir, result_data, project_filename)
 
 
 @shared_task
@@ -113,7 +119,7 @@ def groom(user_id, project_id, form_data):
         models.GroomedSegmentation.objects.filter(project=project_id).delete()
         models.GroomedMesh.objects.filter(project=project_id).delete()
 
-    def post_command_function(project, download_dir, project_data, project_filename):
+    def post_command_function(project, download_dir, result_data, project_filename):
         # save project file changes to database
         project.file.save(
             project_filename,
@@ -125,7 +131,7 @@ def groom(user_id, project_id, form_data):
             subject__dataset__id=project.dataset.id
         )
         project_meshes = models.Mesh.objects.filter(subject__dataset__id=project.dataset.id)
-        for row in project_data['data']:
+        for row in result_data['data']:
             source_filename = row['shape_1'].split('/')[-1]
             result_file = Path(download_dir, row['groomed_1'])
             try:
@@ -160,7 +166,7 @@ def optimize(user_id, project_id, form_data):
         # delete any previous results
         models.OptimizedParticles.objects.filter(project=project_id).delete()
 
-    def post_command_function(project, download_dir, project_data, project_filename):
+    def post_command_function(project, download_dir, result_data, project_filename):
         # save project file changes to database
         project.file.save(
             project_filename,
@@ -170,7 +176,7 @@ def optimize(user_id, project_id, form_data):
         # make new objects in database
         project_groomed_segmentations = models.GroomedSegmentation.objects.filter(project=project)
         project_groomed_meshes = models.GroomedMesh.objects.filter(project=project)
-        for row in project_data['data']:
+        for row in result_data['data']:
             groomed_filename = row['groomed_1'].split('/')[-1]
             target_segmentation = project_groomed_segmentations.filter(
                 file__endswith=groomed_filename,
@@ -198,4 +204,32 @@ def optimize(user_id, project_id, form_data):
 
     run_shapeworks_command(
         user_id, project_id, form_data, 'optimize', pre_command_function, post_command_function
+    )
+
+    analyze.delay(user_id, project_id)
+
+
+@shared_task
+def analyze(user_id, project_id):
+    def pre_command_function():
+        # delete any previous results
+        project = models.Project.objects.get(id=project_id)
+        models.CachedAnalysisModePCA.objects.filter(
+            cachedanalysismode__cachedanalysis__project=project
+        ).delete()
+        models.CachedAnalysisMode.objects.filter(cachedanalysis__project=project).delete()
+        models.CachedAnalysis.objects.filter(project=project).delete()
+        print('deleted previous results')
+        print(models.CachedAnalysis.objects.count())
+
+    def post_command_function(project, download_dir, result_data, project_filename):
+        project_fileio = ProjectFileIO(project=SWCCProject.from_id(project.id))
+        swcc_cached_analysis = project_fileio.load_analysis_from_json(
+            Path(download_dir, 'analysis.json')
+        )
+        project.last_cached_analysis = models.CachedAnalysis.objects.get(id=swcc_cached_analysis.id)
+        project.save()
+
+    run_shapeworks_command(
+        user_id, project_id, None, 'analyze', pre_command_function, post_command_function
     )

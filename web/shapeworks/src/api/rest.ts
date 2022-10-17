@@ -20,6 +20,10 @@ export async function getProjectsForDataset(datasetId: number): Promise<Project[
     return (await apiClient.get(`/projects?dataset=${datasetId}`)).data?.results
 }
 
+export async function refreshProject(projectId: number){
+    return (await apiClient.get(`/projects/${projectId}`)).data
+}
+
 export async function getSubject(subjectId: number): Promise<Subject>{
     return (await apiClient.get(`/subjects/${subjectId}`)).data
 }

@@ -7,6 +7,7 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
+from django.db.models import Q
 import pandas
 from rest_framework.authtoken.models import Token
 
@@ -215,6 +216,7 @@ def analyze(user_id, project_id):
     def pre_command_function():
         # delete any previous results
         project = models.Project.objects.get(id=project_id)
+        models.ReconstructedSample.objects.filter(project=project).delete()
         models.CachedAnalysisModePCA.objects.filter(
             cachedanalysismode__cachedanalysis__project=project
         ).delete()
@@ -229,9 +231,26 @@ def analyze(user_id, project_id):
         project.last_cached_analysis = models.CachedAnalysis.objects.get(id=swcc_cached_analysis.id)
         project.save()
 
-        # [['sample_0_0.vtk'], ['sample_1_0.vtk'], ['sample_2_0.vtk'], ['sample_3_0.vtk']]
-        # how can we tell which file belongs to each optimized particles object?
-        print(result_data['reconstructed_samples'])
+        with open(Path(download_dir, project_filename)) as pf:
+            project_data = json.load(pf)['data']
+            for i, sample in enumerate(project_data):
+                reconstructed_filenames = result_data['reconstructed_samples'][i]
+                particles = models.OptimizedParticles.objects.filter(
+                    project=project
+                ).filter(
+                    Q(groomed_mesh__mesh__subject__name=sample['name']) |
+                    Q(groomed_segmentation__segmentation__subject__name=sample['name'])
+                ).first()
+                for reconstructed_filename in reconstructed_filenames:
+                    reconstructed = models.ReconstructedSample(
+                        project=project,
+                        particles=particles
+                    )
+                    reconstructed.file.save(
+                        reconstructed_filename,
+                        open(Path(download_dir, reconstructed_filename), 'rb')
+                    )
+                    reconstructed.save()
 
     run_shapeworks_command(
         user_id, project_id, None, 'analyze', pre_command_function, post_command_function

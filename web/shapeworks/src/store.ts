@@ -1,9 +1,10 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
-import { DataObject, Dataset, Subject, Particles, GroomedShape, Project } from '@/types'
+import { DataObject, Dataset, Subject, Particles, GroomedShape, Project, ReconstructedSample } from '@/types'
 import {
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
     getProjectsForDataset,
+    getReconstructedSamplesForProject,
     groomProject, optimizeProject
 } from '@/api/rest';
 import { ref } from '@vue/composition-api'
@@ -27,6 +28,8 @@ export const selectedDataObjects = ref<DataObject[]>([])
 export const orientationIndicator = ref<vtkAnnotatedCubeActor>(vtkAnnotatedCubeActor.newInstance())
 
 export const particleSize = ref<number>(2)
+
+export const reconstructionsForOriginalDataObjects = ref<ReconstructedSample[]>([])
 
 export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles>>>({})
 
@@ -52,7 +55,9 @@ export const layers = ref<Record<string, any>[]>([
         name: 'Reconstructed',
         color: 'red',
         rgb: [1, 0, 0],
-        available: () => false,
+        available: () => {
+            return reconstructionsForOriginalDataObjects.value?.length > 0
+        },
     },
     {
         name: 'Particles',
@@ -115,6 +120,14 @@ export const loadGroomedShapeForObject = async (type: string, id: number) => {
         groomedShapesForOriginalDataObjects.value[type] = {}
     }
     groomedShapesForOriginalDataObjects.value[type][id] = groomed
+}
+
+export const loadReconstructedSamplesForProject = async (type: string, id: number) => {
+    if (selectedProject.value){
+        reconstructionsForOriginalDataObjects.value = await getReconstructedSamplesForProject(
+            type, id, selectedProject.value?.id
+        )
+    }
 }
 
 export function jobAlreadyDone(action: string): Boolean {
@@ -214,6 +227,30 @@ export async function pollJobResults(action: string): Promise<string | undefined
             }
             break;
         case 'analyze':
+            targetStorage = reconstructionsForOriginalDataObjects
+            testFunction = async (type: string, id: number) => {
+                if (reconstructionsForOriginalDataObjects.value.length < 0){
+                    const knownIds = reconstructionsForOriginalDataObjects.value.map(
+                        (sample) => sample.id
+                    )
+                    return (await getReconstructedSamplesForProject(
+                        type, id, selectedProject.value?.id
+                    )).filter(
+                        (result: ReconstructedSample) => {
+                            // only consider updated objects as successful results
+                            !knownIds.includes(result.id)
+                        }
+                    )
+                } else {
+                    return await getReconstructedSamplesForProject(
+                        type, id, selectedProject.value?.id
+                    )
+                }
+            }
+            loadFunction = loadReconstructedSamplesForProject
+            successFunction = () => {
+                if(!layersShown.value.includes('Reconstructed')) layersShown.value.push('Reconstructed')
+            }
             break;
         default:
             break;
@@ -222,12 +259,19 @@ export async function pollJobResults(action: string): Promise<string | undefined
     if(testObject && targetStorage && testFunction && loadFunction && successFunction) {
         resultsFound = (await testFunction(testObject.type, testObject.id)).length > 0
         if(resultsFound) {
-            targetStorage.value = {}
-            await Promise.all(allDataObjectsInDataset.value.map(
-                (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
-            ))
-            if(successFunction) successFunction()
-            return `Received results for ${action} job.`
+            if (action !== 'analyze'){
+                targetStorage.value = {}
+                await Promise.all(allDataObjectsInDataset.value.map(
+                    (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
+                ))
+                if(successFunction) successFunction()
+                return `Received results for ${action} job.`
+            } else {
+                targetStorage.value = []
+                await loadFunction(undefined, undefined, selectedProject.value?.id)
+                if(successFunction) successFunction()
+                return `Received reconstructed geometries after successful optimization.`
+            }
         }
     } else {
         return `Error polling for ${action} results. Try refreshing the page.`

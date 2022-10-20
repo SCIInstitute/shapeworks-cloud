@@ -40,6 +40,7 @@ export default defineComponent({
         const showSubmissionConfirmation = ref(false);
         const messages = ref('');
         const resultsPoll = ref();
+        const reconstructionsPoll = ref();
         const alreadyDone = ref(jobAlreadyDone(props.form))
 
         async function fetchFormSchema() {
@@ -99,6 +100,21 @@ export default defineComponent({
                     },
                     5000,
                 )
+                if(props.form === 'optimize'){
+                    reconstructionsPoll.value = setInterval(
+                        async () => {
+                            const pollMessage = await pollJobResults('analyze')
+                            if(pollMessage){
+                                messages.value = pollMessage
+                                setTimeout(() => messages.value = '', 5000)
+                                clearInterval(reconstructionsPoll.value)
+                                reconstructionsPoll.value = undefined
+                                context.emit("change")
+                            }
+                        },
+                        5000,
+                    )
+                }
             } else {
                 messages.value = `Failed to submit ${props.form} job.`
                 setTimeout(() => messages.value = '', 5000)

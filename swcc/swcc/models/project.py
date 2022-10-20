@@ -84,9 +84,9 @@ class ProjectFileIO(BaseModel, FileIO):
         for entry in data:
             entry_values = {}
             for key in entry.keys():
-                prefix = [p for p in expected_key_prefixes if key.startswith(p)]
-                prefix = prefix[0] if len(prefix) > 0 else 'shape'
-                entry_values[prefix] = entry[key]
+                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
+                if len(prefixes) > 0:
+                    entry_values[prefixes[0]] = entry[key]
             self.interpret_data_row(
                 segmentations,
                 meshes,

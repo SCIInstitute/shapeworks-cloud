@@ -32,6 +32,7 @@ router.register(
     rest.CachedAnalysisModePCAViewSet,
     basename='cached_analysis_mode_pca',
 )
+router.register('reconstructed-samples', rest.ReconstructedSampleViewSet, basename='reconstructed_sample')
 
 
 # OpenAPI generation

@@ -119,17 +119,20 @@ class OptimizedParticlesSerializer(serializers.ModelSerializer):
     local = S3FileSerializerField()
     transform = S3FileSerializerField()
     constraints = S3FileSerializerField(required=False, allow_null=True)
-    groomed_mesh = GroomedMeshSerializer(required=False, allow_null=True)
-    groomed_segmentation = GroomedSegmentationSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.OptimizedParticles
         fields = '__all__'
 
 
+class OptimizedParticlesReadSerializer(OptimizedParticlesSerializer):
+    groomed_mesh = GroomedMeshSerializer(required=False, allow_null=True)
+    groomed_segmentation = GroomedSegmentationSerializer(required=False, allow_null=True)
+
+
 class ReconstructedSampleSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
-    particles = OptimizedParticlesSerializer(required=False)
+    particles = OptimizedParticlesReadSerializer(required=False)
 
     class Meta:
         model = models.ReconstructedSample

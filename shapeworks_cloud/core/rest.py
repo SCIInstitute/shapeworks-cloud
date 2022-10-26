@@ -57,7 +57,6 @@ class DatasetViewSet(BaseViewSet):
             name=form_data.get('name') or dataset.name,
             description=form_data.get('description') or dataset.description,
             keywords=form_data.get('keywords') or dataset.keywords,
-
             # the following attributes are inherited directly
             license=dataset.license,
             acknowledgement=dataset.acknowledgement,
@@ -68,8 +67,7 @@ class DatasetViewSet(BaseViewSet):
         for datum in selected:
             target_subject = models.Subject.objects.get(id=datum['subject'])
             new_subject = models.Subject.objects.create(
-                name=target_subject.name,
-                dataset=new_dataset
+                name=target_subject.name, dataset=new_dataset
             )
             if datum['type'] == 'mesh':
                 target_object = models.Mesh.objects.get(id=datum['id'])

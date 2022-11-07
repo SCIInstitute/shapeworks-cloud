@@ -274,6 +274,7 @@ export default defineComponent({
 .content-area {
     position: relative;
     min-height: calc(100vh - 161px);
+    background-color: #1e1e1e;
 }
 .width-change {
     position: absolute;

@@ -1,10 +1,15 @@
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { setDatasetThumbnail, setProjectThumbnail } from '@/api/rest';
+import { computed, defineComponent, ref } from '@vue/composition-api';
 import {
     particleSize,
     layers,
     layersShown,
     orientationIndicator,
+    selectedDataObjects,
+    selectedDataset,
+    selectedProject,
+    vtkInstance,
 } from '../store';
 
 
@@ -79,6 +84,50 @@ export default defineComponent({
             context.emit("change")
         }
 
+        const thumbnailTarget = computed(() => {
+            if(layersShown.value.length === 1 && layersShown.value[0] === "Original") {
+                // showing only original data object, valid for dataset thumbnail
+                return {
+                    type: 'Dataset',
+                    id: selectedDataset.value?.id
+                }
+            } else {
+                // valid for project thumbnail
+                return {
+                    type: 'Project',
+                    id: selectedProject.value?.id
+                }
+            }
+        })
+
+        async function captureThumbnail() {
+            if(vtkInstance.value) {
+                vtkInstance.value.orientationCube.setEnabled(false)
+                const encoded = (await Promise.all(
+                    // method signature for captureImages is defined as returning void,
+                    // but it returns a list of promises.
+                    // @ts-ignore
+                    vtkInstance.value.renderWindow.captureImages(
+                        "image/png",
+                        {
+                            size: [100, 100]
+                        }
+                    )
+                ))[0] as String
+                const thumbnail = encoded.split(',')[1]
+                if (thumbnailTarget.value.type === 'Dataset') {
+                    if (thumbnailTarget.value.id) {
+                        setDatasetThumbnail(thumbnailTarget.value.id, thumbnail)
+                    }
+                } else {
+                    if (thumbnailTarget.value.id) {
+                        setProjectThumbnail(thumbnailTarget.value.id, thumbnail)
+                    }
+                }
+                vtkInstance.value.orientationCube.setEnabled(true)
+            }
+        }
+
         return {
             particleSize,
             layersShown,
@@ -87,6 +136,9 @@ export default defineComponent({
             axisSystemOptions,
             changeAxisSystem,
             resetView,
+            selectedDataObjects,
+            captureThumbnail,
+            thumbnailTarget
         }
     }
 })
@@ -134,6 +186,13 @@ export default defineComponent({
             label="Axis System"
             style="width: 150px"
         />
+        <v-btn
+            class="my-5"
+            v-if="selectedDataObjects.length === 1"
+            @click="captureThumbnail"
+        >
+            Set {{ thumbnailTarget.type }} thumbnail
+        </v-btn>
         <v-btn
             class="my-5"
             @click="resetView"

@@ -1,6 +1,22 @@
 
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
+import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
+import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
+import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
+import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
+import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
+
+
+export interface VTKInstance {
+    renderWindow: vtkRenderWindow,
+    openglRenderWindow: vtkOpenGLRenderWindow,
+    interactor: vtkRenderWindowInteractor,
+    orientationCube: vtkOrientationMarkerWidget,
+    renderers: vtkRenderer[],
+    pointMappers: vtkMapper[],
+}
 
 
 export interface ShapeData {

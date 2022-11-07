@@ -1,7 +1,7 @@
 import { DataObject, Dataset, Project, Subject } from "@/types";
 import { apiClient } from "./auth";
 import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
-import { loadReconstructedSamplesForProject } from '../store';
+
 
 export async function getDatasets(): Promise<Dataset[]>{
     return (await apiClient.get('/datasets')).data.results
@@ -9,6 +9,18 @@ export async function getDatasets(): Promise<Dataset[]>{
 
 export async function getDataset(datasetId: number): Promise<Dataset>{
     return (await apiClient.get(`/datasets/${datasetId}`)).data
+}
+
+export async function setDatasetThumbnail(datasetId: number, encoding: string) {
+    return (await apiClient.post(`/datasets/${datasetId}/thumbnail/`, {
+        encoding
+    })).data
+}
+
+export async function setProjectThumbnail(projectId: number, encoding: string) {
+    return (await apiClient.post(`/projects/${projectId}/thumbnail/`, {
+        encoding
+    })).data
 }
 
 export async function getSubjectsForDataset(datasetId: number): Promise<Subject[]> {

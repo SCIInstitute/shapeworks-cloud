@@ -36,7 +36,7 @@ import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/Orien
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
-import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType } from '../store';
+import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType, vtkInstance } from '../store';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -130,13 +130,18 @@ export default {
     interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
     interactor.onAnimation(this.syncCameras)
 
+    const orientationCube = this.newOrientationCube(interactor)
+
     this.vtk = {
       renderWindow,
       interactor,
       openglRenderWindow,
+      orientationCube,
       renderers: [],
       pointMappers: [],
     };
+
+    vtkInstance.value = this.vtk
   },
   mounted() {
     const el = this.$refs.vtk;
@@ -161,17 +166,15 @@ export default {
         this.render();
       }
     },
-    updateOrientationCube(){
-      if(this.vtk.interactor){
-        this.orientationCube = vtkOrientationMarkerWidget.newInstance({
+    newOrientationCube(interactor){
+      return vtkOrientationMarkerWidget.newInstance({
           actor: orientationIndicator.value,
-          interactor: this.vtk.interactor,
+          interactor: interactor,
           viewportSize: 0.1,
           minPixelSize: 100,
           maxPixelSize: 300,
           viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
         });
-      }
     },
     initializeCameras(){
       this.initialCameraStates = {
@@ -342,13 +345,13 @@ export default {
       for (let i = 0; i < this.vtk.renderers.length; i += 1) {
         this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
       }
-      if(this.orientationCube) this.orientationCube.setEnabled(false)
+      if(this.vtk.orientationCube) this.vtk.orientationCube.setEnabled(false)
       this.vtk.renderers = [];
       this.vtk.pointMappers = [];
 
       const data = Object.entries(this.data)
       for (let i = 0; i < this.grid.length; i += 1) {
-        let newRenderer = vtkRenderer.newInstance({ background: [0.07, 0.07, 0.07] });
+        let newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
         if(i < data.length){
           this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
         }
@@ -358,10 +361,10 @@ export default {
       }
 
       const targetRenderer = this.vtk.renderers[this.columns - 1]
-      this.updateOrientationCube()
+      this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
       if (targetRenderer) {
-        this.orientationCube.setParentRenderer(targetRenderer)
-        this.orientationCube.setEnabled(true);
+        this.vtk.orientationCube.setParentRenderer(targetRenderer)
+        this.vtk.orientationCube.setEnabled(true);
 
         this.render();
       }

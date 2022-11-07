@@ -1,7 +1,7 @@
-from typing import Dict, Type
 import base64
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Dict, Type
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
@@ -19,13 +19,10 @@ from .tasks import groom, optimize
 def save_thumbnail_image(target, encoded_thumbnail):
     if encoded_thumbnail:
         with TemporaryDirectory() as download_dir:
-            target_path = Path(download_dir) / "thumbnail.png"
-            with open(target_path, "wb") as fh:
+            target_path = Path(download_dir) / 'thumbnail.png'
+            with open(target_path, 'wb') as fh:
                 fh.write(base64.b64decode((encoded_thumbnail)))
-            target.thumbnail.save(
-                "thumbnail.png",
-                open(target_path, 'rb')
-            )
+            target.thumbnail.save('thumbnail.png', open(target_path, 'rb'))
 
 
 class Pagination(PageNumberPagination):

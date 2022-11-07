@@ -52,8 +52,8 @@ export interface DataObject {
 
 export interface Particles {
     id: number,
-    groomed_mesh: number,
-    groomed_segmentation: number,
+    groomed_mesh: GroomedShape,
+    groomed_segmentation: GroomedShape,
     shape_model: number,
     local: string,
     transform: string,
@@ -72,4 +72,11 @@ export interface GroomedShape {
     mesh: number,
     created: string,
     modified: string,
+}
+
+export interface ReconstructedSample {
+    id: number,
+    file: string,
+    project: number,
+    particles: Particles,
 }

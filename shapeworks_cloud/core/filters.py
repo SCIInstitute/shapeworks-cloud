@@ -89,3 +89,11 @@ class OptimizedParticlesFilter(FilterSet):
             'original_segmentation',
             'original_mesh',
         ]
+
+
+class ReconstructedSampleFilter(FilterSet):
+    project = ModelChoiceFilter(queryset=models.Project.objects.all())
+
+    class Meta:
+        models = models.ReconstructedSample
+        fields = ['project']

@@ -123,3 +123,17 @@ class OptimizedParticlesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OptimizedParticles
         fields = '__all__'
+
+
+class OptimizedParticlesReadSerializer(OptimizedParticlesSerializer):
+    groomed_mesh = GroomedMeshSerializer(required=False, allow_null=True)
+    groomed_segmentation = GroomedSegmentationSerializer(required=False, allow_null=True)
+
+
+class ReconstructedSampleSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+    particles = OptimizedParticlesReadSerializer(required=False)
+
+    class Meta:
+        model = models.ReconstructedSample
+        fields = '__all__'

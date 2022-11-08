@@ -1,6 +1,7 @@
 import { DataObject, Dataset, Project, Subject } from "@/types";
 import { apiClient } from "./auth";
 import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
+import { loadReconstructedSamplesForProject } from '../store';
 
 export async function getDatasets(): Promise<Dataset[]>{
     return (await apiClient.get('/datasets')).data.results
@@ -18,6 +19,10 @@ export async function getSubjectsForDataset(datasetId: number): Promise<Subject[
 
 export async function getProjectsForDataset(datasetId: number): Promise<Project[]>{
     return (await apiClient.get(`/projects?dataset=${datasetId}`)).data?.results
+}
+
+export async function refreshProject(projectId: number){
+    return (await apiClient.get(`/projects/${projectId}`)).data
 }
 
 export async function getSubject(subjectId: number): Promise<Subject>{
@@ -57,6 +62,14 @@ export async function getGroomedShapeForDataObject(
     const plural = `${type}${type == 'mesh' ?'es' :'s'}`
     return (await apiClient.get(`/groomed-${plural}`, {
         params: {[type]: id, project: projectId}
+    })).data.results
+}
+
+export async function getReconstructedSamplesForProject(
+    type: string, id: number, projectId: number|undefined
+){
+    return (await apiClient.get(`/reconstructed-samples/`, {
+        params: {project: projectId}
     })).data.results
 }
 

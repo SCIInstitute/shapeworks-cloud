@@ -7,7 +7,8 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { pollJobResults, spawnJob, jobAlreadyDone } from '../store';
+import { pollJobResults, spawnJob, jobAlreadyDone, allDataObjectsInDataset } from '../store';
+import { DataObject } from '../types/index';
 
 Vue.use(Vuetify)
 
@@ -44,7 +45,17 @@ export default defineComponent({
         const alreadyDone = ref(jobAlreadyDone(props.form))
 
         async function fetchFormSchema() {
-            formSchema.value = await (await fetch( `forms/${props.form}.json`)).json()
+            let formName = props.form
+            if(formName === 'groom'){
+                const types = allDataObjectsInDataset.value.map((obj: DataObject) => obj.type)
+                if(types.some((type: string) => type === 'segmentation')) {
+                    formName += '_segmentation'
+                } else {
+                    formName += '_mesh'
+                }
+            }
+
+            formSchema.value = await (await fetch( `forms/${formName}.json`)).json()
             formDefaults.value = defaults(formSchema.value)
         }
         fetchFormSchema()
@@ -152,10 +163,7 @@ export default defineComponent({
                         color="primary"
                     ></v-progress-circular>
                 </div>
-                <div
-                    v-if="props.form !== 'analyze'"
-                    style="display: flex; width: 100%; justify-content: space-between;"
-                >
+                <div style="display: flex; width: 100%; justify-content: space-between;">
                     <v-btn @click="resetForm">Restore defaults</v-btn>
                     <v-btn color="primary" @click="submitForm">
                         {{ alreadyDone ? 're': '' }}{{ props.form }}
@@ -184,10 +192,7 @@ export default defineComponent({
                     </template>
                 </v-jsf>
                 <br />
-                <div
-                    v-if="props.form !== 'analyze'"
-                    style="display: flex; width: 100%; justify-content: space-between;"
-                >
+                <div style="display: flex; width: 100%; justify-content: space-between;">
                     <v-btn @click="resetForm">Restore defaults</v-btn>
                     <v-btn color="primary" @click="submitForm">
                         {{ alreadyDone ? 're': '' }}{{ props.form }}

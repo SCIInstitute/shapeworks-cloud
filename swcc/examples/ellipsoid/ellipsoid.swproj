@@ -1,0 +1,61 @@
+{
+    "data": [
+        {
+            "name": "ellipsoid_00_DT",
+            "shape_1": "./ellipsoid_00_DT.nrrd",
+            "groomed_1": "./groomed/ellipsoid_00_DT.nrrd",
+            "local_particles_1": "./particles/ellipsoid_00_DT_local.particles",
+            "world_particles_1": "./particles/ellipsoid_00_DT_world.particles",
+            "alignment_1": "0.631271 -0.021808 -0.775256 64.795326 0.018402 0.999744 -0.013138 -1.489839 0.775344 -0.005972 0.631511 17.216461 0.000000 0.000000 0.000000 1.000000",
+            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+        },
+        {
+            "name": "ellipsoid_01_DT",
+            "shape_1": "./ellipsoid_01_DT.nrrd",
+            "groomed_1": "./groomed/ellipsoid_01_DT.nrrd",
+            "local_particles_1": "./particles/ellipsoid_01_DT_local.particles",
+            "world_particles_1": "./particles/ellipsoid_01_DT_world.particles",
+            "alignment_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000",
+            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+        },
+        {
+            "name": "ellipsoid_02_DT",
+            "shape_1": "./ellipsoid_02_DT.nrrd",
+            "groomed_1": "./groomed/ellipsoid_02_DT.nrrd",
+            "local_particles_1": "./particles/ellipsoid_02_DT_local.particles",
+            "world_particles_1": "./particles/ellipsoid_02_DT_world.particles",
+            "alignment_1": "0.964157 0.008812 0.265187 -8.142659 -0.011719 0.999887 0.009382 -38.932233 -0.265075 -0.012153 0.964151 19.816476 0.000000 0.000000 0.000000 1.000000",
+            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+        }
+    ],
+    "groom": {
+        "1": {}
+    },
+    "optimize": {
+        "number_of_particles": "32",
+        "use_normals": "0",
+        "normal_weight": "10",
+        "checkpointing_interval": "1000",
+        "keep_checkpoints": "0",
+        "iterations_per_split": "25",
+        "optimization_iterations": "25",
+        "starting_regularization": "10",
+        "ending_regularization": "1",
+        "recompute_regularization_interval": "1",
+        "domains_per_shape": "1",
+        "relative_weighting": "1",
+        "initial_relative_weighting": "0.05",
+        "procrustes_interval": "0",
+        "procrustes_scaling": "0",
+        "save_init_splits": "0",
+        "verbosity": "0",
+        "domain_type": "mesh"
+    },
+    "studio": {},
+    "project": {
+        "version": "2"
+    },
+    "analysis": {},
+    "deepssm": {},
+    "landmarks": []
+}

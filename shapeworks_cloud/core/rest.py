@@ -44,6 +44,41 @@ class DatasetViewSet(BaseViewSet):
     serializer_class = serializers.DatasetSerializer
     filterset_class = filters.DatasetFilter
 
+    @action(
+        detail=True,
+        url_path='subset',
+        url_name='subset',
+        methods=['POST'],
+    )
+    def subset(self, request, **kwargs):
+        dataset = self.get_object()
+        form_data = request.data
+        new_dataset = models.Dataset.objects.create(
+            name=form_data.get('name') or dataset.name,
+            description=form_data.get('description') or dataset.description,
+            keywords=form_data.get('keywords') or dataset.keywords,
+            # the following attributes are inherited directly
+            license=dataset.license,
+            acknowledgement=dataset.acknowledgement,
+            contributors=dataset.contributors,
+            publications=dataset.publications,
+        )
+        selected = form_data.get('selected')
+        for datum in selected:
+            target_subject = models.Subject.objects.get(id=datum['subject'])
+            new_subject = models.Subject.objects.create(
+                name=target_subject.name, dataset=new_dataset
+            )
+            if datum['type'] == 'mesh':
+                target_object = models.Mesh.objects.get(id=datum['id'])
+            elif datum['type'] == 'segmentation':
+                target_object = models.Segmentation.objects.get(id=datum['id'])
+            # clone object with new subject
+            target_object.id = None
+            target_object.subject = new_subject
+            target_object.save()
+        return Response(serializers.DatasetSerializer(new_dataset).data)
+
 
 class SubjectViewSet(BaseViewSet):
     queryset = models.Subject.objects.all().order_by('name')

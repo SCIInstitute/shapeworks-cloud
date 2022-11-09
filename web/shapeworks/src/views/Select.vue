@@ -13,11 +13,13 @@ import {
 import { Dataset, Project } from '@/types';
 import router from '@/router';
 import CreateProject from '@/components/CreateProject.vue';
+import SubsetSelection from '@/components/SubsetSelection.vue';
 
 export default defineComponent({
-  components: { CreateProject },
+  components: { CreateProject, SubsetSelection },
     setup() {
         const deleting = ref();
+        const selectingSubsetOf = ref();
 
         async function getAllDatasets(){
             loadingState.value = true;
@@ -93,6 +95,7 @@ export default defineComponent({
             selectOrDeselectProject,
             deleting,
             deleteProj,
+            selectingSubsetOf,
             loadingState,
         }
     }
@@ -104,6 +107,7 @@ export default defineComponent({
         <div
             v-if="!selectedDataset"
             class="flex-container pa-5"
+            :style="selectingSubsetOf ? 'width: calc(100% - 500px)' : ''"
         >
             <v-card v-if="allDatasets.length === 0 && !loadingState" width="100%">
                 <v-card-title>No datasets.</v-card-title>
@@ -132,6 +136,14 @@ export default defineComponent({
                     @click="() => selectOrDeselectDataset(dataset)"
                 >
                     {{ selectedDataset ?'Deselect' :'Select' }}
+                </v-btn>
+                <v-btn
+                    outlined
+                    rounded
+                    text
+                    @click="() => selectingSubsetOf = dataset"
+                >
+                    Create subset
                 </v-btn>
                 </v-card-actions>
             </v-card>
@@ -221,6 +233,25 @@ export default defineComponent({
             </v-card>
             </v-dialog>
         </div>
+        <v-navigation-drawer
+            right
+            absolute
+            width="500px"
+            :value="selectingSubsetOf !== undefined && !selectedDataset"
+        >
+             <v-btn
+                icon
+                @click.stop="selectingSubsetOf = undefined"
+                class="pa-3 pt-8"
+            >
+                <v-icon>mdi-close</v-icon>
+            </v-btn>
+            <subset-selection
+                :targetDataset="selectingSubsetOf"
+                v-if="selectingSubsetOf"
+                @close="selectingSubsetOf = undefined"
+            />
+        </v-navigation-drawer>
     </div>
 </template>
 
@@ -235,7 +266,7 @@ export default defineComponent({
 }
 .selectable-card{
     width: 275px;
-    padding: 10px 20px 60px 20px;
+    padding: 10px 20px 70px 20px;
 }
 .action-buttons {
     position: absolute;
@@ -244,6 +275,7 @@ export default defineComponent({
     width: calc(100% - 10px);
     display: flex;
     justify-content: space-between;
+    margin-top: 10px;
 }
 .v-list-item__title, .v-list-item__subtitle {
     white-space: normal!important;

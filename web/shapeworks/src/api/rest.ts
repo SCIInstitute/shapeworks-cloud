@@ -11,6 +11,10 @@ export async function getDataset(datasetId: number): Promise<Dataset>{
     return (await apiClient.get(`/datasets/${datasetId}`)).data
 }
 
+export async function subsetDataset(datasetId: number, formData: Object): Promise<Dataset>{
+    return (await apiClient.post(`/datasets/${datasetId}/subset/`, formData)).data
+}
+
 export async function setDatasetThumbnail(datasetId: number, encoding: string) {
     return (await apiClient.post(`/datasets/${datasetId}/thumbnail/`, {
         encoding

@@ -117,7 +117,8 @@ export default {
   },
   beforeDestroy() {
     this.vtk.interactor.unbindEvents();
-    this.vtk.openglRenderWindow.delete();
+    this.vtk.orientationCube.delete();
+    this.vtk.openglRenderWindow.setContainer(null);
   },
   created() {
     const renderWindow = vtkRenderWindow.newInstance();

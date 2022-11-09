@@ -12,7 +12,6 @@ import {
     loadingState,
     loadReconstructedSamplesForProject,
 } from '../store';
-import router from '@/router';
 
 
 export default defineComponent({
@@ -21,8 +20,12 @@ export default defineComponent({
             type: Number,
             required: true,
         },
+        autoSelectAll: {
+            type: Boolean,
+            default: false,
+        }
     },
-    setup() {
+    setup(props) {
         const anatomies = ref<string[]>([]);
         const selectedAnatomies = ref<string[]>([]);
         const selectedSubjects = ref<number[]>([])
@@ -55,6 +58,11 @@ export default defineComponent({
                 groupBy(allDataObjectsInDataset.value, 'anatomy_type')
             ).filter((key) => key !== 'undefined')
             selectedAnatomies.value = anatomies.value;
+            if(props.autoSelectAll){
+                selectedSubjects.value = allSubjectsForDataset.value.map(
+                    (subject: Subject) => subject.id
+                )
+            }
             loadingState.value = false;
         }
 
@@ -69,16 +77,13 @@ export default defineComponent({
 
         onMounted(async () => {
             if(!selectedDataset.value) {
-                router.push({
-                    name: 'select',
-                });
-                return;
+                await fetchData(props.dataset)
+            } else {
+                await fetchData(selectedDataset.value.id)
             }
-            await fetchData(selectedDataset.value.id)
         })
 
         watch(selectedAnatomies, updateSelectedObjects)
-
         watch(selectedSubjects, updateSelectedObjects)
 
         return {

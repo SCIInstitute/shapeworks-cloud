@@ -1,5 +1,5 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
-import { DataObject, Dataset, Subject, Particles, GroomedShape, Project, ReconstructedSample } from '@/types'
+import { DataObject, Dataset, Subject, Particles, GroomedShape, Project, ReconstructedSample, VTKInstance } from '@/types'
 import {
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
@@ -10,6 +10,8 @@ import {
 import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
+
+export const vtkInstance = ref<VTKInstance>()
 
 export const allDatasets = ref<Dataset[]>([])
 

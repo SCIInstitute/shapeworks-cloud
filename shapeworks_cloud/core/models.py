@@ -8,8 +8,8 @@ from s3_file_field import S3FileField
 
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
-
     file = S3FileField(null=True)
+    thumbnail = S3FileField(null=True)
     # FK to another table?
     license = models.TextField()
     description = models.TextField()
@@ -111,6 +111,7 @@ class CachedAnalysis(TimeStampedModel, models.Model):
 
 class Project(TimeStampedModel, models.Model):
     file = S3FileField()
+    thumbnail = S3FileField(null=True)
     keywords = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')

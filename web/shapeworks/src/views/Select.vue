@@ -115,19 +115,30 @@ export default defineComponent({
             <v-card
                 v-for="dataset in allDatasets"
                 :key="'dataset_'+dataset.id"
-                class="selectable-card"
+                :class="dataset.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
                 v-show="!selectedDataset || selectedDataset == dataset"
                 :width="selectedDataset == dataset ? '100%' :''"
             >
                 <div class="text-overline mb-4">
                     DATASET ({{ dataset.created.split('T')[0] }})
                 </div>
-                <v-list-item-title class="text-h5 mb-1">
-                    {{ dataset.name }}
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                    {{ dataset.description }}
-                </v-list-item-subtitle>
+                <div class="card-contents">
+                    <div>
+                        <v-list-item-title class="text-h5 mb-1">
+                            {{ dataset.name }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle>
+                            {{ dataset.description }}
+                        </v-list-item-subtitle>
+                        <div class="text-overline">
+                           {{ dataset.summary }}
+                        </div>
+                    </div>
+                    <div v-if="dataset.thumbnail">
+                        <v-img :src="dataset.thumbnail" width="100"/>
+                    </div>
+                </div>
+
                 <v-card-actions class="action-buttons">
                 <v-btn
                     outlined
@@ -160,7 +171,7 @@ export default defineComponent({
             <v-card
                 v-for="project in allProjectsForDataset"
                 :key="'project_'+project.id"
-                class="selectable-card"
+                :class="project.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
                 v-show="!selectedProject || selectedProject == project"
                 :width="selectedProject == project ? '100%' :''"
             >
@@ -168,15 +179,22 @@ export default defineComponent({
                     PROJECT ({{ project.created.split('T')[0] }})
                     FOR DATASET {{ selectedDataset.id }}
                 </div>
-                <v-list-item-title class="text-h5 mb-1">
-                    Project {{ project.id }}
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                    {{ project.description }}
-                </v-list-item-subtitle>
-                <v-list-item-subtitle>
-                    <i>{{ project.keywords }}</i>
-                </v-list-item-subtitle>
+                <div class="card-contents">
+                    <div>
+                        <v-list-item-title class="text-h5 mb-1">
+                            Project {{ project.id }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle>
+                            {{ project.description }}
+                        </v-list-item-subtitle>
+                        <v-list-item-subtitle>
+                            <i>{{ project.keywords }}</i>
+                        </v-list-item-subtitle>
+                    </div>
+                    <div v-if="project.thumbnail">
+                        <v-img :src="project.thumbnail" width="100"/>
+                    </div>
+                </div>
                 <v-card-actions class="action-buttons">
                 <v-btn
                     outlined
@@ -267,6 +285,13 @@ export default defineComponent({
 .selectable-card{
     width: 275px;
     padding: 10px 20px 70px 20px;
+}
+.card-contents {
+    display: flex;
+    justify-content: space-between;
+}
+.selectable-card.with-thumbnail {
+    width: 375px;
 }
 .action-buttons {
     position: absolute;

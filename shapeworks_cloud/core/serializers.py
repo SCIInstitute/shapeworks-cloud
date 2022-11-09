@@ -58,6 +58,21 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 class DatasetSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField(required=False, allow_null=True)
     projects = ProjectSerializer(required=False, many=True)
+    summary = serializers.SerializerMethodField('get_summary')
+
+    def get_summary(self, obj):
+        summary = ''
+        meshes = models.Mesh.objects.filter(subject__dataset=obj)
+        segmentations = models.Segmentation.objects.filter(subject__dataset=obj)
+        meshes_count = meshes.count()
+        segmentations_count = segmentations.count()
+        if meshes_count > 0:
+            summary += f'{meshes_count} meshes'
+        if meshes_count > 0 and segmentations_count > 0:
+            summary += ', '
+        if segmentations_count > 0:
+            summary += f'{segmentations_count} segmentations'
+        return summary
 
     class Meta:
         model = models.Dataset

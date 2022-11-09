@@ -1,3 +1,6 @@
+import base64
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Dict, Type
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,6 +14,15 @@ from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
 from .tasks import groom, optimize
+
+
+def save_thumbnail_image(target, encoded_thumbnail):
+    if encoded_thumbnail:
+        with TemporaryDirectory() as download_dir:
+            target_path = Path(download_dir) / 'thumbnail.png'
+            with open(target_path, 'wb') as fh:
+                fh.write(base64.b64decode((encoded_thumbnail)))
+            target.thumbnail.save('thumbnail.png', open(target_path, 'rb'))
 
 
 class Pagination(PageNumberPagination):
@@ -43,6 +55,19 @@ class DatasetViewSet(BaseViewSet):
     queryset = models.Dataset.objects.all().order_by('name')
     serializer_class = serializers.DatasetSerializer
     filterset_class = filters.DatasetFilter
+
+    @action(
+        detail=True,
+        url_path='thumbnail',
+        url_name='thumbnail',
+        methods=['POST'],
+    )
+    def set_thumbnail(self, request, **kwargs):
+        dataset = self.get_object()
+        form_data = request.data
+        encoded_thumbnail = form_data.get('encoding')
+        save_thumbnail_image(dataset, encoded_thumbnail)
+        return Response(serializers.DatasetSerializer(dataset).data)
 
     @action(
         detail=True,
@@ -123,6 +148,19 @@ class ProjectViewSet(BaseViewSet):
         return Response(
             serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED
         )
+
+    @action(
+        detail=True,
+        url_path='thumbnail',
+        url_name='thumbnail',
+        methods=['POST'],
+    )
+    def set_thumbnail(self, request, **kwargs):
+        project = self.get_object()
+        form_data = request.data
+        encoded_thumbnail = form_data.get('encoding')
+        save_thumbnail_image(project, encoded_thumbnail)
+        return Response(serializers.ProjectReadSerializer(project).data)
 
     @action(
         detail=True,

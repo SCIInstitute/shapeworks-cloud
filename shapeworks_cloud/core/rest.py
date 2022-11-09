@@ -192,3 +192,13 @@ class CachedAnalysisModeViewSet(BaseViewSet):
 class CachedAnalysisModePCAViewSet(BaseViewSet):
     queryset = models.CachedAnalysisModePCA.objects.all()
     serializer_class = serializers.CachedAnalysisModePCASerializer
+
+
+class ReconstructedSampleViewSet(
+    GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+):
+    queryset = models.ReconstructedSample.objects.all()
+    serializer_class = serializers.ReconstructedSampleSerializer
+    filterset_class = filters.ReconstructedSampleFilter

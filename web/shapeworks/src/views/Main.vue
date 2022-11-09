@@ -17,7 +17,8 @@ import {
     layersShown,
     groomedShapesForOriginalDataObjects,
     selectedProject,
-    loadProjectForDataset
+    loadProjectForDataset,
+    reconstructionsForOriginalDataObjects
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -104,7 +105,30 @@ export default defineComponent({
                                     )
                                   )
                                 }
-                                // TODO include Reconstructed
+                                if(layersShown.value.includes("Reconstructed")){
+                                    const targetReconstruction = reconstructionsForOriginalDataObjects.value.find(
+                                        (reconstructed) => {
+                                            const particles = reconstructed.particles
+                                            let originalId;
+                                            if(dataObject.type === 'mesh'){
+                                                originalId = particles.groomed_mesh.mesh
+                                            } else if (dataObject.type === 'segmentation'){
+                                                originalId = particles.groomed_segmentation.segmentation
+                                            }
+                                            return originalId === dataObject.id
+                                        }
+                                    )
+                                    if (targetReconstruction) {
+                                        const shapeURL = targetReconstruction.file
+                                        shapePromises.push(
+                                            imageReader(
+                                                shapeURL,
+                                                shortFileName(shapeURL),
+                                                "Reconstructed"
+                                            )
+                                        )
+                                    }
+                                }
 
                                 let particleURL;
                                 if(layersShown.value.includes("Particles")){

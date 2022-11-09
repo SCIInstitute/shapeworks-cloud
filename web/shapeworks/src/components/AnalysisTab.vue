@@ -1,11 +1,35 @@
 <script lang="ts">
+import { refreshProject } from '@/api/rest'
+import router from '@/router';
 import { selectedProject } from '@/store'
-import { defineComponent } from '@vue/composition-api'
+import { defineComponent, ref } from '@vue/composition-api'
 
 export default defineComponent({
     setup() {
-        console.log(selectedProject.value?.last_cached_analysis)
+        const analysis = ref(selectedProject.value?.last_cached_analysis)
+
+        async function refresh() {
+            if(!selectedProject.value) {
+                router.push({
+                    name: 'select',
+                });
+                return;
+            }
+            // refresh project last cached analysis
+            const refreshedProject = await refreshProject(selectedProject.value.id)
+            if (refreshedProject) analysis.value = refreshedProject.last_cached_analysis
+            console.log(analysis.value)
+        }
+        refresh()
+
+        return {
+            refresh,
+            analysis,
+        }
     },
+    beforeUpdate() {
+        this.refresh()
+    }
 })
 </script>
 

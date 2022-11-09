@@ -10,6 +10,7 @@ import {
     allDataObjectsInDataset,
     selectedDataObjects,
     loadingState,
+    loadReconstructedSamplesForProject,
 } from '../store';
 
 
@@ -52,6 +53,7 @@ export default defineComponent({
                     )
                 )
             )).flat()
+            loadReconstructedSamplesForProject('', 0)
             anatomies.value = Object.keys(
                 groupBy(allDataObjectsInDataset.value, 'anatomy_type')
             ).filter((key) => key !== 'undefined')

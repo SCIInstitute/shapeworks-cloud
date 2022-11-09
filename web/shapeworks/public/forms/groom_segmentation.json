@@ -232,7 +232,7 @@
                 "remesh_percent": {
                     "type": "number",
                     "default": 75.0,
-                    "title": "Number of vertices",
+                    "title": "Percentage of vertices",
                     "x-display": "custom-conditional",
                     "x-display-if": "(model) => model.section_2.convert_to_mesh && model.section_2.remesh && model.section_2.remesh_percent_mode",
                     "description": "Set the target number of vertices as a percentage of the current number of vertices"

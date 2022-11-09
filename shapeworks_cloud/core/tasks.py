@@ -31,7 +31,7 @@ def edit_swproj_section(filename, section_name, new_df):
 
 
 def interpret_form_df(df, command):
-    if command == 'groom':
+    if command == 'groom' and df['key'].str.contains('anisotropic_').any():
         # consolidate anisotropic values to one row
         anisotropic_values = {
             axis: str(df.loc[df['key'] == 'anisotropic_' + axis].iloc[0]['value'])

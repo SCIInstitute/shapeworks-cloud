@@ -67,7 +67,7 @@ class DatasetViewSet(BaseViewSet):
         form_data = request.data
         encoded_thumbnail = form_data.get('encoding')
         save_thumbnail_image(dataset, encoded_thumbnail)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializers.DatasetSerializer(dataset).data)
 
 
 class SubjectViewSet(BaseViewSet):
@@ -125,7 +125,7 @@ class ProjectViewSet(BaseViewSet):
         form_data = request.data
         encoded_thumbnail = form_data.get('encoding')
         save_thumbnail_image(project, encoded_thumbnail)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializers.ProjectReadSerializer(project).data)
 
     @action(
         detail=True,

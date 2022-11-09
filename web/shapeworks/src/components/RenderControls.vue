@@ -10,6 +10,8 @@ import {
     selectedDataset,
     selectedProject,
     vtkInstance,
+    allDatasets,
+    allProjectsForDataset,
 } from '../store';
 
 
@@ -117,11 +119,21 @@ export default defineComponent({
                 const thumbnail = encoded.split(',')[1]
                 if (thumbnailTarget.value.type === 'Dataset') {
                     if (thumbnailTarget.value.id) {
-                        setDatasetThumbnail(thumbnailTarget.value.id, thumbnail)
+                        let dataset = await setDatasetThumbnail(thumbnailTarget.value.id, thumbnail)
+                        allDatasets.value = allDatasets.value.map((d) => {
+                            if (d.id === dataset.id) return dataset
+                            return d
+                        })
+                        selectedDataset.value = dataset;
                     }
                 } else {
                     if (thumbnailTarget.value.id) {
-                        setProjectThumbnail(thumbnailTarget.value.id, thumbnail)
+                        let project = await setProjectThumbnail(thumbnailTarget.value.id, thumbnail)
+                        allProjectsForDataset.value = allProjectsForDataset.value.map((p) => {
+                            if (p.id === project.id) return project
+                            return p
+                        })
+                        selectedProject.value = project;
                     }
                 }
                 vtkInstance.value.orientationCube.setEnabled(true)

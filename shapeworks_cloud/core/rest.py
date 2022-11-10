@@ -78,8 +78,20 @@ class DatasetViewSet(BaseViewSet):
     def subset(self, request, **kwargs):
         dataset = self.get_object()
         form_data = request.data
+        selected = form_data.get('selected')
+        name = form_data.get('name') or dataset.name + "_subset"
+        if len(selected) < 1:
+            return Response(
+                "Cannot make dataset from empty subset.",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if models.Dataset.objects.filter(name=name).count() > 0:
+            return Response(
+                f"Dataset {name} already exists.",
+                status=status.HTTP_400_BAD_REQUEST
+            )
         new_dataset = models.Dataset.objects.create(
-            name=form_data.get('name') or dataset.name,
+            name=name,
             description=form_data.get('description') or dataset.description,
             keywords=form_data.get('keywords') or dataset.keywords,
             # the following attributes are inherited directly
@@ -88,7 +100,6 @@ class DatasetViewSet(BaseViewSet):
             contributors=dataset.contributors,
             publications=dataset.publications,
         )
-        selected = form_data.get('selected')
         for datum in selected:
             target_subject = models.Subject.objects.get(id=datum['subject'])
             new_subject = models.Subject.objects.create(

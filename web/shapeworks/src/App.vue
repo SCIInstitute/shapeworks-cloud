@@ -2,7 +2,7 @@
 import { defineComponent } from '@vue/composition-api'
 import NavBar from './components/NavBar';
 import { oauthClient } from './api/auth';
-import { loadingState } from './store';
+import { loadingState, currentError } from './store';
 
 export default defineComponent({
     components: {
@@ -16,6 +16,7 @@ export default defineComponent({
             oauthClient,
             logIn,
             loadingState,
+            currentError,
         }
     },
 });
@@ -52,6 +53,27 @@ export default defineComponent({
                 color="white"
                 class="mb-0"
               ></v-progress-linear>
+          </v-card>
+        </v-overlay>
+
+        <v-overlay
+            absolute
+            :value="currentError !== undefined"
+            :opacity="0.8"
+        >
+            <v-card class="pa-5">
+                <v-btn
+                    icon
+                    @click.stop="currentError = undefined"
+                    class="pa-3"
+                    style="float:right"
+                >
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
+                <v-card-title>
+                    Request Error
+                </v-card-title>
+                {{ currentError }}
           </v-card>
         </v-overlay>
     </v-app>

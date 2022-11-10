@@ -38,8 +38,10 @@ export default defineComponent({
                     selected,
                 }
             )
-            allDatasets.value.push(newDataset)
-            context.emit('close')
+            if(newDataset){
+                allDatasets.value.push(newDataset)
+                context.emit('close')
+            }
         }
 
         return {

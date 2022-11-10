@@ -120,20 +120,24 @@ export default defineComponent({
                 if (thumbnailTarget.value.type === 'Dataset') {
                     if (thumbnailTarget.value.id) {
                         let dataset = await setDatasetThumbnail(thumbnailTarget.value.id, thumbnail)
-                        allDatasets.value = allDatasets.value.map((d) => {
-                            if (d.id === dataset.id) return dataset
-                            return d
-                        })
-                        selectedDataset.value = dataset;
+                        if(dataset) {
+                            allDatasets.value = allDatasets.value.map((d) => {
+                                if (d.id === dataset.id) return dataset
+                                return d
+                            })
+                            selectedDataset.value = dataset;
+                        }
                     }
                 } else {
                     if (thumbnailTarget.value.id) {
                         let project = await setProjectThumbnail(thumbnailTarget.value.id, thumbnail)
-                        allProjectsForDataset.value = allProjectsForDataset.value.map((p) => {
-                            if (p.id === project.id) return project
-                            return p
-                        })
-                        selectedProject.value = project;
+                        if(project) {
+                            allProjectsForDataset.value = allProjectsForDataset.value.map((p) => {
+                                if (p.id === project.id) return project
+                                return p
+                            })
+                            selectedProject.value = project;
+                        }
                     }
                 }
                 vtkInstance.value.orientationCube.setEnabled(true)

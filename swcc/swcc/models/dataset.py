@@ -20,8 +20,8 @@ from openpyxl import load_workbook
 from pydantic import BaseModel
 
 from .api_model import ApiModel
-from .file_type import FileType
 from .constants import accepted_shape_prefixes
+from .file_type import FileType
 from .utils import FileIO, NonEmptyString, logger, shape_file_type
 
 

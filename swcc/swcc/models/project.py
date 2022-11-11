@@ -21,6 +21,7 @@ except ImportError:
 from pydantic import BaseModel
 
 from .api_model import ApiModel
+from .constants import accepted_shape_prefixes
 from .dataset import Dataset
 from .file_type import FileType
 from .other_models import (
@@ -34,7 +35,6 @@ from .other_models import (
     Segmentation,
 )
 from .subject import Subject
-from .constants import accepted_shape_prefixes
 from .utils import FileIO, NonEmptyString, shape_file_type
 
 
@@ -87,7 +87,8 @@ class ProjectFileIO(BaseModel, FileIO):
             anatomy_type = 'shape'
             for key in entry.keys():
                 prefixes = [
-                    p for p, accepted in expected_key_prefixes.items()
+                    p
+                    for p, accepted in expected_key_prefixes.items()
                     if any(key.startswith(a) for a in accepted)
                 ]
                 if len(prefixes) > 0:

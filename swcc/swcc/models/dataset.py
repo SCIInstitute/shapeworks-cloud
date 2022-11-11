@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from .api_model import ApiModel
 from .file_type import FileType
+from .constants import accepted_shape_prefixes
 from .utils import FileIO, NonEmptyString, logger, shape_file_type
 
 
@@ -68,8 +69,8 @@ class DataFileIO(BaseModel, FileIO):
         # split each header into ('shape', anatomy_type) and ('image', modality) tuples
         column_info = [header.split('_', 1) for header in headers]
         # at least one shape column must be present
-        if all(info[0] != 'shape' for info in column_info):
-            raise Exception('No "shape_" column specified')
+        if all(info[0] not in accepted_shape_prefixes for info in column_info):
+            raise Exception('No column for original geometry specified')
 
         subjects: Dict[str, Subject] = {}
 
@@ -89,7 +90,7 @@ class DataFileIO(BaseModel, FileIO):
                         subjects[subject_name] = self.dataset.add_subject(subject_name)
                     subject = subjects[subject_name]
 
-                if file_type == 'shape':
+                if file_type in accepted_shape_prefixes:
                     shape_file = file_path
                     if not shape_file.exists():
                         raise Exception(f'Could not find shape file at "{shape_file}"')

@@ -34,6 +34,7 @@ from .other_models import (
     Segmentation,
 )
 from .subject import Subject
+from .constants import accepted_shape_prefixes
 from .utils import FileIO, NonEmptyString, shape_file_type
 
 
@@ -72,24 +73,31 @@ class ProjectFileIO(BaseModel, FileIO):
         }
         meshes = {PurePath(mesh.file.name).stem: mesh for mesh in self.project.dataset.meshes}
 
-        expected_key_prefixes = [
-            'name',
-            'shape',
-            'groomed',
-            'local_particles',
-            'world_particles',
-            'alignment',
-            'procrustes',
-        ]
+        expected_key_prefixes = {
+            'name': ['name'],
+            'shape': accepted_shape_prefixes,
+            'groomed': ['groomed'] + ['groomed_' + x for x in accepted_shape_prefixes],
+            'local_particles': ['local_particles'],
+            'world_particles': ['world_particles'],
+            'alignment': ['alignment'],
+            'procrustes': ['procrustes'],
+        }
         for entry in data:
             entry_values = {}
+            anatomy_type = 'shape'
             for key in entry.keys():
-                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
+                prefixes = [
+                    p for p, accepted in expected_key_prefixes.items()
+                    if any(key.startswith(a) for a in accepted)
+                ]
                 if len(prefixes) > 0:
                     entry_values[prefixes[0]] = entry[key]
+                    if prefixes[0] == 'shape':
+                        anatomy_type = key
             self.interpret_data_row(
                 segmentations,
                 meshes,
+                anatomy_type,
                 Path(str(entry_values.get('shape'))),
                 Path(str(entry_values.get('groomed'))),
                 Path(str(entry_values.get('alignment'))),
@@ -101,6 +109,7 @@ class ProjectFileIO(BaseModel, FileIO):
         self,
         segmentations,
         meshes,
+        anatomy_type,
         shape_file,
         groomed_file,
         alignment_file,
@@ -118,7 +127,7 @@ class ProjectFileIO(BaseModel, FileIO):
                 if not segmentation:
                     segmentation = Segmentation(
                         file=project_root / shape_file,
-                        anatomy_type='shape',
+                        anatomy_type=anatomy_type,
                         subject=Subject(
                             name=shape_file.stem, dataset=self.project.dataset
                         ).create(),
@@ -132,7 +141,7 @@ class ProjectFileIO(BaseModel, FileIO):
                 if not mesh:
                     mesh = Mesh(
                         file=project_root / shape_file,
-                        anatomy_type='shape',
+                        anatomy_type=anatomy_type,
                         subject=Subject(
                             name=shape_file.stem, dataset=self.project.dataset
                         ).create(),

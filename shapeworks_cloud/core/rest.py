@@ -79,17 +79,13 @@ class DatasetViewSet(BaseViewSet):
         dataset = self.get_object()
         form_data = request.data
         selected = form_data.get('selected')
-        name = form_data.get('name') or dataset.name + "_subset"
+        name = form_data.get('name') or dataset.name + '_subset'
         if len(selected) < 1:
             return Response(
-                "Cannot make dataset from empty subset.",
-                status=status.HTTP_400_BAD_REQUEST
+                'Cannot make dataset from empty subset.', status=status.HTTP_400_BAD_REQUEST
             )
         if models.Dataset.objects.filter(name=name).count() > 0:
-            return Response(
-                f"Dataset {name} already exists.",
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(f'Dataset {name} already exists.', status=status.HTTP_400_BAD_REQUEST)
         new_dataset = models.Dataset.objects.create(
             name=name,
             description=form_data.get('description') or dataset.description,

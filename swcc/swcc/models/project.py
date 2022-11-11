@@ -295,33 +295,31 @@ class Project(ApiModel):
                 else None
             ] = part
 
+        def relative_download(file, resolve):
+            if not file:
+                return
+            destination = resolve.replace('../', '').split('/')
+            file.download(path / Path('/'.join(destination[:-1])))
+            print('saved', path, '/'.join(destination))
+
         for data_row in data:
             if data_row['name'] in original_shapes:
                 shape_key = [key for key in data_row.keys() if 'shape' in key][0]
                 shape_file = original_shapes[data_row['name']].file
-                if shape_file:
-                    destination = '/'.join(data_row[shape_key].split('/')[:-1])
-                    shape_file.download(path / destination)
-                print(path / data_row[shape_key])
+                relative_download(shape_file, data_row[shape_key])
 
             if data_row['name'] in groomed_shapes:
                 groomed_key = [key for key in data_row.keys() if 'groomed' in key][0]
                 groomed_file = groomed_shapes[data_row['name']].file
-                if groomed_file:
-                    destination = '/'.join(data_row[groomed_key].split('/')[:-1])
-                    groomed_file.download(path / destination)
+                relative_download(groomed_file, data_row[groomed_key])
 
             if data_row['name'] in particles:
                 local_key = [key for key in data_row.keys() if 'local_particles' in key][0]
                 world_key = [key for key in data_row.keys() if 'world_particles' in key][0]
                 local_file = particles[data_row['name']].local
                 world_file = particles[data_row['name']].world
-                if local_file:
-                    destination = '/'.join(data_row[local_key].split('/')[:-1])
-                    local_file.download(path / destination)
-                if world_file:
-                    destination = '/'.join(data_row[world_key].split('/')[:-1])
-                    world_file.download(path / destination)
+                relative_download(local_file, data_row[local_key])
+                relative_download(world_file, data_row[world_key])
 
 
 ProjectFileIO.update_forward_refs()

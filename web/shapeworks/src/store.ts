@@ -11,6 +11,8 @@ import { ref } from '@vue/composition-api'
 
 export const loadingState = ref<boolean>(false)
 
+export const currentError = ref<string>()
+
 export const vtkInstance = ref<VTKInstance>()
 
 export const allDatasets = ref<Dataset[]>([])

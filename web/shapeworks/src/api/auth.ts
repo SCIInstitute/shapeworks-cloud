@@ -1,5 +1,6 @@
 import axios from 'axios';
 import OauthClient from '@girder/oauth-client';
+import { currentError } from '@/store';
 
 
 export const apiClient = axios.create({
@@ -24,6 +25,14 @@ apiClient.interceptors.request.use((config) => ({
     ...config.headers,
   },
 }));
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    currentError.value = error.response.data;
+    return { data: undefined }
+  }
+)
 
 export const logout = async () => {
   await oauthClient.logout();

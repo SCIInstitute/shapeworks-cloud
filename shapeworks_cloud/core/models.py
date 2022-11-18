@@ -198,7 +198,9 @@ class Landmarks(TimeStampedModel, models.Model):
 class Constraints(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='constraints')
-    optimized_particles = models.ForeignKey(OptimizedParticles, on_delete=models.CASCADE, related_name='constraints')
+    optimized_particles = models.ForeignKey(
+        OptimizedParticles, on_delete=models.CASCADE, related_name='constraints'
+    )
 
 
 class ReconstructedSample(TimeStampedModel, models.Model):

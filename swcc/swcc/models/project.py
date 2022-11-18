@@ -1,7 +1,8 @@
 from __future__ import annotations
-from tempfile import TemporaryDirectory
+
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 try:
     from typing import Any, Dict, Iterator, Literal, Optional, Union
@@ -74,10 +75,7 @@ class ProjectFileIO(BaseModel, FileIO):
             entry_values = {}
             anatomy_type = 'shape'
             for key in entry.keys():
-                prefixes = [
-                    p for p in expected_key_prefixes
-                    if key.startswith(p)
-                ]
+                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
                     entry_values[prefixes[0]] = entry[key]
                     if prefixes[0] == 'shape':
@@ -93,7 +91,9 @@ class ProjectFileIO(BaseModel, FileIO):
         row,
     ):
         def relative_path(filepath):
-            return Path(self.project.file.path.parent, str(filepath).replace('../', '').replace('./', ''))
+            return Path(
+                self.project.file.path.parent, str(filepath).replace('../', '').replace('./', '')
+            )
 
         with TemporaryDirectory() as temp_dir:
 
@@ -107,9 +107,7 @@ class ProjectFileIO(BaseModel, FileIO):
 
             subject = Subject.from_name_and_dataset(row.get('name'), self.project.dataset)
             if not subject:
-                subject = Subject(
-                    name=row.get('name'), dataset=self.project.dataset
-                ).create()
+                subject = Subject(name=row.get('name'), dataset=self.project.dataset).create()
 
             for key, value in row.items():
                 if key == 'shape':
@@ -189,18 +187,14 @@ class ProjectFileIO(BaseModel, FileIO):
                 ).create()
                 if constraints_path:
                     Constraints(
-                        file=constraints_path,
-                        subject=subject,
-                        optimized_particles=particles
+                        file=constraints_path, subject=subject, optimized_particles=particles
                     ).create()
 
     def download_all(self, location):
         def relative_path(filepath):
             return Path(
                 location,
-                str(
-                    '/'.join(filepath.split('/')[:-1])
-                ).replace('../', '').replace('./', '')
+                str('/'.join(filepath.split('/')[:-1])).replace('../', '').replace('./', ''),
             )
 
         def relative_download(file, resolve):
@@ -214,10 +208,7 @@ class ProjectFileIO(BaseModel, FileIO):
         for entry in data:
             row = {}
             for key in entry.keys():
-                prefixes = [
-                    p for p in expected_key_prefixes
-                    if key.startswith(p)
-                ]
+                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
                     row[prefixes[0]] = entry[key]
 

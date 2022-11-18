@@ -25,11 +25,33 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Landmarks',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('file', s3_file_field.fields.S3FileField()),
-                ('subject', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='landmarks', to='core.subject')),
+                (
+                    'subject',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='landmarks',
+                        to='core.subject',
+                    ),
+                ),
             ],
             options={
                 'get_latest_by': 'modified',
@@ -39,12 +61,34 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Contour',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('file', s3_file_field.fields.S3FileField()),
                 ('anatomy_type', models.CharField(max_length=255)),
-                ('subject', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='contours', to='core.subject')),
+                (
+                    'subject',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='contours',
+                        to='core.subject',
+                    ),
+                ),
             ],
             options={
                 'get_latest_by': 'modified',
@@ -54,12 +98,41 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Constraints',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
                 ('file', s3_file_field.fields.S3FileField()),
-                ('optimized_particles', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='constraints', to='core.optimizedparticles')),
-                ('subject', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='constraints', to='core.subject')),
+                (
+                    'optimized_particles',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='constraints',
+                        to='core.optimizedparticles',
+                    ),
+                ),
+                (
+                    'subject',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='constraints',
+                        to='core.subject',
+                    ),
+                ),
             ],
             options={
                 'get_latest_by': 'modified',

@@ -32,6 +32,14 @@ class Mesh(ApiModel):
     subject: Subject
 
 
+class Contour(ApiModel):
+    _endpoint = 'contours'
+
+    file: FileType[Literal['core.Contour.file']]
+    anatomy_type: NonEmptyString
+    subject: Subject
+
+
 class Image(ApiModel):
     _endpoint = 'images'
 
@@ -71,7 +79,21 @@ class OptimizedParticles(ApiModel):
     project: Project
     groomed_segmentation: Optional[GroomedSegmentation]
     groomed_mesh: Optional[GroomedMesh]
-    constraints: Optional[FileType[Literal['core.OptimizedParticles.constraints']]] = None
+
+
+class Landmarks(ApiModel):
+    _endpoint = 'landmarks'
+
+    file: Optional[FileType[Literal['core.Landmarks.file']]]
+    subject: Subject
+
+
+class Constraints(ApiModel):
+    _endpoint = 'constraints'
+
+    file: Optional[FileType[Literal['core.Constraints.file']]]
+    subject: Subject
+    optimized_particles: Optional[OptimizedParticles]
 
 
 class CachedAnalysisModePCA(ApiModel):
@@ -105,7 +127,10 @@ from .subject import Subject  # noqa: E402
 
 Segmentation.update_forward_refs()
 Mesh.update_forward_refs()
+Contour.update_forward_refs()
 Image.update_forward_refs()
 GroomedSegmentation.update_forward_refs()
 GroomedMesh.update_forward_refs()
 OptimizedParticles.update_forward_refs()
+Landmarks.update_forward_refs()
+Constraints.update_forward_refs()

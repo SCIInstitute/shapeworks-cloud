@@ -20,6 +20,7 @@ from openpyxl import load_workbook
 from pydantic import BaseModel
 
 from .api_model import ApiModel
+from .constants import expected_key_prefixes
 from .file_type import FileType
 from .utils import FileIO, NonEmptyString, logger, shape_file_type
 
@@ -67,12 +68,7 @@ class DataFileIO(BaseModel, FileIO):
                 )
         # split each header into ('shape', anatomy_type) and ('image', modality) tuples
         column_info = [header.split('_', 1) for header in headers]
-        # at least one shape column must be present
-        if all(info[0] != 'shape' for info in column_info):
-            raise Exception('No "shape_" column specified')
-
         subjects: Dict[str, Subject] = {}
-
         found = False
         for row in data:
             subject = None
@@ -89,7 +85,7 @@ class DataFileIO(BaseModel, FileIO):
                         subjects[subject_name] = self.dataset.add_subject(subject_name)
                     subject = subjects[subject_name]
 
-                if file_type == 'shape':
+                if file_type in expected_key_prefixes:
                     shape_file = file_path
                     if not shape_file.exists():
                         raise Exception(f'Could not find shape file at "{shape_file}"')
@@ -171,10 +167,28 @@ class Dataset(ApiModel):
                 yield mesh
 
     @property
+    def contours(self) -> Iterator:
+        for subject in self.subjects:
+            for contour in subject.contours:
+                yield contour
+
+    @property
     def images(self) -> Iterator:
         for subject in self.subjects:
             for mesh in subject.images:
                 yield mesh
+
+    @property
+    def landmarks(self) -> Iterator:
+        for subject in self.subjects:
+            for landmark in subject.landmarks:
+                yield landmark
+
+    @property
+    def constraints(self) -> Iterator:
+        for subject in self.subjects:
+            for constraint in subject.constraints:
+                yield constraint
 
     def force_create(self, backup=False):
         """

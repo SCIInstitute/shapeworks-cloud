@@ -41,11 +41,35 @@ class MeshFilter(FilterSet):
         fields = ['subject']
 
 
+class ContourFilter(FilterSet):
+    subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
+
+    class Meta:
+        models = models.Contour
+        fields = ['subject']
+
+
 class ImageFilter(FilterSet):
     subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
 
     class Meta:
         models = models.Image
+        fields = ['subject']
+
+
+class LandmarksFilter(FilterSet):
+    subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
+
+    class Meta:
+        models = models.Landmarks
+        fields = ['subject']
+
+
+class ConstraintsFilter(FilterSet):
+    subject = ModelChoiceFilter(queryset=models.Subject.objects.all())
+
+    class Meta:
+        models = models.Constraints
         fields = ['subject']
 
 

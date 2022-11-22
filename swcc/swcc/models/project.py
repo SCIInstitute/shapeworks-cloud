@@ -105,9 +105,7 @@ class ProjectFileIO(BaseModel, FileIO):
             constraints_path = None
             transform = None
 
-            subject = Subject.from_name_and_dataset(row.get('name'), self.project.dataset)
-            if not subject:
-                subject = Subject(name=row.get('name'), dataset=self.project.dataset).create()
+            subject = Subject(name=row.get('name'), dataset=self.project.dataset).create()
 
             for key, value in row.items():
                 if key == 'shape':

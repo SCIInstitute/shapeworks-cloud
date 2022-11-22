@@ -34,7 +34,7 @@ export interface AnalysisMode {
     id: number,
     mode: number,
     eigen_value: number,
-    expliained_variance: number,
+    explained_variance: number,
     cumulative_explained_variance: number,
     pca_values: AnalysisPCA[],
 }

@@ -12,7 +12,12 @@ export default defineComponent({
 
         const currMode = computed(() => {
             return analysis.value?.modes.find((m) => m.mode == mode.value)
+        })
 
+        const currPCA = computed(() => {
+            return currMode.value?.pca_values.find(
+                p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
+            )
         })
 
         const stdDevRange = computed(() => {
@@ -26,15 +31,28 @@ export default defineComponent({
             ]
         })
 
+        const pcaInfo = computed(() => {
+            return {
+                headers: [
+                    {text: 'key', value: 'key'},
+                    {text: 'value', value: 'value', align: 'end'}
+                ],
+                items: [
+                    {key: 'Lambda', value: currPCA.value?.lambda_value},
+                    {key: 'Eigenvalue', value: currMode.value?.eigen_value},
+                    {key: 'Explained Variance', value: currMode.value?.explained_variance, class: 'percentage'},
+                    {key: 'Cumulative Explained Variance', value: currMode.value?.cumulative_explained_variance, class:'percentage'},
+                ],
+            }
+        })
+
         function updateFileShown() {
             if (analysis.value){
                 let fileShown = undefined
                 if (stdDev.value === 0) {
                     fileShown = analysis.value.mean_shape
                 } else {
-                    fileShown = currMode.value?.pca_values.find(
-                        p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
-                    )?.file
+                    fileShown = currPCA.value?.file
                 }
                 analysisFileShown.value = fileShown;
             }
@@ -54,7 +72,6 @@ export default defineComponent({
             // refresh project last cached analysis
             const refreshedProject = await refreshProject(selectedProject.value.id)
             if (refreshedProject) analysis.value = refreshedProject.last_cached_analysis
-            console.log(analysis.value)
         }
 
         return {
@@ -63,6 +80,7 @@ export default defineComponent({
             mode,
             stdDev,
             stdDevRange,
+            pcaInfo,
             analysisFileShown
         }
     },
@@ -75,6 +93,21 @@ export default defineComponent({
 <template>
     <div class="pa-3">
         Review shape analysis
+        <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+                <v-icon
+                    v-bind="attrs"
+                    v-on="on"
+                >
+                mdi-information
+                </v-icon>
+            </template>
+            <span>
+               <v-subheader>Last analysis run at {{ analysis.modified }}</v-subheader>
+            </span>
+        </v-tooltip>
+
+
          <v-expansion-panels :value="0">
             <v-expansion-panel>
                 <v-expansion-panel-header>
@@ -100,6 +133,14 @@ export default defineComponent({
                             Std. Devs. from Mean
                         </template>
                     </v-slider>
+                    <br/>
+                    <v-data-table
+                        :headers="pcaInfo.headers"
+                        :items="pcaInfo.items"
+                        item-class="class"
+                        hide-default-header
+                        hide-default-footer
+                    />
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel>
@@ -113,3 +154,9 @@ export default defineComponent({
         </v-expansion-panels>
     </div>
 </template>
+
+<style>
+.percentage>.text-end::after {
+    content: ' %'
+}
+</style>

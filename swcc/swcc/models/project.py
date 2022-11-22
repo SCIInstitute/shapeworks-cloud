@@ -91,15 +91,16 @@ class ProjectFileIO(BaseModel, FileIO):
         row,
     ):
         def relative_path(filepath):
+            if not self.project.file.path:
+                return None
             return Path(
                 self.project.file.path.parent, str(filepath).replace('../', '').replace('./', '')
             )
 
         with TemporaryDirectory() as temp_dir:
 
-            original_shape = None
-            original_shape_type = None
-            groomed_shape = None
+            original_shape: Union[Mesh, Segmentation, Contour, None] = None
+            groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
             world_particles_path = None
             local_particles_path = None
             constraints_path = None
@@ -112,14 +113,12 @@ class ProjectFileIO(BaseModel, FileIO):
                     key = shape_file_type(Path(value)).__name__.lower()
 
                 if key == 'mesh':
-                    original_shape_type = 'mesh'
                     original_shape = Mesh(
                         file=relative_path(value),
                         anatomy_type=anatomy_type,
                         subject=subject,
                     ).create()
                 elif key == 'segmentation':
-                    original_shape_type = 'segmentation'
                     original_shape = Segmentation(
                         file=relative_path(value),
                         anatomy_type=anatomy_type,
@@ -127,7 +126,6 @@ class ProjectFileIO(BaseModel, FileIO):
                     ).create()
                     pass
                 elif key == 'contour':
-                    original_shape_type = 'contour'
                     original_shape = Contour(
                         file=relative_path(value),
                         anatomy_type=anatomy_type,
@@ -140,12 +138,12 @@ class ProjectFileIO(BaseModel, FileIO):
                         subject=subject,
                     ).create()
                 elif key == 'groomed':
-                    if original_shape_type == 'mesh':
+                    if type(original_shape) == Mesh:
                         groomed_shape = self.project.add_groomed_mesh(
                             file=relative_path(value),
                             mesh=original_shape,
                         )
-                    elif original_shape_type == 'segmentation':
+                    elif type(original_shape) == Segmentation:
                         groomed_shape = self.project.add_groomed_segmentation(
                             file=relative_path(value),
                             segmentation=original_shape,
@@ -171,9 +169,9 @@ class ProjectFileIO(BaseModel, FileIO):
             if world_particles_path or local_particles_path:
                 groomed_mesh = None
                 groomed_segmentation = None
-                if original_shape_type == 'mesh':
+                if type(original_shape) == Mesh:
                     groomed_mesh = groomed_shape
-                elif original_shape_type == 'segmentation':
+                elif type(original_shape) == Segmentation:
                     groomed_segmentation = groomed_shape
                 particles = OptimizedParticles(
                     world=world_particles_path,
@@ -232,12 +230,12 @@ class ProjectFileIO(BaseModel, FileIO):
                         if str(i.file) == match_name:
                             relative_download(i.file, value)
                 elif key == 'groomed':
-                    for g in self.project.groomed_meshes:
-                        if str(g.file) == match_name:
-                            relative_download(g.file, value)
-                    for g in self.project.groomed_segmentations:
-                        if str(g.file) == match_name:
-                            relative_download(g.file, value)
+                    for gm in self.project.groomed_meshes:
+                        if str(gm.file) == match_name:
+                            relative_download(gm.file, value)
+                    for gs in self.project.groomed_segmentations:
+                        if str(gs.file) == match_name:
+                            relative_download(gs.file, value)
                 elif key == 'local':
                     for p in self.project.particles:
                         if str(p.local) == match_name:

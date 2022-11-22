@@ -18,7 +18,8 @@ import {
     groomedShapesForOriginalDataObjects,
     selectedProject,
     loadProjectForDataset,
-    reconstructionsForOriginalDataObjects
+    reconstructionsForOriginalDataObjects,
+    analysisFileShown
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -72,81 +73,94 @@ export default defineComponent({
         async function refreshRender() {
             renderData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
-            renderData.value = Object.fromEntries(
-                await Promise.all(Object.entries(groupedSelections).map(
-                    async ([subjectId, dataObjects]) => {
-                        let subjectName = subjectId;
-                        if(allSubjectsForDataset.value){
-                            const subject = allSubjectsForDataset.value.find(
-                                (subject) => subject.id.toString() === subjectId
-                            )
-                            if (subject) subjectName = subject.name
-                        }
-                        const shapeDatas = (await Promise.all(dataObjects.map(
-                            (dataObject) => {
-                                const shapePromises = [];
-                                if(layersShown.value.includes("Original")){
-                                  shapePromises.push(
-                                      imageReader(
-                                        dataObject.file,
-                                        shortFileName(dataObject.file),
-                                    )
-                                  )
-                                }
-                                if(layersShown.value.includes("Groomed")){
-                                    const shapeURL = groomedShapesForOriginalDataObjects.value[
-                                        dataObject.type
-                                    ][dataObject.id].file
-                                    shapePromises.push(
-                                      imageReader(
-                                        shapeURL,
-                                        shortFileName(shapeURL),
-                                        "Groomed",
-                                    )
-                                  )
-                                }
-                                if(layersShown.value.includes("Reconstructed")){
-                                    const targetReconstruction = reconstructionsForOriginalDataObjects.value.find(
-                                        (reconstructed) => {
-                                            const particles = reconstructed.particles
-                                            let originalId;
-                                            if(dataObject.type === 'mesh'){
-                                                originalId = particles.groomed_mesh.mesh
-                                            } else if (dataObject.type === 'segmentation'){
-                                                originalId = particles.groomed_segmentation.segmentation
-                                            }
-                                            return originalId === dataObject.id
-                                        }
-                                    )
-                                    if (targetReconstruction) {
-                                        const shapeURL = targetReconstruction.file
-                                        shapePromises.push(
-                                            imageReader(
-                                                shapeURL,
-                                                shortFileName(shapeURL),
-                                                "Reconstructed"
-                                            )
-                                        )
-                                    }
-                                }
-
-                                let particleURL;
-                                if(layersShown.value.includes("Particles")){
-                                    particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
-                                }
-                                return Promise.all([
-                                    Promise.all(shapePromises),
-                                    pointsReader(particleURL)
-                                ])
-                            }
-                        )))
-                        .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
-                        return [
-                            subjectName, shapeDatas
-                        ]
+            if (analysisFileShown.value) {
+                renderData.value = {
+                    "PCA": [{
+                        shape: await imageReader(
+                            analysisFileShown.value,
+                            shortFileName(analysisFileShown.value),
+                        ),
+                        points: await pointsReader(undefined)
                     }
-                )
-            ))
+                    ]
+                }
+            } else {
+                renderData.value = Object.fromEntries(
+                    await Promise.all(Object.entries(groupedSelections).map(
+                        async ([subjectId, dataObjects]) => {
+                            let subjectName = subjectId;
+                            if(allSubjectsForDataset.value){
+                                const subject = allSubjectsForDataset.value.find(
+                                    (subject) => subject.id.toString() === subjectId
+                                )
+                                if (subject) subjectName = subject.name
+                            }
+                            const shapeDatas = (await Promise.all(dataObjects.map(
+                                (dataObject) => {
+                                    const shapePromises = [];
+                                    if(layersShown.value.includes("Original")){
+                                      shapePromises.push(
+                                        imageReader(
+                                            dataObject.file,
+                                            shortFileName(dataObject.file),
+                                        )
+                                      )
+                                    }
+                                    if(layersShown.value.includes("Groomed")){
+                                        const shapeURL = groomedShapesForOriginalDataObjects.value[
+                                            dataObject.type
+                                        ][dataObject.id].file
+                                        shapePromises.push(
+                                          imageReader(
+                                            shapeURL,
+                                            shortFileName(shapeURL),
+                                            "Groomed",
+                                        )
+                                      )
+                                    }
+                                    if(layersShown.value.includes("Reconstructed")){
+                                        const targetReconstruction = reconstructionsForOriginalDataObjects.value.find(
+                                            (reconstructed) => {
+                                                const particles = reconstructed.particles
+                                                let originalId;
+                                                if(dataObject.type === 'mesh'){
+                                                    originalId = particles.groomed_mesh.mesh
+                                                } else if (dataObject.type === 'segmentation'){
+                                                    originalId = particles.groomed_segmentation.segmentation
+                                                }
+                                                return originalId === dataObject.id
+                                            }
+                                        )
+                                        if (targetReconstruction) {
+                                            const shapeURL = targetReconstruction.file
+                                            shapePromises.push(
+                                                imageReader(
+                                                    shapeURL,
+                                                    shortFileName(shapeURL),
+                                                    "Reconstructed"
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    let particleURL;
+                                    if(layersShown.value.includes("Particles")){
+                                        particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
+                                    }
+                                    return Promise.all([
+                                        Promise.all(shapePromises),
+                                        pointsReader(particleURL)
+                                    ])
+                                }
+                            )))
+                            .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
+                            return [
+                                subjectName, shapeDatas
+                            ]
+                        }
+                    )
+                ))
+            }
 
             const n = Object.keys(renderData.value).length;
             const sqrt = Math.ceil(Math.sqrt(n));
@@ -161,6 +175,7 @@ export default defineComponent({
 
         watch(selectedDataObjects, refreshRender)
         watch(layersShown, refreshRender)
+        watch(analysisFileShown, refreshRender)
 
         return {
             mini,
@@ -174,6 +189,7 @@ export default defineComponent({
             refreshRender,
             jobAlreadyDone,
             particleSize,
+            analysisFileShown,
         }
     }
 })
@@ -218,15 +234,15 @@ export default defineComponent({
                 <v-list-item>
                     <v-icon />
                     <v-tabs v-model="tab" fixed-tabs>
-                        <v-tab href="#data">Data</v-tab>
+                        <v-tab href="#data" @click="analysisFileShown = undefined">Data</v-tab>
                         <v-tab-item value="data">
                             <data-list :dataset="dataset"/>
                         </v-tab-item>
-                        <v-tab href="#groom">Groom</v-tab>
+                        <v-tab href="#groom" @click="analysisFileShown = undefined">Groom</v-tab>
                         <v-tab-item value="groom">
                             <tab-form form="groom" @change="refreshRender"/>
                         </v-tab-item>
-                        <v-tab href="#optimize">Optimize</v-tab>
+                        <v-tab href="#optimize" @click="analysisFileShown = undefined">Optimize</v-tab>
                         <v-tab-item value="optimize">
                             <tab-form
                                 form="optimize"
@@ -250,8 +266,7 @@ export default defineComponent({
         </v-card>
 
         <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">
-            <span v-if="selectedDataObjects.length == 0">Select any number of data objects</span>
-            <template v-else>
+            <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
                 <shape-viewer
                     :data="renderData"
                     :rows="rows"
@@ -259,6 +274,7 @@ export default defineComponent({
                     :glyph-size="particleSize"
                 />
             </template>
+            <span v-else>Select any number of data objects</span>
         </div>
     </div>
 </template>

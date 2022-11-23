@@ -101,11 +101,35 @@ class MeshSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ContourSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Contour
+        fields = '__all__'
+
+
 class ImageSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
 
     class Meta:
         model = models.Image
+        fields = '__all__'
+
+
+class LandmarksSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Landmarks
+        fields = '__all__'
+
+
+class ConstraintsSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Constraints
         fields = '__all__'
 
 
@@ -132,7 +156,7 @@ class GroomedMeshSerializer(serializers.ModelSerializer):
 class OptimizedParticlesSerializer(serializers.ModelSerializer):
     world = S3FileSerializerField()
     local = S3FileSerializerField()
-    transform = S3FileSerializerField()
+    transform = S3FileSerializerField(required=False, allow_null=True)
     constraints = S3FileSerializerField(required=False, allow_null=True)
 
     class Meta:

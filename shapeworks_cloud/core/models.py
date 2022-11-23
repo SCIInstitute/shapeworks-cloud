@@ -83,6 +83,12 @@ class Mesh(TimeStampedModel, models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='meshes')
 
 
+class Contour(TimeStampedModel, models.Model):
+    file = S3FileField()
+    anatomy_type = models.CharField(max_length=255)  # choices?
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='contours')
+
+
 class Image(TimeStampedModel, models.Model):
     file = S3FileField()
     modality = models.CharField(max_length=255)  # choices?
@@ -166,8 +172,7 @@ class OptimizedParticles(TimeStampedModel, models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     world = S3FileField()
     local = S3FileField()
-    transform = S3FileField()
-    constraints = S3FileField(null=True)
+    transform = S3FileField(null=True)
 
     groomed_segmentation = models.ForeignKey(
         GroomedSegmentation,
@@ -182,6 +187,19 @@ class OptimizedParticles(TimeStampedModel, models.Model):
         related_name='+',
         blank=True,
         null=True,
+    )
+
+
+class Landmarks(TimeStampedModel, models.Model):
+    file = S3FileField()
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='landmarks')
+
+
+class Constraints(TimeStampedModel, models.Model):
+    file = S3FileField()
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='constraints')
+    optimized_particles = models.ForeignKey(
+        OptimizedParticles, on_delete=models.CASCADE, related_name='constraints'
     )
 
 

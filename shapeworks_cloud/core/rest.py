@@ -130,10 +130,28 @@ class MeshViewSet(BaseViewSet):
     filterset_class = filters.MeshFilter
 
 
+class ContourViewSet(BaseViewSet):
+    queryset = models.Contour.objects.all().order_by('subject')
+    serializer_class = serializers.ContourSerializer
+    filterset_class = filters.ContourFilter
+
+
 class ImageViewSet(BaseViewSet):
     queryset = models.Image.objects.all().order_by('subject')
     serializer_class = serializers.ImageSerializer
     filterset_class = filters.ImageFilter
+
+
+class LandmarksViewSet(BaseViewSet):
+    queryset = models.Landmarks.objects.all().order_by('subject')
+    serializer_class = serializers.LandmarksSerializer
+    filterset_class = filters.LandmarksFilter
+
+
+class ConstraintsViewSet(BaseViewSet):
+    queryset = models.Constraints.objects.all().order_by('subject')
+    serializer_class = serializers.ConstraintsSerializer
+    filterset_class = filters.ConstraintsFilter
 
 
 class ProjectViewSet(BaseViewSet):

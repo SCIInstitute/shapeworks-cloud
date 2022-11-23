@@ -14,6 +14,7 @@ router.register('datasets', rest.DatasetViewSet, basename='dataset')
 router.register('subjects', rest.SubjectViewSet, basename='subject')
 router.register('segmentations', rest.SegmentationViewSet, basename='segmentation')
 router.register('meshes', rest.MeshViewSet, basename='mesh')
+router.register('contours', rest.ContourViewSet, basename='contour')
 router.register('images', rest.ImageViewSet, basename='image')
 router.register('projects', rest.ProjectViewSet, basename='project')
 router.register(
@@ -23,6 +24,8 @@ router.register('groomed-meshes', rest.GroomedMeshViewSet, basename='groomed_mes
 router.register(
     'optimized-particles', rest.OptimizedParticlesViewSet, basename='optimized_particles'
 )
+router.register('landmarks', rest.LandmarksViewSet, basename='landmarks')
+router.register('constraints', rest.ConstraintsViewSet, basename='constraints')
 router.register('cached-analysis', rest.CachedAnalysisViewSet, basename='cached_analysis')
 router.register(
     'cached-analysis-mode', rest.CachedAnalysisModeViewSet, basename='cached_analysis_mode'

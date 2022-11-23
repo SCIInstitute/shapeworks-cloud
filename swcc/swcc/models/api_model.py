@@ -48,7 +48,7 @@ class ApiModel(BaseModel):
             for key, value in cls.__fields__.items():
                 if key in kwargs:
                     json[key] = kwargs[key]
-                elif value.type_ is not Any and issubclass(value.type_, ApiModel):
+                elif json[key] and value.type_ is not Any and issubclass(value.type_, ApiModel):
                     json[key] = value.type_.from_id(json[key])
             cache[id] = cls(**json)
         return cache[id]

@@ -1,0 +1,15 @@
+expected_key_prefixes = [
+    'name',
+    'shape',
+    'mesh',
+    'segmentation',
+    'contour',
+    'image',
+    'groomed',
+    'local',
+    'world',
+    'alignment',
+    'procrustes',
+    'landmarks',
+    'constraints',
+]

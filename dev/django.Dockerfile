@@ -22,8 +22,8 @@ RUN pip install -U pip && \
     pip install --editable /opt/django-project[dev] && \
     pip install --editable /opt/django-project/swcc
 
-RUN curl -L -o /tmp/shapeworks.tgz https://api.github.com/repos/SCIInstitute/ShapeWorks/tarball/dev-linux
-RUN mkdir /opt/shapeworks && \
+RUN curl -L -o /tmp/shapeworks.tgz https://api.github.com/repos/SCIInstitute/ShapeWorks/tarball/dev-linux && \
+    mkdir /opt/shapeworks && \
     tar -zxvf /tmp/shapeworks.tgz -C /opt/shapeworks --strip-components 1 && \
     rm /tmp/shapeworks.tgz
 ENV PATH $PATH:/opt/shapeworks/bin

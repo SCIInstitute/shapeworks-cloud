@@ -14,6 +14,7 @@ from rest_framework.authtoken.models import Token
 from shapeworks_cloud.core import models
 from swcc.api import swcc_session
 from swcc.models import Project as SWCCProject
+from swcc.models.constants import expected_key_prefixes
 from swcc.models.project import ProjectFileIO
 
 
@@ -26,6 +27,10 @@ def edit_swproj_section(filename, section_name, new_df):
         data[section_name]['shape'] = new_contents
     else:
         data[section_name] = new_contents
+    data['data'] = [
+        {k: v.replace('../', '').replace('./', '') for k, v in row.items()}
+        for row in data['data']
+    ]
     with open(filename, 'w') as f:
         json.dump(data, f)
 
@@ -133,9 +138,15 @@ def groom(user_id, project_id, form_data):
             subject__dataset__id=project.dataset.id
         )
         project_meshes = models.Mesh.objects.filter(subject__dataset__id=project.dataset.id)
-        for row in result_data['data']:
-            source_filename = row['shape_1'].split('/')[-1]
-            result_file = Path(download_dir, row['groomed_1'])
+        for entry in result_data['data']:
+            row = {}
+            for key in entry.keys():
+                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
+                if len(prefixes) > 0:
+                    row[prefixes[0]] = entry[key].replace('../', '').replace('./', '')
+
+            source_filename = row['shape'].split('/')[-1]
+            result_file = Path(download_dir, row['groomed'])
             try:
                 target_object = project_segmentations.get(
                     file__endswith=source_filename,
@@ -153,7 +164,7 @@ def groom(user_id, project_id, form_data):
                     mesh=target_object,
                 )
             result_object.file.save(
-                row['groomed_1'],
+                row['groomed'],
                 open(result_file, 'rb'),
             )
 
@@ -178,8 +189,15 @@ def optimize(user_id, project_id, form_data):
         # make new objects in database
         project_groomed_segmentations = models.GroomedSegmentation.objects.filter(project=project)
         project_groomed_meshes = models.GroomedMesh.objects.filter(project=project)
-        for row in result_data['data']:
-            groomed_filename = row['groomed_1'].split('/')[-1]
+
+        for entry in result_data['data']:
+            row = {}
+            for key in entry.keys():
+                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
+                if len(prefixes) > 0:
+                    row[prefixes[0]] = entry[key].replace('../', '').replace('./', '')
+
+            groomed_filename = row['groomed'].split('/')[-1]
             target_segmentation = project_groomed_segmentations.filter(
                 file__endswith=groomed_filename,
             ).first()
@@ -192,16 +210,16 @@ def optimize(user_id, project_id, form_data):
                 project=project,
             )
             result_particles_object.world.save(
-                row['world_particles_1'].split('/')[-1],
-                open(Path(download_dir, row['world_particles_1']), 'rb'),
+                row['world'].split('/')[-1],
+                open(Path(download_dir, row['world']), 'rb'),
             )
             result_particles_object.local.save(
-                row['local_particles_1'].split('/')[-1],
-                open(Path(download_dir, row['local_particles_1']), 'rb'),
+                row['local'].split('/')[-1],
+                open(Path(download_dir, row['local']), 'rb'),
             )
             result_particles_object.transform.save(
-                '.'.join(row['shape_1'].split('/')[-1].split('.')[:-1]) + '.transform',
-                ContentFile(str(row['alignment_1']).encode()),
+                '.'.join(row['shape'].split('/')[-1].split('.')[:-1]) + '.transform',
+                ContentFile(str(row['alignment']).encode()),
             )
 
     run_shapeworks_command(

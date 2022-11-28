@@ -5,7 +5,13 @@ import { analysisFileShown, selectedProject } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 
 export default defineComponent({
-    setup() {
+    props: {
+        currentTab: {
+            type: String,
+            required: true,
+        }
+    },
+    setup(props) {
         const analysis = ref(selectedProject.value?.last_cached_analysis)
         const mode = ref(1);
         const stdDev = ref(0);
@@ -47,20 +53,21 @@ export default defineComponent({
         })
 
         function updateFileShown() {
-            if (analysis.value){
-                let fileShown = undefined
+            let fileShown = undefined
+            if (props.currentTab === 'analyze' && analysis.value){
                 if (stdDev.value === 0) {
                     fileShown = analysis.value.mean_shape
                 } else {
                     fileShown = currPCA.value?.file
                 }
-                analysisFileShown.value = fileShown;
             }
+            analysisFileShown.value = fileShown;
         }
         updateFileShown()
 
         watch(mode, updateFileShown)
         watch(stdDev, updateFileShown)
+        watch(props, updateFileShown)
 
         async function refresh() {
             if(!selectedProject.value) {
@@ -91,7 +98,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <div class="pa-3">
+    <div class="pa-3" v-if="analysis">
         Review shape analysis
         <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
@@ -152,6 +159,9 @@ export default defineComponent({
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>
+    </div>
+    <div class="pa-3" v-else>
+        No analysis generated yet; run the optimization step to generate an analysis.
     </div>
 </template>
 

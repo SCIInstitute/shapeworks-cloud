@@ -234,15 +234,15 @@ export default defineComponent({
                 <v-list-item>
                     <v-icon />
                     <v-tabs v-model="tab" fixed-tabs>
-                        <v-tab href="#data" @click="analysisFileShown = undefined">Data</v-tab>
+                        <v-tab href="#data">Data</v-tab>
                         <v-tab-item value="data">
                             <data-list :dataset="dataset"/>
                         </v-tab-item>
-                        <v-tab href="#groom" @click="analysisFileShown = undefined">Groom</v-tab>
+                        <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">
                             <tab-form form="groom" @change="refreshRender"/>
                         </v-tab-item>
-                        <v-tab href="#optimize" @click="analysisFileShown = undefined">Optimize</v-tab>
+                        <v-tab href="#optimize">Optimize</v-tab>
                         <v-tab-item value="optimize">
                             <tab-form
                                 form="optimize"
@@ -253,7 +253,7 @@ export default defineComponent({
                         </v-tab-item>
                         <v-tab href="#analyze">Analyze</v-tab>
                         <v-tab-item value="analyze">
-                            <analysis-tab @change="refreshRender"/>
+                            <analysis-tab @change="refreshRender" :currentTab="tab || ''"/>
                         </v-tab-item>
                     </v-tabs>
                 </v-list-item>
@@ -262,7 +262,7 @@ export default defineComponent({
         <v-card
             :class="mini ?'px-5 width-change maximize' :'width-change px-5'"
         >
-            <render-controls @change="refreshRender"/>
+            <render-controls @change="refreshRender" :currentTab="tab || ''"/>
         </v-card>
 
         <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">
@@ -272,6 +272,7 @@ export default defineComponent({
                     :rows="rows"
                     :columns="cols"
                     :glyph-size="particleSize"
+                    :currentTab="tab || ''"
                 />
             </template>
             <span v-else>Select any number of data objects</span>

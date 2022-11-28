@@ -73,10 +73,10 @@ export default {
       type: Number,
       required: true,
     },
-  },
-  data() {
-    return {
-    };
+    currentTab: {
+      type: String,
+      required: true,
+    }
   },
   computed: {
     grid() {
@@ -342,6 +342,14 @@ export default {
       renderer.resetCamera();
     },
     renderGrid() {
+      let holdPosition = undefined;
+      let holdViewUp = undefined;
+      if(this.currentTab === 'analyze' && this.vtk.renderers.length > 0){
+        const targetCamera = this.vtk.renderers[0].getActiveCamera()
+        holdPosition = targetCamera.getReferenceByName('position')
+        holdViewUp = targetCamera.getReferenceByName('viewUp')
+      }
+
       this.prepareLabelCanvas();
       for (let i = 0; i < this.vtk.renderers.length; i += 1) {
         this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
@@ -368,6 +376,11 @@ export default {
         this.vtk.orientationCube.setEnabled(true);
 
         this.render();
+      }
+      if(holdPosition && holdViewUp && this.vtk.renderers.length > 0){
+        const targetCamera = this.vtk.renderers[0].getActiveCamera();
+        targetCamera.setPosition(...holdPosition)
+        targetCamera.setViewUp(...holdViewUp)
       }
     },
     render() {

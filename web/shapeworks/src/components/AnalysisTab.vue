@@ -16,6 +16,10 @@ export default defineComponent({
         const mode = ref(1);
         const stdDev = ref(0);
 
+        const modeOptions = computed(() => {
+            return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
+        })
+
         const currMode = computed(() => {
             return analysis.value?.modes.find((m) => m.mode == mode.value)
         })
@@ -84,6 +88,7 @@ export default defineComponent({
         return {
             refresh,
             analysis,
+            modeOptions,
             mode,
             stdDev,
             stdDevRange,
@@ -124,7 +129,7 @@ export default defineComponent({
                     <v-select
                         label="Select mode"
                         v-model="mode"
-                        :items="analysis.modes"
+                        :items="modeOptions"
                         item-text="mode"
                         item-value="mode"
                     />

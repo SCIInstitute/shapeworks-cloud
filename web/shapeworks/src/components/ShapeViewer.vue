@@ -188,11 +188,10 @@ export default {
         this.initialCameraStates.viewUp[`renderer_${index}`] = [...camera.getReferenceByName('viewUp')]
       })
     },
-    syncCameras(animation) {
-      const targetRenderer = animation.pokedRenderer;
-      const targetCamera = targetRenderer.getActiveCamera();
+    getCameraDelta(renderer){
+      const targetCamera = renderer.getActiveCamera();
 
-      const targetRendererID = `renderer_${this.vtk.renderers.indexOf(targetRenderer)}`
+      const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
       const initialPosition = this.initialCameraStates.position[targetRendererID]
       const initialViewUp = this.initialCameraStates.viewUp[targetRendererID]
       const newPosition = targetCamera.getReferenceByName('position')
@@ -205,23 +204,34 @@ export default {
       const viewUpDelta = [...newViewUp].map(
         (num, index) => num - initialViewUp[index]
       )
+      return {
+        positionDelta,
+        viewUpDelta,
+      }
+    },
+    applyCameraDelta(renderer, positionDelta, viewUpDelta){
+      const camera = renderer.getActiveCamera();
+      const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
+      camera.setPosition(
+        ...this.initialCameraStates.position[rendererID].map(
+          (old, index) => old + positionDelta[index]
+        )
+      )
+      camera.setViewUp(
+        ...this.initialCameraStates.viewUp[rendererID].map(
+          (old, index) => old + viewUpDelta[index]
+        )
+      )
+      camera.setClippingRange(0.1, 1000)
+    },
+    syncCameras(animation) {
+      const targetRenderer = animation.pokedRenderer;
+      const { positionDelta, viewUpDelta } = this.getCameraDelta(targetRenderer)
 
       this.vtk.renderers.filter(
         (renderer) => renderer!== targetRenderer
       ).forEach((renderer) => {
-        const camera = renderer.getActiveCamera();
-        const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
-        camera.setPosition(
-          ...this.initialCameraStates.position[rendererID].map(
-            (old, index) => old + positionDelta[index]
-          )
-        )
-        camera.setViewUp(
-          ...this.initialCameraStates.viewUp[rendererID].map(
-            (old, index) => old + viewUpDelta[index]
-          )
-        )
-        camera.setClippingRange(0.1, 1000)
+        this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
       })
     },
     createColorFilter() {
@@ -342,12 +352,10 @@ export default {
       renderer.resetCamera();
     },
     renderGrid() {
-      let holdPosition = undefined;
-      let holdViewUp = undefined;
+      let positionDelta = undefined;
+      let viewUpDelta = undefined;
       if(this.currentTab === 'analyze' && this.vtk.renderers.length === 1){
-        const targetCamera = this.vtk.renderers[0].getActiveCamera()
-        holdPosition = targetCamera.getReferenceByName('position')
-        holdViewUp = targetCamera.getReferenceByName('viewUp')
+        ({ positionDelta, viewUpDelta } = this.getCameraDelta(this.vtk.renderers[0]))
       }
 
       this.prepareLabelCanvas();
@@ -369,6 +377,9 @@ export default {
         this.vtk.renderWindow.addRenderer(newRenderer);
       }
 
+      if(positionDelta && viewUpDelta && this.vtk.renderers.length > 0){
+        this.applyCameraDelta(this.vtk.renderers[0], positionDelta, viewUpDelta)
+      }
       const targetRenderer = this.vtk.renderers[this.columns - 1]
       this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
       if (targetRenderer) {
@@ -376,11 +387,6 @@ export default {
         this.vtk.orientationCube.setEnabled(true);
 
         this.render();
-      }
-      if(holdPosition && holdViewUp && this.vtk.renderers.length > 0){
-        const targetCamera = this.vtk.renderers[0].getActiveCamera();
-        targetCamera.setPosition(...holdPosition)
-        targetCamera.setViewUp(...holdViewUp)
       }
     },
     render() {

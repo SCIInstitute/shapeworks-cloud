@@ -65,6 +65,7 @@ export default defineComponent({
 
         async function toSelectPage() {
             selectedProject.value = undefined;
+            analysisFileShown.value = undefined;
             router.push({
                 name: 'select',
             });

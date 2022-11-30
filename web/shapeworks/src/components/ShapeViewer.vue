@@ -344,7 +344,7 @@ export default {
     renderGrid() {
       let holdPosition = undefined;
       let holdViewUp = undefined;
-      if(this.currentTab === 'analyze' && this.vtk.renderers.length > 0){
+      if(this.currentTab === 'analyze' && this.vtk.renderers.length === 1){
         const targetCamera = this.vtk.renderers[0].getActiveCamera()
         holdPosition = targetCamera.getReferenceByName('position')
         holdViewUp = targetCamera.getReferenceByName('viewUp')

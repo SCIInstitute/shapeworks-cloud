@@ -97,10 +97,12 @@ class ProjectFileIO(BaseModel, FileIO):
                     if len(v) > 0
                 }
 
-            output_data.append([
-                subject,
-                objects_by_domain,
-            ])
+            output_data.append(
+                [
+                    subject,
+                    objects_by_domain,
+                ]
+            )
         return output_data
 
     def create_objects_for_subject(
@@ -218,48 +220,18 @@ class ProjectFileIO(BaseModel, FileIO):
         data = self.load_data(create=False)
 
         download_mappings = {
-            'mesh': [{
-                'set': list(self.project.dataset.meshes),
-                'attr': 'file'
-            }],
-            'segmentation': [{
-                'set': list(self.project.dataset.segmentations),
-                'attr': 'file'
-            }],
-            'contour': [{
-                'set': list(self.project.dataset.contours),
-                'attr': 'file'
-            }],
-            'image': [{
-                'set': list(self.project.dataset.images),
-                'attr': 'file'
-            }],
+            'mesh': [{'set': list(self.project.dataset.meshes), 'attr': 'file'}],
+            'segmentation': [{'set': list(self.project.dataset.segmentations), 'attr': 'file'}],
+            'contour': [{'set': list(self.project.dataset.contours), 'attr': 'file'}],
+            'image': [{'set': list(self.project.dataset.images), 'attr': 'file'}],
             'groomed': [
-                {
-                    'set': list(self.project.groomed_meshes),
-                    'attr': 'file'
-                },
-                {
-                    'set': list(self.project.groomed_segmentations),
-                    'attr': 'file'
-                }
+                {'set': list(self.project.groomed_meshes), 'attr': 'file'},
+                {'set': list(self.project.groomed_segmentations), 'attr': 'file'},
             ],
-            'local': [{
-                'set': list(self.project.particles),
-                'attr': 'local'
-            }],
-            'world': [{
-                'set': list(self.project.particles),
-                'attr': 'world'
-            }],
-            'landmarks': [{
-                'set': list(self.project.dataset.landmarks),
-                'attr': 'file'
-            }],
-            'constraints': [{
-                'set': list(self.project.dataset.constraints),
-                'attr': 'file'
-            }],
+            'local': [{'set': list(self.project.particles), 'attr': 'local'}],
+            'world': [{'set': list(self.project.particles), 'attr': 'world'}],
+            'landmarks': [{'set': list(self.project.dataset.landmarks), 'attr': 'file'}],
+            'constraints': [{'set': list(self.project.dataset.constraints), 'attr': 'file'}],
         }
 
         for [subject, objects_by_domain] in data:

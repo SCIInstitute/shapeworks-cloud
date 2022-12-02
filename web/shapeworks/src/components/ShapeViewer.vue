@@ -36,7 +36,7 @@ import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/Orien
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
-import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType, vtkInstance } from '../store';
+import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType, vtkInstance, analysisFileShown } from '../store';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -73,10 +73,10 @@ export default {
       type: Number,
       required: true,
     },
-  },
-  data() {
-    return {
-    };
+    currentTab: {
+      type: String,
+      required: true,
+    }
   },
   computed: {
     grid() {
@@ -188,11 +188,10 @@ export default {
         this.initialCameraStates.viewUp[`renderer_${index}`] = [...camera.getReferenceByName('viewUp')]
       })
     },
-    syncCameras(animation) {
-      const targetRenderer = animation.pokedRenderer;
-      const targetCamera = targetRenderer.getActiveCamera();
+    getCameraDelta(renderer){
+      const targetCamera = renderer.getActiveCamera();
 
-      const targetRendererID = `renderer_${this.vtk.renderers.indexOf(targetRenderer)}`
+      const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
       const initialPosition = this.initialCameraStates.position[targetRendererID]
       const initialViewUp = this.initialCameraStates.viewUp[targetRendererID]
       const newPosition = targetCamera.getReferenceByName('position')
@@ -205,23 +204,34 @@ export default {
       const viewUpDelta = [...newViewUp].map(
         (num, index) => num - initialViewUp[index]
       )
+      return {
+        positionDelta,
+        viewUpDelta,
+      }
+    },
+    applyCameraDelta(renderer, positionDelta, viewUpDelta){
+      const camera = renderer.getActiveCamera();
+      const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
+      camera.setPosition(
+        ...this.initialCameraStates.position[rendererID].map(
+          (old, index) => old + positionDelta[index]
+        )
+      )
+      camera.setViewUp(
+        ...this.initialCameraStates.viewUp[rendererID].map(
+          (old, index) => old + viewUpDelta[index]
+        )
+      )
+      camera.setClippingRange(0.1, 1000)
+    },
+    syncCameras(animation) {
+      const targetRenderer = animation.pokedRenderer;
+      const { positionDelta, viewUpDelta } = this.getCameraDelta(targetRenderer)
 
       this.vtk.renderers.filter(
         (renderer) => renderer!== targetRenderer
       ).forEach((renderer) => {
-        const camera = renderer.getActiveCamera();
-        const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
-        camera.setPosition(
-          ...this.initialCameraStates.position[rendererID].map(
-            (old, index) => old + positionDelta[index]
-          )
-        )
-        camera.setViewUp(
-          ...this.initialCameraStates.viewUp[rendererID].map(
-            (old, index) => old + viewUpDelta[index]
-          )
-        )
-        camera.setClippingRange(0.1, 1000)
+        this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
       })
     },
     createColorFilter() {
@@ -285,10 +295,12 @@ export default {
           layerName = layerName.length ? layerName[0] : "Original"
           const type = layers.value.find((layer) => layer.name === layerName)
           let opacity = 1;
-          const numLayers = layersShown.value.filter(
-            (layerName) => layers.value.find((layer) => layer.name == layerName).rgb
-          ).length
-          if(numLayers > 0) opacity /= numLayers
+          if (!analysisFileShown){
+            const numLayers = layersShown.value.filter(
+              (layerName) => layers.value.find((layer) => layer.name == layerName).rgb
+            ).length
+            if(numLayers > 0) opacity /= numLayers
+          }
           const cacheLabel = `${label}_${layerName}_${index}`
 
           const mapper = vtkMapper.newInstance({
@@ -342,6 +354,12 @@ export default {
       renderer.resetCamera();
     },
     renderGrid() {
+      let positionDelta = undefined;
+      let viewUpDelta = undefined;
+      if(this.currentTab === 'analyze' && this.vtk.renderers.length === 1){
+        ({ positionDelta, viewUpDelta } = this.getCameraDelta(this.vtk.renderers[0]))
+      }
+
       this.prepareLabelCanvas();
       for (let i = 0; i < this.vtk.renderers.length; i += 1) {
         this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
@@ -361,6 +379,9 @@ export default {
         this.vtk.renderWindow.addRenderer(newRenderer);
       }
 
+      if(positionDelta && viewUpDelta && this.vtk.renderers.length > 0){
+        this.applyCameraDelta(this.vtk.renderers[0], positionDelta, viewUpDelta)
+      }
       const targetRenderer = this.vtk.renderers[this.columns - 1]
       this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
       if (targetRenderer) {

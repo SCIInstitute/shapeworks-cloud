@@ -16,6 +16,12 @@ import {
 
 
 export default defineComponent({
+    props: {
+        currentTab: {
+            type: String,
+            required: true,
+        }
+    },
     setup(props, context) {
         orientationIndicator.value.setDefaultStyle({
             fontStyle: 'bold',
@@ -164,6 +170,7 @@ export default defineComponent({
     <div class="render-control-bar">
         <v-select
             v-model="layersShown"
+            v-if="currentTab !== 'analyze'"
             :items="layers"
             :item-disabled="(layer) => !layer.available()"
             item-value="name"
@@ -186,7 +193,7 @@ export default defineComponent({
         </v-select>
         <v-text-field
             v-model.number="particleSize"
-            v-if="layersShown.includes('Particles')"
+            v-if="currentTab !== 'analyze' && layersShown.includes('Particles')"
             label="Particle Size"
             type="number"
             style="width: 80px"
@@ -204,7 +211,7 @@ export default defineComponent({
         />
         <v-btn
             class="my-5"
-            v-if="selectedDataObjects.length === 1"
+            v-if="currentTab !== 'analyze' && selectedDataObjects.length === 1"
             @click="captureThumbnail"
         >
             Set {{ thumbnailTarget.type }} thumbnail

@@ -5,12 +5,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, List, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
+        List,
         Optional,
         Union,
     )
@@ -81,7 +82,7 @@ class ProjectFileIO(BaseModel, FileIO):
             else:
                 subject = Subject(name=entry.get('name'), dataset=self.project.dataset).create()
 
-            entry_values = {p: [] for p in expected_key_prefixes}
+            entry_values: Dict = {p: [] for p in expected_key_prefixes}
             entry_values['anatomy_types'] = []
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
@@ -219,7 +220,7 @@ class ProjectFileIO(BaseModel, FileIO):
         relative_download(self.project.file, '')
         data = self.load_data(create=False)
 
-        download_mappings = {
+        download_mappings: Dict[str, List] = {
             'mesh': [{'set': list(self.project.dataset.meshes), 'attr': 'file'}],
             'segmentation': [{'set': list(self.project.dataset.segmentations), 'attr': 'file'}],
             'contour': [{'set': list(self.project.dataset.contours), 'attr': 'file'}],
@@ -234,8 +235,8 @@ class ProjectFileIO(BaseModel, FileIO):
             'constraints': [{'set': list(self.project.dataset.constraints), 'attr': 'file'}],
         }
 
-        for [subject, objects_by_domain] in data:
-            for anatomy_type, objects in objects_by_domain.items():
+        for [_s, objects_by_domain] in data:
+            for _a, objects in objects_by_domain.items():
                 for key, value in objects.items():
                     if key == 'shape':
                         key = shape_file_type(Path(value)).__name__.lower()

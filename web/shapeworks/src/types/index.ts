@@ -18,10 +18,38 @@ export interface VTKInstance {
     pointMappers: vtkMapper[],
 }
 
-
 export interface ShapeData {
     points: vtkPolyData,
     shape: vtkPolyData | vtkImageData,
+}
+
+export interface AnalysisPCA {
+    id: number,
+    pca_value: number,
+    file: string,
+    lambda_value: number,
+}
+
+export interface AnalysisMode {
+    id: number,
+    mode: number,
+    eigen_value: number,
+    explained_variance: number,
+    cumulative_explained_variance: number,
+    pca_values: AnalysisPCA[],
+}
+
+export interface AnalysisChart {
+
+}
+
+export interface Analysis {
+    id: number,
+    created: string,
+    modified: string,
+    charts: AnalysisChart[],
+    mean_shape: string,
+    modes: AnalysisMode[],
 }
 
 export interface Project {
@@ -32,7 +60,7 @@ export interface Project {
     keywords: string,
     description: string,
     dataset: number,
-    last_cached_analysis: Object | undefined,
+    last_cached_analysis: Analysis | undefined,
 }
 
 export interface Dataset {

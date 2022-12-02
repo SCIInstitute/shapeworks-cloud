@@ -76,6 +76,8 @@ export const layers = ref<Record<string, any>[]>([
 
 export const layersShown = ref<string[]>(["Original"])
 
+export const analysisFileShown = ref<string>();
+
 export const cachedMarchingCubes = ref({})
 
 export const vtkShapesByType = ref<Record<string, any[]>>({

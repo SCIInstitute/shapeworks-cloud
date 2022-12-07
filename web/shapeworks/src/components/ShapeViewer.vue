@@ -295,7 +295,7 @@ export default {
           layerName = layerName.length ? layerName[0] : "Original"
           const type = layers.value.find((layer) => layer.name === layerName)
           let opacity = 1;
-          if (!analysisFileShown){
+          if (!analysisFileShown.value) {
             const numLayers = layersShown.value.filter(
               (layerName) => layers.value.find((layer) => layer.name == layerName).rgb
             ).length

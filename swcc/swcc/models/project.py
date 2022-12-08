@@ -5,12 +5,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, List, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
+        List,
         Optional,
         Union,
     )
@@ -48,7 +49,7 @@ class ProjectFileIO(BaseModel, FileIO):
     class Config:
         arbitrary_types_allowed = True
 
-    def load_data(self, interpret=True):
+    def load_data(self, create=True):
         if (
             not self.project.file
             or not hasattr(self.project.file, 'path')
@@ -60,35 +61,55 @@ class ProjectFileIO(BaseModel, FileIO):
         if str(file).endswith('xlsx') or str(file).endswith('xlsx'):
             raise NotImplementedError('Convert spreadsheet file to excel before parsing')
         elif str(file).endswith('json') or str(file).endswith('swproj'):
-            return self.load_data_from_json(file, interpret)
+            return self.load_data_from_json(file, create)
         else:
             raise Exception(f'Unknown format for {file} - expected .xlsx, .xls, .swproj, or .json')
 
-    def load_data_from_json(self, file, interpret):
+    def load_data_from_json(self, file, create):
         contents = json.load(open(file))
-        if interpret:
-            self.interpret_data(contents['data'])
-        return contents['data'], contents['optimize']
+        data = self.interpret_data(contents['data'])
+        if create:
+            for [subject, objects_by_domain] in data:
+                self.create_objects_for_subject(subject, objects_by_domain)
+        return data
 
-    def interpret_data(self, data):
-        for entry in data:
-            entry_values = {}
-            anatomy_type = 'shape'
+    def interpret_data(self, input_data):
+        output_data = []
+        for entry in input_data:
+            subjects = [s for s in self.project.dataset.subjects if s.name == entry.get('name')]
+            if len(subjects) > 0:
+                subject = subjects[0]
+            else:
+                subject = Subject(name=entry.get('name'), dataset=self.project.dataset).create()
+
+            entry_values: Dict = {p: [] for p in expected_key_prefixes}
+            entry_values['anatomy_types'] = []
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
-                    entry_values[prefixes[0]] = entry[key]
-                    if prefixes[0] == 'shape':
-                        anatomy_type = key
-            self.create_objects_from_row(
-                anatomy_type,
-                entry_values,
-            )
+                    entry_values[prefixes[0]].append(entry[key])
+                    if prefixes[0] in ['shape', 'mesh', 'segmentation', 'contour', 'image']:
+                        entry_values['anatomy_types'].append(key)
+            objects_by_domain = {}
+            for index, anatomy_type in enumerate(entry_values['anatomy_types']):
+                objects_by_domain[anatomy_type] = {
+                    k: v[index] if len(v) > index else v[0]
+                    for k, v in entry_values.items()
+                    if len(v) > 0
+                }
 
-    def create_objects_from_row(
+            output_data.append(
+                [
+                    subject,
+                    objects_by_domain,
+                ]
+            )
+        return output_data
+
+    def create_objects_for_subject(
         self,
-        anatomy_type,
-        row,
+        subject,
+        objects_by_domain,
     ):
         def relative_path(filepath):
             if not self.project.file.path:
@@ -98,93 +119,91 @@ class ProjectFileIO(BaseModel, FileIO):
             )
 
         with TemporaryDirectory() as temp_dir:
+            for anatomy_type, objects in objects_by_domain.items():
+                original_shape: Union[Mesh, Segmentation, Contour, None] = None
+                groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
+                world_particles_path = None
+                local_particles_path = None
+                constraints_path = None
+                transform = None
 
-            original_shape: Union[Mesh, Segmentation, Contour, None] = None
-            groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
-            world_particles_path = None
-            local_particles_path = None
-            constraints_path = None
-            transform = None
+                for key, value in objects.items():
+                    if key == 'shape':
+                        key = shape_file_type(Path(value)).__name__.lower()
 
-            subject = Subject(name=row.get('name'), dataset=self.project.dataset).create()
+                    if key == 'mesh':
+                        original_shape = Mesh(
+                            file=relative_path(value),
+                            anatomy_type=anatomy_type,
+                            subject=subject,
+                        ).create()
+                    elif key == 'segmentation':
+                        original_shape = Segmentation(
+                            file=relative_path(value),
+                            anatomy_type=anatomy_type,
+                            subject=subject,
+                        ).create()
+                        pass
+                    elif key == 'contour':
+                        original_shape = Contour(
+                            file=relative_path(value),
+                            anatomy_type=anatomy_type,
+                            subject=subject,
+                        ).create()
+                    elif key == 'image':
+                        Image(
+                            file=relative_path(value),
+                            modality=anatomy_type,
+                            subject=subject,
+                        ).create()
+                    elif key == 'groomed':
+                        if type(original_shape) == Mesh:
+                            groomed_shape = self.project.add_groomed_mesh(
+                                file=relative_path(value),
+                                mesh=original_shape,
+                            )
+                        elif type(original_shape) == Segmentation:
+                            groomed_shape = self.project.add_groomed_segmentation(
+                                file=relative_path(value),
+                                segmentation=original_shape,
+                            )
+                    elif key == 'local':
+                        local_particles_path = relative_path(value)
+                    elif key == 'world':
+                        world_particles_path = relative_path(value)
+                    elif key == 'alignment':
+                        transform = Path(temp_dir) / 'transform'
+                        with transform.open('w') as f:
+                            f.write(value)
+                    elif key == 'landmarks':
+                        Landmarks(
+                            file=relative_path(value),
+                            subject=subject,
+                        ).create()
+                    elif key == 'constraints':
+                        constraints_path = relative_path(value)
+                    # elif key == 'procrustes':
+                    #     pass
 
-            for key, value in row.items():
-                if key == 'shape':
-                    key = shape_file_type(Path(value)).__name__.lower()
-
-                if key == 'mesh':
-                    original_shape = Mesh(
-                        file=relative_path(value),
-                        anatomy_type=anatomy_type,
-                        subject=subject,
-                    ).create()
-                elif key == 'segmentation':
-                    original_shape = Segmentation(
-                        file=relative_path(value),
-                        anatomy_type=anatomy_type,
-                        subject=subject,
-                    ).create()
-                    pass
-                elif key == 'contour':
-                    original_shape = Contour(
-                        file=relative_path(value),
-                        anatomy_type=anatomy_type,
-                        subject=subject,
-                    ).create()
-                elif key == 'image':
-                    Image(
-                        file=relative_path(value),
-                        modality=anatomy_type,
-                        subject=subject,
-                    ).create()
-                elif key == 'groomed':
+                if world_particles_path or local_particles_path:
+                    groomed_mesh = None
+                    groomed_segmentation = None
                     if type(original_shape) == Mesh:
-                        groomed_shape = self.project.add_groomed_mesh(
-                            file=relative_path(value),
-                            mesh=original_shape,
-                        )
+                        groomed_mesh = groomed_shape
                     elif type(original_shape) == Segmentation:
-                        groomed_shape = self.project.add_groomed_segmentation(
-                            file=relative_path(value),
-                            segmentation=original_shape,
-                        )
-                elif key == 'local':
-                    local_particles_path = relative_path(value)
-                elif key == 'world':
-                    world_particles_path = relative_path(value)
-                elif key == 'alignment':
-                    transform = Path(temp_dir) / 'transform'
-                    with transform.open('w') as f:
-                        f.write(value)
-                elif key == 'landmarks':
-                    Landmarks(
-                        file=relative_path(value),
-                        subject=subject,
+                        groomed_segmentation = groomed_shape
+                    particles = OptimizedParticles(
+                        world=world_particles_path,
+                        local=local_particles_path,
+                        transform=transform,
+                        groomed_segmentation=groomed_segmentation,
+                        groomed_mesh=groomed_mesh,
+                        project=self.project,
                     ).create()
-                elif key == 'constraints':
-                    constraints_path = relative_path(value)
-                # elif key == 'procrustes':
-                #     pass
-
-            if world_particles_path or local_particles_path:
-                groomed_mesh = None
-                groomed_segmentation = None
-                if type(original_shape) == Mesh:
-                    groomed_mesh = groomed_shape
-                elif type(original_shape) == Segmentation:
-                    groomed_segmentation = groomed_shape
-                particles = OptimizedParticles(
-                    world=world_particles_path,
-                    local=local_particles_path,
-                    transform=transform,
-                    groomed_segmentation=groomed_segmentation,
-                    groomed_mesh=groomed_mesh,
-                    project=self.project,
-                ).create()
-                if constraints_path:
-                    Constraints(
-                        file=constraints_path, subject=subject, optimized_particles=particles
-                    ).create()
+                    if constraints_path:
+                        Constraints(
+                            file=constraints_path, subject=subject, optimized_particles=particles
+                        ).create()
 
     def download_all(self, location):
         def relative_path(filepath):
@@ -199,59 +218,35 @@ class ProjectFileIO(BaseModel, FileIO):
             file.download(relative_path(resolve))
 
         relative_download(self.project.file, '')
-        data, optimize = self.load_data(interpret=False)
+        data = self.load_data(create=False)
 
-        for entry in data:
-            row = {}
-            for key in entry.keys():
-                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
-                if len(prefixes) > 0:
-                    row[prefixes[0]] = entry[key]
+        download_mappings: Dict[str, List] = {
+            'mesh': [{'set': list(self.project.dataset.meshes), 'attr': 'file'}],
+            'segmentation': [{'set': list(self.project.dataset.segmentations), 'attr': 'file'}],
+            'contour': [{'set': list(self.project.dataset.contours), 'attr': 'file'}],
+            'image': [{'set': list(self.project.dataset.images), 'attr': 'file'}],
+            'groomed': [
+                {'set': list(self.project.groomed_meshes), 'attr': 'file'},
+                {'set': list(self.project.groomed_segmentations), 'attr': 'file'},
+            ],
+            'local': [{'set': list(self.project.particles), 'attr': 'local'}],
+            'world': [{'set': list(self.project.particles), 'attr': 'world'}],
+            'landmarks': [{'set': list(self.project.dataset.landmarks), 'attr': 'file'}],
+            'constraints': [{'set': list(self.project.dataset.constraints), 'attr': 'file'}],
+        }
 
-            for key, value in row.items():
-                match_name = Path(value).name
-                if key == 'shape':
-                    key = shape_file_type(Path(value)).__name__.lower()
-
-                if key == 'mesh':
-                    for m in self.project.dataset.meshes:
-                        if str(m.file) == match_name:
-                            relative_download(m.file, value)
-                elif key == 'segmentation':
-                    for s in self.project.dataset.segmentations:
-                        if str(s.file) == match_name:
-                            relative_download(s.file, value)
-                elif key == 'contour':
-                    for c in self.project.dataset.contours:
-                        if str(c.file) == match_name:
-                            relative_download(c.file, value)
-                elif key == 'image':
-                    for i in self.project.dataset.images:
-                        if str(i.file) == match_name:
-                            relative_download(i.file, value)
-                elif key == 'groomed':
-                    for gm in self.project.groomed_meshes:
-                        if str(gm.file) == match_name:
-                            relative_download(gm.file, value)
-                    for gs in self.project.groomed_segmentations:
-                        if str(gs.file) == match_name:
-                            relative_download(gs.file, value)
-                elif key == 'local':
-                    for p in self.project.particles:
-                        if str(p.local) == match_name:
-                            relative_download(p.local, value)
-                elif key == 'world':
-                    for p in self.project.particles:
-                        if str(p.world) == match_name:
-                            relative_download(p.world, value)
-                elif key == 'landmarks':
-                    for lm in self.project.dataset.landmarks:
-                        if str(lm.file) == match_name:
-                            relative_download(lm.file, value)
-                elif key == 'constraints':
-                    for c in self.project.dataset.constraints:
-                        if str(c.file) == match_name:
-                            relative_download(c.file, value)
+        for [_s, objects_by_domain] in data:
+            for _a, objects in objects_by_domain.items():
+                for key, value in objects.items():
+                    if key == 'shape':
+                        key = shape_file_type(Path(value)).__name__.lower()
+                    match_name = Path(value).name
+                    if key in download_mappings:
+                        for mapping in download_mappings[key]:
+                            for x in mapping['set']:
+                                attr = getattr(x, mapping['attr'])
+                                if str(attr) == match_name:
+                                    relative_download(attr, value)
 
     def load_analysis_from_json(self, file_path):
         project_root = Path(str(self.project.file.path)).parent

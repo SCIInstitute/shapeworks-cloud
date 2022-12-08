@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from setuptools import find_packages, setup
@@ -10,9 +9,6 @@ if readme_file.exists():
 else:
     # When this is first installed in development Docker, README.md is not available
     long_description = ''
-
-# https://github.com/pypa/pip/issues/6658#issuecomment-506841157
-PKG_DIR = os.path.dirname(os.path.abspath(__file__))
 
 setup(
     name='shapeworks-cloud',
@@ -57,7 +53,6 @@ setup(
         'django-s3-file-field[boto3]',
         'gunicorn',
         'numpy',
-        f'swcc @ file://localhost{PKG_DIR}/swcc',
     ],
     extras_require={
         'dev': [

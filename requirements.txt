@@ -1,1 +1,1 @@
-./swcc
+-e ./swcc

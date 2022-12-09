@@ -54,6 +54,4 @@ class ProductionConfiguration(ShapeworksCloudMixin, ProductionBaseConfiguration)
 
 
 class HerokuProductionConfiguration(ShapeworksCloudMixin, HerokuProductionBaseConfiguration):
-    @staticmethod
-    def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.ALLOWED_HOSTS += ['shapeworks-cloud.herokuapp.com']
+    ALLOWED_HOSTS = ['shapeworks-cloud.herokuapp.com']

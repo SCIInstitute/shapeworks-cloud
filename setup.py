@@ -56,7 +56,6 @@ setup(
         'django-s3-file-field[boto3]',
         'gunicorn',
         'numpy',
-        'setuptools_scm==3.2.0',
         f'swcc @ file://localhost{PKG_DIR}/swcc',
     ],
     extras_require={

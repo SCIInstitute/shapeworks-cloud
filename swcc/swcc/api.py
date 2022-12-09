@@ -9,8 +9,6 @@ from requests_toolbelt.sessions import BaseUrlSession
 from s3_file_field_client import S3FileFieldClient
 from urllib3.util.retry import Retry
 
-from . import __version__
-
 _session_stack: List[SwccSession] = []
 
 
@@ -50,7 +48,7 @@ class SwccSession(BaseUrlSession):
 
         self.headers.update(
             {
-                'User-agent': f'swcc/{__version__}',
+                'User-agent': 'swcc',
                 'Accept': 'application/json',
             }
         )

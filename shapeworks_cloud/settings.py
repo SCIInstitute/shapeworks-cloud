@@ -54,4 +54,4 @@ class ProductionConfiguration(ShapeworksCloudMixin, ProductionBaseConfiguration)
 
 
 class HerokuProductionConfiguration(ShapeworksCloudMixin, HerokuProductionBaseConfiguration):
-    ALLOWED_HOSTS = ['shapeworks-cloud.herokuapp.com']
+    ALLOWED_HOSTS = ['shapeworks-cloud.herokuapp.com', 'app.shapeworks-cloud.org']

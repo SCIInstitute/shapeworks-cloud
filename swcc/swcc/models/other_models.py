@@ -102,6 +102,7 @@ class CachedAnalysisModePCA(ApiModel):
     pca_value: float
     lambda_value: float
     file: FileType[Literal['core.CachedAnalysisModePCA.file']]
+    particles: FileType[Literal['core.CachedAnalysisModePCA.particles']]
 
 
 class CachedAnalysisMode(ApiModel):

@@ -99,6 +99,7 @@ class CachedAnalysisModePCA(models.Model):
     pca_value = models.FloatField()
     lambda_value = models.FloatField()
     file = S3FileField()
+    particles = S3FileField(null=True)
 
 
 class CachedAnalysisMode(models.Model):

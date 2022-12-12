@@ -48,6 +48,8 @@ setup(
         'drf-extensions>=0.7.0',
         'drf-yasg',
         'pandas',
+        'swcc',
+        # Production-only
         'django-composed-configuration[prod]',
         'django-s3-file-field[boto3]',
         'gunicorn',

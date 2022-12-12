@@ -15,5 +15,5 @@ provider "aws" {
 provider "heroku" {}
 
 data "aws_route53_zone" "shapeworks_cloud" {
-  name = "shapeworks-cloud.org"
+  name = "www.shapeworks-cloud.org"
 }

@@ -13,7 +13,6 @@ else:
 setup(
     name='swcc',
     description='',
-    version='1.0.0',
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='Apache 2.0',

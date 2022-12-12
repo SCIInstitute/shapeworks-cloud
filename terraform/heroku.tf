@@ -21,7 +21,7 @@ module "django" {
   ec2_worker_volume_size       = 40
 
   additional_django_vars = {
-    DJANGO_API_URL    = "https://app.shapeworks-cloud.org/api/v1"
+    DJANGO_API_URL    = "https://www.shapeworks-cloud.org/api/v1"
   }
   django_cors_origin_whitelist = ["https://www.shapeworks-cloud.org"]
 }

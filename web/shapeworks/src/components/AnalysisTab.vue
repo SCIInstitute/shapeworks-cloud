@@ -4,6 +4,18 @@ import router from '@/router';
 import { analysisFileShown, selectedProject } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 
+import { use } from 'echarts/core';
+import { SVGRenderer } from 'echarts/renderers';
+import { LineChart } from 'echarts/charts';
+import {
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+} from 'echarts/components';
+import VChart from 'vue-echarts';
+
+use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent]);
+
 export default defineComponent({
     props: {
         currentTab: {
@@ -85,6 +97,63 @@ export default defineComponent({
             if (refreshedProject) analysis.value = refreshedProject.last_cached_analysis
         }
 
+        /* TODO
+        * Explore ways to import chartOptions function
+        * Add automatic resizing/css styling for chart class
+        */
+        const chartOptions = (data: any) => {
+            return ({
+                title: {
+                    text: data.title,
+                    textStyle: {
+                        color: "#ffffff"
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                },
+                xAxis: {
+                    type: 'category',
+                    name: data.x_label,
+                    nameLocation: 'center',
+                    nameTextStyle: {
+                        padding: [5,0,0,0],
+                        color: "#c3c3c3"
+                    },
+                    axisLabel: {
+                        align: 'center',
+                        color: "#a3a3a3"
+                    },
+                    boundaryGap: false,
+                    data: data.x
+                },
+                yAxis: {
+                    name: data.y_label,
+                    nameTextStyle: {
+                        align: 'left',
+                        color: "#c3c3c3"
+                    },
+                    axisLine: {
+                        show: true
+                    },
+                    axisLabel: {
+                        align: 'right',
+                        color: "#a3a3a3"
+                    },
+                    axisTick: {
+                        lineStyle: {
+                            color: "#a3a3a3"
+                        }
+                    },
+                    scale: true,
+                },
+                series: {
+                    type:'line',
+                    data: data.y
+                }
+            })
+        }
+
         return {
             refresh,
             analysis,
@@ -93,8 +162,12 @@ export default defineComponent({
             stdDev,
             stdDevRange,
             pcaInfo,
-            analysisFileShown
+            analysisFileShown,
+            chartOptions
         }
+    },
+    components: {
+        VChart
     },
     mounted() {
         this.refresh()
@@ -160,7 +233,7 @@ export default defineComponent({
                     Charts
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    Charts go here
+                    <v-chart class="chart" v-for="chart in analysis.charts" :key="chart.title" :option="chartOptions(chart)" />
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>
@@ -173,5 +246,10 @@ export default defineComponent({
 <style>
 .percentage>.text-end::after {
     content: ' %'
+}
+
+.chart {
+    height: 400px;
+    width: 400px;
 }
 </style>

@@ -112,6 +112,7 @@ export default defineComponent({
                 },
                 tooltip: {
                     trigger: 'axis',
+                    formatter: 'Mode {b}<br />Value: {c}'
                 },
                 xAxis: {
                     type: 'category',

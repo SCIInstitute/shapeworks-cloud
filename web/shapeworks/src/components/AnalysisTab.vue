@@ -14,6 +14,7 @@ import {
 } from 'echarts/components';
 import VChart from 'vue-echarts';
 
+// registers required echarts components
 use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent]);
 
 export default defineComponent({

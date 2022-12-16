@@ -14,6 +14,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='constraints',
             name='optimized_particles',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='constraints', to='core.optimizedparticles'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='constraints',
+                to='core.optimizedparticles',
+            ),
         ),
     ]

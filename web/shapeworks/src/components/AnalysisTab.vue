@@ -123,7 +123,25 @@ export default defineComponent({
                         saveAsImage: {
                             type: 'svg',
                             name: data.title.toLowerCase() + "_chart",
-                            
+                        },
+                        dataView: {
+                            show: true,
+                            title: "View Data",
+                            readOnly: true,
+                            optionToContent: () => {
+                                let text = `Mode:\t${data.y_label}\n`
+                                    
+                                for (let i = 0; i < data.x.length; i++) {
+                                    text += `${data.x[i]}\t\t${data.y[i]}\n`
+                                }
+
+                                return ('<textarea style="display: block; width: 100%; height: 100%; font-family: monospace; font-size: 14px; line-height: 1.6rem; resize: none; box-sizing: border-box; outline: none; color: rgb(0, 0, 0); border-color: rgb(51, 51, 51); background-color: rgb(255, 255, 255);">' +
+                                        text +
+                                        '</textarea>');
+                            }
+                        },
+                        dataZoom: {
+                            show: true,
                         },
                     }
                 },

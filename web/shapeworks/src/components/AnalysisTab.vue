@@ -11,11 +11,12 @@ import {
   TitleComponent,
   TooltipComponent,
   GridComponent,
+  ToolboxComponent,
 } from 'echarts/components';
 import VChart from 'vue-echarts';
 
 // registers required echarts components
-use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent]);
+use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent,ToolboxComponent]);
 
 export default defineComponent({
     props: {
@@ -102,7 +103,7 @@ export default defineComponent({
         * Explore ways to import chartOptions function
         * Add automatic resizing/css styling for chart class
         */
-        const chartOptions = (data: any) => {
+        const chartOptions = (data: { title: string; x_label: string; x: Array<number>; y_label: string; y: Array<number>; }) => {
             return ({
                 title: {
                     text: data.title,
@@ -113,6 +114,18 @@ export default defineComponent({
                 tooltip: {
                     trigger: 'axis',
                     formatter: 'Mode {b}<br />Value: {c}'
+                },
+                toolbox: {
+                    show: true,
+                    orient: 'horizontal',
+                    showTitle: true,
+                    feature: {
+                        saveAsImage: {
+                            type: 'svg',
+                            name: data.title.toLowerCase() + "_chart",
+                            
+                        },
+                    }
                 },
                 xAxis: {
                     type: 'category',

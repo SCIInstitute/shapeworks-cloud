@@ -127,6 +127,13 @@ export default defineComponent({
                         color: "#a3a3a3"
                     },
                     boundaryGap: false,
+                    splitLine: {
+                        show: true,
+                        lineStyle: {
+                            type: "dashed",
+                            opacity: 0.5,
+                        }
+                    },
                     data: data.x
                 },
                 yAxis: {
@@ -148,6 +155,13 @@ export default defineComponent({
                         }
                     },
                     scale: true,
+                    splitLine: {
+                        show: true,
+                        lineStyle: {
+                            type: "dashed",
+                            opacity: 0.5,
+                        }
+                    },
                 },
                 series: {
                     type:'line',

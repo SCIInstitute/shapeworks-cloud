@@ -124,6 +124,7 @@ class ProjectFileIO(BaseModel, FileIO):
                 groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
                 world_particles_path = None
                 local_particles_path = None
+                particles = None
                 constraints_path = None
                 transform = None
 
@@ -184,7 +185,6 @@ class ProjectFileIO(BaseModel, FileIO):
                         constraints_path = relative_path(value)
                     # elif key == 'procrustes':
                     #     pass
-
                 if world_particles_path or local_particles_path:
                     groomed_mesh = None
                     groomed_segmentation = None
@@ -200,10 +200,10 @@ class ProjectFileIO(BaseModel, FileIO):
                         groomed_mesh=groomed_mesh,
                         project=self.project,
                     ).create()
-                    if constraints_path:
-                        Constraints(
-                            file=constraints_path, subject=subject, optimized_particles=particles
-                        ).create()
+                if constraints_path:
+                    Constraints(
+                        file=constraints_path, subject=subject, optimized_particles=particles
+                    ).create()
 
     def download_all(self, location):
         def relative_path(filepath):

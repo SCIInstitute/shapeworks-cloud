@@ -119,6 +119,7 @@ class CachedAnalysis(ApiModel):
     _endpoint = 'cached-analysis'
 
     mean_shape: FileType[Literal['core.CachedAnalysis.mean_shape']]
+    mean_particles: FileType[Literal['core.CachedAnalysis.mean_particles']]
     modes: List[CachedAnalysisMode]
     charts: List[dict]
 

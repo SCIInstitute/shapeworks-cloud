@@ -252,7 +252,8 @@ class ProjectFileIO(BaseModel, FileIO):
         project_root = Path(str(self.project.file.path)).parent
         analysis_file_location = project_root / Path(file_path)
         contents = json.load(open(analysis_file_location))
-        mean_shape_path = list(contents['mean'].values())[0][0]
+        mean_shape_path = contents['mean']['meshes'][0]
+        mean_particles_path = contents['mean']['particle_files'][0]
         modes = []
         for mode in contents['modes']:
             pca_values = []
@@ -282,6 +283,7 @@ class ProjectFileIO(BaseModel, FileIO):
             modes.append(cam)
         return CachedAnalysis(
             mean_shape=analysis_file_location.parent / Path(mean_shape_path),
+            mean_particles=analysis_file_location.parent / Path(mean_particles_path),
             modes=modes,
             charts=contents['charts'],
         ).create()

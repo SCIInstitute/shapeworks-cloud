@@ -1,6 +1,7 @@
 <script lang="ts">
 import { setDatasetThumbnail, setProjectThumbnail } from '@/api/rest';
-import { computed, defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref, watch } from '@vue/composition-api';
+import { showDifferenceFromMeanMode } from '../store';
 import {
     particleSize,
     layers,
@@ -91,6 +92,7 @@ export default defineComponent({
         function resetView() {
             context.emit("change")
         }
+        watch(showDifferenceFromMeanMode, resetView)
 
         const thumbnailTarget = computed(() => {
             if(layersShown.value.length === 1 && layersShown.value[0] === "Original") {
@@ -160,7 +162,8 @@ export default defineComponent({
             resetView,
             selectedDataObjects,
             captureThumbnail,
-            thumbnailTarget
+            thumbnailTarget,
+            showDifferenceFromMeanMode,
         }
     }
 })
@@ -208,6 +211,11 @@ export default defineComponent({
             @change="changeAxisSystem"
             label="Axis System"
             style="width: 150px"
+        />
+        <v-switch
+            v-if="currentTab === 'analyze'"
+            v-model="showDifferenceFromMeanMode"
+            label="Show difference from mean"
         />
         <v-btn
             class="my-5"

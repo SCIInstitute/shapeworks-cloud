@@ -76,6 +76,8 @@ export const layers = ref<Record<string, any>[]>([
 
 export const layersShown = ref<string[]>(["Original"])
 
+export const showDifferenceFromMeanMode = ref<Boolean>(false);
+
 export const analysisFileShown = ref<string>();
 
 export const currentAnalysisFileParticles = ref<string>();
@@ -83,6 +85,8 @@ export const currentAnalysisFileParticles = ref<string>();
 export const meanAnalysisFileParticles = ref<string>();
 
 export const cachedMarchingCubes = ref({})
+
+export const cachedParticleComparisonColors = ref({})
 
 export const vtkShapesByType = ref<Record<string, any[]>>({
     "Original": [],

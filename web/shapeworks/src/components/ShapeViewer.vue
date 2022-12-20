@@ -39,7 +39,12 @@ import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/Co
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
-import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType, vtkInstance, analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles } from '../store';
+import {
+  layers, layersShown, orientationIndicator,
+  cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
+  vtkInstance, analysisFileShown,
+  currentAnalysisFileParticles, meanAnalysisFileParticles, showDifferenceFromMeanMode
+} from '../store';
 import { getDistance } from '@/helper';
 
 
@@ -342,7 +347,7 @@ export default {
             mapper.setInputConnection(marchingCube.getOutputPort());
             cachedMarchingCubes.value[cacheLabel] = marchingCube.getOutputData()
           }
-          this.showDifferenceFromMean(mapper)
+          if(showDifferenceFromMeanMode.value) this.showDifferenceFromMean(mapper)
           renderer.addActor(actor);
         }
       )
@@ -350,7 +355,7 @@ export default {
     showDifferenceFromMean(mapper){
       if (!analysisFileShown.value
       || !currentAnalysisFileParticles.value
-      || !meanAnalysisFileParticles
+      || !meanAnalysisFileParticles.value
       || !this.metaData.current
       || !this.metaData.mean ) return
 
@@ -370,24 +375,32 @@ export default {
 
       // color values should be between 0 and 1
       // 0.5 is green, representing no difference between particles
-      const colorValues = Array.from(
-        [...Array(pointLocations.length / 3).keys()].map(
-          (i) =>  {
-            const location = pointLocations.slice(i * 3, i * 3 + 3)
-            let closestParticle = differenceFromMean[0]
-            let closestParticleDistance;
-            differenceFromMean.forEach((p) => {
-              const distance = getDistance(p.slice(0, 3), location)
-              if(!closestParticleDistance || distance < closestParticleDistance) {
-                closestParticleDistance = distance;
-                closestParticle = p;
-              }
-            })
-            const colorVal = closestParticle[3]
-            return colorVal/3 + 0.5
-          }
+      const particleComparisonKey = `${currentAnalysisFileParticles.value}_${meanAnalysisFileParticles.value}`
+      let colorValues;
+      if (particleComparisonKey in cachedParticleComparisonColors.value){
+        colorValues = cachedParticleComparisonColors.value[particleComparisonKey]
+      } else {
+        colorValues = Array.from(
+          [...Array(pointLocations.length / 3).keys()].map(
+            (i) =>  {
+              const location = pointLocations.slice(i * 3, i * 3 + 3)
+              let closestParticle;
+              let closestParticleDistance;
+              differenceFromMean.forEach((p) => {
+                const distance = getDistance(p.slice(0, 3), location)
+                if(!closestParticleDistance || distance < closestParticleDistance) {
+                  closestParticleDistance = distance;
+                  closestParticle = p;
+                }
+              })
+              if(!closestParticle) return undefined
+              const colorVal = closestParticle[3]
+              return colorVal/5 + 0.5
+            }
+          )
         )
-      )
+        cachedParticleComparisonColors.value[particleComparisonKey] = colorValues
+      }
 
       const colorArray = vtkDataArray.newInstance({
         name: 'color',

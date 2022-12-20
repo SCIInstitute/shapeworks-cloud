@@ -19,7 +19,9 @@ import {
     selectedProject,
     loadProjectForDataset,
     reconstructionsForOriginalDataObjects,
-    analysisFileShown
+    analysisFileShown,
+    meanAnalysisFileParticles,
+    currentAnalysisFileParticles
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -51,6 +53,7 @@ export default defineComponent({
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
+        const renderMetaData = ref<Record<string, ShapeData>>({});
 
         onMounted(async () => {
             try {
@@ -84,6 +87,23 @@ export default defineComponent({
                         points: await pointsReader(undefined)
                     }
                     ]
+                }
+                renderMetaData.value = {
+                    "mean": {
+                        shape: await imageReader(undefined),
+                        points: await pointsReader(
+                            meanAnalysisFileParticles.value
+                        )
+                    },
+                    "current": {
+                        shape: await imageReader(
+                            analysisFileShown.value,
+                            shortFileName(analysisFileShown.value)
+                        ),
+                        points: await pointsReader(
+                            currentAnalysisFileParticles.value
+                        )
+                    }
                 }
             } else {
                 renderData.value = Object.fromEntries(
@@ -184,6 +204,7 @@ export default defineComponent({
             rows,
             cols,
             renderData,
+            renderMetaData,
             selectedDataset,
             selectedDataObjects,
             toSelectPage,
@@ -270,6 +291,7 @@ export default defineComponent({
             <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
                 <shape-viewer
                     :data="renderData"
+                    :metaData="renderMetaData"
                     :rows="rows"
                     :columns="cols"
                     :glyph-size="particleSize"

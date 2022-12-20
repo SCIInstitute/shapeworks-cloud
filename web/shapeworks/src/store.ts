@@ -78,6 +78,10 @@ export const layersShown = ref<string[]>(["Original"])
 
 export const analysisFileShown = ref<string>();
 
+export const currentAnalysisFileParticles = ref<string>();
+
+export const meanAnalysisFileParticles = ref<string>();
+
 export const cachedMarchingCubes = ref({})
 
 export const vtkShapesByType = ref<Record<string, any[]>>({

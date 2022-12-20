@@ -1,7 +1,7 @@
 <script lang="ts">
 import { refreshProject } from '@/api/rest'
 import router from '@/router';
-import { analysisFileShown, selectedProject } from '@/store'
+import { analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles, selectedProject } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 
 export default defineComponent({
@@ -58,14 +58,20 @@ export default defineComponent({
 
         function updateFileShown() {
             let fileShown = undefined
+            let particles = undefined
             if (props.currentTab === 'analyze' && analysis.value){
                 if (stdDev.value === 0) {
                     fileShown = analysis.value.mean_shape
+                    particles = analysis.value.mean_particles;
                 } else {
                     fileShown = currPCA.value?.file
+                    particles = currPCA.value?.particles
                 }
             }
             analysisFileShown.value = fileShown;
+            currentAnalysisFileParticles.value = particles;
+            meanAnalysisFileParticles.value =  analysis.value?.mean_particles;
+
         }
         updateFileShown()
 

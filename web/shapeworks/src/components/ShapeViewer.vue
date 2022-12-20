@@ -19,6 +19,7 @@
 <script>
 import 'vtk.js/Sources/Rendering/Profiles/All';
 
+import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkCalculator from 'vtk.js/Sources/Filters/General/Calculator';
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera';
@@ -32,11 +33,13 @@ import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
+import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
+import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
-import { ColorMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
+import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
-import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType, vtkInstance, analysisFileShown } from '../store';
+import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType, vtkInstance, analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles } from '../store';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -60,6 +63,10 @@ export default {
     data: {
       type: Object,
       required: true,
+    },
+    metaData: {
+      type: Object,
+      required: false,
     },
     rows: {
       type: Number,
@@ -132,6 +139,12 @@ export default {
     interactor.onAnimation(this.syncCameras)
 
     const orientationCube = this.newOrientationCube(interactor)
+
+    this.lookupTable = vtkColorTransferFunction.newInstance();
+    this.lookupTable.applyColorMap(
+      vtkColorMaps.getPresetByName('erdc_rainbow_bright')
+    );
+    this.lookupTable.setMappingRange(-10, 10)
 
     this.vtk = {
       renderWindow,
@@ -212,17 +225,19 @@ export default {
     applyCameraDelta(renderer, positionDelta, viewUpDelta){
       const camera = renderer.getActiveCamera();
       const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
-      camera.setPosition(
-        ...this.initialCameraStates.position[rendererID].map(
-          (old, index) => old + positionDelta[index]
+      if(this.initialCameraStates.position[rendererID]){
+        camera.setPosition(
+          ...this.initialCameraStates.position[rendererID].map(
+            (old, index) => old + positionDelta[index]
+          )
         )
-      )
-      camera.setViewUp(
-        ...this.initialCameraStates.viewUp[rendererID].map(
-          (old, index) => old + viewUpDelta[index]
+        camera.setViewUp(
+          ...this.initialCameraStates.viewUp[rendererID].map(
+            (old, index) => old + viewUpDelta[index]
+          )
         )
-      )
-      camera.setClippingRange(0.1, 1000)
+        camera.setClippingRange(0.1, 1000)
+      }
     },
     syncCameras(animation) {
       const targetRenderer = animation.pokedRenderer;
@@ -305,6 +320,7 @@ export default {
 
           const mapper = vtkMapper.newInstance({
             colorMode: ColorMode.MAP_SCALARS,
+            scalarMode: ScalarMode.USE_POINT_FIELD_DATA,
           });
           const actor = vtkActor.newInstance();
           actor.getProperty().setColor(...type.rgb);
@@ -324,9 +340,40 @@ export default {
             mapper.setInputConnection(marchingCube.getOutputPort());
             cachedMarchingCubes.value[cacheLabel] = marchingCube.getOutputData()
           }
+          this.showDifferenceFromMean(mapper)
           renderer.addActor(actor);
         }
       )
+    },
+    showDifferenceFromMean(mapper){
+      if (!analysisFileShown.value
+      || !currentAnalysisFileParticles.value
+      || !meanAnalysisFileParticles) return
+
+      const currentPoints = this.metaData.current.points.getPoints().getData()
+      const meanPoints = this.metaData.mean.points.getPoints().getData()
+      console.log('current and mean points', currentPoints, meanPoints)
+
+      console.log('mapperInput', mapper.getInputData().getPointData())
+      // const mapperInput = mapper.getInputData().getPointData().getArrayByName('Normals').getData()
+      const mapperInput = mapper.getInputData().getPointData().getArrayByName('ImageScalars').getData()
+      const colorValues =  Float32Array.from(mapperInput)
+      const colorArray = vtkDataArray.newInstance({
+        name: 'color',
+        values: colorValues
+      })
+      console.log('mapper Input', mapperInput)
+      console.log('color values', colorArray.getData())
+      mapper.getInputData().getPointData().addArray(colorArray)
+      mapper.getInputData().modified()
+
+      mapper.setLookupTable(this.lookupTable)
+      mapper.setColorByArrayName('color')
+      // mapper.setScalarVisibility(true);
+      // mapper.setUseLookupTableScalarRange(true);
+      // mapper.setInterpolateScalarsBeforeMapping(false);
+      console.log(this.lookupTable)
+      this.render()
     },
     prepareLabelCanvas() {
       const { clientWidth, clientHeight } = this.$refs.vtk;
@@ -378,6 +425,7 @@ export default {
         this.vtk.renderers.push(newRenderer);
         this.vtk.renderWindow.addRenderer(newRenderer);
       }
+      this.initializeCameras()
 
       if(positionDelta && viewUpDelta && this.vtk.renderers.length > 0){
         this.applyCameraDelta(this.vtk.renderers[0], positionDelta, viewUpDelta)
@@ -393,7 +441,6 @@ export default {
     },
     render() {
       this.vtk.renderWindow.render();
-      this.initializeCameras()
     },
   },
 };

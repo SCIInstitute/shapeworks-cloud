@@ -358,43 +358,38 @@ export default {
       || !meanAnalysisFileParticles.value
       || !this.metaData.current
       || !this.metaData.mean ) return
-
-      const currentPoints = this.metaData.current.points.getPoints().getData()
-      const meanPoints = this.metaData.mean.points.getPoints().getData()
-      const differenceFromMean = []
-      for (var i = 0; i < currentPoints.length; i += 3){
-        const currentParticle = currentPoints.slice(i, i+3)
-        const meanParticle = meanPoints.slice(i, i+3)
-        const distance = getDistance(currentParticle, meanParticle, true)
-        differenceFromMean.push([...currentParticle, distance])
-      }
-
-      const pointLocations = mapper.getInputData().getPoints().getData()
-      // const mapperInput = mapper.getInputData().getPointData().getArrayByName('Normals').getData()
-      // const mapperInput = mapper.getInputData().getPointData().getArrayByName('ImageScalars').getData()
-
       // color values should be between 0 and 1
       // 0.5 is green, representing no difference between particles
+
       const particleComparisonKey = `${currentAnalysisFileParticles.value}_${meanAnalysisFileParticles.value}`
       let colorValues;
       if (particleComparisonKey in cachedParticleComparisonColors.value){
         colorValues = cachedParticleComparisonColors.value[particleComparisonKey]
       } else {
+        const currentPoints = this.metaData.current.points.getPoints().getData()
+        const meanPoints = this.metaData.mean.points.getPoints().getData()
+        const differenceFromMean = []
+        for (var i = 0; i < currentPoints.length; i += 3){
+          const currentParticle = currentPoints.slice(i, i+3)
+          const meanParticle = meanPoints.slice(i, i+3)
+          const distance = getDistance(currentParticle, meanParticle, true)
+          differenceFromMean.push([...currentParticle, distance])
+        }
+
+        const pointLocations = mapper.getInputData().getPoints().getData()
         colorValues = Array.from(
           [...Array(pointLocations.length / 3).keys()].map(
             (i) =>  {
+              let colorVal = 0;
               const location = pointLocations.slice(i * 3, i * 3 + 3)
-              let closestParticle;
-              let closestParticleDistance;
-              differenceFromMean.forEach((p) => {
-                const distance = getDistance(p.slice(0, 3), location)
-                if(!closestParticleDistance || distance < closestParticleDistance) {
-                  closestParticleDistance = distance;
-                  closestParticle = p;
-                }
+              const nearbyParticles = differenceFromMean.map(
+                (p) => [getDistance(p.slice(0, 3), location), ...p]
+              ).sort((a, b) => a[0] > b[0]).slice(0, 10)
+              colorVal = nearbyParticles[0][4]
+              nearbyParticles.slice(1).forEach((p) => {
+                const weight = 1 / p[0];
+                colorVal = (colorVal * (1 - weight)) + (p[4] * weight)
               })
-              if(!closestParticle) return undefined
-              const colorVal = closestParticle[3]
               return colorVal/5 + 0.5
             }
           )

@@ -68,9 +68,9 @@ export default defineComponent({
                     particles = currPCA.value?.particles
                 }
             }
-            analysisFileShown.value = fileShown;
             currentAnalysisFileParticles.value = particles;
             meanAnalysisFileParticles.value =  analysis.value?.mean_particles;
+            analysisFileShown.value = fileShown;
 
         }
         updateFileShown()

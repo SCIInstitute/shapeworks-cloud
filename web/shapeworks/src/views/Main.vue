@@ -76,8 +76,25 @@ export default defineComponent({
 
         async function refreshRender() {
             renderData.value = {}
+            renderMetaData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
             if (analysisFileShown.value) {
+                const currParticles = await pointsReader(
+                    currentAnalysisFileParticles.value
+                )
+                const meanParticles = await pointsReader(
+                    meanAnalysisFileParticles.value
+                )
+                renderMetaData.value = {
+                    "mean": {
+                        shape: await imageReader(undefined),
+                        points: meanParticles,
+                    },
+                    "current": {
+                        shape: await imageReader(undefined),
+                        points: currParticles,
+                    }
+                }
                 renderData.value = {
                     "PCA": [{
                         shape: await imageReader(
@@ -87,23 +104,6 @@ export default defineComponent({
                         points: await pointsReader(undefined)
                     }
                     ]
-                }
-                renderMetaData.value = {
-                    "mean": {
-                        shape: await imageReader(undefined),
-                        points: await pointsReader(
-                            meanAnalysisFileParticles.value
-                        )
-                    },
-                    "current": {
-                        shape: await imageReader(
-                            analysisFileShown.value,
-                            shortFileName(analysisFileShown.value)
-                        ),
-                        points: await pointsReader(
-                            currentAnalysisFileParticles.value
-                        )
-                    }
                 }
             } else {
                 renderData.value = Object.fromEntries(

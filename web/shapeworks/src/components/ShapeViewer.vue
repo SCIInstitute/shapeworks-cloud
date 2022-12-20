@@ -40,6 +40,7 @@ import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttribute
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 import { layers, layersShown, orientationIndicator, cachedMarchingCubes, vtkShapesByType, vtkInstance, analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles } from '../store';
+import { getDistance } from '@/helper';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -144,7 +145,8 @@ export default {
     this.lookupTable.applyColorMap(
       vtkColorMaps.getPresetByName('erdc_rainbow_bright')
     );
-    this.lookupTable.setMappingRange(-10, 10)
+    this.lookupTable.setMappingRange(-1, 1)
+    this.lookupTable.updateRange();
 
     this.vtk = {
       renderWindow,
@@ -348,31 +350,53 @@ export default {
     showDifferenceFromMean(mapper){
       if (!analysisFileShown.value
       || !currentAnalysisFileParticles.value
-      || !meanAnalysisFileParticles) return
+      || !meanAnalysisFileParticles
+      || !this.metaData.current
+      || !this.metaData.mean ) return
 
       const currentPoints = this.metaData.current.points.getPoints().getData()
       const meanPoints = this.metaData.mean.points.getPoints().getData()
-      console.log('current and mean points', currentPoints, meanPoints)
+      const differenceFromMean = []
+      for (var i = 0; i < currentPoints.length; i += 3){
+        const currentParticle = currentPoints.slice(i, i+3)
+        const meanParticle = meanPoints.slice(i, i+3)
+        const distance = getDistance(currentParticle, meanParticle, true)
+        differenceFromMean.push([...currentParticle, distance])
+      }
 
-      console.log('mapperInput', mapper.getInputData().getPointData())
+      const pointLocations = mapper.getInputData().getPoints().getData()
       // const mapperInput = mapper.getInputData().getPointData().getArrayByName('Normals').getData()
-      const mapperInput = mapper.getInputData().getPointData().getArrayByName('ImageScalars').getData()
-      const colorValues =  Float32Array.from(mapperInput)
+      // const mapperInput = mapper.getInputData().getPointData().getArrayByName('ImageScalars').getData()
+
+      // color values should be between 0 and 1
+      // 0.5 is green, representing no difference between particles
+      const colorValues = Array.from(
+        [...Array(pointLocations.length / 3).keys()].map(
+          (i) =>  {
+            const location = pointLocations.slice(i * 3, i * 3 + 3)
+            let closestParticle = differenceFromMean[0]
+            let closestParticleDistance;
+            differenceFromMean.forEach((p) => {
+              const distance = getDistance(p.slice(0, 3), location)
+              if(!closestParticleDistance || distance < closestParticleDistance) {
+                closestParticleDistance = distance;
+                closestParticle = p;
+              }
+            })
+            const colorVal = closestParticle[3]
+            return colorVal/3 + 0.5
+          }
+        )
+      )
+
       const colorArray = vtkDataArray.newInstance({
         name: 'color',
         values: colorValues
       })
-      console.log('mapper Input', mapperInput)
-      console.log('color values', colorArray.getData())
       mapper.getInputData().getPointData().addArray(colorArray)
       mapper.getInputData().modified()
-
       mapper.setLookupTable(this.lookupTable)
       mapper.setColorByArrayName('color')
-      // mapper.setScalarVisibility(true);
-      // mapper.setUseLookupTableScalarRange(true);
-      // mapper.setInterpolateScalarsBeforeMapping(false);
-      console.log(this.lookupTable)
       this.render()
     },
     prepareLabelCanvas() {

@@ -35,6 +35,7 @@ import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingC
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource'
 
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
@@ -43,9 +44,10 @@ import {
   layers, layersShown, orientationIndicator,
   cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
   vtkInstance, analysisFileShown,
-  currentAnalysisFileParticles, meanAnalysisFileParticles, showDifferenceFromMeanMode
+  currentAnalysisFileParticles, meanAnalysisFileParticles, showDifferenceFromMeanMode, cachedParticleComparisonVectors
 } from '../store';
 import { getDistance } from '@/helper';
+import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -347,12 +349,14 @@ export default {
             mapper.setInputConnection(marchingCube.getOutputPort());
             cachedMarchingCubes.value[cacheLabel] = marchingCube.getOutputData()
           }
-          if(showDifferenceFromMeanMode.value) this.showDifferenceFromMean(mapper)
+          if(showDifferenceFromMeanMode.value) {
+            this.showDifferenceFromMean(mapper, renderer)
+          }
           renderer.addActor(actor);
         }
       )
     },
-    showDifferenceFromMean(mapper){
+    showDifferenceFromMean(mapper, renderer){
       if (!analysisFileShown.value
       || !currentAnalysisFileParticles.value
       || !meanAnalysisFileParticles.value
@@ -360,41 +364,96 @@ export default {
       || !this.metaData.mean ) return
       // color values should be between 0 and 1
       // 0.5 is green, representing no difference between particles
+      const currentPoints = this.metaData.current.points.getPoints().getData()
+      const meanPoints = this.metaData.mean.points.getPoints().getData()
 
       const particleComparisonKey = `${currentAnalysisFileParticles.value}_${meanAnalysisFileParticles.value}`
       let colorValues;
-      if (particleComparisonKey in cachedParticleComparisonColors.value){
+      let vectorValues;
+      if (
+        particleComparisonKey in cachedParticleComparisonColors.value
+        && particleComparisonKey in cachedParticleComparisonVectors.value
+      ){
         colorValues = cachedParticleComparisonColors.value[particleComparisonKey]
+        vectorValues = cachedParticleComparisonVectors.value[particleComparisonKey]
       } else {
-        const currentPoints = this.metaData.current.points.getPoints().getData()
-        const meanPoints = this.metaData.mean.points.getPoints().getData()
-        const differenceFromMean = []
+        vectorValues = []
         for (var i = 0; i < currentPoints.length; i += 3){
           const currentParticle = currentPoints.slice(i, i+3)
           const meanParticle = meanPoints.slice(i, i+3)
           const distance = getDistance(currentParticle, meanParticle, true)
-          differenceFromMean.push([...currentParticle, distance])
+          vectorValues.push([...currentParticle, distance])
         }
 
         const pointLocations = mapper.getInputData().getPoints().getData()
+        const normals = mapper.getInputData().getPointData().getArrayByName('Normals').getData()
         colorValues = Array.from(
           [...Array(pointLocations.length / 3).keys()].map(
             (i) =>  {
               let colorVal = 0;
               const location = pointLocations.slice(i * 3, i * 3 + 3)
-              const nearbyParticles = differenceFromMean.map(
-                (p) => [getDistance(p.slice(0, 3), location), ...p]
+              const normal = normals.slice(i * 3, i * 3 + 3)
+              const nearbyParticles = vectorValues.map(
+                (p, i) => [getDistance(p.slice(0, 3), location), i, ...p]
               ).sort((a, b) => a[0] > b[0]).slice(0, 10)
-              colorVal = nearbyParticles[0][4]
+              const nearestParticleIndex = nearbyParticles[0][1]
+              if (vectorValues[nearestParticleIndex].length < 5){
+                vectorValues[nearestParticleIndex].push(...normal)
+              }
+              colorVal = nearbyParticles[0][5]
               nearbyParticles.slice(1).forEach((p) => {
                 const weight = 1 / p[0];
-                colorVal = (colorVal * (1 - weight)) + (p[4] * weight)
+                colorVal = (colorVal * (1 - weight)) + (p[5] * weight)
               })
               return colorVal/5 + 0.5
             }
           )
         )
         cachedParticleComparisonColors.value[particleComparisonKey] = colorValues
+        cachedParticleComparisonVectors.value[particleComparisonKey] = vectorValues
+      }
+
+      if(vectorValues){
+        const vectorMapper = vtkGlyph3DMapper.newInstance({
+          colorMode: ColorMode.MAP_SCALARS,
+          scalarMode: ScalarMode.USE_POINT_FIELD_DATA,
+        })
+        const vectorActor = vtkActor.newInstance()
+        const vectorSource = vtkPolyData.newInstance()
+        const vectorShape = vtkArrowSource.newInstance();
+
+        const verts = new Uint32Array(vectorValues.length + 1)
+        verts[0] = vectorValues.length
+        for (let i=0; i< vectorValues.length; i++){
+          verts[i+1] = i
+        }
+        let magnitudes = vectorValues.map((a) => a[3] / 5 + 0.5)
+        let normals = vectorValues.map((a) => a.slice(4))
+        vectorSource.getPointData().addArray(
+          vtkDataArray.newInstance({
+            name: 'magnitude',
+            values: magnitudes
+          })
+        )
+        vectorSource.getPointData().addArray(
+          vtkDataArray.newInstance({
+            name: 'normal',
+            values: normals.flat(),
+            numberOfComponents: 3
+          })
+        )
+
+        vectorSource.getPoints().setData(currentPoints, 3)
+        vectorSource.getVerts().setData(verts);
+        vectorActor.setMapper(vectorMapper)
+        vectorMapper.setInputData(vectorSource)
+        vectorMapper.addInputConnection(vectorShape.getOutputPort(), 1)
+        vectorMapper.setScaleFactor(10)
+        vectorMapper.setScaleArray('magnitude')
+        vectorMapper.setColorByArrayName('magnitude')
+        vectorMapper.setOrientationArray('normal')
+        vectorMapper.setLookupTable(this.lookupTable)
+        renderer.addActor(vectorActor)
       }
 
       const colorArray = vtkDataArray.newInstance({

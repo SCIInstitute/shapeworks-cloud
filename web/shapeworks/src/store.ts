@@ -86,6 +86,8 @@ export const meanAnalysisFileParticles = ref<string>();
 
 export const cachedMarchingCubes = ref({})
 
+export const cachedParticleComparisonVectors = ref({})
+
 export const cachedParticleComparisonColors = ref({})
 
 export const vtkShapesByType = ref<Record<string, any[]>>({

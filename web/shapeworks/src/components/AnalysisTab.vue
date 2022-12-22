@@ -3,7 +3,7 @@ import { refreshProject } from '@/api/rest'
 import router from '@/router';
 import { analysisFileShown, selectedProject } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
-import { chartOptions } from '@/charts'
+import { lineChartOptions } from '@/charts'
 
 import { use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
@@ -101,7 +101,7 @@ export default defineComponent({
         }
 
         function generateChart(options: any) {
-            return chartOptions(options);
+            return lineChartOptions(options);
         }
 
         return {

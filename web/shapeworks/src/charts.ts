@@ -3,7 +3,7 @@
 /* TODO
 * Add automatic resizing/css styling for chart class
 */
-export function chartOptions (data: { title: string; x_label: string; x: Array<number>; y_label: string; y: Array<number> }) {
+export function lineChartOptions (data: { title: string; x_label: string; x: Array<number>; y_label: string; y: Array<number> }) {
     return ({
         title: {
             text: data.title,
@@ -98,7 +98,8 @@ function showData(data: { title: string; x_label: string; x: Array<number>; y_la
         for (let i = 0; i < data.x.length; i++) {
             text += `${data.x[i]}\t\t\t${data.y[i]}\n`
         }
-
+        // TODO: find alternative to textarea
+        // TODO: download data as CSV?
         return ('<textarea style="display: block; width: 100%; height: 100%; font-family: monospace; font-size: 14px; line-height: 1.6rem; resize: none; box-sizing: border-box; outline: none; color: rgb(0, 0, 0); border-color: rgb(51, 51, 51); background-color: rgb(255, 255, 255);">' +
                 text +
                 '</textarea>');

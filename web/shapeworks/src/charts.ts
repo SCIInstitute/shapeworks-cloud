@@ -1,9 +1,18 @@
 // functions for generating analysis charts
 
+export type lineChartProps = { 
+    title: string, 
+    x_label: string, 
+    y_label: string, 
+    x: Array<number>, 
+    y: Array<number> 
+}
+
+
 /* TODO
 * Add automatic resizing/css styling for chart class
 */
-export function lineChartOptions (data: { title: string; x_label: string; x: Array<number>; y_label: string; y: Array<number> }) {
+export function lineChartOptions (data: lineChartProps) {
     return ({
         title: {
             text: data.title,
@@ -92,7 +101,7 @@ export function lineChartOptions (data: { title: string; x_label: string; x: Arr
 }
 
 
-function showData(data: { title: string; x_label: string; x: Array<number>; y_label: string; y: Array<number> }) {
+function showData(data: lineChartProps) {
     let text = `# Modes:\t${data.y_label}\n`
         // TODO: better styling needed
         for (let i = 0; i < data.x.length; i++) {

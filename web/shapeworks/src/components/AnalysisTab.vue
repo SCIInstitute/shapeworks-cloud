@@ -3,7 +3,7 @@ import { refreshProject } from '@/api/rest'
 import router from '@/router';
 import { analysisFileShown, selectedProject } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
-import { lineChartOptions } from '@/charts'
+import { lineChartOptions, lineChartProps } from '@/charts'
 
 import { use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
@@ -100,7 +100,7 @@ export default defineComponent({
             if (refreshedProject) analysis.value = refreshedProject.last_cached_analysis
         }
 
-        function generateChart(options: any) {
+        function generateChart(options: lineChartProps) {
             return lineChartOptions(options);
         }
 
@@ -183,7 +183,7 @@ export default defineComponent({
                     Charts
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <v-chart class="chart" v-for="chart in analysis.charts" :key="chart.title" :option="generateChart(chart)" />
+                    <v-chart class="chart" v-for="chart in (analysis.charts as any)" :key="chart.title" :option="generateChart(chart)" />
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>

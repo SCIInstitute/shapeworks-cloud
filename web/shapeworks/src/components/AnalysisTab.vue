@@ -3,6 +3,7 @@ import { refreshProject } from '@/api/rest'
 import router from '@/router';
 import { analysisFileShown, selectedProject } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
+import { chartOptions } from '@/helper'
 
 import { use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
@@ -99,106 +100,8 @@ export default defineComponent({
             if (refreshedProject) analysis.value = refreshedProject.last_cached_analysis
         }
 
-        /* TODO
-        * Explore ways to import chartOptions function
-        * Add automatic resizing/css styling for chart class
-        */
-        const chartOptions = (data: { title: string; x_label: string; x: Array<number>; y_label: string; y: Array<number>; }) => {
-            return ({
-                title: {
-                    text: data.title,
-                    textStyle: {
-                        color: "#ffffff"
-                    }
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    formatter: 'Mode {b}<br />Value: {c}'
-                },
-                toolbox: {
-                    show: true,
-                    orient: 'horizontal',
-                    showTitle: true,
-                    feature: {
-                        saveAsImage: {
-                            type: 'svg',
-                            name: data.title.toLowerCase() + "_chart",
-                        },
-                        dataView: {
-                            show: true,
-                            title: "View Data",
-                            readOnly: true,
-                            optionToContent: () => {
-                                let text = `Mode:\t${data.y_label}\n`
-                                    
-                                for (let i = 0; i < data.x.length; i++) {
-                                    text += `${data.x[i]}\t\t${data.y[i]}\n`
-                                }
-
-                                return ('<textarea style="display: block; width: 100%; height: 100%; font-family: monospace; font-size: 14px; line-height: 1.6rem; resize: none; box-sizing: border-box; outline: none; color: rgb(0, 0, 0); border-color: rgb(51, 51, 51); background-color: rgb(255, 255, 255);">' +
-                                        text +
-                                        '</textarea>');
-                            }
-                        },
-                        dataZoom: {
-                            show: true,
-                        },
-                    }
-                },
-                xAxis: {
-                    type: 'category',
-                    name: data.x_label,
-                    nameLocation: 'center',
-                    nameTextStyle: {
-                        padding: [5,0,0,0],
-                        color: "#c3c3c3"
-                    },
-                    axisLabel: {
-                        align: 'center',
-                        color: "#a3a3a3"
-                    },
-                    boundaryGap: false,
-                    splitLine: {
-                        show: true,
-                        lineStyle: {
-                            type: "dashed",
-                            opacity: 0.5,
-                        }
-                    },
-                    data: data.x
-                },
-                yAxis: {
-                    name: data.y_label,
-                    nameTextStyle: {
-                        align: 'left',
-                        color: "#c3c3c3"
-                    },
-                    axisLine: {
-                        show: true
-                    },
-                    axisLabel: {
-                        align: 'right',
-                        color: "#a3a3a3"
-                    },
-                    axisTick: {
-                        lineStyle: {
-                            color: "#a3a3a3"
-                        }
-                    },
-                    scale: true,
-                    splitLine: {
-                        show: true,
-                        lineStyle: {
-                            type: "dashed",
-                            opacity: 0.5,
-                        }
-                    },
-                },
-                series: {
-                    type:'line',
-                    data: data.y
-                }
-            })
+        function generateChart(options: any) {
+            return chartOptions(options);
         }
 
         return {
@@ -210,7 +113,7 @@ export default defineComponent({
             stdDevRange,
             pcaInfo,
             analysisFileShown,
-            chartOptions
+            generateChart
         }
     },
     components: {
@@ -280,7 +183,7 @@ export default defineComponent({
                     Charts
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <v-chart class="chart" v-for="chart in analysis.charts" :key="chart.title" :option="chartOptions(chart)" />
+                    <v-chart class="chart" v-for="chart in analysis.charts" :key="chart.title" :option="generateChart(chart)" />
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>

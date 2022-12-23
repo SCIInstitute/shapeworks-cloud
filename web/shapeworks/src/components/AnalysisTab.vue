@@ -183,7 +183,7 @@ export default defineComponent({
                     Charts
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <v-chart class="chart" v-for="chart in (analysis.charts as any)" :key="chart.title" :option="generateChart(chart)" />
+                    <v-chart class="chart" v-for="chart in analysis.charts" :key="chart.title" :option="generateChart(chart)" />
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>

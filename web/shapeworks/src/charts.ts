@@ -9,8 +9,10 @@ export type lineChartProps = {
 }
 
 
-/* TODO
-* Add automatic resizing/css styling for chart class
+/* 
+* TODO: Add automatic resizing/css styling for chart class
+* TODO: download data as CSV?
+* TODO: copy data to clipboard
 */
 export function lineChartOptions (data: lineChartProps) {
     return ({
@@ -22,7 +24,7 @@ export function lineChartOptions (data: lineChartProps) {
         },
         tooltip: {
             trigger: 'axis',
-            formatter: 'Mode {b}<br />Value: {c}'
+            formatter: '# Modes {b}<br />Value: {c}' // b is x value, c is y value
         },
         toolbox: {
             show: true,
@@ -100,16 +102,49 @@ export function lineChartOptions (data: lineChartProps) {
     })
 }
 
+function copyData(text: string) {
+    navigator.clipboard.writeText(text).then(function() {
+        console.log('Async: Copying to clipboard was successful!');
+    }, function(err) {
+    console.error('Async: Could not copy text: ', err);
+    });
+}
 
 function showData(data: lineChartProps) {
     let text = `# Modes:\t${data.y_label}\n`
         // TODO: better styling needed
-        for (let i = 0; i < data.x.length; i++) {
-            text += `${data.x[i]}\t\t\t${data.y[i]}\n`
-        }
-        // TODO: find alternative to textarea
-        // TODO: download data as CSV?
-        return ('<textarea style="display: block; width: 100%; height: 100%; font-family: monospace; font-size: 14px; line-height: 1.6rem; resize: none; box-sizing: border-box; outline: none; color: rgb(0, 0, 0); border-color: rgb(51, 51, 51); background-color: rgb(255, 255, 255);">' +
-                text +
-                '</textarea>');
+    for (let i = 0; i < data.x.length; i++) {
+        text += `${data.x[i]}\t\t\t${data.y[i]}\n`
+    }
+    
+    const div = document.createElement('div');
+    div.className = "dataView";
+    div.style.height = "100%";
+    div.style.width = "100%";
+    div.style.overflow = "hidden";
+
+    const btn = document.createElement('button');
+    btn.innerHTML = 'Copy';
+    btn.onclick = () => copyData(text);
+    btn.className = 'v-btn primary';
+
+    const textarea = document.createElement('textarea');
+    textarea.style.display = 'block';
+    textarea.style.width = "100%";
+    textarea.style.height = "100%";
+    textarea.style.fontFamily = 'monospace';
+    textarea.style.fontSize = '14px';
+    textarea.style.lineHeight = '1.6rem';
+    textarea.style.resize = 'none';
+    textarea.style.boxSizing = "border-box"; textarea.style.outline = "none"; textarea.style.color = "#000000"; textarea.style.borderColor = "rgb(51, 51, 51)"; textarea.style.backgroundColor = "#ffffff";
+    textarea.innerHTML = text;
+
+    div.appendChild(btn);
+    div.appendChild(textarea);
+
+    // TODO: find alternative to textarea
+    return (
+        div
+    );
 }
+

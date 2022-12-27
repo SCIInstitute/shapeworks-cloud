@@ -103,7 +103,8 @@ export function lineChartOptions (data: lineChartProps) {
 }
 
 function copyData(text: string) {
-    navigator.clipboard.writeText(text).then(function() {
+    let CSVText = text.replaceAll(/\t+/ig, ","); // repalce all tabs and newlines with commas
+    navigator.clipboard.writeText(CSVText).then(function() {
         console.log('Async: Copying to clipboard was successful!');
     }, function(err) {
     console.error('Async: Could not copy text: ', err);
@@ -112,7 +113,7 @@ function copyData(text: string) {
 
 function showData(data: lineChartProps) {
     let text = `# Modes:\t${data.y_label}\n`
-        // TODO: better styling needed
+        // TODO: better styling needed. Maybe HTML table?
     for (let i = 0; i < data.x.length; i++) {
         text += `${data.x[i]}\t\t\t${data.y[i]}\n`
     }
@@ -122,7 +123,7 @@ function showData(data: lineChartProps) {
 
     const btn = document.createElement('button');
     btn.className = 'copy-button';
-    btn.innerHTML = 'Copy';
+    btn.innerHTML = 'Copy as CSV';
     btn.onclick = () => copyData(text);
 
     const textarea = document.createElement('textarea');
@@ -132,7 +133,6 @@ function showData(data: lineChartProps) {
     div.appendChild(textarea);
     div.appendChild(btn);
 
-    // TODO: find alternative to textarea
     return (
         div
     );

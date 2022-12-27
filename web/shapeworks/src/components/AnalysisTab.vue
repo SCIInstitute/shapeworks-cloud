@@ -208,17 +208,25 @@ export default defineComponent({
     width: 100%;
 }
 
-.copy-button {
+.dataview-button {
     background: #2196f3;
     border-radius: 3px;
     cursor: pointer;
     padding: 2px 5px;
     font-size: 12px;
     z-index: 1;
+}
 
+.copy-button {
     position: absolute;
     bottom: 5px;
     right: 70px;
+}
+
+.download-button {
+    position: absolute;
+    bottom: 5px;
+    right: 180px;
 }
 
 .dataview-text {

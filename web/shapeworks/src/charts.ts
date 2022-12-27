@@ -103,12 +103,39 @@ export function lineChartOptions (data: lineChartProps) {
 }
 
 function copyData(text: string) {
-    let CSVText = text.replaceAll(/\t+/ig, ","); // repalce all tabs and newlines with commas
+    let CSVText = getTextAsCSV(text);
     navigator.clipboard.writeText(CSVText).then(function() {
-        console.log('Async: Copying to clipboard was successful!');
+        console.log('Copying to clipboard was successful!');
     }, function(err) {
-    console.error('Async: Could not copy text: ', err);
+    console.error('Could not copy data: ', err);
     });
+}
+
+function getDownloadURL(text: string) {
+    const csvstring = getTextAsCSV(text);
+    const csvarray = csvstring.split(/(?<=\n)/gi); // uses positive look-behind to keep \n intact after split
+
+    const blob = new Blob(csvarray);
+
+    return URL.createObjectURL(blob);
+}
+
+function getTextAsCSV(text: string) {
+    let csvstring = text.replaceAll(/\t+/ig, ",");
+
+    const splitstring = csvstring.split('\n');
+
+    splitstring.forEach((row, rowindex) => {
+        if (row.search(/\s/ig) >= 0) {
+            let h = row.split(',');
+            h.forEach((value, i) => {
+                h[i] = '"' + value + '"';
+            });
+            splitstring[rowindex] = h.join(',');
+        }
+    })
+    
+    return splitstring.join('\n');
 }
 
 function showData(data: lineChartProps) {
@@ -121,17 +148,29 @@ function showData(data: lineChartProps) {
     const div = document.createElement('div');
     div.className = "dataview";
 
-    const btn = document.createElement('button');
-    btn.className = 'copy-button';
-    btn.innerHTML = 'Copy as CSV';
-    btn.onclick = () => copyData(text);
+    const copybtn = document.createElement('button');
+    copybtn.className = 'dataview-button copy-button';
+    copybtn.innerHTML = 'Copy to Clipboard';
+    copybtn.onclick = () => copyData(text);
+
+    const downloadbtn = document.createElement('button');
+    downloadbtn.className = 'dataview-button download-button';
+    downloadbtn.innerHTML = 'Download';
+
+    const downloadlink = document.createElement('a');
+    downloadlink.href = getDownloadURL(text);
+    downloadlink.download = data.y_label.toLowerCase().replaceAll(" ", "_") + '.csv';
+
+    downloadbtn.appendChild(downloadlink);
+    downloadbtn.onclick = () => downloadlink.click();
 
     const textarea = document.createElement('textarea');
     textarea.className = 'dataview-text';
     textarea.innerHTML = text;
 
     div.appendChild(textarea);
-    div.appendChild(btn);
+    div.appendChild(copybtn);
+    div.appendChild(downloadbtn);
 
     return (
         div

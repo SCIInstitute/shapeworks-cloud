@@ -118,29 +118,19 @@ function showData(data: lineChartProps) {
     }
     
     const div = document.createElement('div');
-    div.className = "dataView";
-    div.style.height = "100%";
-    div.style.width = "100%";
-    div.style.overflow = "hidden";
+    div.className = "dataview";
 
     const btn = document.createElement('button');
+    btn.className = 'copy-button';
     btn.innerHTML = 'Copy';
     btn.onclick = () => copyData(text);
-    btn.className = 'v-btn primary';
 
     const textarea = document.createElement('textarea');
-    textarea.style.display = 'block';
-    textarea.style.width = "100%";
-    textarea.style.height = "100%";
-    textarea.style.fontFamily = 'monospace';
-    textarea.style.fontSize = '14px';
-    textarea.style.lineHeight = '1.6rem';
-    textarea.style.resize = 'none';
-    textarea.style.boxSizing = "border-box"; textarea.style.outline = "none"; textarea.style.color = "#000000"; textarea.style.borderColor = "rgb(51, 51, 51)"; textarea.style.backgroundColor = "#ffffff";
+    textarea.className = 'dataview-text';
     textarea.innerHTML = text;
 
-    div.appendChild(btn);
     div.appendChild(textarea);
+    div.appendChild(btn);
 
     // TODO: find alternative to textarea
     return (

@@ -217,6 +217,10 @@ export default defineComponent({
     z-index: 1;
 }
 
+.dataview-button:hover {
+    background: #318dd8;
+}
+
 .copy-button {
     position: absolute;
     bottom: 5px;
@@ -226,7 +230,7 @@ export default defineComponent({
 .download-button {
     position: absolute;
     bottom: 5px;
-    right: 180px;
+    right: 185px;
 }
 
 .dataview-text {

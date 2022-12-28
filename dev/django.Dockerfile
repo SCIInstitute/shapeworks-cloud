@@ -22,7 +22,7 @@ RUN pip install -U pip && \
     pip install --editable /opt/django-project[dev] && \
     pip install --editable /opt/django-project/swcc
 
-RUN export url=$(curl -s https://api.github.com/repos/SCIInstitute/ShapeWorks/releases | grep -o "http.*dev-linux.*${6:-tar.gz}"); \
+RUN export url=$(curl -s https://api.github.com/repos/SCIInstitute/ShapeWorks/releases | grep -o "http.*dev-linux.*.gz"); \
     curl -L -o /tmp/shapeworks.tgz $url
 RUN mkdir /opt/shapeworks && \
     tar -zxvf /tmp/shapeworks.tgz -C /opt/shapeworks --strip-components 1 && \

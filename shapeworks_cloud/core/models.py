@@ -99,6 +99,7 @@ class CachedAnalysisModePCA(models.Model):
     pca_value = models.FloatField()
     lambda_value = models.FloatField()
     file = S3FileField()
+    particles = S3FileField(null=True)
 
 
 class CachedAnalysisMode(models.Model):
@@ -199,7 +200,7 @@ class Constraints(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='constraints')
     optimized_particles = models.ForeignKey(
-        OptimizedParticles, on_delete=models.CASCADE, related_name='constraints'
+        OptimizedParticles, on_delete=models.CASCADE, related_name='constraints', null=True
     )
 
 

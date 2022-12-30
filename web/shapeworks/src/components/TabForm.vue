@@ -89,6 +89,10 @@ export default defineComponent({
         }
 
         async function submitForm(_: Event, confirmed=false){
+            if(resultsPoll.value) {
+                clearInterval(resultsPoll.value)
+                resultsPoll.value = undefined
+            }
             if(alreadyDone.value && !confirmed){
                 showSubmissionConfirmation.value = true
                 return

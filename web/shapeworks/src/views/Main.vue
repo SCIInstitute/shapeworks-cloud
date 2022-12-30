@@ -21,7 +21,8 @@ import {
     reconstructionsForOriginalDataObjects,
     analysisFileShown,
     meanAnalysisFileParticles,
-    currentAnalysisFileParticles
+    currentAnalysisFileParticles,
+    fetchNewData
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -194,9 +195,11 @@ export default defineComponent({
             }
         }
 
+
         watch(selectedDataObjects, refreshRender)
         watch(layersShown, refreshRender)
         watch(analysisFileShown, refreshRender)
+        watch(tab, fetchNewData)
 
         return {
             mini,

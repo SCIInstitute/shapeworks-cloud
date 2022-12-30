@@ -1,7 +1,8 @@
 <script lang="ts">
-import { refreshProject } from '@/api/rest'
-import router from '@/router';
-import { analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles, selectedProject } from '@/store'
+import {
+    analysis, analysisFileShown,
+    currentAnalysisFileParticles, meanAnalysisFileParticles
+} from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 
 export default defineComponent({
@@ -12,7 +13,6 @@ export default defineComponent({
         }
     },
     setup(props) {
-        const analysis = ref(selectedProject.value?.last_cached_analysis)
         const mode = ref(1);
         const stdDev = ref(0);
 
@@ -78,21 +78,10 @@ export default defineComponent({
         watch(mode, updateFileShown)
         watch(stdDev, updateFileShown)
         watch(props, updateFileShown)
+        watch(analysis, updateFileShown)
 
-        async function refresh() {
-            if(!selectedProject.value) {
-                router.push({
-                    name: 'select',
-                });
-                return;
-            }
-            // refresh project last cached analysis
-            const refreshedProject = await refreshProject(selectedProject.value.id)
-            if (refreshedProject) analysis.value = refreshedProject.last_cached_analysis
-        }
 
         return {
-            refresh,
             analysis,
             modeOptions,
             mode,
@@ -102,9 +91,6 @@ export default defineComponent({
             analysisFileShown
         }
     },
-    mounted() {
-        this.refresh()
-    }
 })
 </script>
 

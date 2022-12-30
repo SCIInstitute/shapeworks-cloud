@@ -5,9 +5,11 @@ import {
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
     getProjectsForDataset,
     getReconstructedSamplesForProject,
-    groomProject, optimizeProject
+    groomProject, optimizeProject, refreshProject
 } from '@/api/rest';
+import router from '@/router';
 import { ref } from '@vue/composition-api'
+import { Analysis } from './types/index';
 
 export const loadingState = ref<boolean>(false)
 
@@ -38,6 +40,8 @@ export const reconstructionsForOriginalDataObjects = ref<ReconstructedSample[]>(
 export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles>>>({})
 
 export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape>>>({})
+
+export const analysis = ref<Analysis>();
 
 export const layers = ref<Record<string, any>[]>([
     {
@@ -293,4 +297,19 @@ export async function pollJobResults(action: string): Promise<string | undefined
         return `Error polling for ${action} results. Try refreshing the page.`
     }
     return undefined
+}
+
+
+export async function fetchNewData(tabName: string){
+    if(!selectedProject.value) {
+        return;
+    }
+    const refreshedProject = await refreshProject(selectedProject.value.id)
+    switch(tabName) {
+        // add any other tab-switching updates here
+        case 'analyze':
+            if (refreshedProject) {
+                analysis.value = refreshedProject.last_cached_analysis
+            }
+    }
 }

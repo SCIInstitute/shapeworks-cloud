@@ -405,7 +405,7 @@ export default {
                 const weight = 1 / p[0];
                 colorVal = (colorVal * (1 - weight)) + (p[5] * weight)
               })
-              return colorVal/5 + 0.5
+              return colorVal/10 + 0.5
             }
           )
         )
@@ -427,30 +427,44 @@ export default {
         for (let i=0; i< vectorValues.length; i++){
           verts[i+1] = i
         }
-        let magnitudes = vectorValues.map((a) => a[3] / 5 + 0.5)
-        let normals = vectorValues.map((a) => a.slice(4))
+        let locations = []
+        let orientations = []
+        let colors = []
+
+        for(let i = 0; i< vectorValues.length; i++){
+          const [x, y, z, d, dx, dy, dz] = vectorValues[i]
+          if(d < 0) {
+            const shift = 3  // based on arrow size
+            locations.push([x + dx * shift, y + dy * shift, z + dz * shift])
+            orientations.push([-dx, -dy, -dz])
+            colors.push(d / 10 + 0.5)
+          } else if (d > 0) {
+            locations.push([x + dx, y + dy, z + dz])
+            orientations.push([dx, dy, dz])
+            colors.push(d / 10 + 0.5)
+          }
+        }
+
         vectorSource.getPointData().addArray(
           vtkDataArray.newInstance({
-            name: 'magnitude',
-            values: magnitudes
+            name: 'color',
+            values: colors
           })
         )
         vectorSource.getPointData().addArray(
           vtkDataArray.newInstance({
             name: 'normal',
-            values: normals.flat(),
+            values: orientations.flat(),
             numberOfComponents: 3
           })
         )
-
-        vectorSource.getPoints().setData(currentPoints, 3)
+        vectorSource.getPoints().setData(locations.flat(), 3)
         vectorSource.getVerts().setData(verts);
         vectorActor.setMapper(vectorMapper)
         vectorMapper.setInputData(vectorSource)
         vectorMapper.addInputConnection(vectorShape.getOutputPort(), 1)
-        vectorMapper.setScaleFactor(10)
-        vectorMapper.setScaleArray('magnitude')
-        vectorMapper.setColorByArrayName('magnitude')
+        vectorMapper.setScaleFactor(5)
+        vectorMapper.setColorByArrayName('color')
         vectorMapper.setOrientationArray('normal')
         vectorMapper.setLookupTable(this.lookupTable)
         renderer.addActor(vectorActor)

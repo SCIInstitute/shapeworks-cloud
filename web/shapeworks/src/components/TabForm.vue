@@ -253,4 +253,8 @@ export default defineComponent({
 .float-right {
     float: right;
 }
+.col-6 {
+    max-width: 100% !important;
+    padding: 0px 20px !important;
+}
 </style>

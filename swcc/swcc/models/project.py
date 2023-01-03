@@ -124,6 +124,7 @@ class ProjectFileIO(BaseModel, FileIO):
                 groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
                 world_particles_path = None
                 local_particles_path = None
+                particles = None
                 constraints_path = None
                 transform = None
 
@@ -184,7 +185,6 @@ class ProjectFileIO(BaseModel, FileIO):
                         constraints_path = relative_path(value)
                     # elif key == 'procrustes':
                     #     pass
-
                 if world_particles_path or local_particles_path:
                     groomed_mesh = None
                     groomed_segmentation = None
@@ -200,10 +200,10 @@ class ProjectFileIO(BaseModel, FileIO):
                         groomed_mesh=groomed_mesh,
                         project=self.project,
                     ).create()
-                    if constraints_path:
-                        Constraints(
-                            file=constraints_path, subject=subject, optimized_particles=particles
-                        ).create()
+                if constraints_path:
+                    Constraints(
+                        file=constraints_path, subject=subject, optimized_particles=particles
+                    ).create()
 
     def download_all(self, location):
         def relative_path(filepath):
@@ -253,23 +253,33 @@ class ProjectFileIO(BaseModel, FileIO):
         analysis_file_location = project_root / Path(file_path)
         contents = json.load(open(analysis_file_location))
         mean_shape_path = list(contents['mean'].values())[0][0]
-        modes = [
-            CachedAnalysisMode(
+        modes = []
+        for mode in contents['modes']:
+            pca_values = []
+            for pca in mode['pca_values']:
+                i = 0
+                while (
+                    pca['meshes']
+                    and len(pca['meshes']) > i
+                    and pca['particles']
+                    and len(pca['particles']) > i
+                ):
+                    cam_pca = CachedAnalysisModePCA(
+                        pca_value=pca['pca_value'],
+                        lambda_value=pca['lambda'],
+                        file=analysis_file_location.parent / Path(pca['meshes'][i]),
+                        particles=analysis_file_location.parent / Path(pca['particles'][i]),
+                    ).create()
+                    pca_values.append(cam_pca)
+                    i += 1
+            cam = CachedAnalysisMode(
                 mode=mode['mode'],
                 eigen_value=mode['eigen_value'],
                 explained_variance=mode['explained_variance'],
                 cumulative_explained_variance=mode['cumulative_explained_variance'],
-                pca_values=[
-                    CachedAnalysisModePCA(
-                        pca_value=pca['pca_value'],
-                        lambda_value=pca['lambda'],
-                        file=analysis_file_location.parent / Path(pca['meshes'][0]),
-                    ).create()
-                    for pca in mode['pca_values']
-                ],
+                pca_values=pca_values,
             ).create()
-            for mode in contents['modes']
-        ]
+            modes.append(cam)
         return CachedAnalysis(
             mean_shape=analysis_file_location.parent / Path(mean_shape_path),
             modes=modes,

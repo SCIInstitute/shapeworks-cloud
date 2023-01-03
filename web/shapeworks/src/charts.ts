@@ -8,12 +8,6 @@ export type lineChartProps = {
     y: Array<number> 
 }
 
-
-/* 
-* TODO: Add automatic resizing/css styling for chart class
-* TODO: download data as CSV?
-* TODO: copy data to clipboard
-*/
 export function lineChartOptions (data: lineChartProps) {
     return ({
         title: {
@@ -22,6 +16,13 @@ export function lineChartOptions (data: lineChartProps) {
                 color: "#ffffff"
             }
         },
+        dataZoom: [
+            {
+                id: 'xAxisZoom',
+                type: 'inside',
+                xAxisIndex: [0]
+            },
+        ],
         tooltip: {
             trigger: 'axis',
             formatter: '# Modes {b}<br />Value: {c}' // b is x value, c is y value
@@ -43,6 +44,9 @@ export function lineChartOptions (data: lineChartProps) {
                 },
                 dataZoom: {
                     show: true,
+                },
+                restore: {
+                    show: true
                 },
             }
         },
@@ -103,7 +107,7 @@ export function lineChartOptions (data: lineChartProps) {
 }
 
 function copyData(text: string) {
-    let CSVText = getTextAsCSV(text);
+    const CSVText = getTextAsCSV(text);
     navigator.clipboard.writeText(CSVText).then(function() {
         console.log('Copying to clipboard was successful!');
     }, function(err) {
@@ -121,13 +125,14 @@ function getDownloadURL(text: string) {
 }
 
 function getTextAsCSV(text: string) {
-    let csvstring = text.replaceAll(/\t+/ig, ",");
+    // replace 1 or more consecutive tabs with a comma
+    const csvstring = text.replaceAll(/\t+/ig, ",");
 
     const splitstring = csvstring.split('\n');
 
     splitstring.forEach((row, rowindex) => {
-        if (row.search(/\s/ig) >= 0) {
-            let h = row.split(',');
+        if (row.search(/\s/ig) >= 0) { // if the current rwo contains any spaces or non-whitespace special char (\n\r\t\f)
+            const h = row.split(',');
             h.forEach((value, i) => {
                 h[i] = '"' + value + '"';
             });
@@ -140,7 +145,7 @@ function getTextAsCSV(text: string) {
 
 function showData(data: lineChartProps) {
     let text = `# Modes:\t${data.y_label}\n`
-        // TODO: better styling needed. Maybe HTML table?
+    // TODO: better format needed. Maybe HTML table?
     for (let i = 0; i < data.x.length; i++) {
         text += `${data.x[i]}\t\t\t${data.y[i]}\n`
     }

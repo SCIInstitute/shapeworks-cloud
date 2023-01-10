@@ -19,7 +19,10 @@ import {
     selectedProject,
     loadProjectForDataset,
     reconstructionsForOriginalDataObjects,
-    analysisFileShown
+    analysisFileShown,
+    meanAnalysisFileParticles,
+    currentAnalysisFileParticles,
+    fetchNewData
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -51,6 +54,7 @@ export default defineComponent({
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
+        const renderMetaData = ref<Record<string, ShapeData>>({});
 
         onMounted(async () => {
             try {
@@ -73,8 +77,25 @@ export default defineComponent({
 
         async function refreshRender() {
             renderData.value = {}
+            renderMetaData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
             if (analysisFileShown.value) {
+                const currParticles = await pointsReader(
+                    currentAnalysisFileParticles.value
+                )
+                const meanParticles = await pointsReader(
+                    meanAnalysisFileParticles.value
+                )
+                renderMetaData.value = {
+                    "mean": {
+                        shape: await imageReader(undefined),
+                        points: meanParticles,
+                    },
+                    "current": {
+                        shape: await imageReader(undefined),
+                        points: currParticles,
+                    }
+                }
                 renderData.value = {
                     "PCA": [{
                         shape: await imageReader(
@@ -174,9 +195,11 @@ export default defineComponent({
             }
         }
 
+
         watch(selectedDataObjects, refreshRender)
         watch(layersShown, refreshRender)
         watch(analysisFileShown, refreshRender)
+        watch(tab, fetchNewData)
 
         return {
             mini,
@@ -184,6 +207,7 @@ export default defineComponent({
             rows,
             cols,
             renderData,
+            renderMetaData,
             selectedDataset,
             selectedDataObjects,
             toSelectPage,
@@ -270,6 +294,7 @@ export default defineComponent({
             <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
                 <shape-viewer
                     :data="renderData"
+                    :metaData="renderMetaData"
                     :rows="rows"
                     :columns="cols"
                     :glyph-size="particleSize"

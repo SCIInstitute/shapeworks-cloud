@@ -27,6 +27,7 @@ export interface AnalysisPCA {
     id: number,
     pca_value: number,
     file: string,
+    particles: string,
     lambda_value: number,
 }
 
@@ -49,6 +50,7 @@ export interface Analysis {
     modified: string,
     charts: AnalysisChart[],
     mean_shape: string,
+    mean_particles: string;
     modes: AnalysisMode[],
 }
 

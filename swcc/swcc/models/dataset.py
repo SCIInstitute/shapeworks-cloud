@@ -1,8 +1,8 @@
 import re
-
 from typing import Iterator
-from .utils import NonEmptyString, logger
+
 from .api_model import ApiModel
+from .utils import NonEmptyString, logger
 
 
 class Dataset(ApiModel):

@@ -23,6 +23,7 @@ from pydantic import BaseModel
 
 from .api_model import ApiModel
 from .constants import expected_key_prefixes
+from .dataset import Dataset
 from .file_type import FileType
 from .other_models import (
     CachedAnalysis,
@@ -38,7 +39,6 @@ from .other_models import (
     OptimizedParticles,
     Segmentation,
 )
-from .dataset import Dataset
 from .subject import Subject
 from .utils import FileIO, shape_file_type
 
@@ -254,7 +254,9 @@ class ProjectFileIO(BaseModel, FileIO):
         contents = json.load(open(analysis_file_location))
         if contents['mean'] and contents['mean']['meshes']:
             mean_shape_path = contents['mean']['meshes'][0]
-            mean_particles_path = contents['mean']['particle_files'][0] if 'particle_files' in contents['mean']else None
+            mean_particles_path = None
+            if 'particles' in contents['mean']:
+                mean_particles_path = contents['mean']['particle_files'][0]
             modes = []
             for mode in contents['modes']:
                 pca_values = []
@@ -270,7 +272,7 @@ class ProjectFileIO(BaseModel, FileIO):
                             pca_value=pca['pca_value'],
                             lambda_value=pca['lambda'],
                             file=analysis_file_location.parent / Path(pca['meshes'][i]),
-                            particles=analysis_file_location.parent / Path(pca['particles'][i])
+                            particles=analysis_file_location.parent / Path(pca['particles'][i]),
                         ).create()
                         pca_values.append(cam_pca)
                         i += 1
@@ -284,10 +286,12 @@ class ProjectFileIO(BaseModel, FileIO):
                     ).create()
                     modes.append(cam)
             if len(modes) > 0:
+                mean_particles = None
+                if mean_particles_path:
+                    mean_particles = analysis_file_location.parent / Path(mean_particles_path)
                 return CachedAnalysis(
                     mean_shape=analysis_file_location.parent / Path(mean_shape_path),
-                    mean_particles=analysis_file_location.parent / Path(mean_particles_path)
-                    if mean_particles_path else None,
+                    mean_particles=mean_particles,
                     modes=modes,
                     charts=contents['charts'],
                 ).create()

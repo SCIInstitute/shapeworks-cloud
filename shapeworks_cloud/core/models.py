@@ -8,18 +8,12 @@ from s3_file_field import S3FileField
 
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
-    file = S3FileField(null=True)
     thumbnail = S3FileField(null=True)
-    # FK to another table?
     license = models.TextField()
     description = models.TextField()
     acknowledgement = models.TextField()
     keywords = models.CharField(max_length=255, blank=True, default='')
-
-    # FK to another table?
     contributors = models.TextField(blank=True, default='')
-
-    # FK to another table?
     publications = models.TextField(blank=True, default='')
 
     def get_contents(self, project=None):
@@ -63,6 +57,10 @@ class Dataset(TimeStampedModel, models.Model):
             groomed = safe_get(GroomedMesh, mesh=shape, project=project)
             particles = safe_get(OptimizedParticles, groomed_mesh=groomed, project=project)
             record_shape(shape, groomed, particles)
+        for shape in Image.objects.filter(subject__dataset=self):
+            record_shape(shape, None, None)
+        for shape in Contour.objects.filter(subject__dataset=self):
+            record_shape(shape, None, None)
         return ret
 
 

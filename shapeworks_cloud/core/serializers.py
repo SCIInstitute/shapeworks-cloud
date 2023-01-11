@@ -56,7 +56,6 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
 
 class DatasetSerializer(serializers.ModelSerializer):
-    file = S3FileSerializerField(required=False, allow_null=True)
     projects = ProjectSerializer(required=False, many=True)
     summary = serializers.SerializerMethodField('get_summary')
 

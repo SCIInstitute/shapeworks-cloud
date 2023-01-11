@@ -1,4 +1,5 @@
 <script lang="ts">
+import _ from 'lodash';
 import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
@@ -76,7 +77,7 @@ export default defineComponent({
         }
 
         async function refreshRender() {
-            renderData.value = {}
+            let newRenderData = {}
             renderMetaData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
             if (analysisFileShown.value) {
@@ -96,7 +97,7 @@ export default defineComponent({
                         points: currParticles,
                     }
                 }
-                renderData.value = {
+                newRenderData = {
                     "PCA": [{
                         shape: await imageReader(
                             analysisFileShown.value,
@@ -107,7 +108,7 @@ export default defineComponent({
                     ]
                 }
             } else {
-                renderData.value = Object.fromEntries(
+                newRenderData = Object.fromEntries(
                     await Promise.all(Object.entries(groupedSelections).map(
                         async ([subjectId, dataObjects]) => {
                             let subjectName = subjectId;
@@ -184,7 +185,7 @@ export default defineComponent({
                 ))
             }
 
-            const n = Object.keys(renderData.value).length;
+            const n = Object.keys(newRenderData).length;
             const sqrt = Math.ceil(Math.sqrt(n));
             if(sqrt <= 5) {
                 rows.value = Math.ceil(n / sqrt);
@@ -193,12 +194,15 @@ export default defineComponent({
                 rows.value = Math.ceil(n / 5);
                 cols.value = 5;
             }
+            renderData.value = newRenderData
         }
 
+        const debouncedRefreshRender = _.debounce(refreshRender, 300)
 
-        watch(selectedDataObjects, refreshRender)
-        watch(layersShown, refreshRender)
-        watch(analysisFileShown, refreshRender)
+
+        watch(selectedDataObjects, debouncedRefreshRender)
+        watch(layersShown, debouncedRefreshRender)
+        watch(analysisFileShown, debouncedRefreshRender)
         watch(tab, fetchNewData)
 
         return {

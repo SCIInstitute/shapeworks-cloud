@@ -97,3 +97,7 @@ class Dataset(ApiModel):
             # Keep looping until there is no conflict.
             old_dataset = Dataset.from_name(self.name)
         return self.create()
+
+    def download(self, path):
+        for subject in self.subjects:
+            subject.download(path)

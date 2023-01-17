@@ -89,6 +89,10 @@ export default defineComponent({
         }
 
         async function submitForm(_: Event, confirmed=false){
+            if(resultsPoll.value) {
+                clearInterval(resultsPoll.value)
+                resultsPoll.value = undefined
+            }
             if(alreadyDone.value && !confirmed){
                 showSubmissionConfirmation.value = true
                 return
@@ -248,5 +252,9 @@ export default defineComponent({
 }
 .float-right {
     float: right;
+}
+.col-6 {
+    max-width: 100% !important;
+    padding: 0px 20px !important;
 }
 </style>

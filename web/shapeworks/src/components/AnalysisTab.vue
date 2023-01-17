@@ -114,9 +114,6 @@ export default defineComponent({
     },
     components: {
         VChart
-    },
-    mounted() {
-        this.refresh()
     }
 })
 </script>

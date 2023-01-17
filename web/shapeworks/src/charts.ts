@@ -144,14 +144,16 @@ function getTextAsCSV(text: string) {
 function showData(data: lineChartProps) {
     const dataTable = document.createElement('TABLE');
     dataTable.className = 'datatable'
-    const thead = dataTable.createTHead();
+    const thead = document.createElement('thead');
+    dataTable.appendChild(thead);
     const theadRow = thead.insertRow(0);
     theadRow.className = 'datatable-row';
     const theadOne = theadRow.insertCell(0);
     theadOne.innerHTML = '<b># Modes</b>';
     const theadTwo = theadRow.insertCell(1);
     theadTwo.innerHTML = `<b>${data.y_label}</b>`;
-    const tbody = dataTable.createTBody();
+    const tbody = document.createElement('tbody');
+    dataTable.appendChild(tbody);
 
     let csvtext = `# Modes:,${data.y_label}\n`
 
@@ -159,9 +161,9 @@ function showData(data: lineChartProps) {
         const row = tbody.insertRow(-1); // -1 index == last position
         row.className = 'datatable-row';
         const cellOne = row.insertCell(0);
-        cellOne.innerHTML = data.x[i];
+        cellOne.innerHTML = `${data.x[i]}`;
         const cellTwo = row.insertCell(1);
-        cellTwo.innerHTML = data.y[i];
+        cellTwo.innerHTML = `${data.y[i]}`;
 
         csvtext += `${data.x[i]},${data.y[i]}\n`
     }

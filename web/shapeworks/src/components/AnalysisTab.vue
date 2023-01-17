@@ -1,7 +1,8 @@
 <script lang="ts">
-import { refreshProject } from '@/api/rest'
-import router from '@/router';
-import { analysisFileShown, selectedProject } from '@/store'
+import {
+    analysis, analysisFileShown,
+    currentAnalysisFileParticles, meanAnalysisFileParticles
+} from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 import { lineChartOptions, lineChartProps } from '@/charts'
 
@@ -28,7 +29,6 @@ export default defineComponent({
         }
     },
     setup(props) {
-        const analysis = ref(selectedProject.value?.last_cached_analysis)
         const mode = ref(1);
         const stdDev = ref(0);
 
@@ -74,39 +74,34 @@ export default defineComponent({
 
         function updateFileShown() {
             let fileShown = undefined
+            let particles = undefined
             if (props.currentTab === 'analyze' && analysis.value){
                 if (stdDev.value === 0) {
                     fileShown = analysis.value.mean_shape
+                    particles = analysis.value.mean_particles;
                 } else {
                     fileShown = currPCA.value?.file
+                    particles = currPCA.value?.particles
                 }
             }
+            currentAnalysisFileParticles.value = particles;
+            meanAnalysisFileParticles.value =  analysis.value?.mean_particles;
             analysisFileShown.value = fileShown;
+
         }
         updateFileShown()
 
         watch(mode, updateFileShown)
         watch(stdDev, updateFileShown)
         watch(props, updateFileShown)
+        watch(analysis, updateFileShown)
 
-        async function refresh() {
-            if(!selectedProject.value) {
-                router.push({
-                    name: 'select',
-                });
-                return;
-            }
-            // refresh project last cached analysis
-            const refreshedProject = await refreshProject(selectedProject.value.id)
-            if (refreshedProject) analysis.value = refreshedProject.last_cached_analysis
-        }
 
         function generateChart(options: lineChartProps) {
             return lineChartOptions(options);
         }
 
         return {
-            refresh,
             analysis,
             modeOptions,
             mode,

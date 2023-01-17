@@ -1,4 +1,5 @@
 <script lang="ts">
+import _ from 'lodash';
 import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
@@ -19,7 +20,10 @@ import {
     selectedProject,
     loadProjectForDataset,
     reconstructionsForOriginalDataObjects,
-    analysisFileShown
+    analysisFileShown,
+    meanAnalysisFileParticles,
+    currentAnalysisFileParticles,
+    fetchNewData
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -51,6 +55,7 @@ export default defineComponent({
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
+        const renderMetaData = ref<Record<string, ShapeData>>({});
 
         onMounted(async () => {
             try {
@@ -72,10 +77,27 @@ export default defineComponent({
         }
 
         async function refreshRender() {
-            renderData.value = {}
+            let newRenderData = {}
+            renderMetaData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
             if (analysisFileShown.value) {
-                renderData.value = {
+                const currParticles = await pointsReader(
+                    currentAnalysisFileParticles.value
+                )
+                const meanParticles = await pointsReader(
+                    meanAnalysisFileParticles.value
+                )
+                renderMetaData.value = {
+                    "mean": {
+                        shape: await imageReader(undefined),
+                        points: meanParticles,
+                    },
+                    "current": {
+                        shape: await imageReader(undefined),
+                        points: currParticles,
+                    }
+                }
+                newRenderData = {
                     "PCA": [{
                         shape: await imageReader(
                             analysisFileShown.value,
@@ -86,7 +108,7 @@ export default defineComponent({
                     ]
                 }
             } else {
-                renderData.value = Object.fromEntries(
+                newRenderData = Object.fromEntries(
                     await Promise.all(Object.entries(groupedSelections).map(
                         async ([subjectId, dataObjects]) => {
                             let subjectName = subjectId;
@@ -163,7 +185,7 @@ export default defineComponent({
                 ))
             }
 
-            const n = Object.keys(renderData.value).length;
+            const n = Object.keys(newRenderData).length;
             const sqrt = Math.ceil(Math.sqrt(n));
             if(sqrt <= 5) {
                 rows.value = Math.ceil(n / sqrt);
@@ -172,11 +194,16 @@ export default defineComponent({
                 rows.value = Math.ceil(n / 5);
                 cols.value = 5;
             }
+            renderData.value = newRenderData
         }
 
-        watch(selectedDataObjects, refreshRender)
-        watch(layersShown, refreshRender)
-        watch(analysisFileShown, refreshRender)
+        const debouncedRefreshRender = _.debounce(refreshRender, 300)
+
+
+        watch(selectedDataObjects, debouncedRefreshRender)
+        watch(layersShown, debouncedRefreshRender)
+        watch(analysisFileShown, debouncedRefreshRender)
+        watch(tab, fetchNewData)
 
         return {
             mini,
@@ -184,6 +211,7 @@ export default defineComponent({
             rows,
             cols,
             renderData,
+            renderMetaData,
             selectedDataset,
             selectedDataObjects,
             toSelectPage,
@@ -270,6 +298,7 @@ export default defineComponent({
             <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
                 <shape-viewer
                     :data="renderData"
+                    :metaData="renderMetaData"
                     :rows="rows"
                     :columns="cols"
                     :glyph-size="particleSize"

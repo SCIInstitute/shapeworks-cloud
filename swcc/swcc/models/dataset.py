@@ -88,7 +88,7 @@ class DataFileIO(BaseModel, FileIO):
                 if file_type in expected_key_prefixes:
                     shape_file = file_path
                     if not shape_file.exists():
-                        raise Exception(f'Could not find shape file at "{shape_file}"')
+                        raise Exception(f'Could not find shape file at {repr(shape_file)}')
                     data_type = shape_file_type(shape_file)
                     if data_type == Segmentation:
                         subject.add_segmentation(file=shape_file, anatomy_type=domain)
@@ -98,7 +98,7 @@ class DataFileIO(BaseModel, FileIO):
                 elif file_type == 'image':
                     image_file = file_path
                     if not image_file.exists():
-                        raise Exception(f'Could not find image file at "{image_file}"')
+                        raise Exception(f'Could not find image file at {repr(image_file)}')
                     subject.add_image(file=image_file, modality=domain)
                     found = True
         if not found:

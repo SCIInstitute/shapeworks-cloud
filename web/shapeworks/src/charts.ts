@@ -13,7 +13,7 @@ export function lineChartOptions (data: lineChartProps) {
         title: {
             text: data.title,
             textStyle: {
-                color: "#ffffff"
+                color: "#999999"
             }
         },
         dataZoom: [
@@ -35,7 +35,7 @@ export function lineChartOptions (data: lineChartProps) {
                 saveAsImage: {
                     type: 'svg',
                     name: data.title.toLowerCase() + "_chart",
-                    excludedComponents: ['toolbox', 'title']
+                    excludedComponents: ['toolbox', 'title'],
                 },
                 dataView: {
                     show: true,
@@ -57,7 +57,7 @@ export function lineChartOptions (data: lineChartProps) {
             nameLocation: 'center',
             nameTextStyle: {
                 padding: [5,0,0,0],
-                color: "#c3c3c3"
+                color: "#bbbbbb"
             },
             axisLabel: {
                 align: 'center',
@@ -77,7 +77,7 @@ export function lineChartOptions (data: lineChartProps) {
             name: data.y_label,
             nameTextStyle: {
                 align: 'left',
-                color: "#c3c3c3"
+                color: "#bbbbbb"
             },
             axisLine: {
                 show: true

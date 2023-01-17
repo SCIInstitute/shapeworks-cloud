@@ -209,6 +209,19 @@ export default defineComponent({
     width: 100%;
 }
 
+.datatable {
+    color: #000000;
+    width: 100%;
+}
+
+.datatable tbody tr:nth-child(even) {
+    background-color: #e5e4e2;
+}
+
+.datatable-row td {
+    padding-right: 30px;
+}
+
 .dataview-button {
     background: #2196f3;
     border-radius: 3px;

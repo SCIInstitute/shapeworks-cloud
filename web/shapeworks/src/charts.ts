@@ -35,6 +35,7 @@ export function lineChartOptions (data: lineChartProps) {
                 saveAsImage: {
                     type: 'svg',
                     name: data.title.toLowerCase() + "_chart",
+                    excludedComponents: ['toolbox', 'title']
                 },
                 dataView: {
                     show: true,
@@ -125,13 +126,10 @@ function getDownloadURL(text: string) {
 }
 
 function getTextAsCSV(text: string) {
-    // replace 1 or more consecutive tabs with a comma
-    const csvstring = text.replaceAll(/\t+/ig, ",");
-
-    const splitstring = csvstring.split('\n');
+    const splitstring = text.split('\n');
 
     splitstring.forEach((row, rowindex) => {
-        if (row.search(/\s/ig) >= 0) { // if the current rwo contains any spaces or non-whitespace special char (\n\r\t\f)
+        if (row.search(/\s/ig) >= 0) { // if the current row contains any spaces or non-whitespace special char (\n\r\t\f)
             const h = row.split(',');
             h.forEach((value, i) => {
                 h[i] = '"' + value + '"';
@@ -144,10 +142,28 @@ function getTextAsCSV(text: string) {
 }
 
 function showData(data: lineChartProps) {
-    let text = `# Modes:\t${data.y_label}\n`
-    // TODO: better format needed. Maybe HTML table?
+    const dataTable = document.createElement('TABLE');
+    dataTable.className = 'datatable'
+    const thead = dataTable.createTHead();
+    const theadRow = thead.insertRow(0);
+    theadRow.className = 'datatable-row';
+    const theadOne = theadRow.insertCell(0);
+    theadOne.innerHTML = '<b># Modes</b>';
+    const theadTwo = theadRow.insertCell(1);
+    theadTwo.innerHTML = `<b>${data.y_label}</b>`;
+    const tbody = dataTable.createTBody();
+
+    let csvtext = `# Modes:,${data.y_label}\n`
+
     for (let i = 0; i < data.x.length; i++) {
-        text += `${data.x[i]}\t\t\t${data.y[i]}\n`
+        const row = tbody.insertRow(-1); // -1 index == last position
+        row.className = 'datatable-row';
+        const cellOne = row.insertCell(0);
+        cellOne.innerHTML = data.x[i];
+        const cellTwo = row.insertCell(1);
+        cellTwo.innerHTML = data.y[i];
+
+        csvtext += `${data.x[i]},${data.y[i]}\n`
     }
     
     const div = document.createElement('div');
@@ -156,24 +172,20 @@ function showData(data: lineChartProps) {
     const copybtn = document.createElement('button');
     copybtn.className = 'dataview-button copy-button';
     copybtn.innerHTML = 'Copy to Clipboard';
-    copybtn.onclick = () => copyData(text);
+    copybtn.onclick = () => copyData(csvtext);
 
     const downloadbtn = document.createElement('button');
     downloadbtn.className = 'dataview-button download-button';
     downloadbtn.innerHTML = 'Download';
 
     const downloadlink = document.createElement('a');
-    downloadlink.href = getDownloadURL(text);
+    downloadlink.href = getDownloadURL(csvtext);
     downloadlink.download = data.y_label.toLowerCase().replaceAll(" ", "_") + '.csv';
 
     downloadbtn.appendChild(downloadlink);
     downloadbtn.onclick = () => downloadlink.click();
 
-    const textarea = document.createElement('textarea');
-    textarea.className = 'dataview-text';
-    textarea.innerHTML = text;
-
-    div.appendChild(textarea);
+    div.appendChild(dataTable);
     div.appendChild(copybtn);
     div.appendChild(downloadbtn);
 

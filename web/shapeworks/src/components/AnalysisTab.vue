@@ -4,6 +4,22 @@ import {
     currentAnalysisFileParticles, meanAnalysisFileParticles
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
+import { lineChartOptions, lineChartProps } from '@/charts'
+
+import { use } from 'echarts/core';
+import { SVGRenderer } from 'echarts/renderers';
+import { LineChart } from 'echarts/charts';
+import {
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  ToolboxComponent,
+  DataZoomComponent
+} from 'echarts/components';
+import VChart from 'vue-echarts';
+
+// registers required echarts components
+use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent,ToolboxComponent,DataZoomComponent]);
 
 export default defineComponent({
     props: {
@@ -81,6 +97,10 @@ export default defineComponent({
         watch(analysis, updateFileShown)
 
 
+        function generateChart(options: lineChartProps) {
+            return lineChartOptions(options);
+        }
+
         return {
             analysis,
             modeOptions,
@@ -88,9 +108,13 @@ export default defineComponent({
             stdDev,
             stdDevRange,
             pcaInfo,
-            analysisFileShown
+            analysisFileShown,
+            generateChart
         }
     },
+    components: {
+        VChart
+    }
 })
 </script>
 
@@ -152,7 +176,7 @@ export default defineComponent({
                     Charts
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    Charts go here
+                    <v-chart class="chart" v-for="chart in analysis.charts" :key="chart.title" :option="generateChart(chart)" />
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>
@@ -166,4 +190,64 @@ export default defineComponent({
 .percentage>.text-end::after {
     content: ' %'
 }
+
+.chart {
+    height: 400px;
+    width: 400px;
+}
+
+.dataview {
+    height: 100%;
+    width: 100%;
+}
+
+.datatable {
+    color: #000000;
+    width: 100%;
+}
+
+.datatable tbody tr:nth-child(even) {
+    background-color: #e5e4e2;
+}
+
+.datatable-row td {
+    padding-right: 30px;
+}
+
+.dataview-button {
+    background: #2196f3;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 2px 5px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.dataview-button:hover {
+    background: #318dd8;
+}
+
+.copy-button {
+    position: absolute;
+    bottom: 5px;
+    right: 70px;
+}
+
+.download-button {
+    position: absolute;
+    bottom: 5px;
+    right: 185px;
+}
+
+.dataview-text {
+    display: block;
+    height: 100%;
+    width: 100%;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.6rem;
+    resize: none;
+    border: 1px solid #333333;
+}
+
 </style>

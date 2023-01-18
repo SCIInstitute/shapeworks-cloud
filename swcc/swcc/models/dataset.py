@@ -24,6 +24,13 @@ class Dataset(ApiModel):
         return Subject.list(dataset=self)
 
     @property
+    def projects(self) -> Iterator:
+        from .project import Project
+
+        self.assert_remote()
+        return Project.list(dataset=self)
+
+    @property
     def segmentations(self) -> Iterator:
         for subject in self.subjects:
             for segmentation in subject.segmentations:

@@ -13,6 +13,7 @@ class Dataset(ApiModel):
     license: NonEmptyString
     description: NonEmptyString
     acknowledgement: NonEmptyString
+    creator: str = ''
     keywords: str = ''
     contributors: str = ''
     publications: str = ''

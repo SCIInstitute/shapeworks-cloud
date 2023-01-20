@@ -58,6 +58,12 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 class DatasetSerializer(serializers.ModelSerializer):
     projects = ProjectSerializer(required=False, many=True)
     summary = serializers.SerializerMethodField('get_summary')
+    creator = serializers.SerializerMethodField('get_creator')
+
+    def get_creator(self, obj):
+        if obj.creator:
+            return obj.creator.username
+        return ''
 
     def get_summary(self, obj):
         summary = ''

@@ -4,11 +4,13 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
+from django.contrib.auth.models import User
 
 
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
     private = models.BooleanField(default=False)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     thumbnail = S3FileField(null=True)
     license = models.TextField()
     description = models.TextField()

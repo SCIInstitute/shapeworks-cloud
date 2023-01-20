@@ -9,6 +9,7 @@ class Dataset(ApiModel):
     _endpoint = 'datasets'
 
     name: NonEmptyString
+    private: bool
     license: NonEmptyString
     description: NonEmptyString
     acknowledgement: NonEmptyString

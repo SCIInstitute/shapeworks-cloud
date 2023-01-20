@@ -8,6 +8,7 @@ from s3_file_field import S3FileField
 
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
+    private = models.BooleanField(default=False)
     thumbnail = S3FileField(null=True)
     license = models.TextField()
     description = models.TextField()

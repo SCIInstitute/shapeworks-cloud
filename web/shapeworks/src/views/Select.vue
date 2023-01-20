@@ -120,7 +120,7 @@ export default defineComponent({
                 :width="selectedDataset == dataset ? '100%' :''"
             >
                 <div class="text-overline mb-4">
-                    DATASET ({{ dataset.created.split('T')[0] }})
+                    DATASET ({{ dataset.created?.split('T')[0] }})
                 </div>
                 <div class="card-contents">
                     <div>

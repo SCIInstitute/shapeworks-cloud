@@ -71,9 +71,14 @@ export default defineComponent({
                     <v-icon>mdi-close</v-icon>
                 </v-btn>
                 <v-card-title>
-                    Request Error
+                    Error
                 </v-card-title>
-                {{ currentError }}
+                <v-card-text v-if="currentError.length">
+                    {{ currentError }}
+                </v-card-text>
+                <v-card-text v-else>
+                    An error has occurred.
+                </v-card-text>
           </v-card>
         </v-overlay>
     </v-app>

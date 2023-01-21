@@ -71,7 +71,7 @@ export default defineComponent({
                     <v-icon>mdi-close</v-icon>
                 </v-btn>
                 <v-card-title>
-                    Request Error
+                    Error:
                 </v-card-title>
                 {{ currentError }}
           </v-card>

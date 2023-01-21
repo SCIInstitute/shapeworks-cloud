@@ -58,6 +58,8 @@ class DatasetViewSet(BaseViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        if user.is_anonymous:
+            return models.Dataset.objects.none()
         return models.Dataset.objects.filter(
             Q(private=False) | Q(creator=user)
         ).order_by('name')
@@ -66,7 +68,7 @@ class DatasetViewSet(BaseViewSet):
         user = None
         if self.request and hasattr(self.request, "user"):
             user = self.request.user
-        serializer.save(user=user)
+        serializer.save(creator=user)
 
     @action(
         detail=True,

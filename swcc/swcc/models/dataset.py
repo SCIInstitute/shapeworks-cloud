@@ -9,7 +9,7 @@ class Dataset(ApiModel):
     _endpoint = 'datasets'
 
     name: NonEmptyString
-    private: bool
+    private: bool = False
     license: NonEmptyString
     description: NonEmptyString
     acknowledgement: NonEmptyString

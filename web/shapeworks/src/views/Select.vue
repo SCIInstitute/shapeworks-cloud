@@ -120,7 +120,7 @@ export default defineComponent({
                 :width="selectedDataset == dataset ? '100%' :''"
             >
                 <div class="text-overline mb-4">
-                    DATASET ({{ dataset.created.split('T')[0] }})
+                    DATASET ({{ dataset.created ? dataset.created.split('T')[0] : 'No creation time' }})
                 </div>
                 <div class="card-contents">
                     <div>
@@ -176,7 +176,7 @@ export default defineComponent({
                 :width="selectedProject == project ? '100%' :''"
             >
                 <div class="text-overline mb-4">
-                    PROJECT ({{ project.created.split('T')[0] }})
+                    PROJECT ({{ project.created ? project.created.split('T')[0] : 'No creation time'}})
                     FOR DATASET {{ selectedDataset.id }}
                 </div>
                 <div class="card-contents">

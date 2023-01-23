@@ -73,7 +73,7 @@ export default defineComponent({
                 <v-card-title>
                     Error
                 </v-card-title>
-                <v-card-text v-if="currentError.length">
+                <v-card-text v-if="currentError && currentError.length">
                     {{ currentError }}
                 </v-card-text>
                 <v-card-text v-else>

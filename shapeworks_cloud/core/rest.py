@@ -64,7 +64,7 @@ class DatasetViewSet(BaseViewSet):
 
     def perform_create(self, serializer):
         user = None
-        if self.request and hasattr(self.request, "user"):
+        if self.request and hasattr(self.request, 'user'):
             user = self.request.user
         serializer.save(creator=user)
 

@@ -290,6 +290,9 @@ export default defineComponent({
     display: flex;
     justify-content: space-between;
 }
+.card-contents {
+    overflow-wrap: anywhere;
+}
 .selectable-card.with-thumbnail {
     width: 375px;
 }

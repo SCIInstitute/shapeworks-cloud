@@ -7,9 +7,9 @@ import {
     getReconstructedSamplesForProject,
     groomProject, optimizeProject, refreshProject
 } from '@/api/rest';
-import router from '@/router';
 import { ref } from '@vue/composition-api'
 import { Analysis } from './types/index';
+
 
 export const loadingState = ref<boolean>(false)
 

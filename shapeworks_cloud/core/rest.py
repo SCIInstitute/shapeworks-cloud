@@ -60,9 +60,7 @@ class DatasetViewSet(BaseViewSet):
         user = self.request.user
         if user.is_anonymous:
             return models.Dataset.objects.none()
-        return models.Dataset.objects.filter(
-            Q(private=False) | Q(creator=user)
-        ).order_by('name')
+        return models.Dataset.objects.filter(Q(private=False) | Q(creator=user)).order_by('name')
 
     def perform_create(self, serializer):
         user = None

@@ -20,7 +20,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dataset',
             name='creator',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
             model_name='dataset',

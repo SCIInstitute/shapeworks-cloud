@@ -9,6 +9,15 @@ export type lineChartProps = {
 }
 
 export function lineChartOptions (data: lineChartProps) {
+    // decimal place rounding could be specified for each chart
+    const decimalPlaces = 3;
+
+    // rounds each y value to specified decimal place
+    // x will always be integer
+    data.y.forEach((n, i) => {
+        data.y[i] = roundTo(n, decimalPlaces);
+    });
+
     return ({
         title: {
             text: data.title,
@@ -25,7 +34,7 @@ export function lineChartOptions (data: lineChartProps) {
         ],
         tooltip: {
             trigger: 'axis',
-            formatter: '# Modes {b}<br />Value: {c}' // b is x value, c is y value
+            formatter: '# Modes: {b}<br />Value: {c}' // b is x value, c is y value
         },
         toolbox: {
             show: true,
@@ -194,5 +203,10 @@ function showData(data: lineChartProps) {
     return (
         div
     );
+}
+
+function roundTo(num: number, place: number) {
+    const factor = 10 ** place;
+    return Math.round(num * factor) / factor;
 }
 

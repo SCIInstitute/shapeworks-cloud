@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import logging
-from pathlib import Path
-
 try:
     from typing import Generic, Optional, TypeVar, Union, get_args
 except ImportError:
@@ -14,6 +11,8 @@ except ImportError:
     )
     from typing_extensions import get_args
 
+import logging
+from pathlib import Path
 from urllib.parse import unquote
 
 from pydantic import AnyHttpUrl, FilePath, ValidationError, parse_obj_as

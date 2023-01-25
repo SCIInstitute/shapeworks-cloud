@@ -252,41 +252,49 @@ class ProjectFileIO(BaseModel, FileIO):
         project_root = Path(str(self.project.file.path)).parent
         analysis_file_location = project_root / Path(file_path)
         contents = json.load(open(analysis_file_location))
-        mean_shape_path = contents['mean']['meshes'][0]
-        mean_particles_path = contents['mean']['particle_files'][0]
-        modes = []
-        for mode in contents['modes']:
-            pca_values = []
-            for pca in mode['pca_values']:
-                i = 0
-                while (
-                    pca['meshes']
-                    and len(pca['meshes']) > i
-                    and pca['particles']
-                    and len(pca['particles']) > i
-                ):
-                    cam_pca = CachedAnalysisModePCA(
-                        pca_value=pca['pca_value'],
-                        lambda_value=pca['lambda'],
-                        file=analysis_file_location.parent / Path(pca['meshes'][i]),
-                        particles=analysis_file_location.parent / Path(pca['particles'][i]),
+        if contents['mean'] and contents['mean']['meshes']:
+            mean_shape_path = contents['mean']['meshes'][0]
+            mean_particles_path = None
+            if 'particles' in contents['mean']:
+                mean_particles_path = contents['mean']['particle_files'][0]
+            modes = []
+            for mode in contents['modes']:
+                pca_values = []
+                for pca in mode['pca_values']:
+                    i = 0
+                    while (
+                        'meshes' in pca
+                        and len(pca['meshes']) > i
+                        and 'particles' in pca
+                        and len(pca['particles']) > i
+                    ):
+                        cam_pca = CachedAnalysisModePCA(
+                            pca_value=pca['pca_value'],
+                            lambda_value=pca['lambda'],
+                            file=analysis_file_location.parent / Path(pca['meshes'][i]),
+                            particles=analysis_file_location.parent / Path(pca['particles'][i]),
+                        ).create()
+                        pca_values.append(cam_pca)
+                        i += 1
+                if len(pca_values) > 0:
+                    cam = CachedAnalysisMode(
+                        mode=mode['mode'],
+                        eigen_value=mode['eigen_value'],
+                        explained_variance=mode['explained_variance'],
+                        cumulative_explained_variance=mode['cumulative_explained_variance'],
+                        pca_values=pca_values,
                     ).create()
-                    pca_values.append(cam_pca)
-                    i += 1
-            cam = CachedAnalysisMode(
-                mode=mode['mode'],
-                eigen_value=mode['eigen_value'],
-                explained_variance=mode['explained_variance'],
-                cumulative_explained_variance=mode['cumulative_explained_variance'],
-                pca_values=pca_values,
-            ).create()
-            modes.append(cam)
-        return CachedAnalysis(
-            mean_shape=analysis_file_location.parent / Path(mean_shape_path),
-            mean_particles=analysis_file_location.parent / Path(mean_particles_path),
-            modes=modes,
-            charts=contents['charts'],
-        ).create()
+                    modes.append(cam)
+            if len(modes) > 0:
+                mean_particles = None
+                if mean_particles_path:
+                    mean_particles = analysis_file_location.parent / Path(mean_particles_path)
+                return CachedAnalysis(
+                    mean_shape=analysis_file_location.parent / Path(mean_shape_path),
+                    mean_particles=mean_particles,
+                    modes=modes,
+                    charts=contents['charts'],
+                ).create()
 
 
 class Project(ApiModel):

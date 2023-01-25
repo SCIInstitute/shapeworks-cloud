@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, List
 
 from .api_model import ApiModel
 from .dataset import Dataset
@@ -15,32 +15,26 @@ class Subject(ApiModel):
 
     @property
     def segmentations(self) -> Iterator[Segmentation]:
-        self.assert_remote()
         return Segmentation.list(subject=self)
 
     @property
     def meshes(self) -> Iterator[Mesh]:
-        self.assert_remote()
         return Mesh.list(subject=self)
 
     @property
     def contours(self) -> Iterator[Contour]:
-        self.assert_remote()
         return Contour.list(subject=self)
 
     @property
     def images(self) -> Iterator[Image]:
-        self.assert_remote()
         return Image.list(subject=self)
 
     @property
     def landmarks(self) -> Iterator[Landmarks]:
-        self.assert_remote()
         return Landmarks.list(subject=self)
 
     @property
     def constraints(self) -> Iterator[Constraints]:
-        self.assert_remote()
         return Constraints.list(subject=self)
 
     def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
@@ -62,3 +56,17 @@ class Subject(ApiModel):
             return next(results)
         except StopIteration:
             return None
+
+    def download(self, path):
+        self.assert_remote()
+        data_lists: List[Iterator] = [
+            self.segmentations,
+            self.meshes,
+            self.contours,
+            self.images,
+            self.landmarks,
+            self.constraints,
+        ]
+        for iterator in data_lists:
+            for item in iterator:
+                item.file.download(path)

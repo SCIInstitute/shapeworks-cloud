@@ -71,7 +71,7 @@ export default defineComponent({
                     <v-icon>mdi-close</v-icon>
                 </v-btn>
                 <v-card-title>
-                    Error
+                    Error:
                 </v-card-title>
                 <v-card-text v-if="currentError && currentError.length">
                     {{ currentError }}

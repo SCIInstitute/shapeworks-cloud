@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Type
 
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -52,9 +53,20 @@ class BaseViewSet(
 
 
 class DatasetViewSet(BaseViewSet):
-    queryset = models.Dataset.objects.all().order_by('name')
     serializer_class = serializers.DatasetSerializer
     filterset_class = filters.DatasetFilter
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_anonymous:
+            return models.Dataset.objects.none()
+        return models.Dataset.objects.filter(Q(private=False) | Q(creator=user)).order_by('name')
+
+    def perform_create(self, serializer):
+        user = None
+        if self.request and hasattr(self.request, 'user'):
+            user = self.request.user
+        serializer.save(creator=user)
 
     @action(
         detail=True,

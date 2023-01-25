@@ -29,7 +29,15 @@ apiClient.interceptors.request.use((config) => ({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    currentError.value = error.response.data;
+    if(error.response?.status === 500) {
+      currentError.value = 'Server error; see server logs for details.'
+    } else if(error.response?.status === 404) {
+      currentError.value = 'Not found.'
+    } else if (error.response) {
+      currentError.value = error.response?.data;
+    } else {
+      currentError.value = 'An error occurred.'
+    }
     return { data: undefined }
   }
 )

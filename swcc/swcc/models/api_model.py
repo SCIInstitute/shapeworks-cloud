@@ -120,6 +120,8 @@ class ApiModel(BaseModel):
         r: requests.Response = session.post(f'{self._endpoint}/', json=json)
         raise_for_status(r)
         self.id = r.json()['id']
+        if 'creator' in r.json():
+            self.creator = r.json()['creator']
         return self
 
     def download_files(self, path: Union[Path, str]) -> Iterator[Path]:

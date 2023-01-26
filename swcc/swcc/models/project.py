@@ -89,13 +89,8 @@ class ProjectFileIO(BaseModel, FileIO):
                 if len(prefixes) > 0:
                     entry_values[prefixes[0]].append(entry[key])
                     anatomy_id = 'anatomy' + key.replace(prefixes[0], '')
-                    if anatomy_id not in entry_values['anatomy_ids'] and prefixes[0] in [
-                        'shape',
-                        'mesh',
-                        'segmentation',
-                        'contour',
-                        'image',
-                    ]:
+                    if anatomy_id not in entry_values['anatomy_ids'] \
+                            and prefixes[0] in ['shape', 'mesh', 'segmentation', 'contour', 'image']:
                         entry_values['anatomy_ids'].append(anatomy_id)
             objects_by_domain = {}
             for index, anatomy_id in enumerate(entry_values['anatomy_ids']):

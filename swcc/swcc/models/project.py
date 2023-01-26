@@ -83,21 +83,22 @@ class ProjectFileIO(BaseModel, FileIO):
                 subject = Subject(name=entry.get('name'), dataset=self.project.dataset).create()
 
             entry_values: Dict = {p: [] for p in expected_key_prefixes}
-            entry_values['anatomy_types'] = []
+            entry_values['anatomy_ids'] = []
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
                     entry_values[prefixes[0]].append(entry[key])
-                    if prefixes[0] in ['shape', 'mesh', 'segmentation', 'contour', 'image']:
-                        entry_values['anatomy_types'].append(key)
+                    anatomy_id = 'anatomy' + key.replace(prefixes[0], '')
+                    if anatomy_id not in entry_values['anatomy_ids'] \
+                            and prefixes[0] in ['shape', 'mesh', 'segmentation', 'contour', 'image']:
+                        entry_values['anatomy_ids'].append(anatomy_id)
             objects_by_domain = {}
-            for index, anatomy_type in enumerate(entry_values['anatomy_types']):
-                objects_by_domain[anatomy_type] = {
+            for index, anatomy_id in enumerate(entry_values['anatomy_ids']):
+                objects_by_domain[anatomy_id] = {
                     k: v[index] if len(v) > index else v[0]
                     for k, v in entry_values.items()
                     if len(v) > 0
                 }
-
             output_data.append(
                 [
                     subject,
@@ -119,7 +120,7 @@ class ProjectFileIO(BaseModel, FileIO):
             )
 
         with TemporaryDirectory() as temp_dir:
-            for anatomy_type, objects in objects_by_domain.items():
+            for anatomy_id, objects in objects_by_domain.items():
                 original_shape: Union[Mesh, Segmentation, Contour, None] = None
                 groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
                 world_particles_path = None
@@ -135,26 +136,26 @@ class ProjectFileIO(BaseModel, FileIO):
                     if key == 'mesh':
                         original_shape = Mesh(
                             file=relative_path(value),
-                            anatomy_type=anatomy_type,
+                            anatomy_type=anatomy_id,
                             subject=subject,
                         ).create()
                     elif key == 'segmentation':
                         original_shape = Segmentation(
                             file=relative_path(value),
-                            anatomy_type=anatomy_type,
+                            anatomy_type=anatomy_id,
                             subject=subject,
                         ).create()
                         pass
                     elif key == 'contour':
                         original_shape = Contour(
                             file=relative_path(value),
-                            anatomy_type=anatomy_type,
+                            anatomy_type=anatomy_id,
                             subject=subject,
                         ).create()
                     elif key == 'image':
                         Image(
                             file=relative_path(value),
-                            modality=anatomy_type,
+                            modality=anatomy_id,
                             subject=subject,
                         ).create()
                     elif key == 'groomed':

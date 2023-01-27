@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
+import time
 
 from celery import shared_task
 from django.conf import settings
@@ -16,6 +17,13 @@ from swcc.api import swcc_session
 from swcc.models import Project as SWCCProject
 from swcc.models.constants import expected_key_prefixes
 from swcc.models.project import ProjectFileIO
+
+
+# TODO: use celery beat to schedule this every night
+def task_trash_collect():
+    # Delete all leftover TaskProgress objects
+    # not currently in progress
+    models.TaskProgress.objects.exclude(Q(error__exact="") & Q(percent_complete__lt=100)).delete()
 
 
 def edit_swproj_section(filename, section_name, new_df):
@@ -59,14 +67,10 @@ def interpret_form_df(df, command):
 
 
 def run_shapeworks_command(
-    user_id,
-    project_id,
-    form_data,
-    command,
-    pre_command_function,
-    post_command_function,
+    user_id, project_id, form_data, command, pre_command_function, post_command_function, task_id
 ):
     user = User.objects.get(id=user_id)
+    progress = models.TaskProgress.objects.get(task_id=task_id)
     token, _created = Token.objects.get_or_create(user=user)
     base_url = settings.API_URL
 
@@ -78,7 +82,13 @@ def run_shapeworks_command(
             project_filename = project.file.name.split('/')[-1]
             SWCCProject.from_id(project.id).download(download_dir)
 
+            progress.update_percentage(10)
+            time.sleep(3)
+
             pre_command_function()
+
+            progress.update_percentage(25)
+            time.sleep(3)
 
             if form_data:
                 # write the form data to the project file
@@ -93,6 +103,8 @@ def run_shapeworks_command(
                     form_df,
                 )
 
+            progress.update_percentage(50)
+            time.sleep(3)
             # perform command
             full_command = [
                 '/opt/shapeworks/bin/shapeworks',
@@ -109,17 +121,21 @@ def run_shapeworks_command(
                 stderr=PIPE,
             )
             _out, _err = process.communicate()
-            # TODO: raise _err to user if not empty
             print(_out, _err)
+            if len(_err) > 0:
+                progress.update_error(_err.decode())
+                return
+            progress.update_percentage(75)
 
             result_filename = 'analysis.json' if command == 'analyze' else project_filename
             with open(Path(download_dir, result_filename), 'r') as f:
                 result_data = json.load(f)
             post_command_function(project, download_dir, result_data, project_filename)
+            progress.update_percentage(100)
 
 
 @shared_task
-def groom(user_id, project_id, form_data):
+def groom(user_id, project_id, form_data, task_id):
     def pre_command_function():
         # delete any previous results
         models.GroomedSegmentation.objects.filter(project=project_id).delete()
@@ -142,38 +158,52 @@ def groom(user_id, project_id, form_data):
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
-                    row[prefixes[0]] = entry[key].replace('../', '').replace('./', '')
+                    prefix = prefixes[0]
+                    anatomy_id = 'anatomy' + key.replace(prefix, '')
+                    if prefix in ['mesh', 'segmentation', 'image', 'contour']:
+                        prefix = 'shape'
+                    if prefix in ['shape', 'groomed']:
+                        if anatomy_id not in row:
+                            row[anatomy_id] = {}
+                        row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
-            source_filename = row['shape'].split('/')[-1]
-            result_file = Path(download_dir, row['groomed'])
-            try:
-                target_object = project_segmentations.get(
-                    file__endswith=source_filename,
+            for anatomy_id, anatomy_data in row.items():
+                source_filename = anatomy_data['shape'].split('/')[-1]
+                result_file = Path(download_dir, anatomy_data['groomed'])
+                try:
+                    target_object = project_segmentations.get(
+                        file__endswith=source_filename,
+                    )
+                    result_object = models.GroomedSegmentation.objects.create(
+                        project=project,
+                        segmentation=target_object,
+                    )
+                except models.Segmentation.DoesNotExist:
+                    target_object = project_meshes.get(
+                        file__endswith=source_filename,
+                    )
+                    result_object = models.GroomedMesh.objects.create(
+                        project=project,
+                        mesh=target_object,
+                    )
+                result_object.file.save(
+                    anatomy_data['groomed'],
+                    open(result_file, 'rb'),
                 )
-                result_object = models.GroomedSegmentation.objects.create(
-                    project=project,
-                    segmentation=target_object,
-                )
-            except models.Segmentation.DoesNotExist:
-                target_object = project_meshes.get(
-                    file__endswith=source_filename,
-                )
-                result_object = models.GroomedMesh.objects.create(
-                    project=project,
-                    mesh=target_object,
-                )
-            result_object.file.save(
-                row['groomed'],
-                open(result_file, 'rb'),
-            )
 
     run_shapeworks_command(
-        user_id, project_id, form_data, 'groom', pre_command_function, post_command_function
+        user_id,
+        project_id,
+        form_data,
+        'groom',
+        pre_command_function,
+        post_command_function,
+        task_id,
     )
 
 
 @shared_task
-def optimize(user_id, project_id, form_data):
+def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
     def pre_command_function():
         # delete any previous results
         models.OptimizedParticles.objects.filter(project=project_id).delete()
@@ -193,8 +223,14 @@ def optimize(user_id, project_id, form_data):
             row = {}
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
-                if len(prefixes) > 0:
-                    row[prefixes[0]] = entry[key].replace('../', '').replace('./', '')
+                if len(prefixes) > 0 and prefixes[0] != 'name':
+                    prefix = prefixes[0]
+                    anatomy_id = 'anatomy' + key.replace(prefix, '')
+                    if prefix in ['mesh', 'segmentation', 'image', 'contour']:
+                        prefix = 'shape'
+                    if anatomy_id not in row:
+                        row[anatomy_id] = {}
+                    row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
             groomed_filename = row['groomed'].split('/')[-1]
             target_segmentation = project_groomed_segmentations.filter(
@@ -222,14 +258,20 @@ def optimize(user_id, project_id, form_data):
             )
 
     run_shapeworks_command(
-        user_id, project_id, form_data, 'optimize', pre_command_function, post_command_function
+        user_id,
+        project_id,
+        form_data,
+        'optimize',
+        pre_command_function,
+        post_command_function,
+        task_id,
     )
 
-    analyze.delay(user_id, project_id)
+    analyze.delay(user_id, project_id, analysis_task_id)
 
 
 @shared_task
-def analyze(user_id, project_id):
+def analyze(user_id, project_id, task_id):
     def pre_command_function():
         # delete any previous results
         project = models.Project.objects.get(id=project_id)
@@ -269,5 +311,5 @@ def analyze(user_id, project_id):
                     reconstructed.save()
 
     run_shapeworks_command(
-        user_id, project_id, None, 'analyze', pre_command_function, post_command_function
+        user_id, project_id, None, 'analyze', pre_command_function, post_command_function, task_id
     )

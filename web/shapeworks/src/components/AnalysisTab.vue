@@ -1,7 +1,8 @@
 <script lang="ts">
 import {
     analysis, analysisFileShown,
-    currentAnalysisFileParticles, meanAnalysisFileParticles
+    currentAnalysisFileParticles, meanAnalysisFileParticles,
+    currentTasks,
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 import { lineChartOptions, lineChartProps } from '@/charts'
@@ -17,6 +18,7 @@ import {
   DataZoomComponent
 } from 'echarts/components';
 import VChart from 'vue-echarts';
+import TaskProgress from './TaskProgress.vue';
 
 // registers required echarts components
 use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent,ToolboxComponent,DataZoomComponent]);
@@ -31,6 +33,7 @@ export default defineComponent({
     setup(props) {
         const mode = ref(1);
         const stdDev = ref(0);
+        const message = ref<string>();
 
         const modeOptions = computed(() => {
             return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -101,6 +104,11 @@ export default defineComponent({
             return lineChartOptions(options);
         }
 
+        function completeTask(m: string){
+            message.value = m
+            updateFileShown()
+        }
+
         return {
             analysis,
             modeOptions,
@@ -109,11 +117,15 @@ export default defineComponent({
             stdDevRange,
             pcaInfo,
             analysisFileShown,
-            generateChart
+            generateChart,
+            currentTasks,
+            message,
+            completeTask,
         }
     },
     components: {
-        VChart
+        VChart,
+        TaskProgress,
     }
 })
 </script>
@@ -181,8 +193,14 @@ export default defineComponent({
             </v-expansion-panel>
         </v-expansion-panels>
     </div>
-    <div class="pa-3" v-else>
-        No analysis generated yet; run the optimization step to generate an analysis.
+    <div v-else-if="currentTasks.analyze_task" class="messages-box pa-3">
+        Running analysis after optimization step...
+        <task-progress task="analyze" @complete="completeTask"/>
+    </div>
+    <div v-else class="messages-box pa-3">
+        {{ message ||
+            "No analysis generated yet; run the optimization step to generate an analysis."
+        }}
     </div>
 </template>
 
@@ -248,6 +266,11 @@ export default defineComponent({
     line-height: 1.6rem;
     resize: none;
     border: 1px solid #333333;
+}
+
+.messages-box {
+    text-align: center;
+    color: #2196f3;
 }
 
 </style>

@@ -101,6 +101,12 @@ export const vtkShapesByType = ref<Record<string, any[]>>({
     "Particles": []
 })
 
+export const currentTasks = ref<Record<string, string| undefined>>({
+    groom_task: undefined,
+    optimize_task: undefined,
+    analyze_task: undefined
+})
+
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
     if (selectedDataset.value?.id != datasetId) {
@@ -166,27 +172,25 @@ export function jobAlreadyDone(action: string): Boolean {
     }
 }
 
-export async function spawnJob(action: string, payload: Record<string, any>): Promise<Boolean>{
+export async function spawnJob(action: string, payload: Record<string, any>): Promise<any>{
     if (Object.keys(payload).every((key) => key.includes("section"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
     const projectId = selectedProject.value?.id;
-    if(!projectId) return false
+    if(!projectId) return undefined
     switch(action){
         case 'groom':
-            return (await groomProject(projectId, payload)).status === 204
+            return (await groomProject(projectId, payload))?.data
         case 'optimize':
-            return (await optimizeProject(projectId, payload)).status === 204
-        case 'analyze':
-            break;
+            return (await optimizeProject(projectId, payload))?.data
         default:
             break;
     }
-    return false;
+    return undefined;
 }
 
 export async function pollJobResults(action: string): Promise<string | undefined> {
-    let resultsFound = false;
+    let resultsFound = [];
     let targetStorage = undefined;
     let testFunction: Function | undefined = undefined;
     let loadFunction: Function | undefined = undefined;
@@ -277,21 +281,14 @@ export async function pollJobResults(action: string): Promise<string | undefined
     }
     const testObject = allDataObjectsInDataset.value[0]
     if(testObject && targetStorage && testFunction && loadFunction && successFunction) {
-        resultsFound = (await testFunction(testObject.type, testObject.id)).length > 0
-        if(resultsFound) {
-            if (action !== 'analyze'){
-                targetStorage.value = {}
-                await Promise.all(allDataObjectsInDataset.value.map(
-                    (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
-                ))
-                if(successFunction) successFunction()
-                return `Received results for ${action} job.`
-            } else {
-                targetStorage.value = []
-                await loadFunction(undefined, undefined, selectedProject.value?.id)
-                if(successFunction) successFunction()
-                return `Received reconstructed geometries after successful optimization.`
-            }
+        resultsFound = await testFunction(testObject.type, testObject.id)
+        if(resultsFound.length > 0) {
+            targetStorage.value = {}
+            await Promise.all(allDataObjectsInDataset.value.map(
+                (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
+            ))
+            if(successFunction) successFunction()
+            return `Received results for ${action} job.`
         }
     } else {
         return `Error polling for ${action} results. Try refreshing the page.`

@@ -7,8 +7,9 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { pollJobResults, spawnJob, jobAlreadyDone, allDataObjectsInDataset } from '../store';
+import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks } from '../store';
 import { DataObject } from '../types/index';
+import TaskProgress from './TaskProgress.vue'
 
 Vue.use(Vuetify)
 
@@ -29,7 +30,8 @@ export default defineComponent({
         },
     },
     components: {
-      VJsf,
+        VJsf,
+        TaskProgress,
     },
     setup(props, context) {
         const ajv = new Ajv();
@@ -40,8 +42,6 @@ export default defineComponent({
         const refreshing = ref(false);
         const showSubmissionConfirmation = ref(false);
         const messages = ref('');
-        const resultsPoll = ref();
-        const reconstructionsPoll = ref();
         const alreadyDone = ref(jobAlreadyDone(props.form))
 
         async function fetchFormSchema() {
@@ -89,51 +89,28 @@ export default defineComponent({
         }
 
         async function submitForm(_: Event, confirmed=false){
-            if(resultsPoll.value) {
-                clearInterval(resultsPoll.value)
-                resultsPoll.value = undefined
+            if(currentTasks.value[`${props.form}_task`]) {
+                currentTasks.value[`${props.form}_task`] = undefined
             }
             if(alreadyDone.value && !confirmed){
                 showSubmissionConfirmation.value = true
                 return
             }
-            const success = await spawnJob(props.form, formData.value)
-            if(success){
-                messages.value = `Successfully submitted ${props.form} job. Awaiting results...`
-                resultsPoll.value = setInterval(
-                    async () => {
-                        const pollMessage = await pollJobResults(props.form)
-                        if(pollMessage){
-                            messages.value = pollMessage
-                            setTimeout(() => messages.value = '', 5000)
-                            clearInterval(resultsPoll.value)
-                            context.emit("change")
-                            alreadyDone.value = jobAlreadyDone(props.form)
-                            resultsPoll.value = undefined
-                            context.emit("change")
-                        }
-                    },
-                    5000,
-                )
-                if(props.form === 'optimize'){
-                    reconstructionsPoll.value = setInterval(
-                        async () => {
-                            const pollMessage = await pollJobResults('analyze')
-                            if(pollMessage){
-                                messages.value = pollMessage
-                                setTimeout(() => messages.value = '', 5000)
-                                clearInterval(reconstructionsPoll.value)
-                                reconstructionsPoll.value = undefined
-                                context.emit("change")
-                            }
-                        },
-                        5000,
-                    )
-                }
-            } else {
+            const taskIds = await spawnJob(props.form, formData.value)
+            if(!taskIds || taskIds.length === 0) {
                 messages.value = `Failed to submit ${props.form} job.`
-                setTimeout(() => messages.value = '', 5000)
+                setTimeout(() => messages.value = '', 10000)
+            } else {
+                messages.value = `Successfully submitted ${props.form} job. Awaiting results...`
+                currentTasks.value = Object.assign(currentTasks.value, taskIds)
             }
+        }
+
+        function taskComplete(message: string){
+            messages.value = message || ''
+            setTimeout(() => messages.value = '', 10000)
+            context.emit("change")
+            alreadyDone.value = jobAlreadyDone(props.form)
         }
 
         return {
@@ -149,6 +126,7 @@ export default defineComponent({
             submitForm,
             evaluateExpression,
             alreadyDone,
+            taskComplete,
         }
     },
 })
@@ -161,12 +139,8 @@ export default defineComponent({
             <v-form v-model="formValid" class="pa-3">
                 <div class="messages-box pa-3" v-if="messages.length">
                     {{ messages }}
-                    <v-progress-circular
-                        v-if="messages.includes('wait')"
-                        indeterminate
-                        color="primary"
-                    ></v-progress-circular>
                 </div>
+                <task-progress :task="props.form" @complete="taskComplete"/>
                 <div style="display: flex; width: 100%; justify-content: space-between;">
                     <v-btn @click="resetForm">Restore defaults</v-btn>
                     <v-btn color="primary" @click="submitForm">

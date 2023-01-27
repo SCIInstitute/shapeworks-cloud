@@ -38,6 +38,7 @@ router.register(
 router.register(
     'reconstructed-samples', rest.ReconstructedSampleViewSet, basename='reconstructed_sample'
 )
+router.register('task-progress', rest.TaskProgressViewSet, basename='task_progress')
 
 
 # OpenAPI generation

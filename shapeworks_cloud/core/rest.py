@@ -209,7 +209,7 @@ class ProjectViewSet(BaseViewSet):
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
-        progress = models.TaskProgress.objects.create(name="groom")
+        progress = models.TaskProgress.objects.create(name='groom')
         groom.delay(request.user.id, project.id, form_data, progress.task_id)
         return Response(data={'groom_task': progress.task_id}, status=status.HTTP_200_OK)
 

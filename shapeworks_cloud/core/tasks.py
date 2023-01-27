@@ -3,6 +3,7 @@ from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
 import time
+from typing import Dict
 
 from celery import shared_task
 from django.conf import settings
@@ -23,7 +24,7 @@ from swcc.models.project import ProjectFileIO
 def task_trash_collect():
     # Delete all leftover TaskProgress objects
     # not currently in progress
-    models.TaskProgress.objects.exclude(Q(error__exact="") & Q(percent_complete__lt=100)).delete()
+    models.TaskProgress.objects.exclude(Q(error__exact='') & Q(percent_complete__lt=100)).delete()
 
 
 def edit_swproj_section(filename, section_name, new_df):
@@ -154,7 +155,7 @@ def groom(user_id, project_id, form_data, task_id):
         )
         project_meshes = models.Mesh.objects.filter(subject__dataset__id=project.dataset.id)
         for entry in result_data['data']:
-            row = {}
+            row: Dict[str, Dict] = {}
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
@@ -167,7 +168,7 @@ def groom(user_id, project_id, form_data, task_id):
                             row[anatomy_id] = {}
                         row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
-            for anatomy_id, anatomy_data in row.items():
+            for anatomy_data in row.values():
                 source_filename = anatomy_data['shape'].split('/')[-1]
                 result_file = Path(download_dir, anatomy_data['groomed'])
                 try:
@@ -220,7 +221,7 @@ def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
         project_groomed_meshes = models.GroomedMesh.objects.filter(project=project)
 
         for entry in result_data['data']:
-            row = {}
+            row: Dict[str, Dict] = {}
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0 and prefixes[0] != 'name':
@@ -232,30 +233,31 @@ def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
                         row[anatomy_id] = {}
                     row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
-            groomed_filename = row['groomed'].split('/')[-1]
-            target_segmentation = project_groomed_segmentations.filter(
-                file__endswith=groomed_filename,
-            ).first()
-            target_mesh = project_groomed_meshes.filter(
-                file__endswith=groomed_filename,
-            ).first()
-            result_particles_object = models.OptimizedParticles.objects.create(
-                groomed_segmentation=target_segmentation,
-                groomed_mesh=target_mesh,
-                project=project,
-            )
-            result_particles_object.world.save(
-                row['world'].split('/')[-1],
-                open(Path(download_dir, row['world']), 'rb'),
-            )
-            result_particles_object.local.save(
-                row['local'].split('/')[-1],
-                open(Path(download_dir, row['local']), 'rb'),
-            )
-            result_particles_object.transform.save(
-                '.'.join(row['shape'].split('/')[-1].split('.')[:-1]) + '.transform',
-                ContentFile(str(row['alignment']).encode()),
-            )
+            for anatomy_data in row.values():
+                groomed_filename = anatomy_data['groomed'].split('/')[-1]
+                target_segmentation = project_groomed_segmentations.filter(
+                    file__endswith=groomed_filename,
+                ).first()
+                target_mesh = project_groomed_meshes.filter(
+                    file__endswith=groomed_filename,
+                ).first()
+                result_particles_object = models.OptimizedParticles.objects.create(
+                    groomed_segmentation=target_segmentation,
+                    groomed_mesh=target_mesh,
+                    project=project,
+                )
+                result_particles_object.world.save(
+                    anatomy_data['world'].split('/')[-1],
+                    open(Path(download_dir, anatomy_data['world']), 'rb'),
+                )
+                result_particles_object.local.save(
+                    anatomy_data['local'].split('/')[-1],
+                    open(Path(download_dir, anatomy_data['local']), 'rb'),
+                )
+                result_particles_object.transform.save(
+                    '.'.join(anatomy_data['shape'].split('/')[-1].split('.')[:-1]) + '.transform',
+                    ContentFile(str(anatomy_data['alignment']).encode()),
+                )
 
     run_shapeworks_command(
         user_id,

@@ -5,7 +5,6 @@ import s3_file_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0020_constraints_no_particles'),
     ]

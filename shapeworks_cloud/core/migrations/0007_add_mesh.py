@@ -6,7 +6,6 @@ import s3_file_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0006_alter_subject_name'),
     ]

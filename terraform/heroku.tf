@@ -12,7 +12,7 @@ module "django" {
   heroku_team_name = data.heroku_team.heroku.name
   subdomain_name   = "app"
 
-  heroku_postgresql_plan      = "hobby-basic"
+  heroku_postgresql_plan      = "basic"
   heroku_worker_dyno_quantity = 0
 
   ec2_worker_instance_type     = "m4.large"

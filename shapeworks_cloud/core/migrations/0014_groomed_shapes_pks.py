@@ -10,7 +10,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0013_remove_redundant_models'),
     ]

@@ -59,6 +59,7 @@
       with_items:
         - "{{ lookup('file', 'anne.pub') }}"
         - "{{ lookup('file', 'shapeworks.pub') }}"
+        - "{{ lookup('file', 'shapeworks-worker.pub') }}"
     - name: Restart celery service to pick up any changes
       systemd:
         state: restarted

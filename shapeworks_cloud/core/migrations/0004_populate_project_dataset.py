@@ -16,7 +16,6 @@ def add_dataset(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0003_project_dataset'),
     ]

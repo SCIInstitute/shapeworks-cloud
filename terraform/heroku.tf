@@ -15,6 +15,9 @@ module "django" {
   heroku_postgresql_plan      = "basic"
   heroku_worker_dyno_quantity = 0
 
+  heroku_web_dyno_size = "basic"
+  heroku_worker_dyno_size = "basic"
+
   ec2_worker_instance_type     = "m4.large"
   ec2_worker_instance_quantity = 1
   ec2_worker_ssh_public_key    = var.ec2_worker_ssh_public_key

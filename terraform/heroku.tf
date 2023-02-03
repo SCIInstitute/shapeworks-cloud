@@ -5,7 +5,7 @@ data "heroku_team" "heroku" {
 
 module "django" {
   source  = "girder/django/heroku"
-  version = "0.10.0"
+  version = "0.10.1"
 
   project_slug     = "shapeworks-cloud"
   route53_zone_id  = data.aws_route53_zone.shapeworks_cloud.zone_id

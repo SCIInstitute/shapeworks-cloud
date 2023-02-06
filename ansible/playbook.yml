@@ -13,31 +13,39 @@
         celery_environment: "{{ django_vars }}"
   tasks:
     - name: Install swcc
-    pip:
-      name: swcc
-    - name: Download shapeworks studio
-      get_url:
-        url: https://github.com/SCIInstitute/ShapeWorks/releases/download/v6.2.1/ShapeWorks-v6.2.1-linux.zip
-        dest: /tmp/shapeworks.zip
-    - name: Install unzip
+      pip:
+        name: /home/ubuntu/celery_project/swcc
+        editable: true
+        virtualenv: /opt/celery
+      become: true
+      become_user: root
+    - name: Install shapeworks prerequisites
       apt:
-        name: unzip
+        name:
+          - curl
+          - gcc
+          - libc6-dev
+          - libgl1-mesa-glx
+          - libglib2.0-0
+          - libpq-dev
+          - libqt5core5a
+          - libxt6
+          - unzip
+        state: present
+        install_recommends: no
       become: true
       become_user: root
-    - name: Unarchive shapeworks studio
-      unarchive:
-        src: /tmp/shapeworks.zip
-        dest: /tmp/
-        remote_src: yes
-      become: true
-      become_user: root
-    - name: Install shapeworks studio into /opt/shapeworks
-      copy:
-        src: /tmp/ShapeWorks-v6.2.1-linux/bin
-        dest: /opt/shapeworks
-        owner: celery
-        group: celery
-        remote_src: yes
+    - name: Download shapeworks studio
+      ansible.builtin.shell: |
+        export url=$(curl -s https://api.github.com/repos/SCIInstitute/ShapeWorks/releases | grep -o "http.*dev-linux.*.gz");
+        curl -L -o /tmp/shapeworks.tgz $url
+        mkdir -p /opt/shapeworks
+        rm -rf /opt/shapeworks
+        mkdir /opt/shapeworks
+        tar -zxvf /tmp/shapeworks.tgz -C /opt/shapeworks --strip-components 1
+        rm /tmp/shapeworks.tgz
+        cp -r /opt/shapeworks/bin/* /usr/local/bin/.
+        cp -nr /opt/shapeworks/lib/* /usr/local/lib/.
       become: true
       become_user: root
     # This is required because composed_configurations attempts to create the staticfiles directory in the python installation directory while being imported.
@@ -57,9 +65,9 @@
         state: present
         key: "{{ item }}"
       with_items:
+        - "{{ lookup('file', 'shapeworks-worker.pub') }}"
         - "{{ lookup('file', 'anne.pub') }}"
         - "{{ lookup('file', 'shapeworks.pub') }}"
-        - "{{ lookup('file', 'shapeworks-worker.pub') }}"
     - name: Restart celery service to pick up any changes
       systemd:
         state: restarted

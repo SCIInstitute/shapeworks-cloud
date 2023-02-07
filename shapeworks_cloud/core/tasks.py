@@ -1,16 +1,16 @@
 import json
-import pandas
 from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
 from typing import Dict
-import xml.etree.ElementTree as ET
+from xml.etree import ElementTree
 
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.db.models import Q
+import pandas
 from rest_framework.authtoken.models import Token
 
 from shapeworks_cloud.core import models
@@ -28,9 +28,13 @@ def task_trash_collect():
 
 
 def parse_progress(xml_string):
-    xml = ET.fromstring(xml_string)
-    percentage = xml.find('progress').text
-    return int(percentage.split('.')[0])
+    xml = ElementTree.fromstring(xml_string)
+    progress_tag = xml.find('progress')
+    if progress_tag:
+        percentage = progress_tag.text
+        if percentage:
+            return int(percentage.split('.')[0])
+    return 0
 
 
 def edit_swproj_section(filename, section_name, new_df):
@@ -109,22 +113,18 @@ def run_shapeworks_command(
                 '/opt/shapeworks/bin/shapeworks',
                 command,
                 f'--name={project_filename}',
-                '--xmlconsole'
+                '--xmlconsole',
             ]
             if command == 'analyze':
                 full_command.append('--output=analysis.json')
 
-            with Popen(
-                full_command,
-                cwd=download_dir,
-                stdout=PIPE,
-                stderr=PIPE
-            ) as process:
-                for line in iter(process.stdout.readline, b''):
-                    progress.update_percentage(parse_progress(line.decode()))
-                for line in iter(process.stderr.readline, b''):
-                    progress.update_error(line.decode())
-                    return
+            with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
+                if process.stderr and process.stdout:
+                    for line in iter(process.stdout.readline, b''):
+                        progress.update_percentage(parse_progress(line.decode()))
+                    for line in iter(process.stderr.readline, b''):
+                        progress.update_error(line.decode())
+                        return
                 process.wait()
 
             result_filename = 'analysis.json' if command == 'analyze' else project_filename
@@ -257,7 +257,8 @@ def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
                     )
                 if 'alignment' in anatomy_data:
                     result_particles_object.transform.save(
-                        '.'.join(anatomy_data['shape'].split('/')[-1].split('.')[:-1]) + '.transform',
+                        '.'.join(anatomy_data['shape'].split('/')[-1].split('.')[:-1])
+                        + '.transform',
                         ContentFile(str(anatomy_data['alignment']).encode()),
                     )
 

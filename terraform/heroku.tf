@@ -5,7 +5,7 @@ data "heroku_team" "heroku" {
 
 module "django" {
   source  = "girder/django/heroku"
-  version = "0.10.0"
+  version = "0.10.1"
 
   project_slug     = "shapeworks-cloud"
   route53_zone_id  = data.aws_route53_zone.shapeworks_cloud.zone_id
@@ -14,6 +14,9 @@ module "django" {
 
   heroku_postgresql_plan      = "basic"
   heroku_worker_dyno_quantity = 0
+
+  heroku_web_dyno_size = "basic"
+  heroku_worker_dyno_size = "basic"
 
   ec2_worker_instance_type     = "m4.large"
   ec2_worker_instance_quantity = 1

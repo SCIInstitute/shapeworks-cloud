@@ -1,16 +1,16 @@
 import json
+import pandas
 from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
-import time
 from typing import Dict
+import xml.etree.ElementTree as ET
 
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.db.models import Q
-import pandas
 from rest_framework.authtoken.models import Token
 
 from shapeworks_cloud.core import models
@@ -25,6 +25,12 @@ def task_trash_collect():
     # Delete all leftover TaskProgress objects
     # not currently in progress
     models.TaskProgress.objects.exclude(Q(error__exact='') & Q(percent_complete__lt=100)).delete()
+
+
+def parse_progress(xml_string):
+    xml = ET.fromstring(xml_string)
+    percentage = xml.find('progress').text
+    return int(percentage.split('.')[0])
 
 
 def edit_swproj_section(filename, section_name, new_df):
@@ -83,13 +89,7 @@ def run_shapeworks_command(
             project_filename = project.file.name.split('/')[-1]
             SWCCProject.from_id(project.id).download(download_dir)
 
-            progress.update_percentage(10)
-            time.sleep(3)
-
             pre_command_function()
-
-            progress.update_percentage(25)
-            time.sleep(3)
 
             if form_data:
                 # write the form data to the project file
@@ -104,29 +104,28 @@ def run_shapeworks_command(
                     form_df,
                 )
 
-            progress.update_percentage(50)
-            time.sleep(3)
             # perform command
             full_command = [
                 '/opt/shapeworks/bin/shapeworks',
                 command,
                 f'--name={project_filename}',
+                '--xmlconsole'
             ]
             if command == 'analyze':
                 full_command.append('--output=analysis.json')
 
-            process = Popen(
+            with Popen(
                 full_command,
                 cwd=download_dir,
                 stdout=PIPE,
-                stderr=PIPE,
-            )
-            _out, _err = process.communicate()
-            print(_out, _err)
-            if len(_err) > 0:
-                progress.update_error(_err.decode())
-                return
-            progress.update_percentage(75)
+                stderr=PIPE
+            ) as process:
+                for line in iter(process.stdout.readline, b''):
+                    progress.update_percentage(parse_progress(line.decode()))
+                for line in iter(process.stderr.readline, b''):
+                    progress.update_error(line.decode())
+                    return
+                process.wait()
 
             result_filename = 'analysis.json' if command == 'analyze' else project_filename
             with open(Path(download_dir, result_filename), 'r') as f:
@@ -226,7 +225,7 @@ def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0 and prefixes[0] != 'name':
                     prefix = prefixes[0]
-                    anatomy_id = 'anatomy' + key.replace(prefix, '')
+                    anatomy_id = 'anatomy' + key.replace(prefix, '').replace('_particles', '')
                     if prefix in ['mesh', 'segmentation', 'image', 'contour']:
                         prefix = 'shape'
                     if anatomy_id not in row:
@@ -246,18 +245,21 @@ def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
                     groomed_mesh=target_mesh,
                     project=project,
                 )
-                result_particles_object.world.save(
-                    anatomy_data['world'].split('/')[-1],
-                    open(Path(download_dir, anatomy_data['world']), 'rb'),
-                )
-                result_particles_object.local.save(
-                    anatomy_data['local'].split('/')[-1],
-                    open(Path(download_dir, anatomy_data['local']), 'rb'),
-                )
-                result_particles_object.transform.save(
-                    '.'.join(anatomy_data['shape'].split('/')[-1].split('.')[:-1]) + '.transform',
-                    ContentFile(str(anatomy_data['alignment']).encode()),
-                )
+                if 'world' in anatomy_data:
+                    result_particles_object.world.save(
+                        anatomy_data['world'].split('/')[-1],
+                        open(Path(download_dir, anatomy_data['world']), 'rb'),
+                    )
+                if 'local' in anatomy_data:
+                    result_particles_object.local.save(
+                        anatomy_data['local'].split('/')[-1],
+                        open(Path(download_dir, anatomy_data['local']), 'rb'),
+                    )
+                if 'alignment' in anatomy_data:
+                    result_particles_object.transform.save(
+                        '.'.join(anatomy_data['shape'].split('/')[-1].split('.')[:-1]) + '.transform',
+                        ContentFile(str(anatomy_data['alignment']).encode()),
+                    )
 
     run_shapeworks_command(
         user_id,

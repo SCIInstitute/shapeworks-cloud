@@ -28,14 +28,11 @@ def task_trash_collect():
 
 
 def parse_progress(xml_string):
-    xml = ElementTree.fromstring(xml_string)
-    progress_tag = xml.find('progress')
-    if progress_tag:
-        percentage = progress_tag.text
-        if percentage:
-            # Only 80% of reported percentage belongs to
-            # entire task progress
-            return int(int(percentage.split('.')[0]) * 0.8) + 10
+    percentages = [
+        content.text for content in ElementTree.fromstring(xml_string).findall('.//progress')
+    ]
+    if len(percentages) == 1:
+        return int(int(percentages[0].split('.')[0]) * 0.8)
     return 0
 
 
@@ -116,15 +113,19 @@ def run_shapeworks_command(
                 '/opt/shapeworks/bin/shapeworks',
                 command,
                 f'--name={project_filename}',
-                '--xmlconsole',
             ]
             if command == 'analyze':
                 full_command.append('--output=analysis.json')
+            else:
+                full_command.append('--xmlconsole')
 
             with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
                 if process.stderr and process.stdout:
                     for line in iter(process.stdout.readline, b''):
-                        progress.update_percentage(parse_progress(line.decode()))
+                        if command == 'analyze':
+                            print(line.decode())  # analyze task has no xmloutput
+                        else:
+                            progress.update_percentage(parse_progress(line.decode()) + 10)
                     for line in iter(process.stderr.readline, b''):
                         progress.update_error(line.decode())
                         return

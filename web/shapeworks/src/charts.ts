@@ -1,11 +1,11 @@
 // functions for generating analysis charts
 
-export type lineChartProps = { 
-    title: string, 
-    x_label: string, 
-    y_label: string, 
-    x: Array<number>, 
-    y: Array<number> 
+export type lineChartProps = {
+    title: string,
+    x_label: string,
+    y_label: string,
+    x: Array<number>,
+    y: Array<number>
 }
 
 export function lineChartOptions (data: lineChartProps) {
@@ -127,7 +127,9 @@ function copyData(text: string) {
 
 function getDownloadURL(text: string) {
     const csvstring = getTextAsCSV(text);
-    const csvarray = csvstring.split(/(?<=\n)/gi); // uses positive look-behind to keep \n intact after split
+    // const csvarray = csvstring.split(/(?<=\n)/gi); // uses positive look-behind to keep \n intact after split
+    // this should do the same thing without the look-behind
+    const csvarray = csvstring.split(/\n/g).map((v, idx) => idx ? v + '\n' : v);
 
     const blob = new Blob(csvarray);
 
@@ -146,7 +148,7 @@ function getTextAsCSV(text: string) {
             splitstring[rowindex] = h.join(',');
         }
     })
-    
+
     return splitstring.join('\n');
 }
 
@@ -176,7 +178,7 @@ function showData(data: lineChartProps) {
 
         csvtext += `${data.x[i]},${data.y[i]}\n`
     }
-    
+
     const div = document.createElement('div');
     div.className = "dataview";
 
@@ -209,4 +211,3 @@ function roundTo(num: number, place: number) {
     const factor = 10 ** place;
     return Math.round(num * factor) / factor;
 }
-

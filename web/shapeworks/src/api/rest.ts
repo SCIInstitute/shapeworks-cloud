@@ -4,7 +4,16 @@ import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
 
 export async function getDatasets(): Promise<Dataset[]>{
-    return (await apiClient.get('/datasets')).data.results
+    const results = []
+    let page = 1
+    let response = (await apiClient.get(`/datasets?page=${page}`)).data
+    results.push(...response.results)
+    while(response.next){
+        page += 1
+        response = (await apiClient.get(`/datasets?page=${page}`)).data
+        results.push(...response.results)
+    }
+    return results
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset>{

@@ -33,7 +33,9 @@ def parse_progress(xml_string):
     if progress_tag:
         percentage = progress_tag.text
         if percentage:
-            return int(percentage.split('.')[0])
+            # Only 80% of reported percentage belongs to
+            # entire task progress
+            return int(int(percentage.split('.')[0]) * 0.8) + 10
     return 0
 
 
@@ -94,6 +96,7 @@ def run_shapeworks_command(
             SWCCProject.from_id(project.id).download(download_dir)
 
             pre_command_function()
+            progress.update_percentage(10)
 
             if form_data:
                 # write the form data to the project file

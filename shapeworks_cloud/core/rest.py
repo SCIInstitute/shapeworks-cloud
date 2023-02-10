@@ -211,9 +211,10 @@ class ProjectViewSet(BaseViewSet):
         form_data = {k: str(v) for k, v in form_data.items()}
         progress = models.TaskProgress.objects.create(name='groom')
         groom.delay(request.user.id, project.id, form_data, progress.task_id)
-        return Response(data={
-            'groom_task': serializers.TaskProgressSerializer(progress).data
-        }, status=status.HTTP_200_OK)
+        return Response(
+            data={'groom_task': serializers.TaskProgressSerializer(progress).data},
+            status=status.HTTP_200_OK,
+        )
 
     @action(
         detail=True,

@@ -31,7 +31,7 @@ def parse_progress(xml_string):
     percentages = [
         content.text for content in ElementTree.fromstring(xml_string).findall('.//progress')
     ]
-    if len(percentages) == 1:
+    if len(percentages) == 1 and percentages[0]:
         return int(int(percentages[0].split('.')[0]) * 0.8)
     return 0
 

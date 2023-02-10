@@ -261,8 +261,10 @@ class ProjectFileIO(BaseModel, FileIO):
         if contents['mean'] and contents['mean']['meshes']:
             mean_shape_path = contents['mean']['meshes'][0]
             mean_particles_path = None
-            if 'particles' in contents['mean']:
+            if 'particle_files' in contents['mean']:
                 mean_particles_path = contents['mean']['particle_files'][0]
+            if 'particles' in contents['mean']:
+                mean_particles_path = contents['mean']['particles'][0]
             modes = []
             for mode in contents['modes']:
                 pca_values = []

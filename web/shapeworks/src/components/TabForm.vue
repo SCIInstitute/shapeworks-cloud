@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api'
+import { defineComponent, ref, computed } from '@vue/composition-api'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
@@ -7,7 +7,7 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { pollJobResults, spawnJob, jobAlreadyDone, allDataObjectsInDataset } from '../store';
+import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks, spawnJobProgressPoll } from '../store';
 import { DataObject } from '../types/index';
 
 Vue.use(Vuetify)
@@ -29,9 +29,9 @@ export default defineComponent({
         },
     },
     components: {
-      VJsf,
+        VJsf,
     },
-    setup(props, context) {
+    setup(props) {
         const ajv = new Ajv();
         const formDefaults = ref();
         const formData = ref({});
@@ -40,8 +40,6 @@ export default defineComponent({
         const refreshing = ref(false);
         const showSubmissionConfirmation = ref(false);
         const messages = ref('');
-        const resultsPoll = ref();
-        const reconstructionsPoll = ref();
         const alreadyDone = ref(jobAlreadyDone(props.form))
 
         async function fetchFormSchema() {
@@ -89,52 +87,28 @@ export default defineComponent({
         }
 
         async function submitForm(_: Event, confirmed=false){
-            if(resultsPoll.value) {
-                clearInterval(resultsPoll.value)
-                resultsPoll.value = undefined
+            if(currentTasks.value[`${props.form}_task`]) {
+                currentTasks.value[`${props.form}_task`] = undefined
             }
             if(alreadyDone.value && !confirmed){
                 showSubmissionConfirmation.value = true
                 return
             }
-            const success = await spawnJob(props.form, formData.value)
-            if(success){
-                messages.value = `Successfully submitted ${props.form} job. Awaiting results...`
-                resultsPoll.value = setInterval(
-                    async () => {
-                        const pollMessage = await pollJobResults(props.form)
-                        if(pollMessage){
-                            messages.value = pollMessage
-                            setTimeout(() => messages.value = '', 5000)
-                            clearInterval(resultsPoll.value)
-                            context.emit("change")
-                            alreadyDone.value = jobAlreadyDone(props.form)
-                            resultsPoll.value = undefined
-                            context.emit("change")
-                        }
-                    },
-                    5000,
-                )
-                if(props.form === 'optimize'){
-                    reconstructionsPoll.value = setInterval(
-                        async () => {
-                            const pollMessage = await pollJobResults('analyze')
-                            if(pollMessage){
-                                messages.value = pollMessage
-                                setTimeout(() => messages.value = '', 5000)
-                                clearInterval(reconstructionsPoll.value)
-                                reconstructionsPoll.value = undefined
-                                context.emit("change")
-                            }
-                        },
-                        5000,
-                    )
-                }
-            } else {
+            const taskIds = await spawnJob(props.form, formData.value)
+            if(!taskIds || taskIds.length === 0) {
                 messages.value = `Failed to submit ${props.form} job.`
-                setTimeout(() => messages.value = '', 5000)
+                setTimeout(() => messages.value = '', 10000)
+            } else {
+                messages.value = `Successfully submitted ${props.form} job. Awaiting results...`
+                currentTasks.value = Object.assign(currentTasks.value, taskIds)
+                spawnJobProgressPoll()
             }
         }
+
+        const taskData = computed(
+            () => currentTasks.value[`${props.form}_task`]
+        )
+
 
         return {
             props,
@@ -149,6 +123,7 @@ export default defineComponent({
             submitForm,
             evaluateExpression,
             alreadyDone,
+            taskData,
         }
     },
 })
@@ -159,13 +134,13 @@ export default defineComponent({
     <div>
         <div v-if="props.prerequisite()">
             <v-form v-model="formValid" class="pa-3">
-                <div class="messages-box pa-3" v-if="messages.length">
-                    {{ messages }}
-                    <v-progress-circular
-                        v-if="messages.includes('wait')"
-                        indeterminate
-                        color="primary"
-                    ></v-progress-circular>
+                <div v-if="taskData">
+                    <div class="messages-box pa-3" v-if="messages.length">
+                        {{ messages }}
+                    </div>
+                    <div v-if="taskData.error">{{ taskData.error }}</div>
+                    <v-progress-linear v-else :value="taskData.percent_complete"/>
+                <br />
                 </div>
                 <div style="display: flex; width: 100%; justify-content: space-between;">
                     <v-btn @click="resetForm">Restore defaults</v-btn>

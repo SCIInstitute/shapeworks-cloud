@@ -1,6 +1,7 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
 import { DataObject, Dataset, Subject, Particles, GroomedShape, Project, ReconstructedSample, VTKInstance } from '@/types'
 import {
+    deleteTaskProgress,
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
     getProjectsForDataset,
@@ -8,7 +9,8 @@ import {
     groomProject, optimizeProject, refreshProject
 } from '@/api/rest';
 import { ref } from '@vue/composition-api'
-import { Analysis } from './types/index';
+import { Analysis, Task } from './types/index';
+import { getTaskProgress } from '@/api/rest';
 
 
 export const loadingState = ref<boolean>(false)
@@ -101,6 +103,14 @@ export const vtkShapesByType = ref<Record<string, any[]>>({
     "Particles": []
 })
 
+export const currentTasks = ref<Record<string, Task| undefined>>({
+    groom_task: undefined,
+    optimize_task: undefined,
+    analyze_task: undefined
+})
+
+export const jobProgressPoll = ref();
+
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
     if (selectedDataset.value?.id != datasetId) {
@@ -166,141 +176,86 @@ export function jobAlreadyDone(action: string): Boolean {
     }
 }
 
-export async function spawnJob(action: string, payload: Record<string, any>): Promise<Boolean>{
+export async function spawnJob(action: string, payload: Record<string, any>): Promise<any>{
     if (Object.keys(payload).every((key) => key.includes("section"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
     const projectId = selectedProject.value?.id;
-    if(!projectId) return false
+    if(!projectId) return undefined
     switch(action){
         case 'groom':
-            return (await groomProject(projectId, payload)).status === 204
+            return (await groomProject(projectId, payload))?.data
         case 'optimize':
-            return (await optimizeProject(projectId, payload)).status === 204
-        case 'analyze':
-            break;
+            return (await optimizeProject(projectId, payload))?.data
         default:
             break;
     }
-    return false;
+    return undefined;
 }
 
-export async function pollJobResults(action: string): Promise<string | undefined> {
-    let resultsFound = false;
-    let targetStorage = undefined;
-    let testFunction: Function | undefined = undefined;
-    let loadFunction: Function | undefined = undefined;
-    let successFunction: Function | undefined = undefined;
-    switch(action){
-        case 'groom':
-            targetStorage = groomedShapesForOriginalDataObjects
-            testFunction = async (type: string, id: number) => {
-                if(jobAlreadyDone(action)) {
-                    return (await getGroomedShapeForDataObject(
-                            type, id, selectedProject.value?.id
-                        )).filter(
-                        (result: GroomedShape) => {
-                            // only consider updated objects as successful results
-                            return groomedShapesForOriginalDataObjects.value[type][id].modified !== result.modified
-                        }
-                    )
-                }
-                return await getGroomedShapeForDataObject(
-                    type, id, selectedProject.value?.id
-                )
-            }
-            loadFunction = loadGroomedShapeForObject
-            successFunction = () => {
-                cachedMarchingCubes.value = Object.fromEntries(
-                    Object.entries(cachedMarchingCubes.value).filter(
-                        ([cachedLabel]) => !cachedLabel.includes('Groomed')
-                    )
-                )
-                if(!layersShown.value.includes('Groomed')) layersShown.value.push('Groomed')
-            }
-            break;
-        case 'optimize':
-            targetStorage = particlesForOriginalDataObjects
-            testFunction = async (type: string, id: number) => {
-                if(jobAlreadyDone(action)) {
-                    return (await getOptimizedParticlesForDataObject(
-                            type, id, selectedProject.value?.id
-                        )).filter(
-                        (result: Particles) => {
-                            // only consider updated objects as successful results
-                            return particlesForOriginalDataObjects.value[type][id].modified !== result.modified
-                        }
-                    )
-                }
-                return await getOptimizedParticlesForDataObject(
-                    type, id, selectedProject.value?.id
-                )
-            }
-            loadFunction = loadParticlesForObject
-            successFunction = () => {
-                cachedMarchingCubes.value = Object.fromEntries(
-                    Object.entries(cachedMarchingCubes.value).filter(
-                        ([cachedLabel]) => !cachedLabel.includes('Particles')
-                    )
-                )
-                if(!layersShown.value.includes('Particles')) layersShown.value.push('Particles')
-            }
-            break;
-        case 'analyze':
-            targetStorage = reconstructionsForOriginalDataObjects
-            testFunction = async (type: string, id: number) => {
-                if (reconstructionsForOriginalDataObjects.value.length < 0){
-                    const knownIds = reconstructionsForOriginalDataObjects.value.map(
-                        (sample) => sample.id
-                    )
-                    return (await getReconstructedSamplesForProject(
-                        type, id, selectedProject.value?.id
-                    )).filter(
-                        (result: ReconstructedSample) => {
-                            // only consider updated objects as successful results
-                            !knownIds.includes(result.id)
-                        }
-                    )
-                } else {
-                    return await getReconstructedSamplesForProject(
-                        type, id, selectedProject.value?.id
-                    )
-                }
-            }
-            loadFunction = loadReconstructedSamplesForProject
-            successFunction = () => {
-                if(!layersShown.value.includes('Reconstructed')) layersShown.value.push('Reconstructed')
-            }
-            break;
-        default:
-            break;
-    }
-    const testObject = allDataObjectsInDataset.value[0]
-    if(testObject && targetStorage && testFunction && loadFunction && successFunction) {
-        resultsFound = (await testFunction(testObject.type, testObject.id)).length > 0
-        if(resultsFound) {
-            if (action !== 'analyze'){
-                targetStorage.value = {}
-                await Promise.all(allDataObjectsInDataset.value.map(
-                    (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
-                ))
-                if(successFunction) successFunction()
-                return `Received results for ${action} job.`
-            } else {
-                targetStorage.value = []
-                await loadFunction(undefined, undefined, selectedProject.value?.id)
-                if(successFunction) successFunction()
-                return `Received reconstructed geometries after successful optimization.`
+export async function spawnJobProgressPoll() {
+    jobProgressPoll.value = setInterval(pollJobProgress, 1000)
+}
+
+export async function pollJobProgress(){
+    const refreshedTasks = await Promise.all(Object.entries(currentTasks.value)
+    .map(async ([taskName, task]) => {
+        if (task?.task_id){
+            task = await getTaskProgress(task.task_id)
+            if (task?.task_id && task?.percent_complete === 100) {
+                await deleteTaskProgress(task?.task_id)
+                task.task_id = undefined
+                setTimeout(() => {
+                    currentTasks.value[taskName] = undefined
+                }, 1000)
+                fetchJobResults(taskName.replace('_task', ''))
             }
         }
-    } else {
-        return `Error polling for ${action} results. Try refreshing the page.`
+        return [taskName, task]
+    }))
+    currentTasks.value = Object.fromEntries(refreshedTasks)
+    if (Object.values(currentTasks.value).every(task => task?.task_id === undefined)) {
+        clearInterval(jobProgressPoll.value)
+        jobProgressPoll.value = undefined
     }
-    return undefined
 }
 
+export async function fetchJobResults(taskName: string) {
+    if(!selectedProject.value) {
+        return;
+    }
+    const refreshedProject = await refreshProject(selectedProject.value.id)
+    let layerName: string = ''
+    let loadFunction: Function | undefined = undefined
+    switch(taskName) {
+        case 'groom':
+            layerName = 'Groomed'
+            loadFunction = loadGroomedShapeForObject
+            break;
+        case 'optimize':
+            layerName = 'Particles'
+            loadFunction = loadParticlesForObject
+            break;
+        case 'analyze':
+            layerName = 'Reconstructed'
+            loadFunction = loadReconstructedSamplesForProject
+            analysis.value = refreshedProject?.last_cached_analysis
+            break;
+    }
+    if (layerName && loadFunction) {
+        await Promise.all(allDataObjectsInDataset.value.map(
+            (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
+        ))
+        cachedMarchingCubes.value = Object.fromEntries(
+            Object.entries(cachedMarchingCubes.value).filter(
+                ([cachedLabel]) => !cachedLabel.includes(layerName)
+            )
+        )
+        if(!layersShown.value.includes(layerName)) layersShown.value.push(layerName)
+    }
+}
 
-export async function fetchNewData(tabName: string){
+export async function switchTab(tabName: string){
     if(!selectedProject.value) {
         return;
     }
@@ -308,7 +263,7 @@ export async function fetchNewData(tabName: string){
     switch(tabName) {
         // add any other tab-switching updates here
         case 'analyze':
-            if (refreshedProject) {
+            if (refreshedProject && !currentTasks.value['analyze_task']) {
                 analysis.value = refreshedProject.last_cached_analysis
             }
     }

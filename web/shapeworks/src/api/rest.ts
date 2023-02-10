@@ -113,3 +113,11 @@ export async function groomProject(projectId: number, formData: Record<string, a
 export async function optimizeProject(projectId: number, formData: Record<string, any>){
     return (await apiClient.post(`/projects/${projectId}/optimize/`, formData))
 }
+
+export async function getTaskProgress(taskId: string){
+    return (await apiClient.get(`/task-progress/${taskId}`)).data
+}
+
+export async function deleteTaskProgress(taskId: string){
+    return (await apiClient.delete(`/task-progress/${taskId}`)).data
+}

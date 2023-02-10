@@ -1,10 +1,10 @@
 <script>
 import { defineComponent, ref } from '@vue/composition-api';
-import { createProject } from '../api/rest'
+import { createProject, getProjectsForDataset } from '../api/rest'
 import {
     selectedDataset,
     loadingState,
-    loadProjectForDataset,
+    allProjectsForDataset,
 } from '../store';
 
 export default defineComponent({
@@ -26,9 +26,9 @@ export default defineComponent({
             dataset: selectedDataset.value.id,
             description: description.value,
             keywords: keywords.value,
-        }).then((response) => {
+        }).then(async (response) => {
             if(response.status === 201){
-                loadProjectForDataset(undefined, selectedDataset.value.id)
+                allProjectsForDataset.value = await getProjectsForDataset(selectedDataset.value.id);
             }
             loadingState.value = false
             reset()

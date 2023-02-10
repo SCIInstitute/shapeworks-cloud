@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
+from typing import Dict
+from xml.etree import ElementTree
 
 from celery import shared_task
 from django.conf import settings
@@ -16,6 +18,15 @@ from swcc.api import swcc_session
 from swcc.models import Project as SWCCProject
 from swcc.models.constants import expected_key_prefixes
 from swcc.models.project import ProjectFileIO
+
+
+def parse_progress(xml_string):
+    percentages = [
+        content.text for content in ElementTree.fromstring(xml_string).findall('.//progress')
+    ]
+    if len(percentages) == 1 and percentages[0] is not None:
+        return int(int(percentages[0].split('.')[0]) * 0.8)
+    return 0
 
 
 def edit_swproj_section(filename, section_name, new_df):
@@ -59,14 +70,10 @@ def interpret_form_df(df, command):
 
 
 def run_shapeworks_command(
-    user_id,
-    project_id,
-    form_data,
-    command,
-    pre_command_function,
-    post_command_function,
+    user_id, project_id, form_data, command, pre_command_function, post_command_function, task_id
 ):
     user = User.objects.get(id=user_id)
+    progress = models.TaskProgress.objects.get(task_id=task_id)
     token, _created = Token.objects.get_or_create(user=user)
     base_url = settings.API_URL
 
@@ -79,6 +86,7 @@ def run_shapeworks_command(
             SWCCProject.from_id(project.id).download(download_dir)
 
             pre_command_function()
+            progress.update_percentage(10)
 
             if form_data:
                 # write the form data to the project file
@@ -101,25 +109,30 @@ def run_shapeworks_command(
             ]
             if command == 'analyze':
                 full_command.append('--output=analysis.json')
+            else:
+                full_command.append('--xmlconsole')
 
-            process = Popen(
-                full_command,
-                cwd=download_dir,
-                stdout=PIPE,
-                stderr=PIPE,
-            )
-            _out, _err = process.communicate()
-            # TODO: raise _err to user if not empty
-            print(_out, _err)
+            with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
+                if process.stderr and process.stdout:
+                    for line in iter(process.stdout.readline, b''):
+                        if command == 'analyze':
+                            print(line.decode())  # analyze task has no xmloutput
+                        else:
+                            progress.update_percentage(parse_progress(line.decode()) + 10)
+                    for line in iter(process.stderr.readline, b''):
+                        progress.update_error(line.decode())
+                        return
+                process.wait()
 
             result_filename = 'analysis.json' if command == 'analyze' else project_filename
             with open(Path(download_dir, result_filename), 'r') as f:
                 result_data = json.load(f)
             post_command_function(project, download_dir, result_data, project_filename)
+            progress.update_percentage(100)
 
 
 @shared_task
-def groom(user_id, project_id, form_data):
+def groom(user_id, project_id, form_data, task_id):
     def pre_command_function():
         # delete any previous results
         models.GroomedSegmentation.objects.filter(project=project_id).delete()
@@ -138,42 +151,56 @@ def groom(user_id, project_id, form_data):
         )
         project_meshes = models.Mesh.objects.filter(subject__dataset__id=project.dataset.id)
         for entry in result_data['data']:
-            row = {}
+            row: Dict[str, Dict] = {}
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
-                    row[prefixes[0]] = entry[key].replace('../', '').replace('./', '')
+                    prefix = prefixes[0]
+                    anatomy_id = 'anatomy' + key.replace(prefix, '')
+                    if prefix in ['mesh', 'segmentation', 'image', 'contour']:
+                        prefix = 'shape'
+                    if prefix in ['shape', 'groomed']:
+                        if anatomy_id not in row:
+                            row[anatomy_id] = {}
+                        row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
-            source_filename = row['shape'].split('/')[-1]
-            result_file = Path(download_dir, row['groomed'])
-            try:
-                target_object = project_segmentations.get(
-                    file__endswith=source_filename,
+            for anatomy_data in row.values():
+                source_filename = anatomy_data['shape'].split('/')[-1]
+                result_file = Path(download_dir, anatomy_data['groomed'])
+                try:
+                    target_object = project_segmentations.get(
+                        file__endswith=source_filename,
+                    )
+                    result_object = models.GroomedSegmentation.objects.create(
+                        project=project,
+                        segmentation=target_object,
+                    )
+                except models.Segmentation.DoesNotExist:
+                    target_object = project_meshes.get(
+                        file__endswith=source_filename,
+                    )
+                    result_object = models.GroomedMesh.objects.create(
+                        project=project,
+                        mesh=target_object,
+                    )
+                result_object.file.save(
+                    anatomy_data['groomed'],
+                    open(result_file, 'rb'),
                 )
-                result_object = models.GroomedSegmentation.objects.create(
-                    project=project,
-                    segmentation=target_object,
-                )
-            except models.Segmentation.DoesNotExist:
-                target_object = project_meshes.get(
-                    file__endswith=source_filename,
-                )
-                result_object = models.GroomedMesh.objects.create(
-                    project=project,
-                    mesh=target_object,
-                )
-            result_object.file.save(
-                row['groomed'],
-                open(result_file, 'rb'),
-            )
 
     run_shapeworks_command(
-        user_id, project_id, form_data, 'groom', pre_command_function, post_command_function
+        user_id,
+        project_id,
+        form_data,
+        'groom',
+        pre_command_function,
+        post_command_function,
+        task_id,
     )
 
 
 @shared_task
-def optimize(user_id, project_id, form_data):
+def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
     def pre_command_function():
         # delete any previous results
         models.OptimizedParticles.objects.filter(project=project_id).delete()
@@ -190,46 +217,63 @@ def optimize(user_id, project_id, form_data):
         project_groomed_meshes = models.GroomedMesh.objects.filter(project=project)
 
         for entry in result_data['data']:
-            row = {}
+            row: Dict[str, Dict] = {}
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
-                if len(prefixes) > 0:
-                    row[prefixes[0]] = entry[key].replace('../', '').replace('./', '')
+                if len(prefixes) > 0 and prefixes[0] != 'name':
+                    prefix = prefixes[0]
+                    anatomy_id = 'anatomy' + key.replace(prefix, '').replace('_particles', '')
+                    if prefix in ['mesh', 'segmentation', 'image', 'contour']:
+                        prefix = 'shape'
+                    if anatomy_id not in row:
+                        row[anatomy_id] = {}
+                    row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
-            groomed_filename = row['groomed'].split('/')[-1]
-            target_segmentation = project_groomed_segmentations.filter(
-                file__endswith=groomed_filename,
-            ).first()
-            target_mesh = project_groomed_meshes.filter(
-                file__endswith=groomed_filename,
-            ).first()
-            result_particles_object = models.OptimizedParticles.objects.create(
-                groomed_segmentation=target_segmentation,
-                groomed_mesh=target_mesh,
-                project=project,
-            )
-            result_particles_object.world.save(
-                row['world'].split('/')[-1],
-                open(Path(download_dir, row['world']), 'rb'),
-            )
-            result_particles_object.local.save(
-                row['local'].split('/')[-1],
-                open(Path(download_dir, row['local']), 'rb'),
-            )
-            result_particles_object.transform.save(
-                '.'.join(row['shape'].split('/')[-1].split('.')[:-1]) + '.transform',
-                ContentFile(str(row['alignment']).encode()),
-            )
+            for anatomy_data in row.values():
+                groomed_filename = anatomy_data['groomed'].split('/')[-1]
+                target_segmentation = project_groomed_segmentations.filter(
+                    file__endswith=groomed_filename,
+                ).first()
+                target_mesh = project_groomed_meshes.filter(
+                    file__endswith=groomed_filename,
+                ).first()
+                result_particles_object = models.OptimizedParticles.objects.create(
+                    groomed_segmentation=target_segmentation,
+                    groomed_mesh=target_mesh,
+                    project=project,
+                )
+                if 'world' in anatomy_data:
+                    result_particles_object.world.save(
+                        anatomy_data['world'].split('/')[-1],
+                        open(Path(download_dir, anatomy_data['world']), 'rb'),
+                    )
+                if 'local' in anatomy_data:
+                    result_particles_object.local.save(
+                        anatomy_data['local'].split('/')[-1],
+                        open(Path(download_dir, anatomy_data['local']), 'rb'),
+                    )
+                if 'alignment' in anatomy_data:
+                    result_particles_object.transform.save(
+                        '.'.join(anatomy_data['shape'].split('/')[-1].split('.')[:-1])
+                        + '.transform',
+                        ContentFile(str(anatomy_data['alignment']).encode()),
+                    )
 
     run_shapeworks_command(
-        user_id, project_id, form_data, 'optimize', pre_command_function, post_command_function
+        user_id,
+        project_id,
+        form_data,
+        'optimize',
+        pre_command_function,
+        post_command_function,
+        task_id,
     )
 
-    analyze.delay(user_id, project_id)
+    analyze.delay(user_id, project_id, analysis_task_id)
 
 
 @shared_task
-def analyze(user_id, project_id):
+def analyze(user_id, project_id, task_id):
     def pre_command_function():
         # delete any previous results
         project = models.Project.objects.get(id=project_id)
@@ -269,5 +313,5 @@ def analyze(user_id, project_id):
                     reconstructed.save()
 
     run_shapeworks_command(
-        user_id, project_id, None, 'analyze', pre_command_function, post_command_function
+        user_id, project_id, None, 'analyze', pre_command_function, post_command_function, task_id
     )

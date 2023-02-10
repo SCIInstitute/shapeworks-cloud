@@ -181,3 +181,9 @@ class ReconstructedSampleSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ReconstructedSample
         fields = '__all__'
+
+
+class TaskProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.TaskProgress
+        fields = '__all__'

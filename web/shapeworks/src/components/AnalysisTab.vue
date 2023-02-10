@@ -1,7 +1,8 @@
 <script lang="ts">
 import {
     analysis, analysisFileShown,
-    currentAnalysisFileParticles, meanAnalysisFileParticles
+    currentAnalysisFileParticles, meanAnalysisFileParticles,
+    currentTasks,
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 import { lineChartOptions, lineChartProps } from '@/charts'
@@ -31,6 +32,7 @@ export default defineComponent({
     setup(props) {
         const mode = ref(1);
         const stdDev = ref(0);
+        const message = ref<string>();
 
         const modeOptions = computed(() => {
             return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -101,6 +103,10 @@ export default defineComponent({
             return lineChartOptions(options);
         }
 
+        const taskData = computed(
+            () => currentTasks.value['analyze_task']
+        )
+
         return {
             analysis,
             modeOptions,
@@ -109,17 +115,25 @@ export default defineComponent({
             stdDevRange,
             pcaInfo,
             analysisFileShown,
-            generateChart
+            generateChart,
+            message,
+            taskData,
         }
     },
     components: {
-        VChart
+        VChart,
     }
 })
 </script>
 
 <template>
-    <div class="pa-3" v-if="analysis">
+    <div v-if="taskData" class="messages-box pa-3">
+        Running analysis after optimization step...
+        <div v-if="taskData.error">{{ taskData.error }}</div>
+        <v-progress-linear v-else :value="taskData.percent_complete"/>
+        <br />
+    </div>
+    <div class="pa-3" v-else-if="analysis">
         Review shape analysis
         <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
@@ -181,8 +195,10 @@ export default defineComponent({
             </v-expansion-panel>
         </v-expansion-panels>
     </div>
-    <div class="pa-3" v-else>
-        No analysis generated yet; run the optimization step to generate an analysis.
+    <div v-else class="messages-box pa-3">
+        {{ message ||
+            "No analysis generated yet; run the optimization step to generate an analysis."
+        }}
     </div>
 </template>
 
@@ -248,6 +264,11 @@ export default defineComponent({
     line-height: 1.6rem;
     resize: none;
     border: 1px solid #333333;
+}
+
+.messages-box {
+    text-align: center;
+    color: #2196f3;
 }
 
 </style>

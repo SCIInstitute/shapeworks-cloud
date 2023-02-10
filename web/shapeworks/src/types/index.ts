@@ -126,3 +126,12 @@ export interface ReconstructedSample {
     project: number,
     particles: Particles,
 }
+
+export interface Task {
+    name: string,
+    task_id: string | undefined,
+    percent_complete: number,
+    error: string,
+    created: string,
+    modified: string,
+}

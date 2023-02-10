@@ -209,8 +209,14 @@ class ProjectViewSet(BaseViewSet):
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
-        groom.delay(request.user.id, project.id, form_data)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        models.TaskProgress.objects.filter(name='groom', project=project).delete()
+        progress = models.TaskProgress.objects.create(name='groom')
+        groom.delay(request.user.id, project.id, form_data, progress.task_id)
+        return Response(
+            data={'groom_task': serializers.TaskProgressSerializer(progress).data},
+            status=status.HTTP_200_OK,
+        )
 
     @action(
         detail=True,
@@ -222,8 +228,26 @@ class ProjectViewSet(BaseViewSet):
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
-        optimize.delay(request.user.id, project.id, form_data)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        models.TaskProgress.objects.filter(name='optimize', project=project).delete()
+        models.TaskProgress.objects.filter(name='analyze', project=project).delete()
+
+        progress = models.TaskProgress.objects.create(name='optimize')
+        analysis_progress = models.TaskProgress.objects.create(name='analyze')
+        optimize.delay(
+            request.user.id,
+            project.id,
+            form_data,
+            progress.task_id,
+            analysis_progress.task_id,
+        )
+        return Response(
+            data={
+                'optimize_task': serializers.TaskProgressSerializer(progress).data,
+                'analyze_task': serializers.TaskProgressSerializer(analysis_progress).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class GroomedSegmentationViewSet(BaseViewSet):
@@ -277,3 +301,13 @@ class ReconstructedSampleViewSet(
     queryset = models.ReconstructedSample.objects.all()
     serializer_class = serializers.ReconstructedSampleSerializer
     filterset_class = filters.ReconstructedSampleFilter
+
+
+class TaskProgressViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    queryset = models.TaskProgress.objects.all()
+    serializer_class = serializers.TaskProgressSerializer

@@ -23,7 +23,7 @@ import {
     analysisFileShown,
     meanAnalysisFileParticles,
     currentAnalysisFileParticles,
-    fetchNewData
+    switchTab
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -203,7 +203,7 @@ export default defineComponent({
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFileShown, debouncedRefreshRender)
-        watch(tab, fetchNewData)
+        watch(tab, switchTab)
 
         return {
             mini,

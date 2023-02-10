@@ -1,7 +1,7 @@
 <script lang="ts">
 import { setDatasetThumbnail, setProjectThumbnail } from '@/api/rest';
 import { computed, defineComponent, ref, watch } from '@vue/composition-api';
-import { showDifferenceFromMeanMode } from '../store';
+import { showDifferenceFromMeanMode, analysisFileShown } from '../store';
 import {
     particleSize,
     layers,
@@ -152,6 +152,10 @@ export default defineComponent({
             }
         }
 
+        const showAnalysisOptions = computed(() => {
+            return props.currentTab === 'analyze' && analysisFileShown.value;
+        })
+
         return {
             particleSize,
             layersShown,
@@ -164,6 +168,7 @@ export default defineComponent({
             captureThumbnail,
             thumbnailTarget,
             showDifferenceFromMeanMode,
+            showAnalysisOptions,
         }
     }
 })
@@ -173,7 +178,7 @@ export default defineComponent({
     <div class="render-control-bar">
         <v-select
             v-model="layersShown"
-            v-if="currentTab !== 'analyze'"
+            v-if="!showAnalysisOptions"
             :items="layers"
             :item-disabled="(layer) => !layer.available()"
             item-value="name"
@@ -196,7 +201,7 @@ export default defineComponent({
         </v-select>
         <v-text-field
             v-model.number="particleSize"
-            v-if="currentTab !== 'analyze' && layersShown.includes('Particles')"
+            v-if="!showAnalysisOptions && layersShown.includes('Particles')"
             label="Particle Size"
             type="number"
             style="width: 80px"
@@ -213,13 +218,13 @@ export default defineComponent({
             style="width: 150px"
         />
         <v-switch
-            v-if="currentTab === 'analyze'"
+            v-if="showAnalysisOptions"
             v-model="showDifferenceFromMeanMode"
             label="Show difference from mean"
         />
         <v-btn
             class="my-5"
-            v-if="currentTab !== 'analyze' && selectedDataObjects.length === 1"
+            v-if="!showAnalysisOptions && selectedDataObjects.length === 1"
             @click="captureThumbnail"
         >
             Set {{ thumbnailTarget.type }} thumbnail
@@ -239,6 +244,8 @@ export default defineComponent({
     width: 100%;
     height: 70px;
     justify-content: space-between;
+    align-items: baseline;
+    column-gap: 20px;
 }
 .render-control-bar > * {
     flex-grow: 0;

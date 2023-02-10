@@ -18,7 +18,6 @@ import {
   DataZoomComponent
 } from 'echarts/components';
 import VChart from 'vue-echarts';
-import TaskProgress from './TaskProgress.vue';
 
 // registers required echarts components
 use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent,ToolboxComponent,DataZoomComponent]);
@@ -104,10 +103,9 @@ export default defineComponent({
             return lineChartOptions(options);
         }
 
-        function completeTask(m: string){
-            message.value = m
-            updateFileShown()
-        }
+        const taskData = computed(
+            () => currentTasks.value['analyze_task']
+        )
 
         return {
             analysis,
@@ -118,20 +116,24 @@ export default defineComponent({
             pcaInfo,
             analysisFileShown,
             generateChart,
-            currentTasks,
             message,
-            completeTask,
+            taskData,
         }
     },
     components: {
         VChart,
-        TaskProgress,
     }
 })
 </script>
 
 <template>
-    <div class="pa-3" v-if="analysis">
+    <div v-if="taskData" class="messages-box pa-3">
+        Running analysis after optimization step...
+        <div v-if="taskData.error">{{ taskData.error }}</div>
+        <v-progress-linear v-else :value="taskData.percent_complete"/>
+        <br />
+    </div>
+    <div class="pa-3" v-else-if="analysis">
         Review shape analysis
         <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
@@ -192,10 +194,6 @@ export default defineComponent({
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>
-    </div>
-    <div v-else-if="currentTasks.analyze_task" class="messages-box pa-3">
-        Running analysis after optimization step...
-        <task-progress task="analyze" @complete="completeTask"/>
     </div>
     <div v-else class="messages-box pa-3">
         {{ message ||

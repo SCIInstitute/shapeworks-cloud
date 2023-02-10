@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api'
+import { defineComponent, ref, computed } from '@vue/composition-api'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
@@ -7,9 +7,8 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks } from '../store';
+import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks, spawnJobProgressPoll } from '../store';
 import { DataObject } from '../types/index';
-import TaskProgress from './TaskProgress.vue'
 
 Vue.use(Vuetify)
 
@@ -31,9 +30,8 @@ export default defineComponent({
     },
     components: {
         VJsf,
-        TaskProgress,
     },
-    setup(props, context) {
+    setup(props) {
         const ajv = new Ajv();
         const formDefaults = ref();
         const formData = ref({});
@@ -103,15 +101,14 @@ export default defineComponent({
             } else {
                 messages.value = `Successfully submitted ${props.form} job. Awaiting results...`
                 currentTasks.value = Object.assign(currentTasks.value, taskIds)
+                spawnJobProgressPoll()
             }
         }
 
-        function taskComplete(message: string){
-            messages.value = message || ''
-            setTimeout(() => messages.value = '', 10000)
-            context.emit("change")
-            alreadyDone.value = jobAlreadyDone(props.form)
-        }
+        const taskData = computed(
+            () => currentTasks.value[`${props.form}_task`]
+        )
+
 
         return {
             props,
@@ -126,7 +123,7 @@ export default defineComponent({
             submitForm,
             evaluateExpression,
             alreadyDone,
-            taskComplete,
+            taskData,
         }
     },
 })
@@ -137,10 +134,14 @@ export default defineComponent({
     <div>
         <div v-if="props.prerequisite()">
             <v-form v-model="formValid" class="pa-3">
-                <div class="messages-box pa-3" v-if="messages.length">
-                    {{ messages }}
+                <div v-if="taskData">
+                    <div class="messages-box pa-3" v-if="messages.length">
+                        {{ messages }}
+                    </div>
+                    <div v-if="taskData.error">{{ taskData.error }}</div>
+                    <v-progress-linear v-else :value="taskData.percent_complete"/>
+                <br />
                 </div>
-                <task-progress :task="props.form" @complete="taskComplete"/>
                 <div style="display: flex; width: 100%; justify-content: space-between;">
                     <v-btn @click="resetForm">Restore defaults</v-btn>
                     <v-btn color="primary" @click="submitForm">

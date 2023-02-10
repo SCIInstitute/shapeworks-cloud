@@ -20,13 +20,6 @@ from swcc.models.constants import expected_key_prefixes
 from swcc.models.project import ProjectFileIO
 
 
-# TODO: use celery beat to schedule this every night
-def task_trash_collect():
-    # Delete all leftover TaskProgress objects
-    # not currently in progress
-    models.TaskProgress.objects.exclude(Q(error__exact='') & Q(percent_complete__lt=100)).delete()
-
-
 def parse_progress(xml_string):
     percentages = [
         content.text for content in ElementTree.fromstring(xml_string).findall('.//progress')

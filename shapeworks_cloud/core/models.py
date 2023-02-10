@@ -220,6 +220,7 @@ class ReconstructedSample(TimeStampedModel, models.Model):
 class TaskProgress(TimeStampedModel, models.Model):
     task_id = models.UUIDField(default=uuid.uuid4, primary_key=True)
     name = models.CharField(max_length=255)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     error = models.CharField(max_length=255)
     percent_complete = models.IntegerField(default=0)
 

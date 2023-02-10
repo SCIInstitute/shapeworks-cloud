@@ -211,7 +211,7 @@ class ProjectViewSet(BaseViewSet):
         form_data = {k: str(v) for k, v in form_data.items()}
 
         models.TaskProgress.objects.filter(name='groom', project=project).delete()
-        progress = models.TaskProgress.objects.create(name='groom')
+        progress = models.TaskProgress.objects.create(name='groom', project=project)
         groom.delay(request.user.id, project.id, form_data, progress.task_id)
         return Response(
             data={'groom_task': serializers.TaskProgressSerializer(progress).data},
@@ -232,8 +232,8 @@ class ProjectViewSet(BaseViewSet):
         models.TaskProgress.objects.filter(name='optimize', project=project).delete()
         models.TaskProgress.objects.filter(name='analyze', project=project).delete()
 
-        progress = models.TaskProgress.objects.create(name='optimize')
-        analysis_progress = models.TaskProgress.objects.create(name='analyze')
+        progress = models.TaskProgress.objects.create(name='optimize', project=project)
+        analysis_progress = models.TaskProgress.objects.create(name='analyze', project=project)
         optimize.delay(
             request.user.id,
             project.id,

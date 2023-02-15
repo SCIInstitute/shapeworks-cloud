@@ -2,9 +2,12 @@
   <div
     ref="vtk"
     v-resize="resize"
-    style="position: relative;"
+    style="position: relative; padding-right: 40px;"
   >
-  <canvas class="labels-canvas" ref="labels"/>
+    <canvas class="labels-canvas" ref="labels"/>
+    <canvas class="color-scale-canvas" ref="colors" v-if="showDifferenceFromMeanMode"/>
+    <div class ="color-scale-title-text" v-if="showDifferenceFromMeanMode">Distance from particle on mean shape</div>
+    <div class="color-scale-labels-canvas" ref="colorLabels" v-if="showDifferenceFromMeanMode"/>
   </div>
 </template>
 
@@ -12,6 +15,30 @@
 .labels-canvas {
   position: absolute;
   width: 100%;
+  height: 100%;
+}
+.color-scale-canvas {
+  position: absolute;
+  right: 10px;
+  width: 20px;
+  height: 100%;
+  z-index: 1;
+}
+.color-scale-labels-canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: absolute;
+  right: 35px;
+  width: 50px;
+  height: 100%;
+}
+.color-scale-title-text {
+  position: absolute;
+  writing-mode: vertical-rl;
+  right: -10px;
+  text-align: center;;
   height: 100%;
 }
 </style>
@@ -114,7 +141,10 @@ export default {
     },
     labelCanvasContext() {
       return this.labelCanvas.getContext("2d");
-    }
+    },
+    showDifferenceFromMeanMode() {
+      return showDifferenceFromMeanMode.value
+    },
   },
   watch: {
     data() {
@@ -128,7 +158,7 @@ export default {
         mapper.setScaleFactor(this.glyphSize);
       });
       this.render();
-    }
+    },
   },
   beforeDestroy() {
     this.vtk.interactor.unbindEvents();
@@ -152,7 +182,7 @@ export default {
     this.lookupTable.applyColorMap(
       vtkColorMaps.getPresetByName('erdc_rainbow_bright')
     );
-    this.lookupTable.setMappingRange(-1, 1)
+    this.lookupTable.setMappingRange(0, 1)
     this.lookupTable.updateRange();
 
     this.vtk = {
@@ -173,6 +203,9 @@ export default {
 
     this.updateSize();
     this.renderGrid();
+  },
+  updated() {
+    this.prepareColorScale()
   },
   methods: {
     async resize() {
@@ -478,7 +511,36 @@ export default {
       mapper.getInputData().modified()
       mapper.setLookupTable(this.lookupTable)
       mapper.setColorByArrayName('color')
+
+      this.prepareColorScale()
+
       this.render()
+    },
+    prepareColorScale(){
+      if (showDifferenceFromMeanMode.value) {
+        const canvas = this.$refs.colors
+        const labelDiv = this.$refs.colorLabels;
+        if(canvas && labelDiv) {
+          const {width, height} = canvas
+          const context = canvas.getContext('2d', { willReadFrequently: true });
+          const pixelsArea = context.getImageData(0, 0, width, height);
+          const colorsData = this.lookupTable.getUint8Table(
+            0, 1, height * width, true
+          )
+
+          pixelsArea.data.set(colorsData)
+          context.putImageData(pixelsArea, 0, 0)
+        }
+
+        const labels = [0, 0.25, 0.5, 0.75, 1];
+        if (!labelDiv.children.length) {
+          labels.forEach((l) => {
+            const child = document.createElement('span');
+            child.innerHTML = (l - 0.5) * 10;
+            labelDiv.appendChild(child);
+          })
+        }
+      }
     },
     prepareLabelCanvas() {
       const { clientWidth, clientHeight } = this.$refs.vtk;

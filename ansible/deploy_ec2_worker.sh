@@ -13,7 +13,9 @@ tf_output="$(terraform -chdir=../terraform output -json)"
 inventory="$(jq --raw-output '.ec2_worker_hostnames.value|join(",")' <<< "$tf_output"),"
 echo "Running ansible on $inventory"
 
-extra_vars="$(jq '{django_vars: .all_django_vars.value}' <<< "$tf_output")"
+# extra_vars="$(jq '{django_vars: .all_django_vars.value}' <<< "$tf_output")"
+# inject the location of the ssl certs on the worker
+extra_vars=$(echo $(echo "$(jq '.all_django_vars.value' <<< "$tf_output")" '{"SSL_CERT_DIR": "/etc/ssl/certs"}' | jq -s add) | jq '{django_vars: .}')
 echo "Django configuration:"
 echo $extra_vars
 

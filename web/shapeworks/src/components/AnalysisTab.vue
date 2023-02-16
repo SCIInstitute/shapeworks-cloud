@@ -6,7 +6,8 @@ import {
     selectedProject,
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
-import { lineChartOptions, lineChartProps } from '@/charts'
+import { lineChartOptions } from '@/charts'
+import { AnalysisChart } from '@/types'
 
 import { use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
@@ -100,7 +101,7 @@ export default defineComponent({
         watch(analysis, updateFileShown)
 
 
-        function generateChart(options: lineChartProps) {
+        function generateChart(options: AnalysisChart) {
             return lineChartOptions(options);
         }
 
@@ -187,6 +188,67 @@ export default defineComponent({
                         hide-default-header
                         hide-default-footer
                     />
+                </v-expansion-panel-content>
+            </v-expansion-panel>
+            <v-expansion-panel>
+                <v-expansion-panel-header>
+                    Group Difference
+                </v-expansion-panel-header>
+                <v-expansion-panel-content>
+                    <!-- set group options, SET OPTIONS WHEN BACKEND INCLUDES THEM. MODE IS PLACEHOLDER-->
+                    <v-select
+                        label="Group Set"
+                        v-model="mode"
+                        :items="modeOptions"
+                        item-text="mode"
+                        item-value="mode"
+                    />
+                    <v-divider></v-divider>
+                    <v-row 
+                        align="center" 
+                        justify="center"
+                    >
+                        <v-col>
+                            <v-select
+                                v-model="mode"
+                                :items="modeOptions"
+                                item-text="mode"
+                                item-value="mode"
+                            />
+                        </v-col>
+                        <v-col>
+                            <v-slider
+                                step="10"
+                                show-ticks="always"
+                                thumb-label
+                                hide-details
+                            ></v-slider>
+                        </v-col>
+                        <v-col>
+                            <v-select
+                                v-model="mode"
+                                :items="modeOptions"
+                                item-text="mode"
+                                item-value="mode"
+                            />
+                        </v-col>
+                    </v-row>
+                    <v-row justify="center">
+                        <v-checkbox
+                            class="mt-0 mb-8 pt-0"
+                            value
+                            label="Animate"
+                            hide-details
+                        ></v-checkbox>
+                    </v-row>
+                    <v-card align="center" justify="center" class="ma-auto">
+                        <v-btn class="ms-4" color="grey darken-3">Mean</v-btn>
+                        <v-btn class="ms-4" color="grey darken-3">Diff --></v-btn>
+                        <v-btn class="ms-4" color="grey darken-3">Mean</v-btn>
+                    </v-card>
+                    <v-card align="center" justify="center" class="ma-auto mt-5">
+                        <v-btn class="ms-4" color="grey darken-3">P-values</v-btn>
+                    </v-card>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel>

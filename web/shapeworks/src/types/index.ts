@@ -41,7 +41,11 @@ export interface AnalysisMode {
 }
 
 export interface AnalysisChart {
-
+    title: string, 
+    x_label: string, 
+    y_label: string, 
+    x: Array<number>, 
+    y: Array<number>,
 }
 
 export interface Analysis {

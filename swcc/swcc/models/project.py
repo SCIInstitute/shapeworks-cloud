@@ -5,13 +5,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, List, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
-        List,
         Optional,
         Union,
     )
@@ -40,7 +39,7 @@ from .other_models import (
     Segmentation,
 )
 from .subject import Subject
-from .utils import FileIO, shape_file_type
+from .utils import FileIO, shape_file_type, print_progress_bar
 
 
 class ProjectFileIO(BaseModel, FileIO):
@@ -69,8 +68,15 @@ class ProjectFileIO(BaseModel, FileIO):
         contents = json.load(open(file))
         data = self.interpret_data(contents['data'])
         if create:
+            print(f'Uploading files for {len(data)} subjects...')
+            i = 0
+            total_progress_steps = len(data)
+            print_progress_bar(i, total_progress_steps)
             for [subject, objects_by_domain] in data:
+                i += 1
                 self.create_objects_for_subject(subject, objects_by_domain)
+                print_progress_bar(i, total_progress_steps)
+            print()
         return data
 
     def interpret_data(self, input_data):
@@ -225,34 +231,47 @@ class ProjectFileIO(BaseModel, FileIO):
 
         relative_download(self.project.file, '')
         data = self.load_data(create=False)
+        print(f'Downloading files for {len(data)} subjects...')
+        i = 0
+        total_progress_steps = len(data) + 9  # 9 download mappings to evaluate
+        print_progress_bar(i, total_progress_steps)
 
-        download_mappings: Dict[str, List] = {
-            'mesh': [{'set': list(self.project.dataset.meshes), 'attr': 'file'}],
-            'segmentation': [{'set': list(self.project.dataset.segmentations), 'attr': 'file'}],
-            'contour': [{'set': list(self.project.dataset.contours), 'attr': 'file'}],
-            'image': [{'set': list(self.project.dataset.images), 'attr': 'file'}],
+        download_mappings: Dict[str, Iterator] = {
+            'mesh': [{'set': self.project.dataset.meshes, 'attr': 'file'}],
+            'segmentation': [{'set': self.project.dataset.segmentations, 'attr': 'file'}],
+            'contour': [{'set': self.project.dataset.contours, 'attr': 'file'}],
+            'image': [{'set': self.project.dataset.images, 'attr': 'file'}],
             'groomed': [
-                {'set': list(self.project.groomed_meshes), 'attr': 'file'},
-                {'set': list(self.project.groomed_segmentations), 'attr': 'file'},
+                {'set': self.project.groomed_meshes, 'attr': 'file'},
+                {'set': self.project.groomed_segmentations, 'attr': 'file'},
             ],
-            'local': [{'set': list(self.project.particles), 'attr': 'local'}],
-            'world': [{'set': list(self.project.particles), 'attr': 'world'}],
-            'landmarks': [{'set': list(self.project.dataset.landmarks), 'attr': 'file'}],
-            'constraints': [{'set': list(self.project.dataset.constraints), 'attr': 'file'}],
+            'local': [{'set': self.project.particles, 'attr': 'local'}],
+            'world': [{'set': self.project.particles, 'attr': 'world'}],
+            'landmarks': [{'set': self.project.dataset.landmarks, 'attr': 'file'}],
+            'constraints': [{'set': self.project.dataset.constraints, 'attr': 'file'}],
         }
 
+        download_mappings_evaluated = {}
+        for key, value in download_mappings.items():
+            i += 1
+            print_progress_bar(i, total_progress_steps)
+            download_mappings_evaluated[key] = [dict(s, **{'set': list(s['set'])}) for s in value]
+
         for [_s, objects_by_domain] in data:
+            i += 1
             for _a, objects in objects_by_domain.items():
                 for key, value in objects.items():
                     if key == 'shape':
                         key = shape_file_type(Path(value)).__name__.lower()
                     match_name = Path(value).name
-                    if key in download_mappings:
-                        for mapping in download_mappings[key]:
+                    if key in download_mappings_evaluated:
+                        for mapping in download_mappings_evaluated[key]:
                             for x in mapping['set']:
                                 attr = getattr(x, mapping['attr'])
                                 if str(attr) == match_name:
                                     relative_download(attr, value)
+            print_progress_bar(i, total_progress_steps)
+        print()
 
     def load_analysis_from_json(self, file_path):
         project_root = Path(str(self.project.file.path)).parent

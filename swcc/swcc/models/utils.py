@@ -130,3 +130,20 @@ def get_config_value(filename: str, key: str) -> Optional[Any]:
                 return config.get(key)
 
     return None
+
+
+# from https://stackoverflow.com/questions/3173320/text-progress-bar-in-terminal-with-block-characters
+# Progress Bar Printing Function
+def print_progress_bar(
+    iteration,
+    total,
+    prefix='Progress:',
+    suffix='Complete.',
+    decimals=1,
+    length=30,
+    fill='█',
+):
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end='\r')

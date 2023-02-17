@@ -159,8 +159,8 @@ class GroomedMeshSerializer(serializers.ModelSerializer):
 
 
 class OptimizedParticlesSerializer(serializers.ModelSerializer):
-    world = S3FileSerializerField()
-    local = S3FileSerializerField()
+    world = S3FileSerializerField(required=False, allow_null=True)
+    local = S3FileSerializerField(required=False, allow_null=True)
     transform = S3FileSerializerField(required=False, allow_null=True)
     constraints = S3FileSerializerField(required=False, allow_null=True)
 

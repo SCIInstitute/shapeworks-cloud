@@ -5,12 +5,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, List, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
+        List,
         Optional,
         Union,
     )
@@ -39,7 +40,7 @@ from .other_models import (
     Segmentation,
 )
 from .subject import Subject
-from .utils import FileIO, shape_file_type, print_progress_bar
+from .utils import FileIO, print_progress_bar, shape_file_type
 
 
 class ProjectFileIO(BaseModel, FileIO):
@@ -230,7 +231,7 @@ class ProjectFileIO(BaseModel, FileIO):
         total_progress_steps = len(data) + 9  # 9 download mappings to evaluate
         print_progress_bar(i, total_progress_steps)
 
-        download_mappings: Dict[str, Iterator] = {
+        download_mappings: Dict[str, List] = {
             'mesh': [{'set': self.project.dataset.meshes, 'attr': 'file'}],
             'segmentation': [{'set': self.project.dataset.segmentations, 'attr': 'file'}],
             'contour': [{'set': self.project.dataset.contours, 'attr': 'file'}],
@@ -246,10 +247,10 @@ class ProjectFileIO(BaseModel, FileIO):
         }
 
         download_mappings_evaluated = {}
-        for key, value in download_mappings.items():
+        for k, v in download_mappings.items():
             i += 1
             print_progress_bar(i, total_progress_steps)
-            download_mappings_evaluated[key] = [dict(s, **{'set': list(s['set'])}) for s in value]
+            download_mappings_evaluated[k] = [dict(s, **{'set': list(s['set'])}) for s in v]
 
         for [_s, objects_by_domain] in data:
             i += 1

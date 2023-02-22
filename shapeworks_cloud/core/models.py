@@ -174,8 +174,8 @@ class GroomedMesh(TimeStampedModel, models.Model):
 
 class OptimizedParticles(TimeStampedModel, models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    world = S3FileField()
-    local = S3FileField()
+    world = S3FileField(null=True)
+    local = S3FileField(null=True)
     transform = S3FileField(null=True)
 
     groomed_segmentation = models.ForeignKey(

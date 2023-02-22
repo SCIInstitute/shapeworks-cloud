@@ -561,7 +561,11 @@ export default {
 
       this.addShapes(renderer, label, shapes.map(({shape}) => shape));
       const points = shapes.map(({points}) => points)
-      if(points.length > 0 && points[0].getNumberOfPoints() > 0) this.addPoints(renderer, points[0]);
+      points.forEach((pointSet) => {
+        if(pointSet.getNumberOfPoints() > 0) {
+          this.addPoints(renderer, pointSet);
+        }
+      })
 
       const camera = vtkCamera.newInstance();
       renderer.setActiveCamera(camera);

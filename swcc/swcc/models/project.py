@@ -92,12 +92,15 @@ class ProjectFileIO(BaseModel, FileIO):
             entry_values: Dict = {p: [] for p in expected_key_prefixes}
             entry_values['anatomy_ids'] = []
             for key in entry.keys():
-                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
-                if len(prefixes) > 0:
-                    entry_values[prefixes[0]].append(entry[key])
-                    anatomy_id = 'anatomy' + key.replace(prefixes[0], '')
-                    if anatomy_id not in entry_values['anatomy_ids']:
-                        entry_values['anatomy_ids'].append(anatomy_id)
+                if key != 'name':
+                    prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
+                    if len(prefixes) > 0:
+                        entry_values[prefixes[0]].append(entry[key])
+                        anatomy_id = 'anatomy' + key.replace(prefixes[0], '').replace(
+                            '_particles', ''
+                        )
+                        if anatomy_id not in entry_values['anatomy_ids']:
+                            entry_values['anatomy_ids'].append(anatomy_id)
             objects_by_domain = {}
             for index, anatomy_id in enumerate(entry_values['anatomy_ids']):
                 objects_by_domain[anatomy_id] = {

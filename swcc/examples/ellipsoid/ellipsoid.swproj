@@ -2,6 +2,7 @@
     "data": [
         {
             "name": "ellipsoid_00_DT",
+            "group": "A",
             "shape_1": "./ellipsoid_00_DT.nrrd",
             "groomed_1": "./groomed/ellipsoid_00_DT.nrrd",
             "local_particles_1": "./particles/ellipsoid_00_DT_local.particles",
@@ -11,6 +12,7 @@
         },
         {
             "name": "ellipsoid_01_DT",
+            "group": "B",
             "shape_1": "./ellipsoid_01_DT.nrrd",
             "groomed_1": "./groomed/ellipsoid_01_DT.nrrd",
             "local_particles_1": "./particles/ellipsoid_01_DT_local.particles",
@@ -20,6 +22,7 @@
         },
         {
             "name": "ellipsoid_02_DT",
+            "group": "B",
             "shape_1": "./ellipsoid_02_DT.nrrd",
             "groomed_1": "./groomed/ellipsoid_02_DT.nrrd",
             "local_particles_1": "./particles/ellipsoid_02_DT_local.particles",

@@ -66,7 +66,7 @@ export default defineComponent({
                     {text: 'value', value: 'value', align: 'end'}
                 ],
                 items: [
-                    {key: 'Lambda', value: currPCA.value?.lambda_value},
+                    {key: 'Lambda', value: currPCA.value?.lambda_value || 0},
                     {key: 'Eigenvalue', value: currMode.value?.eigen_value},
                     {key: 'Explained Variance', value: currMode.value?.explained_variance, class: 'percentage'},
                     {key: 'Cumulative Explained Variance', value: currMode.value?.cumulative_explained_variance, class:'percentage'},
@@ -169,12 +169,12 @@ export default defineComponent({
                         :max="stdDevRange[1]"
                         :step="stdDevRange[2]"
                         ticks="always"
-                        tick-size="8"
-                    >
-                        <template v-slot:prepend>
-                            Std. Devs. from Mean
-                        </template>
-                    </v-slider>
+                        tick-size="4"
+                        thumb-label
+                        track-color="#aaa"
+                        track-fill-color="#aaa"
+                        label="Std. Devs. from Mean"
+                    />
                     <br/>
                     <v-data-table
                         :headers="pcaInfo.headers"

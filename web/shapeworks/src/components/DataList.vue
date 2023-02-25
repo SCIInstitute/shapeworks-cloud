@@ -115,7 +115,9 @@ export default defineComponent({
                         v-model="selectedAnatomies"
                         :value="anatomy_type"
                     ></v-checkbox>
-                    <v-list-item-title v-text="anatomy_type"/>
+                    <v-list-item-title>
+                        {{ anatomy_type }}
+                    </v-list-item-title>
                 </v-list-item>
             </v-list-item-group>
             <v-subheader>SUBJECTS</v-subheader>
@@ -139,6 +141,9 @@ export default defineComponent({
                                     v-on="on"
                                 >
                                     Subject: {{ subject.name }}
+                                    <span v-if="subject.group" class="pl-3">
+                                        (Group {{ subject.group }})
+                                    </span>
                                 </v-list-item-title>
                             </template>
                             <span>

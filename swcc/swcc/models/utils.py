@@ -141,7 +141,7 @@ def print_progress_bar(
     suffix='Complete.',
     decimals=1,
     length=30,
-    fill='█',
+    fill='X',
 ):
     percent = ('{0:.' + str(decimals) + 'f}').format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)

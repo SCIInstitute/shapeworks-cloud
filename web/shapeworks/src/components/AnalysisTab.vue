@@ -3,6 +3,7 @@ import {
     analysis, analysisFileShown,
     currentAnalysisFileParticles, meanAnalysisFileParticles,
     currentTasks,
+    selectedProject,
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 import { lineChartOptions, lineChartProps } from '@/charts'
@@ -104,7 +105,10 @@ export default defineComponent({
         }
 
         const taskData = computed(
-            () => currentTasks.value['analyze_task']
+            () => {
+                if (!selectedProject.value) return undefined
+                return currentTasks.value[selectedProject.value.id]['analyze_task']
+            }
         )
 
         return {

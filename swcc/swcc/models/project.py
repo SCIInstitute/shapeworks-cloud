@@ -87,7 +87,9 @@ class ProjectFileIO(BaseModel, FileIO):
             if len(subjects) > 0:
                 subject = subjects[0]
             else:
-                subject = Subject(name=entry.get('name'), dataset=self.project.dataset).create()
+                subject = Subject(
+                    name=entry.get('name'), group=entry.get('group'), dataset=self.project.dataset
+                ).create()
 
             entry_values: Dict = {p: [] for p in expected_key_prefixes}
             entry_values['anatomy_ids'] = []

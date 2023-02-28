@@ -103,11 +103,7 @@ export const vtkShapesByType = ref<Record<string, any[]>>({
     "Particles": []
 })
 
-export const currentTasks = ref<Record<string, Task| undefined>>({
-    groom_task: undefined,
-    optimize_task: undefined,
-    analyze_task: undefined
-})
+export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 
 export const jobProgressPoll = ref();
 
@@ -198,25 +194,34 @@ export async function spawnJobProgressPoll() {
 }
 
 export async function pollJobProgress(){
-    const refreshedTasks = await Promise.all(Object.entries(currentTasks.value)
-    .map(async ([taskName, task]) => {
-        if (task?.task_id){
-            task = await getTaskProgress(task.task_id)
-            if (task?.task_id && task?.percent_complete === 100) {
-                await deleteTaskProgress(task?.task_id)
-                task.task_id = undefined
-                setTimeout(() => {
-                    currentTasks.value[taskName] = undefined
-                }, 1000)
-                fetchJobResults(taskName.replace('_task', ''))
-            }
+    if(selectedProject.value && currentTasks.value[selectedProject.value.id]){
+        const refreshedTasks = await Promise.all(
+            Object.entries(currentTasks.value[selectedProject.value.id])
+            .map(async ([taskName, task]) => {
+                if (task?.task_id){
+                    task = await getTaskProgress(task.task_id)
+                    if (task?.task_id && task?.percent_complete === 100) {
+                        await deleteTaskProgress(task?.task_id)
+                        task.task_id = undefined
+                        setTimeout(() => {
+                            if (selectedProject.value){
+                                currentTasks.value[selectedProject.value.id][taskName] = undefined
+                            }
+                        }, 1000)
+                        fetchJobResults(taskName.replace('_task', ''))
+                    }
+                }
+                return [taskName, task]
+            }))
+        currentTasks.value[selectedProject.value.id] = Object.fromEntries(refreshedTasks)
+        currentTasks.value = {...currentTasks.value}  // reassign for watch response
+        if (
+            Object.values(currentTasks.value[selectedProject.value.id])
+            .every(task => task?.task_id === undefined)
+        ) {
+            clearInterval(jobProgressPoll.value)
+            jobProgressPoll.value = undefined
         }
-        return [taskName, task]
-    }))
-    currentTasks.value = Object.fromEntries(refreshedTasks)
-    if (Object.values(currentTasks.value).every(task => task?.task_id === undefined)) {
-        clearInterval(jobProgressPoll.value)
-        jobProgressPoll.value = undefined
     }
 }
 
@@ -263,7 +268,7 @@ export async function switchTab(tabName: string){
     switch(tabName) {
         // add any other tab-switching updates here
         case 'analyze':
-            if (refreshedProject && !currentTasks.value['analyze_task']) {
+            if (refreshedProject && !currentTasks.value[selectedProject.value.id]['analyze_task']) {
                 analysis.value = refreshedProject.last_cached_analysis
             }
     }

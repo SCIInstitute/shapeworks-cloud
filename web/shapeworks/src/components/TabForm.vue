@@ -7,7 +7,7 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks, spawnJobProgressPoll } from '../store';
+import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks, spawnJobProgressPoll, selectedProject } from '../store';
 import { DataObject } from '../types/index';
 
 Vue.use(Vuetify)
@@ -87,8 +87,9 @@ export default defineComponent({
         }
 
         async function submitForm(_: Event, confirmed=false){
-            if(currentTasks.value[`${props.form}_task`]) {
-                currentTasks.value[`${props.form}_task`] = undefined
+            if (!selectedProject.value) return
+            if (!currentTasks.value[selectedProject.value.id]) {
+                currentTasks.value[selectedProject.value.id] = {}
             }
             if(alreadyDone.value && !confirmed){
                 showSubmissionConfirmation.value = true
@@ -100,13 +101,17 @@ export default defineComponent({
                 setTimeout(() => messages.value = '', 10000)
             } else {
                 messages.value = `Successfully submitted ${props.form} job. Awaiting results...`
-                currentTasks.value = Object.assign(currentTasks.value, taskIds)
+                currentTasks.value[selectedProject.value.id] = taskIds
                 spawnJobProgressPoll()
             }
         }
 
         const taskData = computed(
-            () => currentTasks.value[`${props.form}_task`]
+            () => {
+                if(!selectedProject.value?.id ||
+                !currentTasks.value[selectedProject.value.id]) return undefined
+                return currentTasks.value[selectedProject.value.id][`${props.form}_task`]
+            }
         )
 
 

@@ -70,6 +70,7 @@ class Dataset(TimeStampedModel, models.Model):
 
 class Subject(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
+    group = models.CharField(max_length=100, null=True, blank=True)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='subjects')
 
 

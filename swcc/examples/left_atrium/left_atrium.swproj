@@ -2,6 +2,9 @@
     "data": [
         {
             "name": "LA_04",
+            "group_sex": "M",
+            "group_age": "Adult",
+            "group_diabetic": "No",
             "shape_1": "LA_04.vtk",
             "groomed_1": "groomed/LA_04_groomed.vtk",
             "local_particles_1": "particles/LA_04_groomed_local.particles",
@@ -11,6 +14,9 @@
         },
         {
             "name": "LA_03",
+            "group_sex": "M",
+            "group_age": "Senior",
+            "group_diabetic": "Yes",
             "shape_1": "LA_03.vtk",
             "groomed_1": "groomed/LA_03_groomed.vtk",
             "local_particles_1": "particles/LA_03_groomed_local.particles",
@@ -20,6 +26,9 @@
         },
         {
             "name": "LA_02",
+            "group_sex": "F",
+            "group_age": "Young Adult",
+            "group_diabetic": "No",
             "shape_1": "LA_02.vtk",
             "groomed_1": "groomed/LA_02_groomed.vtk",
             "local_particles_1": "particles/LA_02_groomed_local.particles",
@@ -29,6 +38,9 @@
         },
         {
             "name": "LA_01",
+            "group_sex": "F",
+            "group_age": "Adult",
+            "group_diabetic": "Yes",
             "shape_1": "LA_01.vtk",
             "groomed_1": "groomed/LA_01_groomed.vtk",
             "local_particles_1": "particles/LA_01_groomed_local.particles",

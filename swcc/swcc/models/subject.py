@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Optional
 
 from .api_model import ApiModel
 from .dataset import Dataset
@@ -12,7 +12,7 @@ class Subject(ApiModel):
 
     name: NonEmptyString
     dataset: Dataset
-    groups: Dict[str, str]
+    groups: Optional[Dict[str, str]]
 
     @property
     def segmentations(self) -> Iterator[Segmentation]:

@@ -106,7 +106,7 @@ export default defineComponent({
 
         const taskData = computed(
             () => {
-                if (!selectedProject.value) return undefined
+                if (!selectedProject.value || !currentTasks.value[selectedProject.value.id]) return undefined
                 return currentTasks.value[selectedProject.value.id]['analyze_task']
             }
         )

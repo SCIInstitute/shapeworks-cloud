@@ -141,9 +141,6 @@ export default defineComponent({
                                     v-on="on"
                                 >
                                     Subject: {{ subject.name }}
-                                    <span v-if="subject.group" class="pl-3">
-                                        (Group {{ subject.group }})
-                                    </span>
                                 </v-list-item-title>
                             </template>
                             <span>
@@ -153,6 +150,14 @@ export default defineComponent({
                             </span>
                         </v-tooltip>
                     </template>
+
+                    <div class="pa-3" v-if="subject.groups && Object.keys(subject.groups).length > 0">
+                        Subject Groups
+                        {{
+                            JSON.stringify(subject.groups)
+                            .replace(/"/g, '').replace(/:/g, ': ').replace(/,/g, ', ')
+                        }}
+                    </div>
 
                     <v-data-table
                         :headers="headers"

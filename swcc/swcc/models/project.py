@@ -87,8 +87,11 @@ class ProjectFileIO(BaseModel, FileIO):
             if len(subjects) > 0:
                 subject = subjects[0]
             else:
+                groups_dict = {
+                    k.replace('group_', ''): v for k, v in entry.items() if k.startswith('group_')
+                }
                 subject = Subject(
-                    name=entry.get('name'), group=entry.get('group'), dataset=self.project.dataset
+                    name=entry.get('name'), groups=groups_dict, dataset=self.project.dataset
                 ).create()
 
             entry_values: Dict = {p: [] for p in expected_key_prefixes}

@@ -268,7 +268,7 @@ export async function switchTab(tabName: string){
     switch(tabName) {
         // add any other tab-switching updates here
         case 'analyze':
-            if (refreshedProject && !currentTasks.value[selectedProject.value.id]['analyze_task']) {
+            if (refreshedProject && !currentTasks.value[selectedProject.value.id]) {
                 analysis.value = refreshedProject.last_cached_analysis
             }
     }

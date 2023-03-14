@@ -6,6 +6,7 @@ import {
     Analysis, Task
 } from '@/types'
 import {
+    abortTask,
     deleteTaskProgress,
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
@@ -262,6 +263,15 @@ export async function fetchJobResults(taskName: string) {
         )
         if(!layersShown.value.includes(layerName)) layersShown.value.push(layerName)
     }
+}
+
+export async function abort(task: Task) {
+    abortTask(task.id)
+    if (selectedProject.value) {
+        currentTasks.value[selectedProject.value.id] = {}
+    }
+    clearInterval(jobProgressPoll.value)
+    jobProgressPoll.value = undefined
 }
 
 export async function switchTab(tabName: string){

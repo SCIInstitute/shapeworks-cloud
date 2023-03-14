@@ -6,6 +6,7 @@ from typing import Dict
 from xml.etree import ElementTree
 
 from celery import shared_task
+from ..celery import app
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
@@ -18,6 +19,12 @@ from swcc.api import swcc_session
 from swcc.models import Project as SWCCProject
 from swcc.models.constants import expected_key_prefixes
 from swcc.models.project import ProjectFileIO
+
+
+def abort_tasks(task_ids):
+    print(task_ids)
+    # the following line hangs indefinitely
+    # app.control.revoke(task_ids, terminate=True)
 
 
 def parse_progress(xml_string):

@@ -15,7 +15,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from .tasks import groom, optimize
+from .tasks import groom, optimize, abort_tasks
 
 
 def save_thumbnail_image(target, encoded_thumbnail):
@@ -316,3 +316,18 @@ class TaskProgressViewSet(
     permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = models.TaskProgress.objects.all()
     serializer_class = serializers.TaskProgressSerializer
+
+    @action(
+        detail=True,
+        url_path='abort',
+        url_name='abort',
+        methods=['POST'],
+    )
+    def abort(self, request, **kwargs):
+        progress = self.get_object()
+        current_tasks = models.TaskProgress.objects.filter(project=progress.project)
+        abort_tasks([str(p.task_id) for p in current_tasks])
+        current_tasks.delete()
+        return Response(
+            status=status.HTTP_200_OK,
+        )

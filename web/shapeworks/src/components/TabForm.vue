@@ -7,7 +7,7 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks, spawnJobProgressPoll, selectedProject } from '../store';
+import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks, spawnJobProgressPoll, selectedProject, abort } from '../store';
 import { DataObject } from '../types/index';
 
 Vue.use(Vuetify)
@@ -39,6 +39,7 @@ export default defineComponent({
         const formValid = ref(false);
         const refreshing = ref(false);
         const showSubmissionConfirmation = ref(false);
+        const showAbortConfirmation = ref(false);
         const messages = ref('');
         const alreadyDone = ref(jobAlreadyDone(props.form))
 
@@ -123,12 +124,14 @@ export default defineComponent({
             formValid,
             refreshing,
             showSubmissionConfirmation,
+            showAbortConfirmation,
             messages,
             resetForm,
             submitForm,
             evaluateExpression,
             alreadyDone,
             taskData,
+            abort,
         }
     },
 })
@@ -145,6 +148,14 @@ export default defineComponent({
                     </div>
                     <div v-if="taskData.error">{{ taskData.error }}</div>
                     <v-progress-linear v-else :value="taskData.percent_complete"/>
+                    <div class="d-flex pa-3" style="width:100%; justify-content:space-around">
+                        <v-btn
+                            color="red"
+                            @click="() => showAbortConfirmation = true"
+                        >
+                            Abort
+                        </v-btn>
+                    </div>
                 <br />
                 </div>
                 <div style="display: flex; width: 100%; justify-content: space-between;">
@@ -213,6 +224,39 @@ export default defineComponent({
                             @click="() => {showSubmissionConfirmation = false, submitForm(undefined, confirmed=true)}"
                         >
                             Yes, Rerun
+                        </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
+                <v-dialog
+                v-model="showAbortConfirmation"
+                width="500"
+                >
+                    <v-card>
+                        <v-card-title>
+                        Confirmation
+                        </v-card-title>
+
+                        <v-card-text>
+                            Are you sure you want to abort this task? This will cancel any related tasks in this project.
+                        </v-card-text>
+
+                        <v-divider></v-divider>
+
+                        <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn
+                            text
+                            @click="() => {showAbortConfirmation = false}"
+                        >
+                            Cancel
+                        </v-btn>
+                        <v-btn
+                            color="red"
+                            text
+                            @click="() => {showAbortConfirmation = false, abort(taskData)}"
+                        >
+                            Abort
                         </v-btn>
                         </v-card-actions>
                     </v-card>

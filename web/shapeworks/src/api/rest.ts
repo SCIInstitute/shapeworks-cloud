@@ -121,3 +121,7 @@ export async function getTaskProgress(taskId: number){
 export async function deleteTaskProgress(taskId: number){
     return (await apiClient.delete(`/task-progress/${taskId}`)).data
 }
+
+export async function abortTask(taskId: number) {
+    return (await apiClient.post(`/task-progress/${taskId}/abort/`)).data
+}

@@ -1,5 +1,10 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
-import { DataObject, Dataset, Subject, Particles, GroomedShape, Project, ReconstructedSample, VTKInstance } from '@/types'
+import {
+    DataObject, Dataset, Subject,
+    Particles, GroomedShape, Project,
+    ReconstructedSample, VTKInstance,
+    Analysis, Task
+} from '@/types'
 import {
     deleteTaskProgress,
     getDataset,
@@ -9,7 +14,6 @@ import {
     groomProject, optimizeProject, refreshProject
 } from '@/api/rest';
 import { ref } from '@vue/composition-api'
-import { Analysis, Task } from './types/index';
 import { getTaskProgress } from '@/api/rest';
 
 
@@ -199,9 +203,9 @@ export async function pollJobProgress(){
             Object.entries(currentTasks.value[selectedProject.value.id])
             .map(async ([taskName, task]) => {
                 if (task?.task_id){
-                    task = await getTaskProgress(task.task_id)
+                    task = await getTaskProgress(task.id)
                     if (task?.task_id && task?.percent_complete === 100) {
-                        await deleteTaskProgress(task?.task_id)
+                        await deleteTaskProgress(task?.id)
                         task.task_id = undefined
                         setTimeout(() => {
                             if (selectedProject.value){

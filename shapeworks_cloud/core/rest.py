@@ -1,4 +1,5 @@
 import base64
+import uuid
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Type
@@ -212,7 +213,9 @@ class ProjectViewSet(BaseViewSet):
 
         models.TaskProgress.objects.filter(name='groom', project=project).delete()
         progress = models.TaskProgress.objects.create(name='groom', project=project)
-        groom.delay(request.user.id, project.id, form_data, progress.task_id)
+        task = groom.delay(request.user.id, project.id, form_data, progress.id)
+        progress.task_id = uuid.UUID(task.id)
+        progress.save()
         return Response(
             data={'groom_task': serializers.TaskProgressSerializer(progress).data},
             status=status.HTTP_200_OK,
@@ -234,13 +237,15 @@ class ProjectViewSet(BaseViewSet):
 
         progress = models.TaskProgress.objects.create(name='optimize', project=project)
         analysis_progress = models.TaskProgress.objects.create(name='analyze', project=project)
-        optimize.delay(
+        task = optimize.delay(
             request.user.id,
             project.id,
             form_data,
-            progress.task_id,
-            analysis_progress.task_id,
+            progress.id,
+            analysis_progress.id,
         )
+        progress.task_id = uuid.UUID(task.id)
+        progress.save()
         return Response(
             data={
                 'optimize_task': serializers.TaskProgressSerializer(progress).data,

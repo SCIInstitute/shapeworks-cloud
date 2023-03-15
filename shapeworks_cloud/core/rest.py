@@ -1,5 +1,4 @@
 import base64
-import uuid
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Type
@@ -15,7 +14,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from .tasks import groom, optimize, abort_tasks
+from .tasks import groom, optimize
 
 
 def save_thumbnail_image(target, encoded_thumbnail):
@@ -213,9 +212,7 @@ class ProjectViewSet(BaseViewSet):
 
         models.TaskProgress.objects.filter(name='groom', project=project).delete()
         progress = models.TaskProgress.objects.create(name='groom', project=project)
-        task = groom.delay(request.user.id, project.id, form_data, progress.id)
-        progress.task_id = uuid.UUID(task.id)
-        progress.save()
+        groom.delay(request.user.id, project.id, form_data, progress.id)
         return Response(
             data={'groom_task': serializers.TaskProgressSerializer(progress).data},
             status=status.HTTP_200_OK,
@@ -237,15 +234,13 @@ class ProjectViewSet(BaseViewSet):
 
         progress = models.TaskProgress.objects.create(name='optimize', project=project)
         analysis_progress = models.TaskProgress.objects.create(name='analyze', project=project)
-        task = optimize.delay(
+        optimize.delay(
             request.user.id,
             project.id,
             form_data,
             progress.id,
             analysis_progress.id,
         )
-        progress.task_id = uuid.UUID(task.id)
-        progress.save()
         return Response(
             data={
                 'optimize_task': serializers.TaskProgressSerializer(progress).data,
@@ -325,9 +320,9 @@ class TaskProgressViewSet(
     )
     def abort(self, request, **kwargs):
         progress = self.get_object()
-        current_tasks = models.TaskProgress.objects.filter(project=progress.project)
-        abort_tasks([str(p.task_id) for p in current_tasks])
-        current_tasks.delete()
+        for task in models.TaskProgress.objects.filter(project=progress.project):
+            task.abort = True
+            task.save(update_fields=['abort'])
         return Response(
             status=status.HTTP_200_OK,
         )

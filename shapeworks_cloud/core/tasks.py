@@ -6,7 +6,6 @@ from typing import Dict
 from xml.etree import ElementTree
 
 from celery import shared_task
-from ..celery import app
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
@@ -19,12 +18,6 @@ from swcc.api import swcc_session
 from swcc.models import Project as SWCCProject
 from swcc.models.constants import expected_key_prefixes
 from swcc.models.project import ProjectFileIO
-
-
-def abort_tasks(task_ids):
-    print(task_ids)
-    # the following line hangs indefinitely
-    # app.control.revoke(task_ids, terminate=True)
 
 
 def parse_progress(xml_string):
@@ -128,10 +121,16 @@ def run_shapeworks_command(
             with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
                 if process.stderr and process.stdout:
                     for line in iter(process.stdout.readline, b''):
-                        if command == 'analyze':
-                            print(line.decode())  # analyze task has no xmloutput
+                        progress.refresh_from_db()
+                        if progress.abort:
+                            progress.delete()
+                            process.kill()
+                            return
                         else:
-                            progress.update_percentage(parse_progress(line.decode()) + 10)
+                            if command == 'analyze':
+                                print(line.decode())  # analyze task has no xmloutput
+                            else:
+                                progress.update_percentage(parse_progress(line.decode()) + 10)
                     for line in iter(process.stderr.readline, b''):
                         progress.update_error(line.decode())
                         return

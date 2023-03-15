@@ -128,9 +128,8 @@ export interface ReconstructedSample {
 }
 
 export interface Task {
-    id: number,
+    id: number | undefined,
     name: string,
-    task_id: string | undefined,
     percent_complete: number,
     error: string,
     created: string,

@@ -203,11 +203,11 @@ export async function pollJobProgress(){
         const refreshedTasks = await Promise.all(
             Object.entries(currentTasks.value[selectedProject.value.id])
             .map(async ([taskName, task]) => {
-                if (task?.task_id){
+                if (task?.id){
                     task = await getTaskProgress(task.id)
-                    if (task?.task_id && task?.percent_complete === 100) {
+                    if (task?.id && task?.percent_complete === 100) {
                         await deleteTaskProgress(task?.id)
-                        task.task_id = undefined
+                        task.id = undefined
                         setTimeout(() => {
                             if (selectedProject.value){
                                 currentTasks.value[selectedProject.value.id][taskName] = undefined
@@ -222,7 +222,7 @@ export async function pollJobProgress(){
         currentTasks.value = {...currentTasks.value}  // reassign for watch response
         if (
             Object.values(currentTasks.value[selectedProject.value.id])
-            .every(task => task?.task_id === undefined)
+            .every(task => task?.id === undefined)
         ) {
             clearInterval(jobProgressPoll.value)
             jobProgressPoll.value = undefined
@@ -266,7 +266,7 @@ export async function fetchJobResults(taskName: string) {
 }
 
 export async function abort(task: Task) {
-    abortTask(task.id)
+    if(task.id) abortTask(task.id)
     if (selectedProject.value) {
         currentTasks.value[selectedProject.value.id] = {}
     }

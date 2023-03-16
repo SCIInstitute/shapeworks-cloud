@@ -2,6 +2,7 @@
 # This will fetch all datasets populated on the public server and attempt to
 # upload them all to the local server
 from tempfile import TemporaryDirectory
+
 from swcc import models
 from swcc.api import swcc_session
 
@@ -46,10 +47,7 @@ def test_download_upload_cycle(session):
             ).create()
 
     for local_project, remote_project in zip(models.Project.list(), all_projects):
-        local_repr, remote_repr = project_as_dict_repr(
-            local_project,
-        ), project_as_dict_repr(
-            remote_project,
-        )
+        local_repr = project_as_dict_repr(local_project)
+        remote_repr = project_as_dict_repr(remote_project)
         assert local_repr == remote_repr
     assert len(list(models.Project.list())) == len(all_projects)

@@ -1,6 +1,12 @@
 import vtkAnnotatedCubeActor from 'vtk.js/Sources/Rendering/Core/AnnotatedCubeActor';
-import { DataObject, Dataset, Subject, Particles, GroomedShape, Project, ReconstructedSample, VTKInstance } from '@/types'
 import {
+    DataObject, Dataset, Subject,
+    Particles, GroomedShape, Project,
+    ReconstructedSample, VTKInstance,
+    Analysis, Task
+} from '@/types'
+import {
+    abortTask,
     deleteTaskProgress,
     getDataset,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
@@ -9,7 +15,6 @@ import {
     groomProject, optimizeProject, refreshProject
 } from '@/api/rest';
 import { ref } from '@vue/composition-api'
-import { Analysis, Task } from './types/index';
 import { getTaskProgress } from '@/api/rest';
 
 
@@ -198,11 +203,11 @@ export async function pollJobProgress(){
         const refreshedTasks = await Promise.all(
             Object.entries(currentTasks.value[selectedProject.value.id])
             .map(async ([taskName, task]) => {
-                if (task?.task_id){
-                    task = await getTaskProgress(task.task_id)
-                    if (task?.task_id && task?.percent_complete === 100) {
-                        await deleteTaskProgress(task?.task_id)
-                        task.task_id = undefined
+                if (task?.id){
+                    task = await getTaskProgress(task.id)
+                    if (task?.id && task?.percent_complete === 100) {
+                        await deleteTaskProgress(task?.id)
+                        task.id = undefined
                         setTimeout(() => {
                             if (selectedProject.value){
                                 currentTasks.value[selectedProject.value.id][taskName] = undefined
@@ -217,7 +222,7 @@ export async function pollJobProgress(){
         currentTasks.value = {...currentTasks.value}  // reassign for watch response
         if (
             Object.values(currentTasks.value[selectedProject.value.id])
-            .every(task => task?.task_id === undefined)
+            .every(task => task?.id === undefined)
         ) {
             clearInterval(jobProgressPoll.value)
             jobProgressPoll.value = undefined
@@ -258,6 +263,15 @@ export async function fetchJobResults(taskName: string) {
         )
         if(!layersShown.value.includes(layerName)) layersShown.value.push(layerName)
     }
+}
+
+export async function abort(task: Task) {
+    if(task.id) abortTask(task.id)
+    if (selectedProject.value) {
+        currentTasks.value[selectedProject.value.id] = {}
+    }
+    clearInterval(jobProgressPoll.value)
+    jobProgressPoll.value = undefined
 }
 
 export async function switchTab(tabName: string){

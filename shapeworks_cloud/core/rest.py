@@ -212,7 +212,7 @@ class ProjectViewSet(BaseViewSet):
 
         models.TaskProgress.objects.filter(name='groom', project=project).delete()
         progress = models.TaskProgress.objects.create(name='groom', project=project)
-        groom.delay(request.user.id, project.id, form_data, progress.task_id)
+        groom.delay(request.user.id, project.id, form_data, progress.id)
         return Response(
             data={'groom_task': serializers.TaskProgressSerializer(progress).data},
             status=status.HTTP_200_OK,
@@ -238,8 +238,8 @@ class ProjectViewSet(BaseViewSet):
             request.user.id,
             project.id,
             form_data,
-            progress.task_id,
-            analysis_progress.task_id,
+            progress.id,
+            analysis_progress.id,
         )
         return Response(
             data={
@@ -311,3 +311,18 @@ class TaskProgressViewSet(
     permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = models.TaskProgress.objects.all()
     serializer_class = serializers.TaskProgressSerializer
+
+    @action(
+        detail=True,
+        url_path='abort',
+        url_name='abort',
+        methods=['POST'],
+    )
+    def abort(self, request, **kwargs):
+        progress = self.get_object()
+        for task in models.TaskProgress.objects.filter(project=progress.project):
+            task.abort = True
+            task.save(update_fields=['abort'])
+        return Response(
+            status=status.HTTP_200_OK,
+        )

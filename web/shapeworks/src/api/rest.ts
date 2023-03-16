@@ -114,10 +114,14 @@ export async function optimizeProject(projectId: number, formData: Record<string
     return (await apiClient.post(`/projects/${projectId}/optimize/`, formData))
 }
 
-export async function getTaskProgress(taskId: string){
+export async function getTaskProgress(taskId: number){
     return (await apiClient.get(`/task-progress/${taskId}`)).data
 }
 
-export async function deleteTaskProgress(taskId: string){
+export async function deleteTaskProgress(taskId: number){
     return (await apiClient.delete(`/task-progress/${taskId}`)).data
+}
+
+export async function abortTask(taskId: number) {
+    return (await apiClient.post(`/task-progress/${taskId}/abort/`)).data
 }

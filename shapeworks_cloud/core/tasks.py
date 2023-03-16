@@ -70,10 +70,16 @@ def interpret_form_df(df, command):
 
 
 def run_shapeworks_command(
-    user_id, project_id, form_data, command, pre_command_function, post_command_function, task_id
+    user_id,
+    project_id,
+    form_data,
+    command,
+    pre_command_function,
+    post_command_function,
+    progress_id,
 ):
     user = User.objects.get(id=user_id)
-    progress = models.TaskProgress.objects.get(task_id=task_id)
+    progress = models.TaskProgress.objects.get(id=progress_id)
     token, _created = Token.objects.get_or_create(user=user)
     base_url = settings.API_URL
 
@@ -115,10 +121,16 @@ def run_shapeworks_command(
             with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
                 if process.stderr and process.stdout:
                     for line in iter(process.stdout.readline, b''):
-                        if command == 'analyze':
-                            print(line.decode())  # analyze task has no xmloutput
+                        progress.refresh_from_db()
+                        if progress.abort:
+                            progress.delete()
+                            process.kill()
+                            return
                         else:
-                            progress.update_percentage(parse_progress(line.decode()) + 10)
+                            if command == 'analyze':
+                                print(line.decode())  # analyze task has no xmloutput
+                            else:
+                                progress.update_percentage(parse_progress(line.decode()) + 10)
                     for line in iter(process.stderr.readline, b''):
                         progress.update_error(line.decode())
                         return
@@ -132,7 +144,7 @@ def run_shapeworks_command(
 
 
 @shared_task
-def groom(user_id, project_id, form_data, task_id):
+def groom(user_id, project_id, form_data, progress_id):
     def pre_command_function():
         # delete any previous results
         models.GroomedSegmentation.objects.filter(project=project_id).delete()
@@ -195,12 +207,12 @@ def groom(user_id, project_id, form_data, task_id):
         'groom',
         pre_command_function,
         post_command_function,
-        task_id,
+        progress_id,
     )
 
 
 @shared_task
-def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
+def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
     def pre_command_function():
         # delete any previous results
         models.OptimizedParticles.objects.filter(project=project_id).delete()
@@ -266,14 +278,14 @@ def optimize(user_id, project_id, form_data, task_id, analysis_task_id):
         'optimize',
         pre_command_function,
         post_command_function,
-        task_id,
+        progress_id,
     )
 
-    analyze.delay(user_id, project_id, analysis_task_id)
+    analyze.delay(user_id, project_id, analysis_progress_id)
 
 
 @shared_task
-def analyze(user_id, project_id, task_id):
+def analyze(user_id, project_id, progress_id):
     def pre_command_function():
         # delete any previous results
         project = models.Project.objects.get(id=project_id)
@@ -313,5 +325,11 @@ def analyze(user_id, project_id, task_id):
                     reconstructed.save()
 
     run_shapeworks_command(
-        user_id, project_id, None, 'analyze', pre_command_function, post_command_function, task_id
+        user_id,
+        project_id,
+        None,
+        'analyze',
+        pre_command_function,
+        post_command_function,
+        progress_id,
     )

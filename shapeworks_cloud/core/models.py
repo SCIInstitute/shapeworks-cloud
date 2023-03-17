@@ -19,44 +19,25 @@ class Dataset(TimeStampedModel, models.Model):
     contributors = models.TextField(blank=True, default='')
     publications = models.TextField(blank=True, default='')
 
-    def get_contents(self, project=None):
+    def get_contents(self):
         ret = []
-        if not project:
-            project = Project.objects.filter(dataset=self).first()
 
         def truncate_filename(filename):
             return filename.split('/')[-1]
 
-        def record_shape(shape, groomed, particles):
-            entry = {
-                'name': shape.subject.name,
-                'shape_1': truncate_filename(shape.file.name),
-            }
-            if groomed:
-                entry['groomed_1'] = 'groomed/' + truncate_filename(groomed.file.name)
-            if particles:
-                entry['local_particles_1'] = 'particles/' + truncate_filename(particles.local.name)
-                entry['world_particles_1'] = 'particles/' + truncate_filename(particles.local.name)
-            ret.append(entry)
-
-        def safe_get(model, **kwargs):
-            try:
-                return model.objects.get(**kwargs)
-            except model.DoesNotExist:
-                return None
-
-        for shape in Segmentation.objects.filter(subject__dataset=self):
-            groomed = safe_get(GroomedSegmentation, segmentation=shape, project=project)
-            particles = safe_get(OptimizedParticles, groomed_segmentation=groomed, project=project)
-            record_shape(shape, groomed, particles)
-        for shape in Mesh.objects.filter(subject__dataset=self):
-            groomed = safe_get(GroomedMesh, mesh=shape, project=project)
-            particles = safe_get(OptimizedParticles, groomed_mesh=groomed, project=project)
-            record_shape(shape, groomed, particles)
-        for shape in Image.objects.filter(subject__dataset=self):
-            record_shape(shape, None, None)
-        for shape in Contour.objects.filter(subject__dataset=self):
-            record_shape(shape, None, None)
+        for shape_group in [
+            Segmentation.objects.filter(subject__dataset=self),
+            Mesh.objects.filter(subject__dataset=self),
+            Image.objects.filter(subject__dataset=self),
+            Contour.objects.filter(subject__dataset=self),
+        ]:
+            for shape in shape_group:
+                ret.append(
+                    {
+                        'name': shape.subject.name,
+                        'shape_1': truncate_filename(shape.file.name),
+                    }
+                )
         return ret
 
 
@@ -122,7 +103,7 @@ class Project(TimeStampedModel, models.Model):
 
     def create_new_file(self):
         file_contents = {
-            'data': self.dataset.get_contents(self),
+            'data': self.dataset.get_contents(),
             'groom': {},
             'optimize': {},
         }

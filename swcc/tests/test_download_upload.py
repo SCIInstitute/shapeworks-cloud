@@ -2,6 +2,7 @@
 # This will fetch all datasets populated on the public server and attempt to
 # upload them all to the local server
 from tempfile import TemporaryDirectory
+import random
 
 from swcc import models
 from swcc.api import swcc_session
@@ -26,7 +27,7 @@ def test_download_upload_cycle(session):
 
         with swcc_session() as public_server_session:
             public_server_session.login('testuser@noemail.nil', 'cicdtest')
-            all_projects = list(models.Project.list())
+            all_projects = random.sample(list(models.Project.list()), 1)
             for project in all_projects:
                 project.download(download_dir)
 

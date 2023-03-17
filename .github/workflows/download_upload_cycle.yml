@@ -1,0 +1,43 @@
+name: download_upload_cycle
+on:
+  schedule:
+    # once per hour
+    - cron: "0 * * * *"
+jobs:
+  client:
+    env:
+      DJANGO_SUPERUSER_PASSWORD: django-password
+      DJANGO_SUPERUSER_USERNAME: admin
+      DJANGO_SUPERUSER_EMAIL: admin@noemail.com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install tox
+        run: |
+          pip install --upgrade pip
+          pip install tox
+
+      - name: Build images
+        run: docker-compose build
+      - name: Run migrations
+        run: docker-compose run --rm django ./manage.py migrate
+      - name: Create super user
+        run: docker-compose run -e DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD --rm django ./manage.py createsuperuser --noinput --email=$DJANGO_SUPERUSER_EMAIL
+      - name: Start server
+        run: docker-compose up -d
+
+      - uses: ifaxity/wait-on-action@v1
+        with:
+          resource: 'http://localhost:8000/api/docs/swagger/'
+
+      - name: Run tox
+        run: tox -e download_upload_cycle
+        working-directory: ./swcc
+
+      - name: Stop server
+        run: docker-compose down --volumes
+        if: ${{ always() }}

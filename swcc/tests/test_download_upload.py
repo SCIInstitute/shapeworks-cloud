@@ -1,8 +1,8 @@
 # This test requires that https://www.shapeworks-cloud.org/#/ is running
 # This will fetch all datasets populated on the public server and attempt to
 # upload them all to the local server
-from tempfile import TemporaryDirectory
 import random
+from tempfile import TemporaryDirectory
 
 from swcc import models
 from swcc.api import swcc_session

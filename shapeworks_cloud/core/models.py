@@ -34,8 +34,8 @@ class Dataset(TimeStampedModel, models.Model):
             for shape in shape_group:
                 ret.append(
                     {
-                        'name': shape.subject.name,
-                        'shape_1': truncate_filename(shape.file.name),
+                        'name': shape.subject.name,  # type: ignore
+                        'shape_1': truncate_filename(shape.file.name),  # type: ignore
                     }
                 )
         return ret

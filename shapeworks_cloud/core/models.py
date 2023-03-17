@@ -28,23 +28,16 @@ class Dataset(TimeStampedModel, models.Model):
             return filename.split('/')[-1]
 
         def record_shape(shape, groomed, particles):
-            ret.append(
-                {
-                    'name': shape.subject.name,
-                    'shape_1': truncate_filename(shape.file.name),
-                    'groomed_1': 'groomed/' + truncate_filename(groomed.file.name)
-                    if groomed
-                    else '',
-                    'local_particles_1': 'particles/' + truncate_filename(particles.local.name)
-                    if particles
-                    else '',
-                    'world_particles_1': 'particles/' + truncate_filename(particles.world.name)
-                    if particles
-                    else '',
-                    'alignment_1': '',
-                    'procrustes_1': '',
-                }
-            )
+            entry = {
+                'name': shape.subject.name,
+                'shape_1': truncate_filename(shape.file.name),
+            }
+            if groomed:
+                entry['groomed_1'] = 'groomed/' + truncate_filename(groomed.file.name)
+            if particles:
+                entry['local_particles_1'] = 'particles/' + truncate_filename(particles.local.name)
+                entry['world_particles_1'] = 'particles/' + truncate_filename(particles.local.name)
+            ret.append(entry)
 
         def safe_get(model, **kwargs):
             try:
@@ -133,7 +126,9 @@ class Project(TimeStampedModel, models.Model):
             'groom': {},
             'optimize': {},
         }
-        self.file.save('project.swproj', ContentFile(json.dumps(file_contents).encode()))
+        self.file.save(
+            f'{self.dataset.name}.swproj', ContentFile(json.dumps(file_contents).encode())
+        )
 
 
 class GroomedSegmentation(TimeStampedModel, models.Model):

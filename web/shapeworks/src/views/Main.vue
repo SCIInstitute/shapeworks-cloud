@@ -169,7 +169,9 @@ export default defineComponent({
                             analysisFileShown.value,
                             shortFileName(analysisFileShown.value),
                         ),
-                        points: await pointsReader(undefined)
+                        points: await pointsReader(
+                            currentAnalysisFileParticles.value
+                        )
                     }
                     ]
                 }
@@ -285,6 +287,7 @@ export default defineComponent({
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFileShown, debouncedRefreshRender)
         watch(landmarkColorList, debouncedRefreshRender)
+        watch(meanAnalysisFileParticles, debouncedRefreshRender)
         watch(tab, switchTab)
 
         return {

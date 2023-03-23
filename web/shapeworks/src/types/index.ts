@@ -48,11 +48,22 @@ export interface AnalysisChart {
     y: Array<number>,
 }
 
+export interface AnalysisGroup {
+    id: number,
+    name: string,
+    group1: string,
+    group2: string,
+    file: string,
+    particles: string,
+    ratio: number,
+}
+
 export interface Analysis {
     id: number,
     created: string,
     modified: string,
     charts: AnalysisChart[],
+    groups: AnalysisGroup[],
     mean_shape: string,
     mean_particles: string;
     modes: AnalysisMode[],

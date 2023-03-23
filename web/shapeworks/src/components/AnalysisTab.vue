@@ -7,7 +7,7 @@ import {
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 import { lineChartOptions } from '@/charts'
-import { AnalysisChart } from '@/types'
+import { AnalysisChart, AnalysisGroup } from '@/types'
 
 import { use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
@@ -34,6 +34,11 @@ export default defineComponent({
     setup(props) {
         const mode = ref(1);
         const stdDev = ref(0);
+        const groupRatio = ref(0.5);
+        const groupDiff = ref(false);
+        const groupSet = ref<string>();
+        const currPairing = ref<{left: string, right: string}>({left:"", right:""});
+        const prevPairing = ref<{left: string, right: string}>({left:"", right:""}); // stores the previously selected pairing
         const message = ref<string>();
 
         const modeOptions = computed(() => {
@@ -49,6 +54,37 @@ export default defineComponent({
                 p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
             )
         })
+
+        const currGroup = computed(() => {
+            return analysis.value?.groups.find((g) => {
+                if (g.name === groupSet.value) {
+                    if (g.group1 === currPairing.value.left && g.group2 === currPairing.value.right)  { // in-order group pairings
+                        if (g.ratio === groupRatio.value) {
+                            return true;
+                        }
+                    } else if (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left) { // inverted group pairings
+                        if (g.ratio === parseFloat((1 - groupRatio.value).toFixed(1))) { // floating point precision errors (https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems)
+                            return true;
+                        }
+                    }
+                }
+            })
+        })
+
+        const allGroupSets = computed(() => { 
+            return analysis.value?.groups.map((g) => g.name); 
+        })
+
+        // get all possible unique group pairings
+        const groupPairings = computed(() => {
+            const g: { [name: string]: string[] } = {};
+            analysis.value?.groups.map((group: AnalysisGroup) => {
+                if (g[group.name] === undefined) g[group.name] = [];
+                if (!g[group.name].includes(group.group1)) g[group.name].push(group.group1);
+                if (!g[group.name].includes(group.group2)) g[group.name].push(group.group2);
+            })
+            return g;
+        });
 
         const stdDevRange = computed(() => {
             if (!analysis.value || !currMode.value) return [0, 0, 0]
@@ -76,6 +112,59 @@ export default defineComponent({
             }
         })
 
+        const setDefaultPairing = () => {
+            // default left and right group selections: first and second item in groupSet pairings list
+            if (groupSet.value !== undefined) {
+                currPairing.value.left = groupPairings.value[groupSet.value][0];
+                currPairing.value.right = groupPairings.value[groupSet.value][1];
+                prevPairing.value = {left: currPairing.value.left, right: currPairing.value.right};
+            }
+
+            updateGroupFileShown();
+        }
+
+        // triggered on group pairing select change
+        const updateGroupSelections = () => {
+            // if the new left and right groups are the same, flip the two values according to the previous selections
+            const temp = {left: "", right: ""} // prevents multiple rerenders by reassinging watched ref values mid-function
+            if (currPairing.value.left === currPairing.value.right && groupSet.value !== undefined) {
+                // set new non-changed side to opposite side in old pairing
+                if (currPairing.value.left === prevPairing.value.left) {
+                    temp.left = prevPairing.value.right;
+                    temp.right = currPairing.value.right;
+                }
+                if (currPairing.value.right === prevPairing.value.right) {
+                    temp.right = prevPairing.value.left;
+                    temp.left = currPairing.value.left;
+                }
+                currPairing.value.left = temp.left;
+                currPairing.value.right = temp.right;
+            }   
+            
+            prevPairing.value.left = currPairing.value.left;
+            prevPairing.value.right = currPairing.value.right;
+
+            updateGroupFileShown();
+        }
+
+        const updateGroupFileShown = () => {
+            let fileShown = undefined;
+            let particles = undefined;
+
+            if (props.currentTab === 'analyze' && analysis.value && currGroup.value){
+                fileShown = currGroup.value.file;
+                particles = currGroup.value.particles;
+            }
+            currentAnalysisFileParticles.value = particles;
+            if (groupDiff.value) {
+                meanAnalysisFileParticles.value = analysis.value?.groups.find((g) => g.name === groupSet.value && g.ratio === 1.0)?.particles
+            } else {
+                meanAnalysisFileParticles.value = analysis.value?.mean_particles;
+            }
+
+            analysisFileShown.value = fileShown;
+        }
+
         function updateFileShown() {
             let fileShown = undefined
             let particles = undefined
@@ -99,9 +188,12 @@ export default defineComponent({
         watch(stdDev, updateFileShown)
         watch(props, updateFileShown)
         watch(analysis, updateFileShown)
+        watch(groupSet, setDefaultPairing)
+        watch(currPairing.value, updateGroupSelections)
+        watch(groupRatio, updateGroupFileShown)
+        watch(groupDiff, updateGroupFileShown)
 
-
-        function generateChart(options: AnalysisChart) {
+        const generateChart = (options: AnalysisChart) => {
             return lineChartOptions(options);
         }
 
@@ -123,6 +215,13 @@ export default defineComponent({
             generateChart,
             message,
             taskData,
+            groupRatio,
+            groupDiff,
+            groupSet,
+            allGroupSets,
+            groupPairings,
+            currGroup,
+            currPairing,
         }
     },
     components: {
@@ -190,7 +289,7 @@ export default defineComponent({
                     />
                 </v-expansion-panel-content>
             </v-expansion-panel>
-            <v-expansion-panel>
+            <v-expansion-panel :disabled="allGroupSets === undefined || allGroupSets.length === 0">
                 <v-expansion-panel-header>
                     Group Difference
                 </v-expansion-panel-header>
@@ -198,10 +297,10 @@ export default defineComponent({
                     <!-- set group options, SET OPTIONS WHEN BACKEND INCLUDES THEM. MODE IS PLACEHOLDER-->
                     <v-select
                         label="Group Set"
-                        v-model="mode"
-                        :items="modeOptions"
-                        item-text="mode"
-                        item-value="mode"
+                        v-model="groupSet"
+                        :items="allGroupSets"
+                        item-text="set"
+                        item-value="set"
                     />
                     <v-divider></v-divider>
                     <v-row 
@@ -210,44 +309,44 @@ export default defineComponent({
                     >
                         <v-col>
                             <v-select
-                                v-model="mode"
-                                :items="modeOptions"
-                                item-text="mode"
-                                item-value="mode"
+                                v-model="currPairing.left"
+                                :items="(currGroup && groupSet) ? groupPairings[groupSet] : ['']"
+                                item-text="group1"
+                                item-value="group1"
                             />
                         </v-col>
                         <v-col>
                             <v-slider
-                                step="10"
+                                v-model="groupRatio"
+                                min="0.0"
+                                max="1.0"
+                                step="0.1"
+                                default="0.5"
                                 show-ticks="always"
-                                thumb-label
                                 hide-details
                             ></v-slider>
                         </v-col>
                         <v-col>
                             <v-select
-                                v-model="mode"
-                                :items="modeOptions"
-                                item-text="mode"
-                                item-value="mode"
+                                v-model="currPairing.right"
+                                :items="(currGroup && groupSet) ? groupPairings[groupSet] : ['']"
+                                item-text="group2"
+                                item-value="group2"
                             />
                         </v-col>
                     </v-row>
-                    <v-row justify="center">
+                    <!-- <v-row justify="center">
                         <v-checkbox
                             class="mt-0 mb-8 pt-0"
                             value
                             label="Animate"
                             hide-details
                         ></v-checkbox>
-                    </v-row>
-                    <v-card align="center" justify="center" class="ma-auto">
-                        <v-btn class="ms-4" color="grey darken-3">Mean</v-btn>
-                        <v-btn class="ms-4" color="grey darken-3">Diff --></v-btn>
-                        <v-btn class="ms-4" color="grey darken-3">Mean</v-btn>
-                    </v-card>
-                    <v-card align="center" justify="center" class="ma-auto mt-5">
-                        <v-btn class="ms-4" color="grey darken-3">P-values</v-btn>
+                    </v-row> -->
+                    <v-card align="center" justify="center" class="ma-auto" :disabled="currGroup === undefined">
+                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 0.0">Mean</v-btn>
+                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupDiff = !groupDiff">Diff --></v-btn>
+                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 1.0">Mean</v-btn>
                     </v-card>
                 </v-expansion-panel-content>
             </v-expansion-panel>

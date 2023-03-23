@@ -101,6 +101,16 @@ class Constraints(ApiModel):
     optimized_particles: Optional[OptimizedParticles]
 
 
+class CachedAnalysisGroup(ApiModel):
+    _endpoint = 'cached-analysis-group'
+
+    file: FileType[Literal['core.CachedAnalysisGroup.file']]
+    particles: Optional[FileType[Literal['core.CachedAnalysisGroup.particles']]]
+    name: NonEmptyString
+    group1: NonEmptyString
+    group2: NonEmptyString
+    ratio: float
+
 class CachedAnalysisModePCA(ApiModel):
     _endpoint = 'cached-analysis-mode-pca'
 
@@ -127,6 +137,7 @@ class CachedAnalysis(ApiModel):
     mean_particles: FileType[Literal['core.CachedAnalysis.mean_particles']]
     modes: List[CachedAnalysisMode]
     charts: List[dict]
+    groups: Optional[List[CachedAnalysisGroup]]
 
 
 from .project import Project  # noqa: E402

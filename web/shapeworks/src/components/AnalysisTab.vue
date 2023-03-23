@@ -126,19 +126,16 @@ export default defineComponent({
         // triggered on group pairing select change
         const updateGroupSelections = () => {
             // if the new left and right groups are the same, flip the two values according to the previous selections
-            const temp = {left: "", right: ""} // prevents multiple rerenders by reassinging watched ref values mid-function
             if (currPairing.value.left === currPairing.value.right && groupSet.value !== undefined) {
                 // set new non-changed side to opposite side in old pairing
                 if (currPairing.value.left === prevPairing.value.left) {
-                    temp.left = prevPairing.value.right;
-                    temp.right = currPairing.value.right;
+                    currPairing.value.left = prevPairing.value.right;
+                    currPairing.value.right = currPairing.value.right;
                 }
                 if (currPairing.value.right === prevPairing.value.right) {
-                    temp.right = prevPairing.value.left;
-                    temp.left = currPairing.value.left;
+                    currPairing.value.right = prevPairing.value.left;
+                    currPairing.value.left = currPairing.value.left;
                 }
-                currPairing.value.left = temp.left;
-                currPairing.value.right = temp.right;
             }   
             
             prevPairing.value.left = currPairing.value.left;

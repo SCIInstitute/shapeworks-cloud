@@ -32,6 +32,7 @@ export default defineComponent({
         }
     },
     setup(props) {
+        const openTab = ref(0);
         const mode = ref(1);
         const stdDev = ref(0);
         const groupRatio = ref(0.5);
@@ -130,11 +131,9 @@ export default defineComponent({
                 // set new non-changed side to opposite side in old pairing
                 if (currPairing.value.left === prevPairing.value.left) {
                     currPairing.value.left = prevPairing.value.right;
-                    currPairing.value.right = currPairing.value.right;
                 }
                 if (currPairing.value.right === prevPairing.value.right) {
                     currPairing.value.right = prevPairing.value.left;
-                    currPairing.value.left = currPairing.value.left;
                 }
             }   
             
@@ -189,6 +188,18 @@ export default defineComponent({
         watch(currPairing.value, updateGroupSelections)
         watch(groupRatio, updateGroupFileShown)
         watch(groupDiff, updateGroupFileShown)
+        watch(openTab, () => {
+            switch(openTab.value) {
+                case 0: // PCA
+                    updateFileShown();
+                    break;
+                case 1: // GROUP
+                    updateGroupFileShown();
+                    break;
+                case 2: // CHARTS
+                    break;
+            }
+        })
 
         const generateChart = (options: AnalysisChart) => {
             return lineChartOptions(options);
@@ -203,6 +214,7 @@ export default defineComponent({
 
         return {
             analysis,
+            openTab,
             modeOptions,
             mode,
             stdDev,
@@ -251,7 +263,7 @@ export default defineComponent({
         </v-tooltip>
 
 
-         <v-expansion-panels :value="0">
+         <v-expansion-panels v-model="openTab">
             <v-expansion-panel>
                 <v-expansion-panel-header>
                     View PCA
@@ -332,14 +344,14 @@ export default defineComponent({
                             />
                         </v-col>
                     </v-row>
-                    <!-- <v-row justify="center">
+                    <v-row justify="center">
                         <v-checkbox
                             class="mt-0 mb-8 pt-0"
                             value
                             label="Animate"
                             hide-details
                         ></v-checkbox>
-                    </v-row> -->
+                    </v-row>
                     <v-card align="center" justify="center" class="ma-auto" :disabled="currGroup === undefined">
                         <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 0.0">Mean</v-btn>
                         <v-btn class="ms-4" color="grey darken-3" @click="() => groupDiff = !groupDiff">Diff --></v-btn>

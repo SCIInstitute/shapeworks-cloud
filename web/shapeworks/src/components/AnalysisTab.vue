@@ -41,6 +41,7 @@ export default defineComponent({
         const currPairing = ref<{left: string, right: string}>({left:"", right:""});
         const prevPairing = ref<{left: string, right: string}>({left:"", right:""}); // stores the previously selected pairing
         const message = ref<string>();
+        const animate = ref<boolean>(false);
 
         const modeOptions = computed(() => {
             return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -112,6 +113,27 @@ export default defineComponent({
                 ],
             }
         })
+
+        let step = 0.1;
+        const animateSlider = () => {
+            if (openTab.value === 1) { // Group tab animate
+                if (groupRatio.value === 0) step = 0.1;
+                if (groupRatio.value === 1) step = -0.1;
+                groupRatio.value = groupRatio.value + step;
+            }
+        }
+
+        let intervalId: number;
+        const triggerAnimate = () => {
+            if (groupSet.value === undefined) return;
+
+            if (animate.value) {
+                intervalId = setInterval(animateSlider, 400);
+            }
+            if (animate.value === false && intervalId) {
+                clearInterval(intervalId);
+            }
+        }
 
         const setDefaultPairing = () => {
             // default left and right group selections: first and second item in groupSet pairings list
@@ -188,6 +210,7 @@ export default defineComponent({
         watch(currPairing.value, updateGroupSelections)
         watch(groupRatio, updateGroupFileShown)
         watch(groupDiff, updateGroupFileShown)
+        watch(animate, triggerAnimate)
         watch(openTab, () => {
             switch(openTab.value) {
                 case 0: // PCA
@@ -231,6 +254,7 @@ export default defineComponent({
             groupPairings,
             currGroup,
             currPairing,
+            animate,
         }
     },
     components: {
@@ -346,8 +370,9 @@ export default defineComponent({
                     </v-row>
                     <v-row justify="center">
                         <v-checkbox
+                            :disabled="currGroup === undefined"
                             class="mt-0 mb-8 pt-0"
-                            value
+                            v-model="animate"
                             label="Animate"
                             hide-details
                         ></v-checkbox>

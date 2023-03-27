@@ -337,6 +337,7 @@ class Project(ApiModel):
     dataset: Dataset
     # sent in as a filepath string, interpreted as CachedAnalysis object
     last_cached_analysis: Optional[Any]
+    landmarks_info: Optional[Any]
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
@@ -393,6 +394,10 @@ class Project(ApiModel):
         file_io = self.get_file_io()
         if self.last_cached_analysis:
             self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
+        if self.file:
+            contents = json.load(open(self.file.path))
+            if 'landmarks' in contents:
+                self.landmarks_info = contents['landmarks']
 
         result = super().create()
         if self.file:

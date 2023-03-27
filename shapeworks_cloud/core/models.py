@@ -100,6 +100,7 @@ class Project(TimeStampedModel, models.Model):
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
     last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.SET_NULL, null=True)
+    landmarks_info = models.JSONField(default=list, null=True)
 
     def create_new_file(self):
         file_contents = {
@@ -176,7 +177,6 @@ class Landmarks(TimeStampedModel, models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name='landmarks', null=True
     )
-    metadata = models.JSONField(default=dict)
 
 
 class Constraints(TimeStampedModel, models.Model):

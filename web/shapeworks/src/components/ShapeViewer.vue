@@ -58,6 +58,7 @@ import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
 import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
+import vtkCubeSource from 'vtk.js/Sources/Filters/Sources/CubeSource';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
@@ -322,14 +323,21 @@ export default {
       });
       return filter;
     },
-    addPoints(renderer, points) {
-      const source = vtkSphereSource.newInstance({
+    addPoints(renderer, points, landmarks=false) {
+      let size = this.glyphSize
+      let source = vtkSphereSource.newInstance({
         thetaResolution: SPHERE_RESOLUTION,
         phiResolution: SPHERE_RESOLUTION,
       });
+      if (landmarks) {
+        size *= 2
+        source = vtkCubeSource.newInstance(
+          { xLength: 1, yLength: 1, zLength: 1 }
+        )
+      }
       const mapper = vtkGlyph3DMapper.newInstance({
         scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
-        scaleFactor: this.glyphSize,
+        scaleFactor: size,
       });
       const actor = vtkActor.newInstance();
       const filter = this.createColorFilter();
@@ -560,10 +568,14 @@ export default {
       );
 
       this.addShapes(renderer, label, shapes.map(({shape}) => shape));
-      const points = shapes.map(({points}) => points)
-      points.forEach((pointSet) => {
+      shapes.map(({points}) => points).forEach((pointSet) => {
         if(pointSet.getNumberOfPoints() > 0) {
           this.addPoints(renderer, pointSet);
+        }
+      })
+      shapes.map(({landmarks}) => landmarks).forEach((landmarkSet) => {
+        if(landmarkSet.getNumberOfPoints() > 0) {
+          this.addPoints(renderer, landmarkSet, true);
         }
       })
 

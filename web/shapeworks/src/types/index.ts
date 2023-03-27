@@ -62,6 +62,7 @@ export interface Project {
     keywords: string,
     description: string,
     dataset: number,
+    landmarks: Landmarks[],
     last_cached_analysis: Analysis | undefined,
 }
 
@@ -132,6 +133,16 @@ export interface Task {
     name: string,
     percent_complete: number,
     error: string,
+    created: string,
+    modified: string,
+}
+
+export interface Landmarks {
+    id: number,
+    file: string,
+    project: number,
+    subject: number,
+    metadata: Object,
     created: string,
     modified: string,
 }

@@ -4,6 +4,14 @@ from s3_file_field.rest_framework import S3FileSerializerField
 from shapeworks_cloud.core import models
 
 
+class LandmarksSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField(required=False)
+
+    class Meta:
+        model = models.Landmarks
+        fields = '__all__'
+
+
 class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CachedAnalysisModePCA
@@ -49,6 +57,7 @@ class CachedAnalysisReadSerializer(serializers.ModelSerializer):
 class ProjectReadSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
     last_cached_analysis = CachedAnalysisReadSerializer(allow_null=True)
+    landmarks = LandmarksSerializer(many=True)
 
     class Meta:
         model = models.Project

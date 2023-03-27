@@ -86,6 +86,7 @@ class Landmarks(ApiModel):
 
     file: Optional[FileType[Literal['core.Landmarks.file']]]
     subject: Subject
+    project: Project
 
 
 class Constraints(ApiModel):

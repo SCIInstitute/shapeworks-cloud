@@ -173,6 +173,10 @@ class OptimizedParticles(TimeStampedModel, models.Model):
 class Landmarks(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='landmarks')
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='landmarks', null=True
+    )
+    metadata = models.JSONField(default=dict)
 
 
 class Constraints(TimeStampedModel, models.Model):

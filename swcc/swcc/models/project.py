@@ -195,6 +195,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         Landmarks(
                             file=relative_path(value),
                             subject=subject,
+                            project=self.project,
                         ).create()
                     elif key == 'constraints':
                         constraints_path = relative_path(value)

@@ -131,14 +131,6 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LandmarksSerializer(serializers.ModelSerializer):
-    file = S3FileSerializerField()
-
-    class Meta:
-        model = models.Landmarks
-        fields = '__all__'
-
-
 class ConstraintsSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
 

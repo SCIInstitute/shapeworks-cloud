@@ -103,7 +103,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         entry_values[prefixes[0]].append(entry[key])
                         anatomy_id = 'anatomy' + key.replace(prefixes[0], '').replace(
                             '_particles', ''
-                        )
+                        ).replace('_file', '')
                         if anatomy_id not in entry_values['anatomy_ids']:
                             entry_values['anatomy_ids'].append(anatomy_id)
             objects_by_domain = {}

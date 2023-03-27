@@ -23,7 +23,8 @@ import {
     analysisFileShown,
     meanAnalysisFileParticles,
     currentAnalysisFileParticles,
-    switchTab
+    switchTab,
+    landmarkColorList
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -216,6 +217,7 @@ export default defineComponent({
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFileShown, debouncedRefreshRender)
+        watch(landmarkColorList, debouncedRefreshRender)
         watch(tab, switchTab)
 
         return {

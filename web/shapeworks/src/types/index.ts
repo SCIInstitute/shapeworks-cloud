@@ -63,6 +63,7 @@ export interface Project {
     description: string,
     dataset: number,
     landmarks: Landmarks[],
+    landmarks_info: any,
     last_cached_analysis: Analysis | undefined,
 }
 
@@ -142,7 +143,6 @@ export interface Landmarks {
     file: string,
     project: number,
     subject: number,
-    metadata: Object,
     created: string,
     modified: string,
 }

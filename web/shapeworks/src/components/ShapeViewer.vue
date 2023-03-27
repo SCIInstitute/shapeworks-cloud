@@ -72,14 +72,14 @@ import {
   layers, layersShown, orientationIndicator,
   cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
   vtkInstance, analysisFileShown,
-  currentAnalysisFileParticles, meanAnalysisFileParticles, showDifferenceFromMeanMode, cachedParticleComparisonVectors
+  currentAnalysisFileParticles, meanAnalysisFileParticles, showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList
 } from '../store';
 import { getDistance } from '@/helper';
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 
 
 const SPHERE_RESOLUTION = 32;
-const COLORS = [
+export const COLORS = [
   [166, 206, 227],
   [31, 120, 180],
   [178, 223, 138],
@@ -292,7 +292,7 @@ export default {
         this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
       })
     },
-    createColorFilter() {
+    createColorFilter(landmarks=false) {
       const filter = vtkCalculator.newInstance()
       filter.setFormula({
         getArrays() {
@@ -313,7 +313,14 @@ export default {
 
           const n = coords.length / 3;
           for (let i = 0; i < n; i += 1) {
-            const c = COLORS[i % COLORS.length];
+            let c = COLORS[i % COLORS.length];
+            if (landmarks) {
+              if (landmarkColorList.value[i]) {
+                c = landmarkColorList.value[i]
+              } else {
+                c = [0, 0, 0]
+              }
+            }
             color[3 * i] = c[0];
             color[3 * i + 1] = c[1];
             color[3 * i + 2] = c[2];
@@ -340,7 +347,7 @@ export default {
         scaleFactor: size,
       });
       const actor = vtkActor.newInstance();
-      const filter = this.createColorFilter();
+      const filter = this.createColorFilter(landmarks);
 
       filter.setInputData(points, 0);
       mapper.setInputConnection(filter.getOutputPort(), 0);

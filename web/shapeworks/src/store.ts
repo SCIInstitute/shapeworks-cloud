@@ -116,6 +116,8 @@ export const vtkShapesByType = ref<Record<string, any[]>>({
     "Particles": []
 })
 
+export const landmarkColorList = ref<number[][]>([])
+
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 
 export const jobProgressPoll = ref();

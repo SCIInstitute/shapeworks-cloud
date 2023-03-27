@@ -87,7 +87,9 @@ export default defineComponent({
 
 <template>
     <div class="pa-3">
-        View / edit project information
+        <div class="pa-3">
+            View / edit project information
+        </div>
         <v-expansion-panels :value="0">
             <v-expansion-panel>
                 <v-expansion-panel-header>

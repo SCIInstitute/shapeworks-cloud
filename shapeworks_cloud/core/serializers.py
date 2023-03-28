@@ -64,6 +64,17 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ProjectDownloadSerializer(serializers.ModelSerializer):
+    download_paths = serializers.SerializerMethodField('get_download_paths')
+
+    def get_download_paths(self, obj):
+        return obj.get_download_paths()
+
+    class Meta:
+        model = models.Project
+        fields = ['download_paths', 'id']
+
+
 class DatasetSerializer(serializers.ModelSerializer):
     projects = ProjectSerializer(required=False, many=True)
     summary = serializers.SerializerMethodField('get_summary')

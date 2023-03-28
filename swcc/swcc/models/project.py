@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import json
+import requests
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 try:
-    from typing import Any, Dict, Iterator, List, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
-        List,
         Optional,
         Union,
     )
@@ -21,6 +21,7 @@ except ImportError:
 
 from pydantic import BaseModel
 
+from ..api import current_session
 from .api_model import ApiModel
 from .constants import expected_key_prefixes
 from .dataset import Dataset
@@ -40,7 +41,7 @@ from .other_models import (
     Segmentation,
 )
 from .subject import Subject
-from .utils import FileIO, print_progress_bar, shape_file_type
+from .utils import FileIO, print_progress_bar, shape_file_type, raise_for_status
 
 
 class ProjectFileIO(BaseModel, FileIO):
@@ -221,62 +222,6 @@ class ProjectFileIO(BaseModel, FileIO):
                         file=constraints_path, subject=subject, optimized_particles=particles
                     ).create()
 
-    def download_all(self, location):
-        def relative_path(filepath):
-            return Path(
-                location,
-                str('/'.join(filepath.split('/')[:-1])).replace('../', '').replace('./', ''),
-            )
-
-        def relative_download(file, resolve):
-            if not file:
-                return
-            file.download(relative_path(resolve))
-
-        relative_download(self.project.file, '')
-        data = self.load_data(create=False)
-        print(f'Downloading files for {len(data)} subjects...')
-        i = 0
-        total_progress_steps = len(data) + 9  # 9 download mappings to evaluate
-        print_progress_bar(i, total_progress_steps)
-
-        download_mappings: Dict[str, List] = {
-            'mesh': [{'set': self.project.dataset.meshes, 'attr': 'file'}],
-            'segmentation': [{'set': self.project.dataset.segmentations, 'attr': 'file'}],
-            'contour': [{'set': self.project.dataset.contours, 'attr': 'file'}],
-            'image': [{'set': self.project.dataset.images, 'attr': 'file'}],
-            'groomed': [
-                {'set': self.project.groomed_meshes, 'attr': 'file'},
-                {'set': self.project.groomed_segmentations, 'attr': 'file'},
-            ],
-            'local': [{'set': self.project.particles, 'attr': 'local'}],
-            'world': [{'set': self.project.particles, 'attr': 'world'}],
-            'landmarks': [{'set': self.project.dataset.landmarks, 'attr': 'file'}],
-            'constraints': [{'set': self.project.dataset.constraints, 'attr': 'file'}],
-        }
-
-        download_mappings_evaluated = {}
-        for k, v in download_mappings.items():
-            i += 1
-            print_progress_bar(i, total_progress_steps)
-            download_mappings_evaluated[k] = [dict(s, **{'set': list(s['set'])}) for s in v]
-
-        for [_s, objects_by_domain] in data:
-            i += 1
-            for _a, objects in objects_by_domain.items():
-                for key, value in objects.items():
-                    if key == 'shape':
-                        key = shape_file_type(Path(value)).__name__.lower()
-                    match_name = Path(value).name
-                    if key in download_mappings_evaluated:
-                        for mapping in download_mappings_evaluated[key]:
-                            for x in mapping['set']:
-                                attr = getattr(x, mapping['attr'])
-                                if str(attr) == match_name:
-                                    relative_download(attr, value)
-            print_progress_bar(i, total_progress_steps)
-        print()
-
     def load_analysis_from_json(self, file_path):
         project_root = Path(str(self.project.file.path)).parent
         analysis_file_location = project_root / Path(file_path)
@@ -337,7 +282,6 @@ class Project(ApiModel):
     dataset: Dataset
     # sent in as a filepath string, interpreted as CachedAnalysis object
     last_cached_analysis: Optional[Any]
-    landmarks_info: Optional[Any]
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
@@ -394,10 +338,6 @@ class Project(ApiModel):
         file_io = self.get_file_io()
         if self.last_cached_analysis:
             self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
-        if self.file:
-            contents = json.load(open(str(self.file.path)))
-            if 'landmarks' in contents:
-                self.landmarks_info = contents['landmarks']
 
         result = super().create()
         if self.file:
@@ -407,8 +347,15 @@ class Project(ApiModel):
         assert result.id
         return Project.from_id(result.id)
 
-    def download(self, path: Union[Path, str]):
-        self.get_file_io().download_all(path)
+    def download(self, folder: Union[Path, str]):
+        session = current_session()
+        r: requests.Response = session.get(f'{self._endpoint}/{self.id}/download/')
+        raise_for_status(r)
+        data = r.json()
+        for path, url in data['download_paths'].items():
+            file_item = FileType(url=url)
+            file_item.download(Path(folder, *path.split('/')[:-1]))
+        session.close()
 
 
 ProjectFileIO.update_forward_refs()

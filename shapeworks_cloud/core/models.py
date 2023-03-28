@@ -112,6 +112,78 @@ class Project(TimeStampedModel, models.Model):
             f'{self.dataset.name}.swproj', ContentFile(json.dumps(file_contents).encode())
         )
 
+    def get_download_paths(self):
+        ret = {self.file.name.split('/')[-1]: self.file.url}
+        with self.file.open() as f:
+            data = json.load(f)['data']
+
+        for subject_info in data:
+            subject = Subject.objects.filter(
+                dataset=self.dataset, name=subject_info['name']
+            ).first()
+            particles = OptimizedParticles.objects.filter(
+                models.Q(groomed_mesh__mesh__subject=subject)
+                | models.Q(groomed_segmentation__segmentation__subject=subject)
+            )
+            related_files = {
+                'mesh': [(m.anatomy_type, m.file) for m in subject.meshes.all()],
+                'segmentation': [(s.anatomy_type, s.file) for s in subject.segmentations.all()],
+                'contour': [(c.anatomy_type, c.file) for c in subject.contours.all()],
+                'image': [(i.anatomy_type, i.file) for i in subject.images.all()],
+                'constraints': [(None, c.file) for c in subject.constraints.all()],
+                'landmarks': [
+                    (None, lm.file)
+                    for lm in Landmarks.objects.filter(project=self, subject=subject)
+                ],
+                'groomed': [
+                    (gm.mesh.anatomy_type, gm.file)
+                    for gm in GroomedMesh.objects.filter(project=self, mesh__subject=subject)
+                ]
+                + [
+                    (gs.segmentation.anatomy_type, gs.file)
+                    for gs in GroomedSegmentation.objects.filter(
+                        project=self, segmentation__subject=subject
+                    )
+                ],
+                'local': [
+                    (
+                        p.groomed_mesh.mesh.anatomy_type
+                        if p.groomed_mesh
+                        else p.groomed_segmentation.segmentation.anatomy_type,
+                        p.local,
+                    )
+                    for p in particles
+                ],
+                'world': [
+                    (
+                        p.groomed_mesh.mesh.anatomy_type
+                        if p.groomed_mesh
+                        else p.groomed_segmentation.segmentation.anatomy_type,
+                        p.world,
+                    )
+                    for p in particles
+                ],
+            }
+            related_files['shape'] = (
+                related_files['mesh']
+                + related_files['segmentation']
+                + related_files['contour']
+                + related_files['image']
+            )
+
+            for key, value in subject_info.items():
+                prefix = key.split('_')[0]
+                suffix = key.split('_')[-1]
+                target_file = None
+                if prefix in related_files:
+                    for related in related_files[prefix]:
+                        if not target_file:
+                            if related[0] is None or suffix in related[0]:
+                                target_file = related[1].url
+                if target_file:
+                    ret[value] = target_file
+        return ret
+
 
 class GroomedSegmentation(TimeStampedModel, models.Model):
     # The contents of the nrrd file

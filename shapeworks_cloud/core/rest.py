@@ -201,6 +201,16 @@ class ProjectViewSet(BaseViewSet):
 
     @action(
         detail=True,
+        url_path='download',
+        url_name='download',
+        methods=['GET'],
+    )
+    def download(self, request, **kwargs):
+        project = self.get_object()
+        return Response(serializers.ProjectDownloadSerializer(project).data)
+
+    @action(
+        detail=True,
         url_path='groom',
         url_name='groom',
         methods=['POST'],

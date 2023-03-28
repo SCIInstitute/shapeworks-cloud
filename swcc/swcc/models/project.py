@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
-import requests
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+import requests
 
 try:
     from typing import Any, Dict, Iterator, Literal, Optional, Union
@@ -41,7 +42,7 @@ from .other_models import (
     Segmentation,
 )
 from .subject import Subject
-from .utils import FileIO, print_progress_bar, shape_file_type, raise_for_status
+from .utils import FileIO, print_progress_bar, raise_for_status, shape_file_type
 
 
 class ProjectFileIO(BaseModel, FileIO):

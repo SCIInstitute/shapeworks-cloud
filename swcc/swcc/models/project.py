@@ -360,7 +360,7 @@ class Project(ApiModel):
         raise_for_status(r)
         data = r.json()
         for path, url in data['download_paths'].items():
-            file_item = FileType(url=url)
+            file_item: FileType = FileType(url=url)
             file_item.download(Path(folder, *path.split('/')[:-1]))
         session.close()
 

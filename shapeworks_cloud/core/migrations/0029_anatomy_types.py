@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0028_landmarks_info'),
     ]
@@ -32,6 +31,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='optimizedparticles',
             name='subject',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='particles', to='core.subject'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='particles',
+                to='core.subject',
+            ),
         ),
     ]

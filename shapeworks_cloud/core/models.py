@@ -121,18 +121,15 @@ class Project(TimeStampedModel, models.Model):
             subject = Subject.objects.filter(
                 dataset=self.dataset, name=subject_info['name']
             ).first()
-            particles = OptimizedParticles.objects.filter(
-                models.Q(groomed_mesh__mesh__subject=subject)
-                | models.Q(groomed_segmentation__segmentation__subject=subject)
-            )
+            particles = OptimizedParticles.objects.filter(project=self, subject=subject)
             related_files = {
                 'mesh': [(m.anatomy_type, m.file) for m in subject.meshes.all()],
                 'segmentation': [(s.anatomy_type, s.file) for s in subject.segmentations.all()],
                 'contour': [(c.anatomy_type, c.file) for c in subject.contours.all()],
                 'image': [(i.anatomy_type, i.file) for i in subject.images.all()],
-                'constraints': [(None, c.file) for c in subject.constraints.all()],
+                'constraints': [(c.anatomy_type, c.file) for c in subject.constraints.all()],
                 'landmarks': [
-                    (None, lm.file)
+                    (lm.anatomy_type, lm.file)
                     for lm in Landmarks.objects.filter(project=self, subject=subject)
                 ],
                 'groomed': [
@@ -145,24 +142,8 @@ class Project(TimeStampedModel, models.Model):
                         project=self, segmentation__subject=subject
                     )
                 ],
-                'local': [
-                    (
-                        p.groomed_mesh.mesh.anatomy_type
-                        if p.groomed_mesh
-                        else p.groomed_segmentation.segmentation.anatomy_type,
-                        p.local,
-                    )
-                    for p in particles
-                ],
-                'world': [
-                    (
-                        p.groomed_mesh.mesh.anatomy_type
-                        if p.groomed_mesh
-                        else p.groomed_segmentation.segmentation.anatomy_type,
-                        p.world,
-                    )
-                    for p in particles
-                ],
+                'local': [(p.anatomy_type, p.local) for p in particles],
+                'world': [(p.anatomy_type, p.world) for p in particles],
             }
             related_files['shape'] = (
                 related_files['mesh']
@@ -178,9 +159,11 @@ class Project(TimeStampedModel, models.Model):
                 if prefix in related_files:
                     for related in related_files[prefix]:
                         if not target_file:
-                            if related[0] is None or suffix in related[0]:
+                            # subject and anatomy type must match
+                            if suffix in related[0]:
                                 target_file = related[1].url
                 if target_file:
+                    value = value.replace('../', '')
                     ret[value] = target_file
         return ret
 
@@ -226,6 +209,10 @@ class OptimizedParticles(TimeStampedModel, models.Model):
     world = S3FileField(null=True)
     local = S3FileField(null=True)
     transform = S3FileField(null=True)
+    anatomy_type = models.CharField(max_length=255)
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, related_name='particles', null=True
+    )
 
     groomed_segmentation = models.ForeignKey(
         GroomedSegmentation,
@@ -246,6 +233,7 @@ class OptimizedParticles(TimeStampedModel, models.Model):
 class Landmarks(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='landmarks')
+    anatomy_type = models.CharField(max_length=255)
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name='landmarks', null=True
     )
@@ -254,6 +242,7 @@ class Landmarks(TimeStampedModel, models.Model):
 class Constraints(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='constraints')
+    anatomy_type = models.CharField(max_length=255)
     optimized_particles = models.ForeignKey(
         OptimizedParticles, on_delete=models.CASCADE, related_name='constraints', null=True
     )

@@ -198,6 +198,7 @@ class ProjectFileIO(BaseModel, FileIO):
                             file=relative_path(value),
                             subject=subject,
                             project=self.project,
+                            anatomy_type=anatomy_id,
                         ).create()
                     elif key == 'constraints':
                         constraints_path = relative_path(value)
@@ -217,10 +218,15 @@ class ProjectFileIO(BaseModel, FileIO):
                         groomed_segmentation=groomed_segmentation,
                         groomed_mesh=groomed_mesh,
                         project=self.project,
+                        subject=subject,
+                        anatomy_type=anatomy_id,
                     ).create()
                 if constraints_path:
                     Constraints(
-                        file=constraints_path, subject=subject, optimized_particles=particles
+                        file=constraints_path,
+                        subject=subject,
+                        optimized_particles=particles,
+                        anatomy_type=anatomy_id,
                     ).create()
 
     def load_analysis_from_json(self, file_path):

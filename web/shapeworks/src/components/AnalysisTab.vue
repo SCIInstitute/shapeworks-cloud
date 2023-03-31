@@ -4,6 +4,8 @@ import {
     currentAnalysisFileParticles, meanAnalysisFileParticles,
     currentTasks,
     selectedProject,
+    analysisExpandedTab,
+calculateComparisons,
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 import { lineChartOptions } from '@/charts'
@@ -20,6 +22,11 @@ import {
   DataZoomComponent
 } from 'echarts/components';
 import VChart from 'vue-echarts';
+import imageReader from '../reader/image';
+import pointsReader from '../reader/points';
+import generateMapper from '@/reader/mapper';
+import { cacheComparison } from '@/store';
+import { cachedParticleComparisonColors } from '@/store';
 
 // registers required echarts components
 use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent,ToolboxComponent,DataZoomComponent]);
@@ -42,6 +49,7 @@ export default defineComponent({
         const prevPairing = ref<{left: string, right: string}>({left:"", right:""}); // stores the previously selected pairing
         const message = ref<string>();
         const animate = ref<boolean>(false);
+        const currentlyCaching = ref<boolean>(false);
 
         const modeOptions = computed(() => {
             return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -57,14 +65,20 @@ export default defineComponent({
             )
         })
 
+        // determine if the currently selected group pairing is inverted
+        // returns true if they are inverted, false if not
+        const pairingIsInverted = (g: any) => {
+            return (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left)
+        }
+
         const currGroup = computed(() => {
             return analysis.value?.groups.find((g) => {
                 if (g.name === groupSet.value) {
-                    if (g.group1 === currPairing.value.left && g.group2 === currPairing.value.right)  { // in-order group pairings
+                    if (!pairingIsInverted(g))  { // in-order group pairings
                         if (g.ratio === groupRatio.value) {
                             return true;
                         }
-                    } else if (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left) { // inverted group pairings
+                    } else if (pairingIsInverted(g)) { // inverted group pairings
                         if (g.ratio === parseFloat((1 - groupRatio.value).toFixed(1))) { // floating point precision errors (https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems)
                             return true;
                         }
@@ -114,6 +128,48 @@ export default defineComponent({
             }
         })
 
+        async function cacheAllComparisons() {
+            const allInPairing = analysis.value?.groups.filter((g) => {
+                if (g.name === groupSet.value) { // if groupSet is same
+                    if ((g.group1 === currPairing.value.left || g.group1 === currPairing.value.right) && (g.group2 === currPairing.value.left || g.group2 === currPairing.value.right))
+                        return true;
+                }
+            })
+
+            if (allInPairing !== undefined) {
+                const cachePrep = await Promise.all(allInPairing?.map(async (g) => {
+                    const particleComparisonKey = `${g.particles}_${meanAnalysisFileParticles.value}`;
+
+                    if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
+                        const compareToPoints = await pointsReader(meanAnalysisFileParticles.value);
+                        const currentPoints = await pointsReader(g.particles);
+
+                        const currentMesh = await imageReader(g.file, "current_mesh.vtk");
+
+                        return {
+                            "compareTo": {
+                                points: compareToPoints.getPoints().getData(),
+                                particleUrl: meanAnalysisFileParticles.value,
+                            },
+                            "current":  {
+                                points: currentPoints.getPoints().getData(),
+                                mapper: generateMapper(currentMesh),
+                                particleUrl: g.particles,
+                            }, 
+                        }
+                    }
+                }))
+
+                cachePrep.forEach((g) => {
+                    if (g !== undefined) {
+                        const { current, compareTo } = g;
+                        const comparisons = calculateComparisons(current.mapper, current.points, compareTo.points)
+                        cacheComparison(comparisons.colorValues, comparisons.vectorValues, `${current.particleUrl}_${compareTo.particleUrl}`);
+                    }
+                })
+            }
+        }
+
         let step = 0.1;
         const animateSlider = () => {
             if (openTab.value === 1) { // Group tab animate
@@ -124,11 +180,14 @@ export default defineComponent({
         }
 
         let intervalId: number;
-        const triggerAnimate = () => {
+        async function triggerAnimate() {
             if (groupSet.value === undefined) return;
 
             if (animate.value) {
-                intervalId = setInterval(animateSlider, 400);
+                currentlyCaching.value = true;
+                await cacheAllComparisons();
+                currentlyCaching.value = false;
+                intervalId = setInterval(animateSlider, 500);
             }
             if (animate.value === false && intervalId) {
                 clearInterval(intervalId);
@@ -175,7 +234,15 @@ export default defineComponent({
             }
             currentAnalysisFileParticles.value = particles;
             if (groupDiff.value) {
-                meanAnalysisFileParticles.value = analysis.value?.groups.find((g) => g.name === groupSet.value && g.ratio === 1.0)?.particles
+                meanAnalysisFileParticles.value = analysis.value?.groups.find((g) => {
+                    if (g.name === groupSet.value) {
+                      if (!pairingIsInverted(g)) {
+                        if (g.ratio === 1.0) return true;
+                      } else if (pairingIsInverted(g)) {
+                        if (g.ratio === 0.0) return true;
+                      }
+                    }
+                })?.particles // account for inverted-pairings
             } else {
                 meanAnalysisFileParticles.value = analysis.value?.mean_particles;
             }
@@ -212,6 +279,7 @@ export default defineComponent({
         watch(groupDiff, updateGroupFileShown)
         watch(animate, triggerAnimate)
         watch(openTab, () => {
+            analysisExpandedTab.value = openTab.value;
             switch(openTab.value) {
                 case 0: // PCA
                     updateFileShown();
@@ -237,7 +305,6 @@ export default defineComponent({
 
         return {
             analysis,
-            openTab,
             modeOptions,
             mode,
             stdDev,
@@ -255,6 +322,8 @@ export default defineComponent({
             currGroup,
             currPairing,
             animate,
+            openTab,
+            currentlyCaching
         }
     },
     components: {
@@ -322,12 +391,11 @@ export default defineComponent({
                     />
                 </v-expansion-panel-content>
             </v-expansion-panel>
-            <v-expansion-panel :disabled="allGroupSets === undefined || allGroupSets.length === 0">
+            <v-expansion-panel :disabled="allGroupSets === undefined || allGroupSets.length === 0" id="groups-panel">
                 <v-expansion-panel-header>
                     Group Difference
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <!-- set group options, SET OPTIONS WHEN BACKEND INCLUDES THEM. MODE IS PLACEHOLDER-->
                     <v-select
                         label="Group Set"
                         v-model="groupSet"
@@ -378,10 +446,11 @@ export default defineComponent({
                         ></v-checkbox>
                     </v-row>
                     <v-card align="center" justify="center" class="ma-auto" :disabled="currGroup === undefined">
-                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 0.0">Mean</v-btn>
-                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupDiff = !groupDiff">Diff --></v-btn>
-                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 1.0">Mean</v-btn>
+                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 0.0">{{currPairing.left}}: Mean</v-btn>
+                        <v-btn class="ms-4" color="grey darken-3" :disabled="animate || currentlyCaching" @click="() => groupDiff = !groupDiff">Diff --></v-btn>
+                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 1.0">{{currPairing.right}}: Mean</v-btn>
                     </v-card>
+                    <v-dialog v-model="currentlyCaching" width="50px"><v-progress-circular indeterminate align-center></v-progress-circular></v-dialog>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel>
@@ -468,6 +537,10 @@ export default defineComponent({
 .messages-box {
     text-align: center;
     color: #2196f3;
+}
+
+.v-dialog {
+    overflow: hidden;
 }
 
 </style>

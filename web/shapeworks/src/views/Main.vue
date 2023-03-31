@@ -30,6 +30,7 @@ import {
     switchTab,
     landmarkColorList,
     jobAlreadyDone,
+    analysisExpandedTab
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -163,18 +164,30 @@ export default defineComponent({
                         points: currParticles,
                     }
                 }
-                newRenderData = {
-                    "PCA": [{
-                        shape: await imageReader(
-                            analysisFileShown.value,
-                            shortFileName(analysisFileShown.value),
-                        ),
-                        points: await pointsReader(
-                            currentAnalysisFileParticles.value
-                        )
+                newRenderData =
+                    (analysisExpandedTab.value === 0) ? 
+                    {
+                        "PCA": [{
+                            shape: await imageReader(
+                                analysisFileShown.value,
+                                shortFileName(analysisFileShown.value),
+                            ),
+                            points: await pointsReader(
+                                currentAnalysisFileParticles.value
+                            )
+                        }]
+                    }:
+                    {
+                        "GROUP": [{
+                            shape: await imageReader(
+                                analysisFileShown.value,
+                                shortFileName(analysisFileShown.value),
+                            ),
+                            points: await pointsReader(
+                                currentAnalysisFileParticles.value
+                            )
+                        }]
                     }
-                    ]
-                }
             } else {
                 newRenderData = Object.fromEntries(
                     await Promise.all(Object.entries(groupedSelections).map(

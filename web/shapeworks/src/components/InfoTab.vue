@@ -1,6 +1,6 @@
 <script lang="ts">
 import pointsReader from '../reader/points';
-import { COLORS } from './ShapeViewer.vue'
+import { COLORS } from './ShapeViewer/methods'
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { landmarkColorList, selectedDataset, selectedProject } from '../store';
 

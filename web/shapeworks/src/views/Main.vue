@@ -9,7 +9,7 @@ import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
 import { DataObject, ShapeData } from '@/types';
-import ShapeViewer from '../components/ShapeViewer.vue';
+import ShapeViewer from '../components/ShapeViewer/viewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
 import {

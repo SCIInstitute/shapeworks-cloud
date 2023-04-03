@@ -30,6 +30,7 @@ import {
     switchTab,
     landmarkColorList,
     jobAlreadyDone,
+    updateLandmarks,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -286,6 +287,7 @@ export default defineComponent({
         watch(analysisFileShown, debouncedRefreshRender)
         watch(landmarkColorList, debouncedRefreshRender)
         watch(tab, switchTab)
+        watch(layersShown, updateLandmarks)
 
         return {
             drawer,

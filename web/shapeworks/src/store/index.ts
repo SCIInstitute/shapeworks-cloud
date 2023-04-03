@@ -59,6 +59,8 @@ export const cachedParticleComparisonVectors = ref({})
 
 export const cachedParticleComparisonColors = ref({})
 
+export const landmarkInfo = ref();
+
 export const landmarkColorList = ref<number[][]>([])
 
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})

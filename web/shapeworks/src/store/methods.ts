@@ -1,4 +1,6 @@
 import { Project, Task } from "@/types";
+import { COLORS } from './constants'
+import pointsReader from '../reader/points';
 import {
      loadingState,
      selectedDataset,
@@ -13,6 +15,8 @@ import {
      groomedShapesForOriginalDataObjects,
      jobProgressPoll,
      reconstructionsForOriginalDataObjects,
+     landmarkInfo,
+     landmarkColorList,
 } from ".";
 import {
     abortTask,
@@ -25,6 +29,7 @@ import {
     groomProject, optimizeProject, refreshProject
 } from '@/api/rest';
 import { layers } from "./constants";
+
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
@@ -74,7 +79,6 @@ export const loadReconstructedSamplesForProject = async (type: string, id: numbe
         )
     }
 }
-
 
 export function jobAlreadyDone(action: string): Boolean {
     let layer;
@@ -201,4 +205,57 @@ export async function switchTab(tabName: string) {
                 analysis.value = refreshedProject.last_cached_analysis
             }
     }
+}
+
+
+
+// from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+function hexToRgb(hex: string) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16)
+     ] : [0, 0,0];
+  }
+
+
+export async function updateLandmarks(){
+    if (!layersShown.value.includes("Landmarks")) return
+    if (selectedProject.value?.landmarks){
+        const subjectParticles = await Promise.all(
+            selectedProject.value.landmarks.map(
+                async (subjectLandmarks) => {
+                    const locations = await pointsReader(subjectLandmarks.file)
+                    return locations.getPoints().getNumberOfPoints()
+                }
+            )
+        )
+        const numRows = Math.max(...subjectParticles)
+        landmarkInfo.value = [...Array(numRows).keys()].map((index) => {
+            let currentInfo = {
+                id: index,
+                color: COLORS[index % COLORS.length],
+                name: `L${index}`,
+                num_set: subjectParticles.filter(
+                    (numLocations) => numLocations > index
+                ).length,
+                comment: undefined,
+
+            }
+            if (selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > index) {
+                currentInfo = Object.assign(
+                    currentInfo,
+                    selectedProject.value?.landmarks_info[index]
+                )
+            }
+            if (currentInfo.color.toString().includes("#")) {
+                currentInfo.color = hexToRgb(currentInfo.color.toString())
+            }
+            return currentInfo
+        })
+    }
+    landmarkColorList.value = landmarkInfo.value.map(
+        (info: any) => info.color
+    )
 }

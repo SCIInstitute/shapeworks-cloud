@@ -9,7 +9,7 @@ import {
     allProjectsForDataset,
     loadProjectForDataset,
     selectedProject,
-} from '../store';
+} from '@/store';
 import { Dataset, Project } from '@/types';
 import router from '@/router';
 import CreateProject from '@/components/CreateProject.vue';

@@ -2,7 +2,7 @@
 import pointsReader from '../reader/points';
 import { COLORS } from './ShapeViewer/methods'
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
-import { landmarkColorList, selectedDataset, selectedProject } from '../store';
+import { landmarkColorList, selectedDataset, selectedProject } from '@/store';
 
 
 // from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb

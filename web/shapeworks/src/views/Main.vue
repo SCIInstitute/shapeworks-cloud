@@ -28,11 +28,11 @@ import {
     meanAnalysisFileParticles,
     currentAnalysisFileParticles,
     switchTab,
-    landmarkColorList
-} from '../store';
+    landmarkColorList,
+    jobAlreadyDone,
+} from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
-import { jobAlreadyDone } from '../store';
 import AnalysisTab from '@/components/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
 

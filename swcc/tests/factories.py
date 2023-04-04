@@ -129,5 +129,7 @@ class OptimizedParticlesFactory(Factory):
     local = Faker('file', extension='txt')
     transform = Faker('file', extension='txt')
     project = SubFactory(ProjectFactory)
+    subject = SubFactory(SubjectFactory)
+    anatomy_type = Faker('word')
     groomed_segmentation = SubFactory(GroomedSegmentationFactory)
     groomed_mesh = SubFactory(GroomedMeshFactory)

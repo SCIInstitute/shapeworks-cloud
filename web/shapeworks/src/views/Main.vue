@@ -1,9 +1,13 @@
 <script lang="ts">
+import {
+    defineComponent, onMounted, ref,
+    watch, computed, nextTick,
+    onBeforeUnmount,
+} from '@vue/composition-api';
 import _ from 'lodash';
 import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
-import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
 import { DataObject, ShapeData } from '@/types';
 import ShapeViewer from '../components/ShapeViewer.vue';
 import DataList from '../components/DataList.vue'
@@ -23,12 +27,14 @@ import {
     analysisFileShown,
     meanAnalysisFileParticles,
     currentAnalysisFileParticles,
-    switchTab
+    switchTab,
+    landmarkColorList
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import { jobAlreadyDone } from '../store';
 import AnalysisTab from '@/components/AnalysisTab.vue';
+import InfoTab from '@/components/InfoTab.vue';
 
 
 export default defineComponent({
@@ -38,6 +44,7 @@ export default defineComponent({
         RenderControls,
         TabForm,
         AnalysisTab,
+        InfoTab,
     },
     props: {
         dataset: {
@@ -50,7 +57,19 @@ export default defineComponent({
         }
     },
     setup(props) {
-        const mini = ref(false);
+        const drawerWidth = ref<number>(600);
+        const drawer = ref();
+        const renderAreaStyle = computed(() => {
+            let width = `calc(100% - ${drawerWidth.value}px)`
+            return {
+                width,
+                position: 'absolute',
+                left: `${drawerWidth.value}px`,
+                top: '70px',
+                height: 'calc(100% - 70px)'
+            }
+        })
+
         const tab = ref();
         const rows = ref<number>(1);
         const cols = ref<number>(1);
@@ -66,7 +85,18 @@ export default defineComponent({
                     name: 'select'
                 })
             }
+            nextTick(() => {
+                window.addEventListener('resize', onResize);
+            })
         })
+
+        onBeforeUnmount(() => {
+            window.removeEventListener('resize', onResize);
+        })
+
+        function onResize() {
+            refreshRender()
+        }
 
         async function toSelectPage() {
             selectedProject.value = undefined;
@@ -74,6 +104,42 @@ export default defineComponent({
             router.push({
                 name: 'select',
             });
+        }
+
+        function prepareDrawer() {
+            if (drawer.value && drawer.value.$el) {
+                let i = drawer.value.$el.querySelector(
+                    ".v-navigation-drawer__border"
+                );
+                i.style.width = "10px";
+                i.style.cursor = "ew-resize";
+                i.addEventListener(
+                    "mousedown",
+                    function(e: MouseEvent) {
+                        e.preventDefault()
+                        if (e.offsetX < 300) {
+                            drawer.value.$el.style.transition ='initial';
+                            document.addEventListener("mousemove", setDrawerWidth, false);
+                        }
+                    },
+                    false
+                );
+                document.addEventListener(
+                    "mouseup",
+                    function() {
+                        drawer.value.$el.style.transition ='';
+                        document.body.style.cursor = "";
+                        document.removeEventListener("mousemove", setDrawerWidth, false);
+                    },
+                    false
+                );
+            }
+        }
+
+        function setDrawerWidth(e: MouseEvent) {
+            document.body.style.cursor = "ew-resize";
+            drawer.value.$el.style.width =  e.clientX + "px";
+            drawerWidth.value = e.clientX
         }
 
         async function refreshRender() {
@@ -170,13 +236,24 @@ export default defineComponent({
                                     if(layersShown.value.includes("Particles")){
                                         particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
                                     }
+
+                                    let landmarksURL;
+                                    if(layersShown.value.includes("Landmarks")) {
+                                        landmarksURL = selectedProject.value?.landmarks?.find(
+                                            (l) => l.subject.toString() === subjectId
+                                        )?.file
+                                    }
+
                                     return Promise.all([
                                         Promise.all(shapePromises),
-                                        pointsReader(particleURL)
+                                        pointsReader(particleURL),
+                                        pointsReader(landmarksURL)
                                     ])
                                 }
                             )))
-                            .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
+                            .map(([imageData, particleData, landmarkData]) => (
+                                {shape: imageData, points: particleData, landmarks: landmarkData}
+                            ))
                             return [
                                 subjectName, shapeDatas
                             ]
@@ -187,26 +264,34 @@ export default defineComponent({
 
             const n = Object.keys(newRenderData).length;
             const sqrt = Math.ceil(Math.sqrt(n));
-            if(sqrt <= 5) {
-                rows.value = Math.ceil(n / sqrt);
-                cols.value = sqrt;
+            const numGroups = Math.min(sqrt, 5)
+            const renderAreaWidth = window.innerWidth - drawerWidth.value
+            const renderAreaHeight = window.innerHeight - 120
+            const renderAreaRatio = renderAreaWidth / renderAreaHeight
+            if (renderAreaRatio > 1) {
+                rows.value = Math.ceil(n / numGroups);
+                cols.value = numGroups;
             } else {
-                rows.value = Math.ceil(n / 5);
-                cols.value = 5;
+                cols.value = Math.ceil(n / numGroups);
+                rows.value = numGroups;
             }
             renderData.value = newRenderData
         }
 
         const debouncedRefreshRender = _.debounce(refreshRender, 300)
 
-
+        watch(drawer, prepareDrawer)
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFileShown, debouncedRefreshRender)
+        watch(landmarkColorList, debouncedRefreshRender)
         watch(tab, switchTab)
 
         return {
-            mini,
+            drawer,
+            drawerWidth,
+            setDrawerWidth,
+            renderAreaStyle,
             tab,
             rows,
             cols,
@@ -227,15 +312,13 @@ export default defineComponent({
 
 <template>
     <div class='content-area' style='height: 100%' v-if="selectedDataset">
-        <v-navigation-drawer :mini-variant.sync="mini" width="650" permanent absolute>
+        <v-navigation-drawer
+            ref="drawer"
+            :width="drawerWidth"
+            permanent
+            absolute
+        >
                 <v-list-item>
-                    <v-btn
-                        icon
-                        @click.stop="mini=!mini"
-                        class="mr-3"
-                    >
-                        <v-icon large>mdi-menu</v-icon>
-                    </v-btn>
                     <v-list-item-title class="text-h6">
                         <v-tooltip bottom>
                         <template v-slot:activator="{ on, attrs }">
@@ -252,13 +335,6 @@ export default defineComponent({
                         </v-tooltip>
                         Dataset: {{ selectedDataset.name }}
                     </v-list-item-title>
-                    <v-btn
-                        icon
-                        @click.stop="mini=!mini"
-                        class="pr-3"
-                    >
-                        <v-icon large>mdi-chevron-left</v-icon>
-                    </v-btn>
                 </v-list-item>
                 <v-list-item>
                     <v-icon />
@@ -266,6 +342,10 @@ export default defineComponent({
                         <v-tab href="#data">Data</v-tab>
                         <v-tab-item value="data">
                             <data-list :dataset="dataset"/>
+                        </v-tab-item>
+                        <v-tab href="#info">Info</v-tab>
+                        <v-tab-item value="info">
+                            <info-tab />
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">
@@ -288,13 +368,11 @@ export default defineComponent({
                 </v-list-item>
                 <br>
         </v-navigation-drawer>
-        <v-card
-            :class="mini ?'px-5 width-change maximize' :'width-change px-5'"
-        >
+        <v-card :style="renderAreaStyle" class="px-3 render-controls">
             <render-controls @change="refreshRender" :currentTab="tab || ''"/>
         </v-card>
 
-        <div :class="mini ?'pa-5 render-area width-change maximize' :'pa-5 render-area width-change'">
+        <div :style="renderAreaStyle" class="render-area pa-3">
             <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
                 <shape-viewer
                     :data="renderData"
@@ -303,6 +381,7 @@ export default defineComponent({
                     :columns="cols"
                     :glyph-size="particleSize"
                     :currentTab="tab || ''"
+                    :drawerWidth="drawerWidth"
                 />
             </template>
             <span v-else>Select any number of data objects</span>
@@ -311,33 +390,14 @@ export default defineComponent({
 </template>
 
 <style>
-.context-card {
-    display: flex;
-    column-gap: 40px;
-    padding: 10px 20px;
-    width: 100%;
-    height: 80px;
-}
 .content-area {
     position: relative;
-    min-height: calc(100vh - 161px);
+    min-height: calc(100vh - 160px);
     background-color: #1e1e1e;
 }
-.width-change {
-    position: absolute;
-    left: 650px;
-    width: calc(100% - 650px);
-}
-.maximize {
-    left: 60px;
-    width: calc(100% - 60px);
-}
-.render-area {
-    display: flex;
-    top: 75px;
-    height: calc(100% - 70px);
-}
-.render-area > * {
-    flex-grow: 1;
+.render-controls {
+    height: 70px!important;
+    top: 0!important;
+    z-index: 2;
 }
 </style>

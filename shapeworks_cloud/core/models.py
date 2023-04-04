@@ -100,6 +100,7 @@ class Project(TimeStampedModel, models.Model):
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
     last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.SET_NULL, null=True)
+    landmarks_info = models.JSONField(default=list, null=True)
 
     def create_new_file(self):
         file_contents = {
@@ -110,6 +111,62 @@ class Project(TimeStampedModel, models.Model):
         self.file.save(
             f'{self.dataset.name}.swproj', ContentFile(json.dumps(file_contents).encode())
         )
+
+    def get_download_paths(self):
+        ret = {self.file.name.split('/')[-1]: self.file.url}
+        with self.file.open() as f:
+            data = json.load(f)['data']
+
+        for subject_info in data:
+            subject = Subject.objects.filter(
+                dataset=self.dataset, name=subject_info['name']
+            ).first()
+            if subject:
+                particles = OptimizedParticles.objects.filter(project=self, subject=subject)
+                related_files = {
+                    'mesh': [(m.anatomy_type, m.file) for m in subject.meshes.all()],
+                    'segmentation': [(s.anatomy_type, s.file) for s in subject.segmentations.all()],
+                    'contour': [(c.anatomy_type, c.file) for c in subject.contours.all()],
+                    'image': [(i.anatomy_type, i.file) for i in subject.images.all()],
+                    'constraints': [(c.anatomy_type, c.file) for c in subject.constraints.all()],
+                    'landmarks': [
+                        (lm.anatomy_type, lm.file)
+                        for lm in Landmarks.objects.filter(project=self, subject=subject)
+                    ],
+                    'groomed': [
+                        (gm.mesh.anatomy_type, gm.file)
+                        for gm in GroomedMesh.objects.filter(project=self, mesh__subject=subject)
+                    ]
+                    + [
+                        (gs.segmentation.anatomy_type, gs.file)
+                        for gs in GroomedSegmentation.objects.filter(
+                            project=self, segmentation__subject=subject
+                        )
+                    ],
+                    'local': [(p.anatomy_type, p.local) for p in particles],
+                    'world': [(p.anatomy_type, p.world) for p in particles],
+                }
+                related_files['shape'] = (
+                    related_files['mesh']
+                    + related_files['segmentation']
+                    + related_files['contour']
+                    + related_files['image']
+                )
+
+                for key, value in subject_info.items():
+                    prefix = key.split('_')[0]
+                    suffix = key.split('_')[-1]
+                    target_file = None
+                    if prefix in related_files:
+                        for related in related_files[prefix]:
+                            if not target_file:
+                                # subject and anatomy type must match
+                                if suffix in related[0]:
+                                    target_file = related[1].url
+                    if target_file:
+                        value = value.replace('../', '')
+                        ret[value] = target_file
+        return ret
 
 
 class GroomedSegmentation(TimeStampedModel, models.Model):
@@ -153,6 +210,10 @@ class OptimizedParticles(TimeStampedModel, models.Model):
     world = S3FileField(null=True)
     local = S3FileField(null=True)
     transform = S3FileField(null=True)
+    anatomy_type = models.CharField(max_length=255)
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, related_name='particles', null=True
+    )
 
     groomed_segmentation = models.ForeignKey(
         GroomedSegmentation,
@@ -173,11 +234,16 @@ class OptimizedParticles(TimeStampedModel, models.Model):
 class Landmarks(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='landmarks')
+    anatomy_type = models.CharField(max_length=255)
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='landmarks', null=True
+    )
 
 
 class Constraints(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='constraints')
+    anatomy_type = models.CharField(max_length=255)
     optimized_particles = models.ForeignKey(
         OptimizedParticles, on_delete=models.CASCADE, related_name='constraints', null=True
     )

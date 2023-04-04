@@ -82,6 +82,14 @@ export const layers = ref<Record<string, any>[]>([
             return Object.values(particlesForOriginalDataObjects.value)
             .map((obj) => Object.values(obj).flat()).flat().length > 0
         }
+    },
+    {
+        name: 'Landmarks',
+        color: undefined,
+        rgb: undefined,
+        available: () => {
+            return selectedProject.value?.landmarks && selectedProject.value.landmarks.length > 0
+        }
     }
 ])
 
@@ -107,6 +115,8 @@ export const vtkShapesByType = ref<Record<string, any[]>>({
     "Reconstructed": [],
     "Particles": []
 })
+
+export const landmarkColorList = ref<number[][]>([])
 
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 

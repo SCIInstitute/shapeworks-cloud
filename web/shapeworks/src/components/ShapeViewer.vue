@@ -2,7 +2,7 @@
   <div
     ref="vtk"
     v-resize="resize"
-    style="position: relative; padding-right: 40px;"
+    class="render-area"
   >
     <canvas class="labels-canvas" ref="labels"/>
     <canvas class="color-scale-canvas" ref="colors" v-if="showDifferenceFromMeanMode"/>
@@ -12,6 +12,11 @@
 </template>
 
 <style scoped>
+.render-area {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
 .labels-canvas {
   position: absolute;
   width: 100%;
@@ -58,6 +63,7 @@ import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
 import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
+import vtkCubeSource from 'vtk.js/Sources/Filters/Sources/CubeSource';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
@@ -71,14 +77,14 @@ import {
   layers, layersShown, orientationIndicator,
   cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
   vtkInstance, analysisFileShown,
-  currentAnalysisFileParticles, meanAnalysisFileParticles, showDifferenceFromMeanMode, cachedParticleComparisonVectors
+  currentAnalysisFileParticles, meanAnalysisFileParticles, showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList
 } from '../store';
 import { getDistance } from '@/helper';
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 
 
 const SPHERE_RESOLUTION = 32;
-const COLORS = [
+export const COLORS = [
   [166, 206, 227],
   [31, 120, 180],
   [178, 223, 138],
@@ -118,7 +124,11 @@ export default {
     currentTab: {
       type: String,
       required: true,
-    }
+    },
+    drawerWidth: {
+      type: Number,
+      required: false,
+    },
   },
   computed: {
     grid() {
@@ -159,6 +169,9 @@ export default {
       });
       this.render();
     },
+    drawerWidth() {
+      this.updateSize()
+    }
   },
   beforeDestroy() {
     this.vtk.interactor.unbindEvents();
@@ -291,7 +304,7 @@ export default {
         this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
       })
     },
-    createColorFilter() {
+    createColorFilter(landmarks=false) {
       const filter = vtkCalculator.newInstance()
       filter.setFormula({
         getArrays() {
@@ -312,7 +325,14 @@ export default {
 
           const n = coords.length / 3;
           for (let i = 0; i < n; i += 1) {
-            const c = COLORS[i % COLORS.length];
+            let c = COLORS[i % COLORS.length];
+            if (landmarks) {
+              if (landmarkColorList.value[i]) {
+                c = landmarkColorList.value[i]
+              } else {
+                c = [0, 0, 0]
+              }
+            }
             color[3 * i] = c[0];
             color[3 * i + 1] = c[1];
             color[3 * i + 2] = c[2];
@@ -322,17 +342,24 @@ export default {
       });
       return filter;
     },
-    addPoints(renderer, points) {
-      const source = vtkSphereSource.newInstance({
+    addPoints(renderer, points, landmarks=false) {
+      let size = this.glyphSize
+      let source = vtkSphereSource.newInstance({
         thetaResolution: SPHERE_RESOLUTION,
         phiResolution: SPHERE_RESOLUTION,
       });
+      if (landmarks) {
+        size *= 2
+        source = vtkCubeSource.newInstance(
+          { xLength: 1, yLength: 1, zLength: 1 }
+        )
+      }
       const mapper = vtkGlyph3DMapper.newInstance({
         scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
-        scaleFactor: this.glyphSize,
+        scaleFactor: size,
       });
       const actor = vtkActor.newInstance();
-      const filter = this.createColorFilter();
+      const filter = this.createColorFilter(landmarks);
 
       filter.setInputData(points, 0);
       mapper.setInputConnection(filter.getOutputPort(), 0);
@@ -560,10 +587,14 @@ export default {
       );
 
       this.addShapes(renderer, label, shapes.map(({shape}) => shape));
-      const points = shapes.map(({points}) => points)
-      points.forEach((pointSet) => {
+      shapes.map(({points}) => points).forEach((pointSet) => {
         if(pointSet.getNumberOfPoints() > 0) {
           this.addPoints(renderer, pointSet);
+        }
+      })
+      shapes.map(({landmarks}) => landmarks).forEach((landmarkSet) => {
+        if(landmarkSet.getNumberOfPoints() > 0) {
+          this.addPoints(renderer, landmarkSet, true);
         }
       })
 

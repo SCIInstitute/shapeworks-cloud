@@ -77,6 +77,8 @@ class OptimizedParticles(ApiModel):
     local: Optional[FileType[Literal['core.OptimizedParticles.local']]]
     transform: Optional[FileType[Literal['core.OptimizedParticles.transform']]]
     project: Project
+    subject: Subject
+    anatomy_type: NonEmptyString
     groomed_segmentation: Optional[GroomedSegmentation]
     groomed_mesh: Optional[GroomedMesh]
 
@@ -86,6 +88,7 @@ class Landmarks(ApiModel):
 
     file: Optional[FileType[Literal['core.Landmarks.file']]]
     subject: Subject
+    anatomy_type: NonEmptyString
     project: Project
 
 
@@ -94,6 +97,7 @@ class Constraints(ApiModel):
 
     file: Optional[FileType[Literal['core.Constraints.file']]]
     subject: Subject
+    anatomy_type: NonEmptyString
     optimized_particles: Optional[OptimizedParticles]
 
 

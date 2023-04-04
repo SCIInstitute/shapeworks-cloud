@@ -2,7 +2,7 @@
   <div
     ref="vtk"
     v-resize="resize"
-    style="position: relative; padding-right: 40px;"
+    class="render-area"
   >
     <canvas class="labels-canvas" ref="labels"/>
     <canvas class="color-scale-canvas" ref="colors" v-if="showDifferenceFromMeanMode"/>
@@ -12,6 +12,11 @@
 </template>
 
 <style scoped>
+.render-area {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
 .labels-canvas {
   position: absolute;
   width: 100%;
@@ -119,7 +124,11 @@ export default {
     currentTab: {
       type: String,
       required: true,
-    }
+    },
+    drawerWidth: {
+      type: Number,
+      required: false,
+    },
   },
   computed: {
     grid() {
@@ -160,6 +169,9 @@ export default {
       });
       this.render();
     },
+    drawerWidth() {
+      this.updateSize()
+    }
   },
   beforeDestroy() {
     this.vtk.interactor.unbindEvents();

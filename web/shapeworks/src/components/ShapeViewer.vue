@@ -246,18 +246,19 @@ export default {
     getCameraDelta(renderer){
       const targetCamera = renderer.getActiveCamera();
 
-      const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
-      const initialPosition = this.initialCameraStates.position[targetRendererID]
-      const initialViewUp = this.initialCameraStates.viewUp[targetRendererID]
-      const newPosition = targetCamera.getReferenceByName('position')
-      const newViewUp = targetCamera.getReferenceByName('viewUp')
+      if (this.vtk.renderers.indexOf(renderer) >= 0) {
+        const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
+        this.initialCameraPosition = this.initialCameraStates.position[targetRendererID]
+        this.initialCameraViewUp = this.initialCameraStates.viewUp[targetRendererID]
+        this.newCameraPosition = targetCamera.getReferenceByName('position')
+        this.newCameraViewUp = targetCamera.getReferenceByName('viewUp')
+      }
 
-
-      const positionDelta = [...newPosition].map(
-        (num, index) => num - initialPosition[index]
+      const positionDelta = [...this.newCameraPosition].map(
+        (num, index) => num - this.initialCameraPosition[index]
       )
-      const viewUpDelta = [...newViewUp].map(
-        (num, index) => num - initialViewUp[index]
+      const viewUpDelta = [...this.newCameraViewUp].map(
+        (num, index) => num - this.initialCameraViewUp[index]
       )
       return {
         positionDelta,
@@ -556,8 +557,8 @@ export default {
       if(this.vtk.orientationCube) this.vtk.orientationCube.setEnabled(false)
       this.vtk.renderers = [];
       this.vtk.pointMappers = [];
-
       const data = Object.entries(this.data)
+
       for (let i = 0; i < this.grid.length; i += 1) {
         let newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
         if(i < data.length){
@@ -577,7 +578,6 @@ export default {
       if (targetRenderer) {
         this.vtk.orientationCube.setParentRenderer(targetRenderer)
         this.vtk.orientationCube.setEnabled(true);
-
         this.render();
       }
     },

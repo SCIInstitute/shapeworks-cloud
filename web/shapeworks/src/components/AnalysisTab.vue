@@ -50,6 +50,7 @@ export default defineComponent({
         const message = ref<string>();
         const animate = ref<boolean>(false);
         const currentlyCaching = ref<boolean>(false);
+        const currGroup = ref<AnalysisGroup>();
 
         const modeOptions = computed(() => {
             return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -70,27 +71,11 @@ export default defineComponent({
         const pairingIsInverted = (g: any) => {
             return (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left)
         }
-
-        const currGroup = computed(() => {
-            return analysis.value?.groups.find((g) => {
-                if (g.name === groupSet.value) {
-                    if (!pairingIsInverted(g))  { // in-order group pairings
-                        if (g.ratio === groupRatio.value) {
-                            return true;
-                        }
-                    } else if (pairingIsInverted(g)) { // inverted group pairings
-                        if (g.ratio === parseFloat((1 - groupRatio.value).toFixed(1))) { // floating point precision errors (https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems)
-                            return true;
-                        }
-                    }
-                }
-            })
-        })
-
+        
         const allGroupSets = computed(() => { 
             return analysis.value?.groups.map((g) => g.name); 
         })
-
+        
         // get all possible unique group pairings
         const groupPairings = computed(() => {
             const g: { [name: string]: string[] } = {};
@@ -100,7 +85,7 @@ export default defineComponent({
                 if (!g[group.name].includes(group.group2)) g[group.name].push(group.group2);
             })
             return g;
-        });
+        })
 
         const stdDevRange = computed(() => {
             if (!analysis.value || !currMode.value) return [0, 0, 0]
@@ -127,6 +112,23 @@ export default defineComponent({
                 ],
             }
         })
+
+
+        const updateCurrGroup = () => {
+            currGroup.value = analysis.value?.groups.find((g) => {
+                if (g.name === groupSet.value) {
+                    if (!pairingIsInverted(g))  { // in-order group pairings
+                        if (g.ratio === groupRatio.value) {
+                            return true;
+                        }
+                    } else if (pairingIsInverted(g)) { // inverted group pairings
+                        if (g.ratio === parseFloat((1 - groupRatio.value).toFixed(1))) { // floating point precision errors (https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems)
+                            return true;
+                        }
+                    }
+                }
+            })
+        }
 
         async function cacheAllComparisons() {
             const allInPairing = analysis.value?.groups.filter((g) => {
@@ -175,7 +177,7 @@ export default defineComponent({
             if (openTab.value === 1) { // Group tab animate
                 if (groupRatio.value === 0) step = 0.1;
                 if (groupRatio.value === 1) step = -0.1;
-                groupRatio.value = groupRatio.value + step;
+                groupRatio.value = parseFloat((groupRatio.value + step).toFixed(1));
             }
         }
 
@@ -201,8 +203,6 @@ export default defineComponent({
                 currPairing.value.right = groupPairings.value[groupSet.value][1];
                 prevPairing.value = {left: currPairing.value.left, right: currPairing.value.right};
             }
-
-            updateGroupFileShown();
         }
 
         // triggered on group pairing select change
@@ -227,6 +227,7 @@ export default defineComponent({
         const updateGroupFileShown = () => {
             let fileShown = undefined;
             let particles = undefined;
+            updateCurrGroup();
 
             if (props.currentTab === 'analyze' && analysis.value && currGroup.value){
                 fileShown = currGroup.value.file;
@@ -273,7 +274,10 @@ export default defineComponent({
         watch(stdDev, updateFileShown)
         watch(props, updateFileShown)
         watch(analysis, updateFileShown)
-        watch(groupSet, setDefaultPairing)
+        watch(groupSet, () => {
+            setDefaultPairing(); 
+            updateGroupFileShown();
+        })
         watch(currPairing.value, updateGroupSelections)
         watch(groupRatio, updateGroupFileShown)
         watch(groupDiff, updateGroupFileShown)

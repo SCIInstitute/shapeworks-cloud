@@ -27,12 +27,14 @@ import {
     analysisFileShown,
     meanAnalysisFileParticles,
     currentAnalysisFileParticles,
-    switchTab
+    switchTab,
+    landmarkColorList
 } from '../store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import { jobAlreadyDone } from '../store';
 import AnalysisTab from '@/components/AnalysisTab.vue';
+import InfoTab from '@/components/InfoTab.vue';
 
 
 export default defineComponent({
@@ -42,6 +44,7 @@ export default defineComponent({
         RenderControls,
         TabForm,
         AnalysisTab,
+        InfoTab,
     },
     props: {
         dataset: {
@@ -233,13 +236,24 @@ export default defineComponent({
                                     if(layersShown.value.includes("Particles")){
                                         particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
                                     }
+
+                                    let landmarksURL;
+                                    if(layersShown.value.includes("Landmarks")) {
+                                        landmarksURL = selectedProject.value?.landmarks?.find(
+                                            (l) => l.subject.toString() === subjectId
+                                        )?.file
+                                    }
+
                                     return Promise.all([
                                         Promise.all(shapePromises),
-                                        pointsReader(particleURL)
+                                        pointsReader(particleURL),
+                                        pointsReader(landmarksURL)
                                     ])
                                 }
                             )))
-                            .map(([imageData, particleData]) => ({shape: imageData, points: particleData}))
+                            .map(([imageData, particleData, landmarkData]) => (
+                                {shape: imageData, points: particleData, landmarks: landmarkData}
+                            ))
                             return [
                                 subjectName, shapeDatas
                             ]
@@ -270,6 +284,7 @@ export default defineComponent({
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFileShown, debouncedRefreshRender)
+        watch(landmarkColorList, debouncedRefreshRender)
         watch(tab, switchTab)
 
         return {
@@ -327,6 +342,10 @@ export default defineComponent({
                         <v-tab href="#data">Data</v-tab>
                         <v-tab-item value="data">
                             <data-list :dataset="dataset"/>
+                        </v-tab-item>
+                        <v-tab href="#info">Info</v-tab>
+                        <v-tab-item value="info">
+                            <info-tab />
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">

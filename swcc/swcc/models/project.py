@@ -103,7 +103,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         entry_values[prefixes[0]].append(entry[key])
                         anatomy_id = 'anatomy' + key.replace(prefixes[0], '').replace(
                             '_particles', ''
-                        )
+                        ).replace('_file', '')
                         if anatomy_id not in entry_values['anatomy_ids']:
                             entry_values['anatomy_ids'].append(anatomy_id)
             objects_by_domain = {}
@@ -195,6 +195,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         Landmarks(
                             file=relative_path(value),
                             subject=subject,
+                            project=self.project,
                         ).create()
                     elif key == 'constraints':
                         constraints_path = relative_path(value)
@@ -336,6 +337,7 @@ class Project(ApiModel):
     dataset: Dataset
     # sent in as a filepath string, interpreted as CachedAnalysis object
     last_cached_analysis: Optional[Any]
+    landmarks_info: Optional[Any]
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
@@ -392,6 +394,10 @@ class Project(ApiModel):
         file_io = self.get_file_io()
         if self.last_cached_analysis:
             self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
+        if self.file:
+            contents = json.load(open(str(self.file.path)))
+            if 'landmarks' in contents:
+                self.landmarks_info = contents['landmarks']
 
         result = super().create()
         if self.file:

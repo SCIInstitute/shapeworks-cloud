@@ -1,45 +1,9 @@
-name: test
+name: download_upload_cycle
 on:
   push:
   schedule:
     - cron: "0 0 * * *"
 jobs:
-  server:
-    env:
-      DJANGO_SUPERUSER_PASSWORD: django-password
-      DJANGO_SUPERUSER_USERNAME: admin
-      DJANGO_SUPERUSER_EMAIL: admin@noemail.com
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
-      - name: Install tox
-        run: |
-          pip install --upgrade pip
-          pip install tox
-
-      - name: Build images
-        run: docker-compose -f "docker-compose.yml" build
-      - name: Start services
-        run: docker-compose -f "docker-compose.yml" up -d
-
-      - uses: ifaxity/wait-on-action@v1
-        with:
-          resource: 'tcp:localhost:5432 tcp:localhost:5672'
-          verbose: true
-
-      - name: Run tox
-        run: tox
-        env:
-          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
-          DJANGO_API_URL: http://localhost:8000/api/v1
-
   client:
     env:
       DJANGO_SUPERUSER_PASSWORD: django-password
@@ -71,7 +35,7 @@ jobs:
           resource: 'http://localhost:8000/api/docs/swagger/'
 
       - name: Run tox
-        run: tox
+        run: tox -e download_upload_cycle
         working-directory: ./swcc
 
       - name: Stop server

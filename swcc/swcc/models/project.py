@@ -362,6 +362,7 @@ class Project(ApiModel):
 
     def download(self, folder: Union[Path, str]):
         session = current_session()
+        self.file.download(folder)
         r: requests.Response = session.get(f'{self._endpoint}/{self.id}/download/')
         raise_for_status(r)
         data = r.json()

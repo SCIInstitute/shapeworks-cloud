@@ -107,6 +107,7 @@ class OptimizedParticlesFilter(FilterSet):
     class Meta:
         models = models.OptimizedParticles
         fields = [
+            'project',
             'shape_model',
             'groomed_segmentation',
             'groomed_mesh',

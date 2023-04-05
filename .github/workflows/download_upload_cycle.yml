@@ -1,5 +1,7 @@
 name: download_upload_cycle
 on:
+  pull_request:
+  push:
   schedule:
     # once per hour
     - cron: "0 * * * *"

@@ -1,9 +1,9 @@
 # This test requires that https://www.shapeworks-cloud.org/#/ is running
 # This will fetch all datasets populated on the public server and attempt to
 # upload them all to the local server
-import random
-import os
 import filecmp
+import os
+import random
 from tempfile import TemporaryDirectory
 
 from swcc import models
@@ -25,14 +25,14 @@ def project_as_dict_repr(project):
     return project_repr
 
 
-class dircmp(filecmp.dircmp):
+class DirCmp(filecmp.dircmp):
     def phase3(self):
         fcomp = filecmp.cmpfiles(self.left, self.right, self.common_files, shallow=False)
         self.same_files, self.diff_files, self.funny_files = fcomp
 
 
 def is_same(dir1, dir2):
-    compared = dircmp(dir1, dir2)
+    compared = DirCmp(dir1, dir2)
     different = (
         compared.left_only or compared.right_only or compared.diff_files or compared.funny_files
     )

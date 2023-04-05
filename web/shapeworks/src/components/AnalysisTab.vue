@@ -455,7 +455,7 @@ export default defineComponent({
                         <v-btn-toggle class="ms-4" color="white"><v-btn color="grey darken-4" :disabled="animate || currentlyCaching" @click="() => groupDiff = !groupDiff">Diff --></v-btn></v-btn-toggle>
                         <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 1.0">Right Mean</v-btn>
                     </v-card>
-                    <v-dialog v-model="currentlyCaching" width="50px"><v-progress-circular indeterminate align-center></v-progress-circular></v-dialog>
+                    <div class="loading-dialog"><v-dialog v-model="currentlyCaching" width="10%">Calculating...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel>
@@ -546,6 +546,11 @@ export default defineComponent({
 
 .v-dialog {
     overflow: hidden;
+}
+
+.loading-dialog {
+    display: flex;
+    justify-content: center;
 }
 
 .v-btn-toggle:not(.v-btn-toggle--dense) .v-btn.v-btn.v-size--default {

@@ -44,18 +44,28 @@ def is_same(dir1, dir2):
     return True
 
 
+def public_server_download(download_dir):
+    with swcc_session() as public_server_session:
+        public_server_session.login('testuser@noemail.nil', 'cicdtest')
+        all_projects = list(models.Project.list())
+        project_subset = (
+            random.sample(all_projects, SAMPLE_SIZE)
+            if len(all_projects) >= SAMPLE_SIZE
+            else all_projects
+        )
+        for project in project_subset:
+            project.download(download_dir)
+        return project_subset
+
+
 def test_download_upload_cycle(session):
     with TemporaryDirectory() as temp_dir:
-        all_projects = []
-
         # Download from public server
         download_dir = f'{temp_dir}/download'
-        with swcc_session() as public_server_session:
-            public_server_session.login('testuser@noemail.nil', 'cicdtest')
-            all_projects = random.sample(list(models.Project.list()), SAMPLE_SIZE)
-            for project in all_projects:
-                project.download(download_dir)
+        os.mkdir(download_dir)
+        all_projects = public_server_download(download_dir)
 
+        new_projects = []
         # Upload to local server
         for project in all_projects:
             d = models.Dataset(
@@ -67,15 +77,18 @@ def test_download_upload_cycle(session):
                 contributors=project.dataset.contributors,
                 publications=project.dataset.publications,
             ).force_create()
-            models.Project(
-                dataset=d,
-                file=project.file.path,
-                description=project.description,
-            ).create()
+            new_projects.append(
+                models.Project(
+                    dataset=d,
+                    file=project.file.path,
+                    description=project.description,
+                ).create()
+            )
 
         # Redownload from local server
         redownload_dir = f'{temp_dir}/redownload'
-        for project in all_projects:
+        os.mkdir(redownload_dir)
+        for project in new_projects:
             project.download(redownload_dir)
 
         # Test for file structure congruence

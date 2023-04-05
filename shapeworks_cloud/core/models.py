@@ -113,7 +113,7 @@ class Project(TimeStampedModel, models.Model):
         )
 
     def get_download_paths(self):
-        ret = {self.file.name.split('/')[-1]: self.file.url}
+        ret = {}
         with self.file.open() as f:
             data = json.load(f)['data']
 

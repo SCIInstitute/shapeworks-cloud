@@ -1,7 +1,7 @@
 <script lang="ts">
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
-import { selectedDataset, selectedProject } from '../store';
+import { selectedDataset, selectedProject } from '@/store';
 import router from '@/router';
 
 

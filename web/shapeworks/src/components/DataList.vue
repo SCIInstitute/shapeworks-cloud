@@ -11,7 +11,7 @@ import {
     selectedDataObjects,
     loadingState,
     loadReconstructedSamplesForProject,
-} from '../store';
+} from '@/store';
 
 
 export default defineComponent({

@@ -9,7 +9,7 @@ import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
 import { DataObject, ShapeData } from '@/types';
-import ShapeViewer from '../components/ShapeViewer.vue';
+import ShapeViewer from '../components/ShapeViewer/viewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
 import {
@@ -28,11 +28,11 @@ import {
     meanAnalysisFileParticles,
     currentAnalysisFileParticles,
     switchTab,
-    landmarkColorList
-} from '../store';
+    landmarkColorList,
+    jobAlreadyDone,
+} from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
-import { jobAlreadyDone } from '../store';
 import AnalysisTab from '@/components/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
 

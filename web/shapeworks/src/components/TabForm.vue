@@ -7,7 +7,11 @@ import VJsf from '@koumoul/vjsf'
 import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
-import { spawnJob, jobAlreadyDone, allDataObjectsInDataset, currentTasks, spawnJobProgressPoll, selectedProject, abort } from '../store';
+import {
+    spawnJob, jobAlreadyDone,
+    allDataObjectsInDataset, currentTasks,
+    spawnJobProgressPoll, selectedProject, abort
+} from '@/store';
 import { DataObject } from '../types/index';
 
 Vue.use(Vuetify)

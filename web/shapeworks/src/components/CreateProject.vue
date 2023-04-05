@@ -5,7 +5,7 @@ import {
     selectedDataset,
     loadingState,
     allProjectsForDataset,
-} from '../store';
+} from '@/store';
 
 export default defineComponent({
   setup() {

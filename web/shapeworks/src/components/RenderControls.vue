@@ -1,7 +1,6 @@
 <script lang="ts">
 import { setDatasetThumbnail, setProjectThumbnail } from '@/api/rest';
 import { computed, defineComponent, ref, watch } from '@vue/composition-api';
-import { showDifferenceFromMeanMode, analysisFileShown } from '../store';
 import {
     particleSize,
     layers,
@@ -13,7 +12,9 @@ import {
     vtkInstance,
     allDatasets,
     allProjectsForDataset,
-} from '../store';
+    showDifferenceFromMeanMode,
+    analysisFileShown
+} from '@/store';
 
 
 export default defineComponent({

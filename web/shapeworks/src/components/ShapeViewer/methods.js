@@ -22,7 +22,6 @@ import {
     analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList
 } from '@/store';
-import PointDrag from './dragPoints';
 
 
 const SPHERE_RESOLUTION = 32;
@@ -425,9 +424,6 @@ export default {
     },
     renderGrid() {
         this.prepareLabelCanvas();
-        if (this.currentTab === 'info' && layersShown.value.includes('Landmarks')) {
-            this.pointDrag = new PointDrag()
-        }
 
         let positionDelta = undefined;
         let viewUpDelta = undefined;

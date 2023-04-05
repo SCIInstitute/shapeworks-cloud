@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
 import pointsReader from '../reader/points';
 import { COLORS } from './ShapeViewer/methods'
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
@@ -6,7 +6,7 @@ import { landmarkColorList, selectedDataset, selectedProject } from '@/store';
 
 
 // from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
-function hexToRgb(hex: string) {
+function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? [
     parseInt(result[1], 16),
@@ -66,11 +66,11 @@ export default defineComponent({
 
         function updateLandmarkColorList() {
             landmarkColorList.value = landmarkInfo.value.map(
-                (info: any) => info.color
+                (info) => info.color
             )
         }
 
-        function getColorString(rgb: number[]){
+        function getColorString(rgb){
             return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
         }
 

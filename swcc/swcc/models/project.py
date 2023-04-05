@@ -29,9 +29,9 @@ from .dataset import Dataset
 from .file_type import FileType
 from .other_models import (
     CachedAnalysis,
+    CachedAnalysisGroup,
     CachedAnalysisMode,
     CachedAnalysisModePCA,
-    CachedAnalysisGroup,
     Constraints,
     Contour,
     GroomedMesh,
@@ -285,8 +285,12 @@ class ProjectFileIO(BaseModel, FileIO):
                                     group1=group['group1'],
                                     group2=group['group2'],
                                     ratio=values['ratio'],
-                                    file=analysis_file_location.parent / Path(values['meshes'][i]),
-                                    particles=analysis_file_location.parent / Path(values['particles'][i]),
+                                    file=(
+                                        analysis_file_location.parent / Path(values['meshes'][i])
+                                    ),
+                                    particles=(
+                                        analysis_file_location.parent / Path(values['particles'][i])
+                                    ),
                                 ).create()
 
                                 groups_cache.append(cag)

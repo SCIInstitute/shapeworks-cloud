@@ -5,7 +5,7 @@ import {
     currentTasks,
     selectedProject,
     analysisExpandedTab,
-calculateComparisons,
+    calculateComparisons,
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
 import { lineChartOptions } from '@/charts'
@@ -451,9 +451,9 @@ export default defineComponent({
                         ></v-checkbox>
                     </v-row>
                     <v-card align="center" justify="center" class="ma-auto mb-3" :disabled="currGroup === undefined">
-                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 0.0">Left Mean</v-btn>
+                        <v-btn class="ms-4" color="grey darken-3" @click="() => { groupRatio = 0.0;}">Left Mean</v-btn>
                         <v-btn-toggle class="ms-4" color="white"><v-btn color="grey darken-4" :disabled="animate || currentlyCaching" @click="() => groupDiff = !groupDiff">Diff --></v-btn></v-btn-toggle>
-                        <v-btn class="ms-4" color="grey darken-3" @click="() => groupRatio = 1.0">Right Mean</v-btn>
+                        <v-btn class="ms-4" color="grey darken-3" @click="() => { groupRatio = 1.0;}">Right Mean</v-btn>
                     </v-card>
                     <div class="loading-dialog"><v-dialog v-model="currentlyCaching" width="10%">Calculating...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
                 </v-expansion-panel-content>

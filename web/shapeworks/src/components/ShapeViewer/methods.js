@@ -79,18 +79,18 @@ export default {
     getCameraDelta(renderer) {
         const targetCamera = renderer.getActiveCamera();
 
-        const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
-        const initialPosition = this.initialCameraStates.position[targetRendererID]
-        const initialViewUp = this.initialCameraStates.viewUp[targetRendererID]
-        const newPosition = targetCamera.getReferenceByName('position')
-        const newViewUp = targetCamera.getReferenceByName('viewUp')
-
-
-        const positionDelta = [...newPosition].map(
-            (num, index) => num - initialPosition[index]
+        if (this.vtk.renderers.indexOf(renderer) >= 0) {
+            const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
+            this.initialCameraPosition = this.initialCameraStates.position[targetRendererID]
+            this.initialCameraViewUp = this.initialCameraStates.viewUp[targetRendererID]
+            this.newCameraPosition = targetCamera.getReferenceByName('position')
+            this.newCameraViewUp = targetCamera.getReferenceByName('viewUp')
+        }
+        const positionDelta = [...this.newCameraPosition].map(
+        (num, index) => num - this.initialCameraPosition[index]
         )
-        const viewUpDelta = [...newViewUp].map(
-            (num, index) => num - initialViewUp[index]
+        const viewUpDelta = [...this.newCameraViewUp].map(
+        (num, index) => num - this.initialCameraViewUp[index]
         )
         return {
             positionDelta,
@@ -413,7 +413,7 @@ export default {
             }
         })
         shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet) => {
-            if (landmarkSet.getNumberOfPoints() > 0) {
+            if (landmarkSet && landmarkSet.getNumberOfPoints() > 0) {
                 this.addPoints(renderer, landmarkSet, true);
             }
         })

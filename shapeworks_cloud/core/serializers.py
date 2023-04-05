@@ -15,7 +15,7 @@ class LandmarksSerializer(serializers.ModelSerializer):
 class CachedAnalysisGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CachedAnalysisGroup
-        fields = "__all__"
+        fields = '__all__'
 
 
 class CachedAnalysisModePCASerializer(serializers.ModelSerializer):

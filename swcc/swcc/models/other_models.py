@@ -111,6 +111,7 @@ class CachedAnalysisGroup(ApiModel):
     group2: NonEmptyString
     ratio: float
 
+
 class CachedAnalysisModePCA(ApiModel):
     _endpoint = 'cached-analysis-mode-pca'
 

@@ -55,12 +55,16 @@ export const meanAnalysisFileParticles = ref<string>();
 
 export const cachedMarchingCubes = ref({})
 
-export const cachedParticleComparisonVectors = ref({})
+export const cachedParticleComparisonVectors = ref<{[key: string]: number[][]}>({})
 
-export const cachedParticleComparisonColors = ref({})
+export const cachedParticleComparisonColors = ref<{[key: string]: number[]}>({})
 
 export const landmarkColorList = ref<number[][]>([])
 
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 
 export const jobProgressPoll = ref();
+
+export const analysisExpandedTab = ref(0);
+
+export const analysisAnimate = ref<boolean>(false);

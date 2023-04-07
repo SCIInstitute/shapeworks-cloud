@@ -204,6 +204,9 @@ export async function switchTab(tabName: string) {
             if (refreshedProject && !currentTasks.value[selectedProject.value.id]) {
                 analysis.value = refreshedProject.last_cached_analysis
             }
+            break;
+        case 'info':
+            updateLandmarks('info')
     }
 }
 
@@ -220,8 +223,11 @@ function hexToRgb(hex: string) {
   }
 
 
-export async function updateLandmarks(){
-    if (!layersShown.value.includes("Landmarks")) return
+export async function updateLandmarks(tab: any){
+    if (
+        !layersShown.value.includes("Landmarks")
+        && tab !== 'info'
+    ) return
     if (selectedProject.value?.landmarks){
         const subjectParticles = await Promise.all(
             selectedProject.value.landmarks.map(

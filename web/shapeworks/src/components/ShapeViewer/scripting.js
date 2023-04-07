@@ -116,6 +116,7 @@ export default {
             orientationCube,
             renderers: [],
             pointMappers: [],
+            pointDraggers: []
         };
 
         vtkInstance.value = this.vtk

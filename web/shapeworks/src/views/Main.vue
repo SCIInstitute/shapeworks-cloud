@@ -239,7 +239,7 @@ export default defineComponent({
                                     }
 
                                     let landmarksURL;
-                                    if(layersShown.value.includes("Landmarks")) {
+                                    if(layersShown.value.includes("Landmarks") || tab.value == 'info') {
                                         landmarksURL = selectedProject.value?.landmarks?.find(
                                             (l) => l.subject.toString() === subjectId
                                         )?.file
@@ -343,7 +343,7 @@ export default defineComponent({
                     <v-tabs v-model="tab" fixed-tabs>
                         <v-tab href="#data">Data</v-tab>
                         <v-tab-item value="data">
-                            <data-list :dataset="dataset"/>
+                            <data-list :dataset="dataset" :autoSelectAll="true"/>
                         </v-tab-item>
                         <v-tab href="#info">Info</v-tab>
                         <v-tab-item value="info">

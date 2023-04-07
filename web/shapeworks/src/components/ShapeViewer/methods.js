@@ -1,7 +1,6 @@
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
-import vtkCubeSource from 'vtk.js/Sources/Filters/Sources/CubeSource';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource'
@@ -20,7 +19,7 @@ import {
     layers, layersShown, orientationIndicator, COLORS,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles,
-    showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList
+    showDifferenceFromMeanMode, cachedParticleComparisonVectors
 } from '@/store';
 import PointDrag from './dragPoints';
 
@@ -112,7 +111,7 @@ export default {
             this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
         })
     },
-    createColorFilter(landmarks = false) {
+    createColorFilter() {
         const filter = vtkCalculator.newInstance()
         filter.setFormula({
             getArrays() {
@@ -134,13 +133,6 @@ export default {
                 const n = coords.length / 3;
                 for (let i = 0; i < n; i += 1) {
                     let c = COLORS[i % COLORS.length];
-                    if (landmarks) {
-                        if (landmarkColorList.value[i]) {
-                            c = landmarkColorList.value[i]
-                        } else {
-                            c = [0, 0, 0]
-                        }
-                    }
                     color[3 * i] = c[0];
                     color[3 * i + 1] = c[1];
                     color[3 * i + 2] = c[2];
@@ -150,24 +142,18 @@ export default {
         });
         return filter;
     },
-    addPoints(renderer, points, landmarks = false) {
+    addPoints(renderer, points) {
         let size = this.glyphSize
         let source = vtkSphereSource.newInstance({
             thetaResolution: SPHERE_RESOLUTION,
             phiResolution: SPHERE_RESOLUTION,
         });
-        if (landmarks) {
-            size *= 2
-            source = vtkCubeSource.newInstance(
-                { xLength: 1, yLength: 1, zLength: 1 }
-            )
-        }
         const mapper = vtkGlyph3DMapper.newInstance({
             scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
             scaleFactor: size,
         });
         const actor = vtkActor.newInstance();
-        const filter = this.createColorFilter(landmarks);
+        const filter = this.createColorFilter();
 
         filter.setInputData(points, 0);
         mapper.setInputConnection(filter.getOutputPort(), 0);
@@ -402,7 +388,12 @@ export default {
         })
         shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet) => {
             if (landmarkSet.getNumberOfPoints() > 0) {
-                this.addPoints(renderer, landmarkSet, true);
+                this.vtk.pointDraggers.push(new PointDrag(
+                    renderer,
+                    this.vtk.renderWindow,
+                    this.$refs.vtk,
+                    landmarkSet,
+                ))
             }
         })
 
@@ -412,15 +403,17 @@ export default {
     },
     renderGrid() {
         this.prepareLabelCanvas();
-        if (this.currentTab === 'info' && layersShown.value.includes('Landmarks')) {
-            this.pointDrag = new PointDrag()
-        }
 
         let positionDelta = undefined;
         let viewUpDelta = undefined;
         if (this.currentTab === 'analyze' && this.vtk.renderers.length === 1) {
             ({ positionDelta, viewUpDelta } = this.getCameraDelta(this.vtk.renderers[0]))
         }
+
+        this.vtk.pointDraggers.forEach((drag) => {
+            this.$refs.vtk.removeEventListener('mousemove', drag.throttleMouseHandler)
+        })
+        this.vtk.pointDraggers = []
 
         for (let i = 0; i < this.vtk.renderers.length; i += 1) {
             this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);

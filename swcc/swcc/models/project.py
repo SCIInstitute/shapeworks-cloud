@@ -374,6 +374,7 @@ class Project(ApiModel):
             file_item.download(Path(folder, *path.split('/')[:-1]))
             print_progress_bar(index + 1, len(files))
         session.close()
+        print()
 
 
 ProjectFileIO.update_forward_refs()

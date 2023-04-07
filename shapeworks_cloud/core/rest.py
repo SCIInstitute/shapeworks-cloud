@@ -306,11 +306,7 @@ class CachedAnalysisModePCAViewSet(BaseViewSet):
 class CachedAnalysisGroupViewSet(BaseViewSet):
     queryset = models.CachedAnalysisGroup.objects.all()
 
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return serializers.CachedAnalysisGroupReadSerializer
-        else:
-            return serializers.CachedAnalysisGroupSerializer
+    serializer_class = serializers.CachedAnalysisGroupSerializer
 
 
 class ReconstructedSampleViewSet(

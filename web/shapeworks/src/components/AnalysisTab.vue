@@ -117,13 +117,16 @@ export default defineComponent({
         const updateCurrGroup = () => {
             currGroup.value = analysis.value?.groups.find((g) => {
                 if (g.name === groupSet.value) {
-                    if (!pairingIsInverted(g))  { // in-order group pairings
-                        if (g.ratio === groupRatio.value) {
-                            return true;
-                        }
-                    } else if (pairingIsInverted(g)) { // inverted group pairings
-                        if (g.ratio === parseFloat((1 - groupRatio.value).toFixed(1))) { // floating point precision errors (https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems)
-                            return true;
+                    if ((g.group1 === currPairing.value.left && g.group2 === currPairing.value.right) 
+                        || (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left)) { // if the groups pairings match the selected pairings
+                        if (!pairingIsInverted(g))  { // in-order group pairings
+                            if (g.ratio === groupRatio.value) {
+                                return true;
+                            }
+                        } else if (pairingIsInverted(g)) { // inverted group pairings
+                            if (g.ratio === parseFloat((1 - groupRatio.value).toFixed(1))) { // floating point precision errors (https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems)
+                                return true;
+                            }
                         }
                     }
                 }

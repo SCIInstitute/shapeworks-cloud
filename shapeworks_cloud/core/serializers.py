@@ -44,12 +44,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class CachedAnalysisGroupReadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.CachedAnalysisGroup
-        fields = '__all__'
-
-
 class CachedAnalysisModeReadSerializer(serializers.ModelSerializer):
     pca_values = CachedAnalysisModePCASerializer(many=True)
 
@@ -60,7 +54,7 @@ class CachedAnalysisModeReadSerializer(serializers.ModelSerializer):
 
 class CachedAnalysisReadSerializer(serializers.ModelSerializer):
     modes = CachedAnalysisModeReadSerializer(many=True)
-    groups = CachedAnalysisGroupReadSerializer(many=True)
+    groups = CachedAnalysisGroupSerializer(many=True)
 
     class Meta:
         model = models.CachedAnalysis

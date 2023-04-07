@@ -165,7 +165,7 @@ export default defineComponent({
                     mdi-arrow-left
                 </v-icon>
             </div>
-            <v-card v-if="allProjectsForDataset === undefined && allProjectsForDataset.length === 0 && !loadingState" width="100%">
+            <v-card v-if="(allProjectsForDataset === undefined || allProjectsForDataset.length === 0) && !loadingState" width="100%">
                 <v-card-title>No projects.</v-card-title>
             </v-card>
             <v-card

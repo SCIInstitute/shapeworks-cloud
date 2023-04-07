@@ -366,9 +366,13 @@ class Project(ApiModel):
         r: requests.Response = session.get(f'{self._endpoint}/{self.id}/download/')
         raise_for_status(r)
         data = r.json()
-        for path, url in data['download_paths'].items():
+        files = data['download_paths']
+        print(f'Downloading {len(files)} files...')
+        print_progress_bar(0, len(files))
+        for index, (path, url) in enumerate(files.items()):
             file_item: FileType = FileType(url=url)
             file_item.download(Path(folder, *path.split('/')[:-1]))
+            print_progress_bar(index + 1, len(files))
         session.close()
 
 

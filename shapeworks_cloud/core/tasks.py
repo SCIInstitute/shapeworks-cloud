@@ -3,7 +3,7 @@ from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
 from typing import Dict
-from xml.etree import ElementTree
+import re
 
 from celery import shared_task
 from django.conf import settings
@@ -21,11 +21,10 @@ from swcc.models.project import ProjectFileIO
 
 
 def parse_progress(xml_string):
-    percentages = [
-        content.text for content in ElementTree.fromstring(xml_string).findall('.//progress')
-    ]
-    if len(percentages) == 1 and percentages[0] is not None:
-        return int(int(percentages[0].split('.')[0]) * 0.8)
+    match = re.search("(?<=<progress>)(.*)(?=<\/progress>)", xml_string);
+    if match:
+        # running of exec represents ~80% of task progress
+        return int(int(match.group().split('.')[0]) * 0.8)
     return 0
 
 
@@ -241,7 +240,7 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
                         row[anatomy_id] = {}
                     row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
-            for anatomy_data in row.values():
+            for anatomy_id, anatomy_data in row.items():
                 groomed_filename = anatomy_data['groomed'].split('/')[-1]
                 target_segmentation = project_groomed_segmentations.filter(
                     file__endswith=groomed_filename,
@@ -253,6 +252,8 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
                     groomed_segmentation=target_segmentation,
                     groomed_mesh=target_mesh,
                     project=project,
+                    subject=target_mesh.mesh.subject if target_mesh else target_segmentation.segmentation.subject,
+                    anatomy_type=anatomy_id
                 )
                 if 'world' in anatomy_data:
                     result_particles_object.world.save(

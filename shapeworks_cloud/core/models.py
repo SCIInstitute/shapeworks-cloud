@@ -71,6 +71,15 @@ class Image(TimeStampedModel, models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='images')
 
 
+class CachedAnalysisGroup(models.Model):
+    name = models.CharField(max_length=255, default='')
+    group1 = models.CharField(max_length=255, default='')
+    group2 = models.CharField(max_length=255, default='')
+    ratio = models.FloatField(default=0.0)
+    file = S3FileField()
+    particles = S3FileField(null=True)
+
+
 class CachedAnalysisModePCA(models.Model):
     pca_value = models.FloatField()
     lambda_value = models.FloatField()
@@ -91,6 +100,7 @@ class CachedAnalysis(TimeStampedModel, models.Model):
     mean_particles = S3FileField(null=True)
     modes = models.ManyToManyField(CachedAnalysisMode)
     charts = models.JSONField()
+    groups = models.ManyToManyField(CachedAnalysisGroup)
 
 
 class Project(TimeStampedModel, models.Model):

@@ -12,6 +12,12 @@ class LandmarksSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CachedAnalysisGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisGroup
+        fields = '__all__'
+
+
 class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CachedAnalysisModePCA
@@ -48,6 +54,7 @@ class CachedAnalysisModeReadSerializer(serializers.ModelSerializer):
 
 class CachedAnalysisReadSerializer(serializers.ModelSerializer):
     modes = CachedAnalysisModeReadSerializer(many=True)
+    groups = CachedAnalysisGroupSerializer(many=True)
 
     class Meta:
         model = models.CachedAnalysis

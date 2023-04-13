@@ -36,6 +36,11 @@ router.register(
     basename='cached_analysis_mode_pca',
 )
 router.register(
+    'cached-analysis-group',
+    rest.CachedAnalysisGroupViewSet,
+    basename='cached_analysis_group',
+)
+router.register(
     'reconstructed-samples', rest.ReconstructedSampleViewSet, basename='reconstructed_sample'
 )
 router.register('task-progress', rest.TaskProgressViewSet, basename='task_progress')

@@ -303,6 +303,12 @@ class CachedAnalysisModePCAViewSet(BaseViewSet):
     serializer_class = serializers.CachedAnalysisModePCASerializer
 
 
+class CachedAnalysisGroupViewSet(BaseViewSet):
+    queryset = models.CachedAnalysisGroup.objects.all()
+
+    serializer_class = serializers.CachedAnalysisGroupSerializer
+
+
 class ReconstructedSampleViewSet(
     GenericViewSet,
     mixins.ListModelMixin,

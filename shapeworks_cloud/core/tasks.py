@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
+import re
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
 from typing import Dict
-import re
 
 from celery import shared_task
 from django.conf import settings
@@ -21,7 +21,7 @@ from swcc.models.project import ProjectFileIO
 
 
 def parse_progress(xml_string):
-    match = re.search("(?<=<progress>)(.*)(?=<\/progress>)", xml_string);
+    match = re.search('(?<=<progress>)(.*)(?=</progress>)', xml_string)
     if match:
         # running of exec represents ~80% of task progress
         return int(int(match.group().split('.')[0]) * 0.8)
@@ -248,12 +248,16 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
                 target_mesh = project_groomed_meshes.filter(
                     file__endswith=groomed_filename,
                 ).first()
+                if target_mesh:
+                    subject = target_mesh.mesh.subject
+                elif target_segmentation:
+                    subject = target_segmentation.segmentation.subject
                 result_particles_object = models.OptimizedParticles.objects.create(
                     groomed_segmentation=target_segmentation,
                     groomed_mesh=target_mesh,
                     project=project,
-                    subject=target_mesh.mesh.subject if target_mesh else target_segmentation.segmentation.subject,
-                    anatomy_type=anatomy_id
+                    subject=subject,
+                    anatomy_type=anatomy_id,
                 )
                 if 'world' in anatomy_data:
                     result_particles_object.world.save(

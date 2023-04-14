@@ -78,6 +78,63 @@ export default defineComponent({
 </template>
 
 <style>
+  .chart {
+      height: 400px;
+      width: 400px;
+  }
 
+  .dataview {
+      height: 100%;
+      width: 100%;
+  }
+
+  .datatable {
+      color: #000000;
+      width: 100%;
+  }
+
+  .datatable tbody tr:nth-child(even) {
+      background-color: #e5e4e2;
+  }
+
+  .datatable-row td {
+      padding-right: 30px;
+  }
+
+  .dataview-button {
+      background: #2196f3;
+      border-radius: 3px;
+      cursor: pointer;
+      padding: 2px 5px;
+      font-size: 12px;
+      z-index: 1;
+  }
+
+  .dataview-button:hover {
+      background: #318dd8;
+  }
+
+  .copy-button {
+      position: absolute;
+      bottom: 5px;
+      right: 70px;
+  }
+
+  .download-button {
+      position: absolute;
+      bottom: 5px;
+      right: 185px;
+  }
+
+  .dataview-text {
+      display: block;
+      height: 100%;
+      width: 100%;
+      font-family: monospace;
+      font-size: 14px;
+      line-height: 1.6rem;
+      resize: none;
+      border: 1px solid #333333;
+  }
 </style>
   

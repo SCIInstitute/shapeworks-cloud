@@ -8,28 +8,14 @@ import {
     calculateComparisons,
 } from '@/store'
 import { defineComponent, ref, computed, watch } from '@vue/composition-api'
-import { lineChartOptions } from '@/charts'
-import { AnalysisChart, AnalysisGroup } from '@/types'
+import Charts from './Charts.vue'
+import { AnalysisGroup } from '@/types'
 
-import { use } from 'echarts/core';
-import { SVGRenderer } from 'echarts/renderers';
-import { LineChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  ToolboxComponent,
-  DataZoomComponent
-} from 'echarts/components';
-import VChart from 'vue-echarts';
-import imageReader from '../reader/image';
-import pointsReader from '../reader/points';
+import imageReader from '../../reader/image';
+import pointsReader from '../../reader/points';
 import generateMapper from '@/reader/mapper';
 import { cacheComparison } from '@/store';
 import { cachedParticleComparisonColors } from '@/store';
-
-// registers required echarts components
-use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent,ToolboxComponent,DataZoomComponent]);
 
 export default defineComponent({
     props: {
@@ -37,6 +23,9 @@ export default defineComponent({
             type: String,
             required: true,
         }
+    },
+    components: {
+        Charts,
     },
     setup(props) {
         const openTab = ref(0);
@@ -299,10 +288,6 @@ export default defineComponent({
             }
         })
 
-        const generateChart = (options: AnalysisChart) => {
-            return lineChartOptions(options);
-        }
-
         const taskData = computed(
             () => {
                 if (!selectedProject.value || !currentTasks.value[selectedProject.value.id]) return undefined
@@ -318,7 +303,6 @@ export default defineComponent({
             stdDevRange,
             pcaInfo,
             analysisFileShown,
-            generateChart,
             message,
             taskData,
             groupRatio,
@@ -333,9 +317,6 @@ export default defineComponent({
             currentlyCaching
         }
     },
-    components: {
-        VChart,
-    }
 })
 </script>
 
@@ -466,7 +447,7 @@ export default defineComponent({
                     Charts
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <v-chart class="chart" v-for="chart in analysis.charts" :key="chart.title" :option="generateChart(chart)" />
+                    <charts :charts="analysis.charts"/>
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>

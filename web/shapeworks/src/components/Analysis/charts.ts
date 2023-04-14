@@ -1,4 +1,4 @@
-import { AnalysisChart } from "./types";
+import { AnalysisChart } from "@/types";
 
 // functions for generating analysis charts
 export function lineChartOptions (data: AnalysisChart) {
@@ -120,8 +120,6 @@ function copyData(text: string) {
 
 function getDownloadURL(text: string) {
     const csvstring = getTextAsCSV(text);
-    // const csvarray = csvstring.split(/(?<=\n)/gi); // uses positive look-behind to keep \n intact after split
-    // this should do the same thing without the look-behind
     const csvarray = csvstring.split(/\n/g).map((v, idx) => idx ? v + '\n' : v);
 
     const blob = new Blob(csvarray);

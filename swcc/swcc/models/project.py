@@ -307,6 +307,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         mean_particles=mean_particles,
                         modes=modes,
                         charts=contents['charts'],
+                        groups=[],
                     ).create()
 
 

@@ -29,6 +29,7 @@ from .dataset import Dataset
 from .file_type import FileType
 from .other_models import (
     CachedAnalysis,
+    CachedAnalysisGroup,
     CachedAnalysisMode,
     CachedAnalysisModePCA,
     Constraints,
@@ -268,16 +269,46 @@ class ProjectFileIO(BaseModel, FileIO):
                         pca_values=pca_values,
                     ).create()
                     modes.append(cam)
+
             if len(modes) > 0:
                 mean_particles = None
                 if mean_particles_path:
                     mean_particles = analysis_file_location.parent / Path(mean_particles_path)
-                return CachedAnalysis(
-                    mean_shape=analysis_file_location.parent / Path(mean_shape_path),
-                    mean_particles=mean_particles,
-                    modes=modes,
-                    charts=contents['charts'],
-                ).create()
+
+                if contents['groups']:
+                    groups_cache = []
+                    for group in contents['groups']:
+                        for values in group['values']:
+                            for i in range(0, len(values['meshes'])):
+                                cag = CachedAnalysisGroup(
+                                    name=group['name'],
+                                    group1=group['group1'],
+                                    group2=group['group2'],
+                                    ratio=values['ratio'],
+                                    file=(
+                                        analysis_file_location.parent / Path(values['meshes'][i])
+                                    ),
+                                    particles=(
+                                        analysis_file_location.parent / Path(values['particles'][i])
+                                    ),
+                                ).create()
+
+                                groups_cache.append(cag)
+                    return CachedAnalysis(
+                        mean_shape=analysis_file_location.parent / Path(mean_shape_path),
+                        mean_particles=mean_particles,
+                        modes=modes,
+                        charts=contents['charts'],
+                        groups=groups_cache,
+                    ).create()
+                else:
+                    return CachedAnalysis(
+                        mean_shape=analysis_file_location.parent / Path(mean_shape_path),
+                        mean_particles=mean_particles,
+                        modes=modes,
+                        charts=contents['charts'],
+                        groups=[],
+                    ).create()
 
 
 class Project(ApiModel):

@@ -13,6 +13,8 @@ import {
      groomedShapesForOriginalDataObjects,
      jobProgressPoll,
      reconstructionsForOriginalDataObjects,
+     cachedParticleComparisonColors,
+     cachedParticleComparisonVectors,
 } from ".";
 import {
     abortTask,
@@ -25,6 +27,8 @@ import {
     groomProject, optimizeProject, refreshProject
 } from '@/api/rest';
 import { layers } from "./constants";
+import { getDistance } from "@/helper";
+import { TypedArray } from "vtk.js/Sources/types";
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
@@ -201,4 +205,48 @@ export async function switchTab(tabName: string) {
                 analysis.value = refreshedProject.last_cached_analysis
             }
     }
+}
+
+
+export function calculateComparisons(mapper: any, currentPoints: TypedArray, meanPoints: TypedArray) {
+    const vectorValues: number[][] = []
+    let colorValues = []
+    for (let i = 0; i < currentPoints.length; i += 3){
+        const currentParticle = currentPoints.slice(i, i+3)
+        const meanParticle = meanPoints.slice(i, i+3)
+        const distance = getDistance(currentParticle as number[], meanParticle as number[], true)
+        vectorValues.push([...currentParticle, distance])
+    }
+
+    const pointLocations = mapper.getInputData().getPoints().getData()
+    const normals = mapper.getInputData().getPointData().getArrayByName('Normals').getData()
+    colorValues = Array.from(
+        [...Array(pointLocations.length / 3).keys()].map(
+        (i) =>  {
+            let colorVal = 0;
+            const location = pointLocations.slice(i * 3, i * 3 + 3)
+            const normal = normals.slice(i * 3, i * 3 + 3)
+            const nearbyParticles = vectorValues.map(
+            (p, i) => [getDistance(p.slice(0, 3), location), i, ...p]
+            ).sort((a, b) => a[0] - b[0]).slice(0, 10)
+            const nearestParticleIndex = nearbyParticles[0][1]
+            if (vectorValues[nearestParticleIndex].length < 5){
+            vectorValues[nearestParticleIndex].push(...normal)
+            }
+            colorVal = nearbyParticles[0][5]
+            nearbyParticles.slice(1).forEach((p) => {
+            const weight = 1 / p[0];
+            colorVal = (colorVal * (1 - weight)) + (p[5] * weight)
+            })
+            return colorVal/10 + 0.5
+        }
+        )
+    )
+
+    return { colorValues: colorValues, vectorValues: vectorValues }
+}
+
+export function cacheComparison(colorValues: number[], vectorValues: number[][], particleComparisonKey: string) {
+    cachedParticleComparisonColors.value[particleComparisonKey] = colorValues
+    cachedParticleComparisonVectors.value[particleComparisonKey] = vectorValues
 }

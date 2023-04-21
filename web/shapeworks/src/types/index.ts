@@ -41,7 +41,21 @@ export interface AnalysisMode {
 }
 
 export interface AnalysisChart {
+    title: string, 
+    x_label: string, 
+    y_label: string, 
+    x: Array<number>, 
+    y: Array<number>,
+}
 
+export interface AnalysisGroup {
+    id: number,
+    name: string,
+    group1: string,
+    group2: string,
+    file: string,
+    particles: string,
+    ratio: number,
 }
 
 export interface Analysis {
@@ -49,6 +63,7 @@ export interface Analysis {
     created: string,
     modified: string,
     charts: AnalysisChart[],
+    groups: AnalysisGroup[],
     mean_shape: string,
     mean_particles: string;
     modes: AnalysisMode[],

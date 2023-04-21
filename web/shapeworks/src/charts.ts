@@ -1,14 +1,7 @@
+import { AnalysisChart } from "./types";
+
 // functions for generating analysis charts
-
-export type lineChartProps = {
-    title: string,
-    x_label: string,
-    y_label: string,
-    x: Array<number>,
-    y: Array<number>
-}
-
-export function lineChartOptions (data: lineChartProps) {
+export function lineChartOptions (data: AnalysisChart) {
     // decimal place rounding could be specified for each chart
     const decimalPlaces = 3;
 
@@ -152,7 +145,7 @@ function getTextAsCSV(text: string) {
     return splitstring.join('\n');
 }
 
-function showData(data: lineChartProps) {
+function showData(data: AnalysisChart) {
     const dataTable = document.createElement('TABLE');
     dataTable.className = 'datatable'
     const thead = document.createElement('thead');

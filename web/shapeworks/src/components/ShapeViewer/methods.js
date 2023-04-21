@@ -77,6 +77,10 @@ export default {
         })
     },
     getCameraDelta(renderer) {
+        if (!renderer) return {
+            positionDelta: undefined,
+            viewUpDelta: undefined,
+        }
         const targetCamera = renderer.getActiveCamera();
 
         const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
@@ -425,11 +429,7 @@ export default {
     renderGrid() {
         this.prepareLabelCanvas();
 
-        let positionDelta = undefined;
-        let viewUpDelta = undefined;
-        if (this.currentTab === 'analyze' && this.vtk.renderers.length === 1) {
-            ({ positionDelta, viewUpDelta } = this.getCameraDelta(this.vtk.renderers[0]))
-        }
+        let { positionDelta, viewUpDelta } = this.getCameraDelta(this.vtk.renderers[0])
 
         for (let i = 0; i < this.vtk.renderers.length; i += 1) {
             this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
@@ -450,9 +450,11 @@ export default {
         }
         this.initializeCameras()
 
-        if (positionDelta && viewUpDelta && this.vtk.renderers.length > 0) {
-            this.applyCameraDelta(this.vtk.renderers[0], positionDelta, viewUpDelta)
-        }
+        this.vtk.renderers.forEach((renderer) => {
+            if (positionDelta && viewUpDelta) {
+                this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
+            }
+        })
         const targetRenderer = this.vtk.renderers[this.columns - 1]
         this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
         if (targetRenderer) {

@@ -100,7 +100,7 @@ class CachedAnalysis(TimeStampedModel, models.Model):
     mean_particles = S3FileField(null=True)
     modes = models.ManyToManyField(CachedAnalysisMode)
     charts = models.JSONField()
-    groups = models.ManyToManyField(CachedAnalysisGroup)
+    groups = models.ManyToManyField(CachedAnalysisGroup, blank=True)
 
 
 class Project(TimeStampedModel, models.Model):

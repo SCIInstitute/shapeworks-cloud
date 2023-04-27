@@ -1,12 +1,14 @@
-from django_filters import FilterSet, ModelChoiceFilter
+from django_filters import FilterSet, CharFilter, ModelChoiceFilter
 
 from . import models
 
 
 class DatasetFilter(FilterSet):
+    keywords = CharFilter(lookup_expr='icontains')
+
     class Meta:
         model = models.Dataset
-        fields = ['name']
+        fields = ['name', 'keywords']
 
 
 class SubjectFilter(FilterSet):

@@ -2,10 +2,14 @@
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
 import { selectedDataset, selectedProject } from '@/store';
+import DatasetSearch from './DatasetSearch.vue';
 import router from '@/router';
 
 
 export default defineComponent({
+    components: {
+      DatasetSearch
+    },
     setup() {
       const params = computed(() => ({
         dataset: selectedDataset.value?.id,
@@ -48,6 +52,8 @@ export default defineComponent({
       />
       <v-toolbar-title class="text-h6">ShapeWorks</v-toolbar-title>
     </div>
+    <v-spacer />
+    <dataset-search />
     <v-spacer />
     <v-btn
       v-if="oauthClient.isLoggedIn"

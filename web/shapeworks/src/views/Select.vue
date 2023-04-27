@@ -21,9 +21,10 @@ export default defineComponent({
         const deleting = ref();
         const selectingSubsetOf = ref();
 
-        async function getAllDatasets(){
+        async function getAllDatasets() {
+            const searchText = router.currentRoute.params.searchText
             loadingState.value = true;
-            allDatasets.value = (await getDatasets()).sort((a, b) => {
+            allDatasets.value = (await getDatasets(searchText)).sort((a, b) => {
                 if(a.created < b.created) return 1;
                 if(a.created > b.created) return -1;
                 return 0;

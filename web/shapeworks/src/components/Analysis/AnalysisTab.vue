@@ -32,12 +32,14 @@ export default defineComponent({
         const openTab = ref(AnalysisTabs.PCA);
         const message = ref<string>();
         const currentlyCaching = ref<boolean>(false);
+        const animate = ref<boolean>(false);
 
         const pca = ref();
         const groups = ref();
 
         // provide mutable ref for use in child components
         provide('currentlyCaching', currentlyCaching);
+        provide('animate', animate);
 
         const taskData = computed(
             () => {

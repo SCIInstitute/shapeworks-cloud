@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { analysis, analysisFileShown, cachedParticleComparisonColors, cacheComparison, currentAnalysisFileParticles, meanAnalysisFileParticles, calculateComparisons } from '@/store';
+  import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
 import { AnalysisGroup } from '@/types';
 import { Ref, computed, defineComponent, inject, ref, watch } from '@vue/composition-api';
-import imageReader from '../../reader/image';
-import pointsReader from '../../reader/points';
-import generateMapper from '@/reader/mapper';
+
 import { AnalysisTabs } from './AnalysisTab.vue';
   
   export default defineComponent({
@@ -111,36 +109,7 @@ import { AnalysisTabs } from './AnalysisTab.vue';
             })
 
             if (allInPairing !== undefined) {
-                const cachePrep = await Promise.all(allInPairing?.map(async (g) => {
-                    const particleComparisonKey = `${g.particles}_${meanAnalysisFileParticles.value}`;
-
-                    if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
-                        const compareToPoints = await pointsReader(meanAnalysisFileParticles.value);
-                        const currentPoints = await pointsReader(g.particles);
-
-                        const currentMesh = await imageReader(g.file, "current_mesh.vtk");
-
-                        return {
-                            "compareTo": {
-                                points: compareToPoints.getPoints().getData(),
-                                particleUrl: meanAnalysisFileParticles.value,
-                            },
-                            "current":  {
-                                points: currentPoints.getPoints().getData(),
-                                mapper: generateMapper(currentMesh),
-                                particleUrl: g.particles,
-                            }, 
-                        }
-                    }
-                }))
-
-                cachePrep.forEach((g) => {
-                    if (g !== undefined) {
-                        const { current, compareTo } = g;
-                        const comparisons = calculateComparisons(current.mapper, current.points, compareTo.points)
-                        cacheComparison(comparisons.colorValues, comparisons.vectorValues, `${current.particleUrl}_${compareTo.particleUrl}`);
-                    }
-                })
+                await cacheAllComparisons(allInPairing);
             }
         },
         animateSlider() {

@@ -104,7 +104,7 @@ export default defineComponent({
                     View PCA
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <PCA ref="pca" :currentTab="currentTab"/>
+                    <PCA ref="pca" :currentTab="currentTab" :openTab="openTab"/>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel :disabled="analysis.groups.length <= 0" id="groups-panel">

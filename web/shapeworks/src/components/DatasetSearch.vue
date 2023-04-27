@@ -42,6 +42,16 @@ export default defineComponent({
                 mdi-magnify
             </v-icon>
             </template>
+            <template v-slot:append>
+                <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                        <span v-bind="attrs" v-on="on" style="margin-top: 3px;">
+                        ?
+                        </span>
+                    </template>
+                    <span>Search ShapeWorks datasets by keywords</span>
+                </v-tooltip>
+            </template>
         </v-text-field>
     </v-chip>
 </template>

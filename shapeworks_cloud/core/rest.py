@@ -60,6 +60,8 @@ class DatasetViewSet(BaseViewSet):
         user = self.request.user
         if user.is_anonymous:
             return models.Dataset.objects.none()
+        if user.is_staff:
+            return models.Dataset.objects.all()
         return models.Dataset.objects.filter(Q(private=False) | Q(creator=user)).order_by('name')
 
     def perform_create(self, serializer):
@@ -167,8 +169,15 @@ class ConstraintsViewSet(BaseViewSet):
 
 
 class ProjectViewSet(BaseViewSet):
-    queryset = models.Project.objects.all()
     filterset_class = filters.ProjectFilter
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_anonymous:
+            return models.Project.objects.none()
+        if user.is_staff:
+            return models.Project.objects.all()
+        return models.Project.objects.filter(Q(private=False) | Q(creator=user)).order_by('name')
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -177,7 +186,10 @@ class ProjectViewSet(BaseViewSet):
             return serializers.ProjectSerializer
 
     def create(self, request, **kwargs):
-        serializer = serializers.ProjectSerializer(data=request.data)
+        data = request.data
+        if not data['creator']:
+            data['creator'] = request.user.id
+        serializer = serializers.ProjectSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         project = serializer.save()
         if not project.file:

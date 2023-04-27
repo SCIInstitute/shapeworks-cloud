@@ -35,8 +35,8 @@ export default defineComponent({
             allProjectsForDataset.value = await getProjectsForDataset(dataset.id);
         }
 
-        async function selectOrDeselectDataset (dataset: Dataset) {
-            if(!selectedDataset.value){
+        async function selectOrDeselectDataset (dataset: Dataset | undefined) {
+            if(!selectedDataset.value && dataset){
                 selectedDataset.value = dataset;
                 fetchProjectsForDataset(dataset)
             } else {
@@ -121,6 +121,9 @@ export default defineComponent({
             >
                 <div class="text-overline mb-4">
                     DATASET ({{ dataset.created ? dataset.created.split('T')[0] : 'No creation time' }})
+                    <span v-if="dataset.private" class="red--text">
+                        (PRIVATE)
+                    </span>
                 </div>
                 <div class="card-contents">
                     <div>
@@ -131,8 +134,13 @@ export default defineComponent({
                             {{ dataset.description }}
                         </v-list-item-subtitle>
                         <div class="text-overline">
-                           {{ dataset.summary }}
+                            {{ dataset.summary }}
                         </div>
+                        <v-list-item-subtitle>
+                            <v-chip small v-for="keyword in dataset.keywords.split(',')" :key="keyword">
+                                <i>{{ keyword }}</i>
+                            </v-chip>
+                        </v-list-item-subtitle>
                     </div>
                     <div v-if="dataset.thumbnail">
                         <v-img :src="dataset.thumbnail" width="100"/>
@@ -178,17 +186,22 @@ export default defineComponent({
                 <div class="text-overline mb-4">
                     PROJECT ({{ project.created ? project.created.split('T')[0] : 'No creation time'}})
                     FOR DATASET {{ selectedDataset.id }}
+                    <span v-if="project.private" class="red--text">
+                        (PRIVATE)
+                    </span>
                 </div>
                 <div class="card-contents">
                     <div>
                         <v-list-item-title class="text-h5 mb-1">
-                            Project {{ project.id }}
+                            {{ project.name }}
                         </v-list-item-title>
                         <v-list-item-subtitle>
                             {{ project.description }}
                         </v-list-item-subtitle>
                         <v-list-item-subtitle>
-                            <i>{{ project.keywords }}</i>
+                            <v-chip small v-for="keyword in project.keywords.split(',')" :key="keyword">
+                                <i>{{ keyword }}</i>
+                            </v-chip>
                         </v-list-item-subtitle>
                     </div>
                     <div v-if="project.thumbnail">

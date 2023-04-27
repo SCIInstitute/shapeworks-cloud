@@ -1,9 +1,10 @@
 <script lang="ts">
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
-import { selectedDataset, selectedProject } from '@/store';
+import { allDatasets, loadingState, selectedDataset, selectedProject } from '@/store';
 import DatasetSearch from './DatasetSearch.vue';
 import router from '@/router';
+import { getDatasets } from '@/api/rest';
 
 
 export default defineComponent({
@@ -24,10 +25,17 @@ export default defineComponent({
           }
       }
 
-      function navigateToHome() {
+      async function navigateToHome() {
         selectedDataset.value = undefined
         selectedProject.value = undefined
         router.push('/')
+        loadingState.value = true;
+        allDatasets.value = (await getDatasets(undefined)).sort((a, b) => {
+            if(a.created < b.created) return 1;
+            if(a.created > b.created) return -1;
+            return 0;
+        });
+        loadingState.value = false;
       }
 
       return {

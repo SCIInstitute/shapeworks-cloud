@@ -17,9 +17,9 @@ import { AnalysisTabs } from './AnalysisTab.vue';
       const groupSet = ref<string>();
       const currPairing = ref<{left: string, right: string}>({left:"", right:""});
       const prevPairing = ref<{left: string, right: string}>({left:"", right:""}); // stores the previously selected pairing
-      const animate = ref<boolean>(false);
 
       const currentlyCaching: Ref | undefined = inject('currentlyCaching');
+      const animate: Ref | undefined = inject('animate'); 
 
       let step = 0.1;
       let intervalId: number;
@@ -120,7 +120,7 @@ import { AnalysisTabs } from './AnalysisTab.vue';
             }
         },
         async triggerAnimate() {
-            if (groupSet.value === undefined) return;
+            if (groupSet.value === undefined || animate == undefined) return;
 
             if (animate.value && currentlyCaching) {
                 currentlyCaching.value = true;
@@ -156,8 +156,11 @@ import { AnalysisTabs } from './AnalysisTab.vue';
         watch(currPairing.value, methods.updateGroupSelections)
         watch(groupRatio, methods.updateGroupFileShown)
         watch(groupDiff, methods.updateGroupFileShown)
-        watch(animate, methods.triggerAnimate)
-  
+
+        if (animate) {
+            watch(animate, methods.triggerAnimate)
+        }
+        
       return {
         methods,
         groupRatio,

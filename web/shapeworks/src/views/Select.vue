@@ -1,6 +1,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
-import { getDatasets, getProjectsForDataset, deleteProject, } from '@/api/rest'
+import { getDatasets, getProjectsForDataset, deleteProject } from '@/api/rest'
 import {
     allDatasets,
     selectedDataset,
@@ -137,7 +137,7 @@ export default defineComponent({
                         <div class="text-overline">
                             {{ dataset.summary }}
                         </div>
-                        <v-list-item-subtitle>
+                        <v-list-item-subtitle v-if="dataset.keywords">
                             <v-chip small v-for="keyword in dataset.keywords.split(',')" :key="keyword">
                                 <i>{{ keyword }}</i>
                             </v-chip>
@@ -199,7 +199,7 @@ export default defineComponent({
                         <v-list-item-subtitle>
                             {{ project.description }}
                         </v-list-item-subtitle>
-                        <v-list-item-subtitle>
+                        <v-list-item-subtitle v-if="project.keywords">
                             <v-chip small v-for="keyword in project.keywords.split(',')" :key="keyword">
                                 <i>{{ keyword }}</i>
                             </v-chip>

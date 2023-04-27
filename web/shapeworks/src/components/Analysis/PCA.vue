@@ -11,12 +11,12 @@
     setup(props) {
       const mode = ref(1);
       const stdDev = ref(0);
-      const animate = ref<boolean>(false);
 
       let step = 0;
       let intervalId: number;
 
       const currentlyCaching: Ref | undefined = inject('currentlyCaching'); 
+      const animate: Ref | undefined = inject('animate'); 
     
       const modeOptions = computed(() => {
           return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -99,7 +99,7 @@
             }
         },
         async triggerAnimate() {
-            if (currMode.value === undefined) return; 
+            if (currMode.value === undefined || animate === undefined) return; 
 
             if (animate.value && currentlyCaching) {
               step = stdDevRange.value[2];
@@ -125,8 +125,9 @@
 
       watch(mode, methods.updateFileShown)
       watch(stdDev, methods.updateFileShown)
-      watch(animate, methods.triggerAnimate)
-
+      if (animate) {
+        watch(animate, methods.triggerAnimate)
+      }
       return {
         methods,
         modeOptions,

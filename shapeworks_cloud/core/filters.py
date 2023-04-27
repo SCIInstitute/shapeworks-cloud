@@ -1,4 +1,4 @@
-from django_filters import FilterSet, CharFilter, ModelChoiceFilter
+from django_filters import CharFilter, FilterSet, ModelChoiceFilter
 
 from . import models
 

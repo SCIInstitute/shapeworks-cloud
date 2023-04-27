@@ -7,7 +7,6 @@ import s3_file_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('core', '0031_Optional_Groups'),
@@ -17,7 +16,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='project',
             name='creator',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
             model_name='project',

@@ -16,7 +16,7 @@
       let intervalId: number;
 
       const currentlyCaching: Ref | undefined = inject('currentlyCaching'); 
-      const animate: Ref | undefined = inject('animate'); 
+      const animate = ref<boolean>(false);
     
       const modeOptions = computed(() => {
           return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -111,6 +111,9 @@
             if (animate.value === false && intervalId) {
               clearInterval(intervalId);
             }
+        },
+        stopAnimating() {
+          animate.value = false;
         }
       }
 

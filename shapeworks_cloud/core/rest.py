@@ -187,7 +187,7 @@ class ProjectViewSet(BaseViewSet):
 
     def create(self, request, **kwargs):
         data = request.data
-        if not data['creator']:
+        if 'creator' not in data:
             data['creator'] = request.user.id
         serializer = serializers.ProjectSerializer(data=data)
         serializer.is_valid(raise_exception=True)

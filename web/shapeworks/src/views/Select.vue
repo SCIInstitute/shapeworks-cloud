@@ -240,8 +240,7 @@ export default defineComponent({
                 </v-card-title>
 
                 <v-card-text>
-                Are you sure you want to delete project {{deleting.id}}
-                with description "{{ deleting.description }}"?
+                Are you sure you want to delete project "{{ deleting.name }}"?
                 </v-card-text>
 
                 <v-divider></v-divider>

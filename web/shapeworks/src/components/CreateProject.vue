@@ -17,8 +17,8 @@ export default defineComponent({
 
     function reset() {
         creating.value = false
-            description.value = ''
-            keywords.value = ''
+        description.value = ''
+        keywords.value = ''
     }
 
     function create(e) {
@@ -79,7 +79,6 @@ export default defineComponent({
             <v-checkbox label="Make this project private" v-model="privated" />
             <v-card-actions class="action-buttons">
                 <v-btn
-                    v-if="description"
                     outlined
                     rounded
                     text

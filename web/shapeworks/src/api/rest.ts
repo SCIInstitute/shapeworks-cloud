@@ -7,13 +7,13 @@ export async function getDatasets(search: string | undefined): Promise<Dataset[]
     const results = []
     let page = 1
     let response = (await apiClient.get('/datasets', {
-        params: { page, keywords: search }
+        params: { page, search }
     })).data
     results.push(...response.results)
     while(response.next){
         page += 1
         response = (await apiClient.get('/datasets', {
-            params: { page, keywords: search }
+            params: { page, search }
         })).data
         results.push(...response.results)
     }

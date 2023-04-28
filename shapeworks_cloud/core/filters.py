@@ -1,14 +1,21 @@
 from django_filters import CharFilter, FilterSet, ModelChoiceFilter
-
+from django.db.models import Q
 from . import models
 
 
 class DatasetFilter(FilterSet):
-    keywords = CharFilter(lookup_expr='icontains')
+    search = CharFilter(method="multifield_search")
+
+    def multifield_search(self, queryset, name, value):
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(description__icontains=value)
+            | Q(keywords__icontains=value)
+        )
 
     class Meta:
         model = models.Dataset
-        fields = ['name', 'keywords']
+        fields = ['name', 'search']
 
 
 class SubjectFilter(FilterSet):

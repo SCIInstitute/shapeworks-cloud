@@ -38,15 +38,17 @@ export default defineComponent({
             @input="navigateToResults"
         >
             <template v-slot:prepend-inner>
-            <v-icon color="blue">
+            <v-icon>
                 mdi-magnify
             </v-icon>
             </template>
             <template v-slot:append>
                 <v-tooltip bottom>
                     <template v-slot:activator="{ on, attrs }">
-                        <span v-bind="attrs" v-on="on" style="margin-top: 3px;">
-                        ?
+                        <span v-bind="attrs" v-on="on">
+                            <v-icon>
+                                mdi-information-outline
+                            </v-icon>
                         </span>
                     </template>
                     <span>Search ShapeWorks datasets by keywords</span>

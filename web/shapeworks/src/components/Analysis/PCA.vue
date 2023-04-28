@@ -126,7 +126,11 @@
       watch(props, methods.updateFileShown)
       watch(analysis, methods.updateFileShown)
 
-      watch(mode, methods.updateFileShown)
+      watch(mode, () => {
+        methods.updateFileShown();
+        animate.value = false;
+      })
+
       watch(stdDev, methods.updateFileShown)
       if (animate) {
         watch(animate, methods.triggerAnimate)

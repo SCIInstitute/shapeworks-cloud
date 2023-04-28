@@ -155,8 +155,12 @@ import { AnalysisTabs } from './AnalysisTab.vue';
         watch(groupSet, () => {
             methods.setDefaultPairing(); 
             methods.updateGroupFileShown();
+            animate.value = false;
         })
-        watch(currPairing.value, methods.updateGroupSelections)
+        watch(currPairing.value, () => {
+            methods.updateGroupSelections();
+            animate.value = false;
+        })
         watch(groupRatio, methods.updateGroupFileShown)
         watch(groupDiff, methods.updateGroupFileShown)
 

@@ -1,5 +1,6 @@
-from django_filters import CharFilter, FilterSet, ModelChoiceFilter
 from django.db.models import Q
+from django_filters import CharFilter, FilterSet, ModelChoiceFilter
+
 from . import models
 
 

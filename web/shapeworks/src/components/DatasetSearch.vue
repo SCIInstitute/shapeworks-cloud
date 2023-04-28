@@ -51,7 +51,7 @@ export default defineComponent({
                             </v-icon>
                         </span>
                     </template>
-                    <span>Search ShapeWorks datasets by title, description, and keywords</span>
+                    <span>Search ShapeWorks datasets by name, description, and keywords</span>
                 </v-tooltip>
             </template>
         </v-text-field>

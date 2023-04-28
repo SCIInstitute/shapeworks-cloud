@@ -19,7 +19,7 @@ import { AnalysisTabs } from './AnalysisTab.vue';
       const prevPairing = ref<{left: string, right: string}>({left:"", right:""}); // stores the previously selected pairing
 
       const currentlyCaching: Ref | undefined = inject('currentlyCaching');
-      const animate: Ref | undefined = inject('animate'); 
+      const animate = ref<boolean>(false); 
 
       let step = 0.1;
       let intervalId: number;
@@ -131,6 +131,9 @@ import { AnalysisTabs } from './AnalysisTab.vue';
             if (animate.value === false && intervalId) {
                 clearInterval(intervalId);
             }
+        },
+        stopAnimating() {
+          animate.value = false;
         }
       };
   

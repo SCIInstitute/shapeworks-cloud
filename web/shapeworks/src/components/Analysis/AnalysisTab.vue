@@ -32,14 +32,12 @@ export default defineComponent({
         const openTab = ref(AnalysisTabs.PCA);
         const message = ref<string>();
         const currentlyCaching = ref<boolean>(false);
-        const animate = ref<boolean>(false);
 
         const pca = ref();
         const groups = ref();
 
         // provide mutable ref for use in child components
         provide('currentlyCaching', currentlyCaching);
-        provide('animate', animate);
 
         const taskData = computed(
             () => {
@@ -52,14 +50,18 @@ export default defineComponent({
             analysisExpandedTab.value = openTab.value;
             switch(openTab.value) {
                 case AnalysisTabs.PCA:
+                    groups.value.methods.stopAnimating();
                     pca.value.methods.updateFileShown();
                     break;
                 case AnalysisTabs.Groups:
+                    pca.value.methods.stopAnimating();
                     if (groups.value.currGroup) {
                         groups.value.methods.updateGroupFileShown();
                     }
                     break;
                 case AnalysisTabs.Charts:
+                    groups.value.methods.stopAnimating();
+                    pca.value.methods.stopAnimating();
                     break;
             }
         })

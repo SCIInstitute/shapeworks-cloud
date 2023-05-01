@@ -5,7 +5,7 @@ from . import models
 
 
 class DatasetFilter(FilterSet):
-    search = CharFilter(method="multifield_search")
+    search = CharFilter(method='multifield_search')
 
     def multifield_search(self, queryset, name, value):
         return queryset.filter(

@@ -319,7 +319,7 @@ class Project(ApiModel):
     file: FileType[Literal['core.Project.file']]
     keywords: str = ''
     description: str = ''
-    creator: str = ''
+    creator: Optional[str] = ''
     dataset: Dataset
     # sent in as a filepath string, interpreted as CachedAnalysis object
     last_cached_analysis: Optional[Any]

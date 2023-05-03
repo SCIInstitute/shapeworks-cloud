@@ -37,30 +37,32 @@ export default defineComponent({
                         }
                     )
                 )
-                const numRows = Math.max(...subjectParticles)
-                landmarkInfo.value = [...Array(numRows).keys()].map((index) => {
-                    let currentInfo = {
-                        id: index,
-                        color: COLORS[index % COLORS.length],
-                        name: `L${index}`,
-                        num_set: subjectParticles.filter(
-                            (numLocations) => numLocations > index
-                        ).length,
-                        comment: undefined,
+                if (subjectParticles.length > 0){
+                    const numRows = Math.max(...subjectParticles)
+                    landmarkInfo.value = [...Array(numRows).keys()].map((index) => {
+                        let currentInfo = {
+                            id: index,
+                            color: COLORS[index % COLORS.length],
+                            name: `L${index}`,
+                            num_set: subjectParticles.filter(
+                                (numLocations) => numLocations > index
+                            ).length,
+                            comment: undefined,
 
-                    }
-                    if (selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > index) {
-                        currentInfo = Object.assign(
-                            currentInfo,
-                            selectedProject.value?.landmarks_info[index]
-                        )
-                    }
-                    if (currentInfo.color.toString().includes("#")) {
-                        currentInfo.color = hexToRgb(currentInfo.color.toString())
-                    }
-                    return currentInfo
-                })
-                updateLandmarkColorList()
+                        }
+                        if (selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > index) {
+                            currentInfo = Object.assign(
+                                currentInfo,
+                                selectedProject.value?.landmarks_info[index]
+                            )
+                        }
+                        if (currentInfo.color.toString().includes("#")) {
+                            currentInfo.color = hexToRgb(currentInfo.color.toString())
+                        }
+                        return currentInfo
+                    })
+                    updateLandmarkColorList()
+                }
             }
         })
 

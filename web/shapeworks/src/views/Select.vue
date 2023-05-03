@@ -173,6 +173,7 @@ export default defineComponent({
                 <v-icon @click="() => selectOrDeselectDataset(selectedDataset)">
                     mdi-arrow-left
                 </v-icon>
+                {{ selectedDataset.name }}
             </div>
             <v-card v-if="(allProjectsForDataset === undefined || allProjectsForDataset.length === 0) && !loadingState" width="100%">
                 <v-card-title>No projects.</v-card-title>

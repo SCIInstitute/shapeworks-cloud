@@ -2,7 +2,7 @@
 import { defineComponent, ref } from '@vue/composition-api'
 import router from '@/router';
 import { getDatasets } from '@/api/rest';
-import { loadingState, allDatasets } from '@/store';
+import { loadingState, allDatasets, selectedDataset, selectedProject } from '@/store';
 
 
 export default defineComponent({
@@ -12,6 +12,8 @@ export default defineComponent({
       async function navigateToResults() {
         router.replace('/search/'+searchText.value)
         loadingState.value = true;
+        selectedDataset.value = undefined;
+        selectedProject.value = undefined
         allDatasets.value = (await getDatasets(searchText.value)).sort((a, b) => {
             if(a.created < b.created) return 1;
             if(a.created > b.created) return -1;
@@ -19,6 +21,11 @@ export default defineComponent({
         });
         loadingState.value = false;
       }
+
+      router.beforeEach(async (to, from, next) => {
+        if (!to.params.searchText) searchText.value = ''
+        next()
+      })
 
       return {
         searchText,

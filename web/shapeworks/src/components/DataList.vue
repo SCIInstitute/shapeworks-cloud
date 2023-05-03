@@ -23,6 +23,10 @@ export default defineComponent({
         autoSelectAll: {
             type: Boolean,
             default: false,
+        },
+        autoSelectOne: {
+            type: Boolean,
+            default: false,
         }
     },
     setup(props) {
@@ -58,10 +62,16 @@ export default defineComponent({
                 groupBy(allDataObjectsInDataset.value, 'anatomy_type')
             ).filter((key) => key !== 'undefined')
             selectedAnatomies.value = anatomies.value;
-            if(props.autoSelectAll){
-                selectedSubjects.value = allSubjectsForDataset.value.map(
+            if(allSubjectsForDataset.value.length > 0) {
+                const subjectIds = allSubjectsForDataset.value.map(
                     (subject: Subject) => subject.id
                 )
+                if(props.autoSelectAll){
+                    selectedSubjects.value = subjectIds
+                }
+                if(props.autoSelectOne && allSubjectsForDataset.value.length > 0) {
+                    selectedSubjects.value = [subjectIds[0]]
+                }
             }
             loadingState.value = false;
         }

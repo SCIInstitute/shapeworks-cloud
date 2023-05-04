@@ -9,12 +9,7 @@ import { defineComponent, ref, computed, watch, provide } from '@vue/composition
 import Charts from './Charts.vue'
 import Groups from './Groups.vue'
 import PCA from './PCA.vue'
-
-export enum AnalysisTabs {
-    PCA = 0,
-    Groups,
-    Charts
-}
+import { AnalysisTabs } from './util';
 
 export default defineComponent({
     props: {
@@ -28,7 +23,7 @@ export default defineComponent({
         Groups,
         PCA
     },
-    setup(props) {
+    setup() {
         const openTab = ref(AnalysisTabs.PCA);
         const message = ref<string>();
         const currentlyCaching = ref<boolean>(false);

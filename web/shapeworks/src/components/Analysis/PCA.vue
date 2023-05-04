@@ -1,7 +1,7 @@
 <script lang="ts">
   import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
   import { computed, defineComponent, ref, Ref, watch, inject } from '@vue/composition-api';
-  import { AnalysisTabs } from './AnalysisTab.vue';
+  import { AnalysisTabs } from './util';
   
   export default defineComponent({
     props: {

@@ -3,7 +3,7 @@
 import { AnalysisGroup } from '@/types';
 import { Ref, computed, defineComponent, inject, ref, watch } from '@vue/composition-api';
 
-import { AnalysisTabs } from './AnalysisTab.vue';
+import { AnalysisTabs } from './util';
   
   export default defineComponent({
     props: {

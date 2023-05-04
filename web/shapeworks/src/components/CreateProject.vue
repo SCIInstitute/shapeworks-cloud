@@ -10,19 +10,23 @@ import {
 export default defineComponent({
   setup() {
     const creating = ref(false)
+    const name = ref('My Project')
     const description = ref('')
     const keywords = ref('')
+    const privated = ref(false);
 
     function reset() {
         creating.value = false
-            description.value = ''
-            keywords.value = ''
+        description.value = ''
+        keywords.value = ''
     }
 
     function create(e) {
         e.preventDefault()
         loadingState.value = true
         createProject({
+            name: name.value,
+            private: privated.value,
             dataset: selectedDataset.value.id,
             description: description.value,
             keywords: keywords.value,
@@ -40,10 +44,12 @@ export default defineComponent({
 
     return {
         creating,
+        name,
         selectedDataset,
         loadingState,
         description,
         keywords,
+        privated,
         create,
     }
   }
@@ -67,11 +73,12 @@ export default defineComponent({
             NEW PROJECT FOR DATASET {{ selectedDataset.id }}
         </div>
         <form :submit="create">
-            <v-text-field autofocus label="Description" v-model="description" />
+            <v-text-field autofocus v-model="name" class="text-h5 mb-1"/>
+            <v-text-field label="Description" v-model="description" />
             <v-text-field label="Keywords" v-model="keywords" />
+            <v-checkbox label="Make this project private" v-model="privated" />
             <v-card-actions class="action-buttons">
                 <v-btn
-                    v-if="description"
                     outlined
                     rounded
                     text

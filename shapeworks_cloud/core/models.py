@@ -11,7 +11,7 @@ class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
     private = models.BooleanField(default=False)
     creator = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
-    thumbnail = S3FileField(null=True)
+    thumbnail = S3FileField(null=True, blank=True)
     license = models.TextField()
     description = models.TextField()
     acknowledgement = models.TextField()
@@ -105,7 +105,10 @@ class CachedAnalysis(TimeStampedModel, models.Model):
 
 class Project(TimeStampedModel, models.Model):
     file = S3FileField()
-    thumbnail = S3FileField(null=True)
+    name = models.CharField(max_length=255)
+    private = models.BooleanField(default=False)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    thumbnail = S3FileField(null=True, blank=True)
     keywords = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')

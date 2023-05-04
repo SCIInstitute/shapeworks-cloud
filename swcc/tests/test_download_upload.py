@@ -19,6 +19,7 @@ def project_as_dict_repr(project):
     # remove keys that are expected to differ between servers
     del project_repr['id']
     del project_repr['file']
+    del project_repr['creator']
     del project_repr['dataset']['id']
     del project_repr['dataset']['creator']
     del project_repr['last_cached_analysis']

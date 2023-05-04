@@ -1,6 +1,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
-import { getDatasets, getProjectsForDataset, deleteProject, } from '@/api/rest'
+import { getDatasets, getProjectsForDataset, deleteProject } from '@/api/rest'
 import {
     allDatasets,
     selectedDataset,
@@ -21,9 +21,10 @@ export default defineComponent({
         const deleting = ref();
         const selectingSubsetOf = ref();
 
-        async function getAllDatasets(){
+        async function getAllDatasets() {
+            const searchText = router.currentRoute.params.searchText
             loadingState.value = true;
-            allDatasets.value = (await getDatasets()).sort((a, b) => {
+            allDatasets.value = (await getDatasets(searchText)).sort((a, b) => {
                 if(a.created < b.created) return 1;
                 if(a.created > b.created) return -1;
                 return 0;
@@ -35,8 +36,8 @@ export default defineComponent({
             allProjectsForDataset.value = await getProjectsForDataset(dataset.id);
         }
 
-        async function selectOrDeselectDataset (dataset: Dataset) {
-            if(!selectedDataset.value){
+        async function selectOrDeselectDataset (dataset: Dataset | undefined) {
+            if(!selectedDataset.value && dataset){
                 selectedDataset.value = dataset;
                 fetchProjectsForDataset(dataset)
             } else {
@@ -121,6 +122,9 @@ export default defineComponent({
             >
                 <div class="text-overline mb-4">
                     DATASET ({{ dataset.created ? dataset.created.split('T')[0] : 'No creation time' }})
+                    <span v-if="dataset.private" class="red--text">
+                        (PRIVATE)
+                    </span>
                 </div>
                 <div class="card-contents">
                     <div>
@@ -131,8 +135,13 @@ export default defineComponent({
                             {{ dataset.description }}
                         </v-list-item-subtitle>
                         <div class="text-overline">
-                           {{ dataset.summary }}
+                            {{ dataset.summary }}
                         </div>
+                        <v-list-item-subtitle v-if="dataset.keywords">
+                            <v-chip small v-for="keyword in dataset.keywords.split(',')" :key="keyword">
+                                <i>{{ keyword }}</i>
+                            </v-chip>
+                        </v-list-item-subtitle>
                     </div>
                     <div v-if="dataset.thumbnail">
                         <v-img :src="dataset.thumbnail" width="100"/>
@@ -164,6 +173,7 @@ export default defineComponent({
                 <v-icon @click="() => selectOrDeselectDataset(selectedDataset)">
                     mdi-arrow-left
                 </v-icon>
+                {{ selectedDataset.name }}
             </div>
             <v-card v-if="(allProjectsForDataset === undefined || allProjectsForDataset.length === 0) && !loadingState" width="100%">
                 <v-card-title>No projects.</v-card-title>
@@ -178,17 +188,22 @@ export default defineComponent({
                 <div class="text-overline mb-4">
                     PROJECT ({{ project.created ? project.created.split('T')[0] : 'No creation time'}})
                     FOR DATASET {{ selectedDataset.id }}
+                    <span v-if="project.private" class="red--text">
+                        (PRIVATE)
+                    </span>
                 </div>
                 <div class="card-contents">
                     <div>
                         <v-list-item-title class="text-h5 mb-1">
-                            Project {{ project.id }}
+                            {{ project.name }}
                         </v-list-item-title>
                         <v-list-item-subtitle>
                             {{ project.description }}
                         </v-list-item-subtitle>
-                        <v-list-item-subtitle>
-                            <i>{{ project.keywords }}</i>
+                        <v-list-item-subtitle v-if="project.keywords">
+                            <v-chip small v-for="keyword in project.keywords.split(',')" :key="keyword">
+                                <i>{{ keyword }}</i>
+                            </v-chip>
                         </v-list-item-subtitle>
                     </div>
                     <div v-if="project.thumbnail">
@@ -226,8 +241,7 @@ export default defineComponent({
                 </v-card-title>
 
                 <v-card-text>
-                Are you sure you want to delete project {{deleting.id}}
-                with description "{{ deleting.description }}"?
+                Are you sure you want to delete project "{{ deleting.name }}"?
                 </v-card-text>
 
                 <v-divider></v-divider>

@@ -9,14 +9,15 @@ import {
     allProjectsForDataset,
     loadProjectForDataset,
     selectedProject,
+    editingProject,
 } from '@/store';
 import { Dataset, Project } from '@/types';
 import router from '@/router';
-import CreateProject from '@/components/CreateProject.vue';
+import ProjectForm from '@/components/ProjectForm.vue';
 import SubsetSelection from '@/components/SubsetSelection.vue';
 
 export default defineComponent({
-  components: { CreateProject, SubsetSelection },
+  components: { ProjectForm, SubsetSelection },
     setup() {
         const deleting = ref();
         const selectingSubsetOf = ref();
@@ -96,6 +97,7 @@ export default defineComponent({
             selectOrDeselectProject,
             deleting,
             deleteProj,
+            editingProject,
             selectingSubsetOf,
             loadingState,
         }
@@ -178,59 +180,72 @@ export default defineComponent({
             <v-card v-if="(allProjectsForDataset === undefined || allProjectsForDataset.length === 0) && !loadingState" width="100%">
                 <v-card-title>No projects.</v-card-title>
             </v-card>
-            <v-card
+            <div 
                 v-for="project in allProjectsForDataset"
                 :key="'project_'+project.id"
-                :class="project.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
-                v-show="!selectedProject || selectedProject == project"
-                :width="selectedProject == project ? '100%' :''"
             >
-                <div class="text-overline mb-4">
-                    PROJECT ({{ project.created ? project.created.split('T')[0] : 'No creation time'}})
-                    FOR DATASET {{ selectedDataset.id }}
-                    <span v-if="project.private" class="red--text">
-                        (PRIVATE)
-                    </span>
-                </div>
-                <div class="card-contents">
-                    <div>
-                        <v-list-item-title class="text-h5 mb-1">
-                            {{ project.name }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle>
-                            {{ project.description }}
-                        </v-list-item-subtitle>
-                        <v-list-item-subtitle v-if="project.keywords">
-                            <v-chip small v-for="keyword in project.keywords.split(',')" :key="keyword">
-                                <i>{{ keyword }}</i>
-                            </v-chip>
-                        </v-list-item-subtitle>
-                    </div>
-                    <div v-if="project.thumbnail">
-                        <v-img :src="project.thumbnail" width="100"/>
-                    </div>
-                </div>
-                <v-card-actions class="action-buttons">
-                <v-btn
-                    outlined
-                    rounded
-                    text
-                    @click="() => selectOrDeselectProject(project)"
+            <project-form v-if="editingProject === project" editMode />
+                <v-card
+                    v-else
+                    :class="project.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
+                    v-show="!selectedProject || selectedProject == project"
+                    :width="selectedProject == project ? '100%' :''"
                 >
-                    {{ selectedProject ?'Deselect' :'Select' }}
-                </v-btn>
-                <v-btn
-                    outlined
-                    rounded
-                    text
-                    color="red"
-                    @click="deleting = project"
-                >
-                    Delete
-                </v-btn>
-                </v-card-actions>
-            </v-card>
-            <create-project />
+                    <div class="text-overline mb-4">
+                        PROJECT ({{ project.created ? project.created.split('T')[0] : 'No creation time'}})
+                        FOR DATASET {{ selectedDataset.id }}
+                        <span v-if="project.private" class="red--text">
+                            (PRIVATE)
+                        </span>
+                    </div>
+                    <div class="card-contents">
+                        <div>
+                            <v-list-item-title class="text-h5 mb-1">
+                                {{ project.name }}
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                {{ project.description }}
+                            </v-list-item-subtitle>
+                            <v-list-item-subtitle v-if="project.keywords">
+                                <v-chip small v-for="keyword in project.keywords.split(',')" :key="keyword">
+                                    <i>{{ keyword }}</i>
+                                </v-chip>
+                            </v-list-item-subtitle>
+                        </div>
+                        <div v-if="project.thumbnail">
+                            <v-img :src="project.thumbnail" width="100"/>
+                        </div>
+                    </div>
+                    <v-card-actions class="action-buttons">
+                    <v-btn
+                        outlined
+                        rounded
+                        text
+                        @click="() => selectOrDeselectProject(project)"
+                    >
+                        {{ selectedProject ?'Deselect' :'Select' }}
+                    </v-btn>
+                    <v-btn
+                        outlined
+                        rounded
+                        text
+                        @click="editingProject = project"
+                    >
+                        Edit
+                    </v-btn>
+                    <v-btn
+                        outlined
+                        rounded
+                        text
+                        color="red"
+                        @click="deleting = project"
+                    >
+                        Delete
+                    </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </div>
+            <project-form />
             <v-dialog
                 :value="deleting"
                 width="500"

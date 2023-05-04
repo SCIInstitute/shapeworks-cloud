@@ -25,6 +25,8 @@ export const allProjectsForDataset = ref<Project[]>([])
 
 export const selectedProject = ref<Project>()
 
+export const editingProject = ref<undefined | Project>();
+
 export const allSubjectsForDataset = ref<Subject[]>([])
 
 export const allDataObjectsInDataset = ref<DataObject[]>([])

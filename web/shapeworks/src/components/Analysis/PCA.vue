@@ -1,15 +1,22 @@
 <script lang="ts">
-  import { analysis, analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
-import { computed, defineComponent, ref, watch } from '@vue/composition-api';
+  import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
+  import { computed, defineComponent, ref, Ref, watch, inject } from '@vue/composition-api';
+  import { AnalysisTabs } from './AnalysisTab.vue';
   
   export default defineComponent({
     props: {
-      currentTab: String
+      currentTab: String,
+      openTab: Number
     },
     setup(props) {
-
       const mode = ref(1);
       const stdDev = ref(0);
+
+      let step = 0;
+      let intervalId: number;
+
+      const currentlyCaching: Ref | undefined = inject('currentlyCaching'); 
+      const animate = ref<boolean>(false);
     
       const modeOptions = computed(() => {
           return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
@@ -67,6 +74,46 @@ import { computed, defineComponent, ref, watch } from '@vue/composition-api';
             currentAnalysisFileParticles.value = particles;
             meanAnalysisFileParticles.value =  analysis.value?.mean_particles;
             analysisFileShown.value = fileShown;
+        },
+        async cacheAllPCAComparisons() {
+          if (currMode.value !== undefined) {
+            const allInMode = currMode.value.pca_values;
+
+            await cacheAllComparisons(allInMode);
+          }
+        },
+        animateSlider() {
+            if (props.openTab === AnalysisTabs.PCA) { // PCA tab animate
+                const [ min, max ] = stdDevRange.value;
+
+                if (stdDev.value <= min) {
+                  stdDev.value = min;
+                  step *= -1;
+                } else if (stdDev.value >= max) {
+                  stdDev.value = max;
+                  step *= -1;
+                }
+
+                stdDev.value = parseFloat((stdDev.value + step).toFixed(1));
+
+            }
+        },
+        async triggerAnimate() {
+            if (currMode.value === undefined || animate === undefined) return; 
+
+            if (animate.value && currentlyCaching) {
+              step = stdDevRange.value[2];
+              currentlyCaching.value = true;
+              await methods.cacheAllPCAComparisons();
+              currentlyCaching.value = false;
+              intervalId = setInterval(methods.animateSlider, 500);
+            }
+            if (animate.value === false && intervalId) {
+              clearInterval(intervalId);
+            }
+        },
+        stopAnimating() {
+          animate.value = false;
         }
       }
 
@@ -79,9 +126,15 @@ import { computed, defineComponent, ref, watch } from '@vue/composition-api';
       watch(props, methods.updateFileShown)
       watch(analysis, methods.updateFileShown)
 
-      watch(mode, methods.updateFileShown)
-      watch(stdDev, methods.updateFileShown)
+      watch(mode, () => {
+        methods.updateFileShown();
+        animate.value = false;
+      })
 
+      watch(stdDev, methods.updateFileShown)
+      if (animate) {
+        watch(animate, methods.triggerAnimate)
+      }
       return {
         methods,
         modeOptions,
@@ -89,6 +142,7 @@ import { computed, defineComponent, ref, watch } from '@vue/composition-api';
         stdDev,
         stdDevRange,
         pcaInfo,
+        animate,
       };
     },
   });
@@ -115,6 +169,14 @@ import { computed, defineComponent, ref, watch } from '@vue/composition-api';
         track-fill-color="#aaa"
         label="Std. Devs. from Mean"
       />
+      <v-row justify="center">
+          <v-checkbox
+              class="mt-0 mb-8 pt-0"
+              v-model="animate"
+              label="Animate"
+              hide-details
+          ></v-checkbox>
+      </v-row>
       <br/>
       <v-data-table
         :headers="pcaInfo.headers"

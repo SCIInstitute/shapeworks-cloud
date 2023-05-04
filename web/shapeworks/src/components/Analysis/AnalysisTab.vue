@@ -50,14 +50,18 @@ export default defineComponent({
             analysisExpandedTab.value = openTab.value;
             switch(openTab.value) {
                 case AnalysisTabs.PCA:
+                    groups.value.methods.stopAnimating();
                     pca.value.methods.updateFileShown();
                     break;
                 case AnalysisTabs.Groups:
+                    pca.value.methods.stopAnimating();
                     if (groups.value.currGroup) {
                         groups.value.methods.updateGroupFileShown();
                     }
                     break;
                 case AnalysisTabs.Charts:
+                    groups.value.methods.stopAnimating();
+                    pca.value.methods.stopAnimating();
                     break;
             }
         })
@@ -104,7 +108,7 @@ export default defineComponent({
                     View PCA
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <PCA ref="pca" :currentTab="currentTab"/>
+                    <PCA ref="pca" :currentTab="currentTab" :openTab="openTab"/>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel :disabled="analysis.groups.length <= 0" id="groups-panel">

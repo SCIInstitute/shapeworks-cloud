@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { analysis, analysisFileShown, cachedParticleComparisonColors, cacheComparison, currentAnalysisFileParticles, meanAnalysisFileParticles, calculateComparisons } from '@/store';
+  import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
 import { AnalysisGroup } from '@/types';
 import { Ref, computed, defineComponent, inject, ref, watch } from '@vue/composition-api';
-import imageReader from '../../reader/image';
-import pointsReader from '../../reader/points';
-import generateMapper from '@/reader/mapper';
+
 import { AnalysisTabs } from './AnalysisTab.vue';
   
   export default defineComponent({
@@ -19,9 +17,9 @@ import { AnalysisTabs } from './AnalysisTab.vue';
       const groupSet = ref<string>();
       const currPairing = ref<{left: string, right: string}>({left:"", right:""});
       const prevPairing = ref<{left: string, right: string}>({left:"", right:""}); // stores the previously selected pairing
-      const animate = ref<boolean>(false);
 
       const currentlyCaching: Ref | undefined = inject('currentlyCaching');
+      const animate = ref<boolean>(false); 
 
       let step = 0.1;
       let intervalId: number;
@@ -111,36 +109,7 @@ import { AnalysisTabs } from './AnalysisTab.vue';
             })
 
             if (allInPairing !== undefined) {
-                const cachePrep = await Promise.all(allInPairing?.map(async (g) => {
-                    const particleComparisonKey = `${g.particles}_${meanAnalysisFileParticles.value}`;
-
-                    if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
-                        const compareToPoints = await pointsReader(meanAnalysisFileParticles.value);
-                        const currentPoints = await pointsReader(g.particles);
-
-                        const currentMesh = await imageReader(g.file, "current_mesh.vtk");
-
-                        return {
-                            "compareTo": {
-                                points: compareToPoints.getPoints().getData(),
-                                particleUrl: meanAnalysisFileParticles.value,
-                            },
-                            "current":  {
-                                points: currentPoints.getPoints().getData(),
-                                mapper: generateMapper(currentMesh),
-                                particleUrl: g.particles,
-                            }, 
-                        }
-                    }
-                }))
-
-                cachePrep.forEach((g) => {
-                    if (g !== undefined) {
-                        const { current, compareTo } = g;
-                        const comparisons = calculateComparisons(current.mapper, current.points, compareTo.points)
-                        cacheComparison(comparisons.colorValues, comparisons.vectorValues, `${current.particleUrl}_${compareTo.particleUrl}`);
-                    }
-                })
+                await cacheAllComparisons(allInPairing);
             }
         },
         animateSlider() {
@@ -151,7 +120,7 @@ import { AnalysisTabs } from './AnalysisTab.vue';
             }
         },
         async triggerAnimate() {
-            if (groupSet.value === undefined) return;
+            if (groupSet.value === undefined || animate == undefined) return;
 
             if (animate.value && currentlyCaching) {
                 currentlyCaching.value = true;
@@ -162,6 +131,9 @@ import { AnalysisTabs } from './AnalysisTab.vue';
             if (animate.value === false && intervalId) {
                 clearInterval(intervalId);
             }
+        },
+        stopAnimating() {
+          animate.value = false;
         }
       };
   
@@ -183,12 +155,19 @@ import { AnalysisTabs } from './AnalysisTab.vue';
         watch(groupSet, () => {
             methods.setDefaultPairing(); 
             methods.updateGroupFileShown();
+            animate.value = false;
         })
-        watch(currPairing.value, methods.updateGroupSelections)
+        watch(currPairing.value, () => {
+            methods.updateGroupSelections();
+            animate.value = false;
+        })
         watch(groupRatio, methods.updateGroupFileShown)
         watch(groupDiff, methods.updateGroupFileShown)
-        watch(animate, methods.triggerAnimate)
-  
+
+        if (animate) {
+            watch(animate, methods.triggerAnimate)
+        }
+        
       return {
         methods,
         groupRatio,

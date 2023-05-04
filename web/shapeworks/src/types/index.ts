@@ -168,3 +168,8 @@ export interface Landmarks {
     created: string,
     modified: string,
 }
+
+export interface CacheComparison {
+    file: string,
+    particles: string
+}

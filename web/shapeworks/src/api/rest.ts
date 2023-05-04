@@ -110,6 +110,10 @@ export async function deleteProject(projectId: number){
     return (await apiClient.delete(`/projects/${projectId}/`))
 }
 
+export async function editProject(projectId: number, formData: Record<string, any>){
+    return (await apiClient.put(`/projects/${projectId}/`, formData));
+}
+
 export async function groomProject(projectId: number, formData: Record<string, any>){
     return (await apiClient.post(`/projects/${projectId}/groom/`, formData))
 }

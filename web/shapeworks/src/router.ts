@@ -18,6 +18,11 @@ const routes: Array<RouteConfig> = [
     component: Main
   },
   {
+    path: '/search/:searchText',
+    name: 'search',
+    component: Select,
+  },
+  {
     path: '/',
     name: 'select',
     component: Select,

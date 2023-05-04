@@ -314,9 +314,12 @@ class ProjectFileIO(BaseModel, FileIO):
 class Project(ApiModel):
     _endpoint = 'projects'
 
+    private: bool = False
+    name: str = 'My Project'
     file: FileType[Literal['core.Project.file']]
     keywords: str = ''
     description: str = ''
+    creator: Optional[str] = ''
     dataset: Dataset
     # sent in as a filepath string, interpreted as CachedAnalysis object
     last_cached_analysis: Optional[Any]
@@ -375,6 +378,7 @@ class Project(ApiModel):
 
     def create(self) -> Project:
         file_io = self.get_file_io()
+
         if self.last_cached_analysis:
             self.last_cached_analysis = file_io.load_analysis_from_json(self.last_cached_analysis)
 

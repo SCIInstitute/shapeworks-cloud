@@ -41,10 +41,10 @@ export interface AnalysisMode {
 }
 
 export interface AnalysisChart {
-    title: string, 
-    x_label: string, 
-    y_label: string, 
-    x: Array<number>, 
+    title: string,
+    x_label: string,
+    y_label: string,
+    x: Array<number>,
     y: Array<number>,
 }
 
@@ -71,7 +71,10 @@ export interface Analysis {
 
 export interface Project {
     id: number,
+    name: string,
     file: string,
+    private: boolean,
+    thumbnail: string,
     created: string,
     modified: string,
     keywords: string,
@@ -84,14 +87,18 @@ export interface Project {
 
 export interface Dataset {
     id: number,
+    name: string,
     file: string,
+    private: boolean,
+    thumbnail: string,
     created: string,
     modified: string,
-    name: string,
+    keywords: string,
     license: string,
     description: string,
     acknowledgement: string,
     projects: Project[],
+    summary?: string,
 }
 
 export interface Subject {

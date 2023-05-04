@@ -34,7 +34,7 @@ import {
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
-import AnalysisTab from '@/components/AnalysisTab.vue';
+import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
 
 

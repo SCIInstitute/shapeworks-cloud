@@ -1,4 +1,4 @@
-import { AnalysisGroup, AnalysisPCA, CacheComparison, Project, Task } from "@/types";
+import { CacheComparison, Project, Task } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -16,6 +16,7 @@ import {
      cachedParticleComparisonColors,
      cachedParticleComparisonVectors,
      meanAnalysisFileParticles,
+     allDatasets,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -24,6 +25,7 @@ import {
     abortTask,
     deleteTaskProgress,
     getDataset,
+    getDatasets,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
     getProjectsForDataset,
     getReconstructedSamplesForProject,
@@ -33,6 +35,7 @@ import {
 import { layers } from "./constants";
 import { getDistance } from "@/helper";
 import { TypedArray } from "vtk.js/Sources/types";
+import router from "@/router";
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
@@ -43,12 +46,43 @@ export const loadDataset = async (datasetId: number) => {
     }
 }
 
-export const loadProjectForDataset = async (projectId: number | undefined, datasetId: number) => {
-    allProjectsForDataset.value = await getProjectsForDataset(datasetId);
+export async function getAllDatasets() {
+    const searchText = router.currentRoute.params.searchText;
+    loadingState.value = true;
+    allDatasets.value = (await getDatasets(searchText)).sort((a, b) => {
+        if(a.created < b.created) return 1;
+        if(a.created > b.created) return -1;
+        return 0;
+    });
+    loadingState.value = false;
+}
+
+export const loadProjectsForDataset = async (datasetId: number) => {
+    const searchText = router.currentRoute.params.searchText;
+    loadingState.value = true;
+    allProjectsForDataset.value = (await getProjectsForDataset(searchText, datasetId)).sort((a, b) => {
+        if(a.created < b.created) return 1;
+        if(a.created > b.created) return -1;
+        return 0;
+    });
+    if (!selectedProject.value) {
+        router.replace(`dataset/${datasetId}`);
+    }
+    loadingState.value = false;
+}
+
+export const selectProject = (projectId: number | undefined) => {
     if (projectId) {
         selectedProject.value = allProjectsForDataset.value.find(
             (project: Project) => project.id == projectId,
         )
+        router.push({
+            name: 'main',
+            params: {
+                dataset: String(selectedDataset.value?.id),
+                project: String(projectId),
+            }
+        });
         layersShown.value = ["Original"]
     }
 }

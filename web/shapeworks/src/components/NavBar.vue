@@ -2,14 +2,14 @@
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
 import { allDatasets, loadingState, selectedDataset, selectedProject } from '@/store';
-import DatasetSearch from './DatasetSearch.vue';
+import FilterSearch from './FilterSearch.vue';
 import router from '@/router';
 import { getDatasets } from '@/api/rest';
 
 
 export default defineComponent({
     components: {
-      DatasetSearch
+      FilterSearch
     },
     setup() {
       const params = computed(() => ({
@@ -43,6 +43,7 @@ export default defineComponent({
           params,
           logInOrOut,
           selectedDataset,
+          selectedProject,
           navigateToHome,
       }
     }
@@ -61,7 +62,7 @@ export default defineComponent({
       <v-toolbar-title class="text-h6">ShapeWorks</v-toolbar-title>
     </div>
     <v-spacer />
-    <dataset-search />
+    <filter-search v-if="!(selectedDataset && selectedProject)"/>
     <v-spacer />
     <v-btn
       v-if="oauthClient.isLoggedIn"

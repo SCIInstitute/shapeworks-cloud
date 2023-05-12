@@ -22,7 +22,7 @@ import {
     layersShown,
     groomedShapesForOriginalDataObjects,
     selectedProject,
-    loadProjectForDataset,
+    loadProjectsForDataset,
     reconstructionsForOriginalDataObjects,
     analysisFileShown,
     meanAnalysisFileParticles,
@@ -30,7 +30,8 @@ import {
     switchTab,
     landmarkColorList,
     jobAlreadyDone,
-    analysisExpandedTab
+    analysisExpandedTab,
+    selectProject
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -80,10 +81,11 @@ export default defineComponent({
         onMounted(async () => {
             try {
                 await loadDataset(props.dataset);
-                await loadProjectForDataset(props.project, props.dataset);
+                await loadProjectsForDataset(props.dataset);
             } catch(e) {
+                console.log(e);
                 router.push({
-                    name: 'select'
+                    name: 'project-select'
                 })
             }
             nextTick(() => {
@@ -103,7 +105,7 @@ export default defineComponent({
             selectedProject.value = undefined;
             analysisFileShown.value = undefined;
             router.push({
-                name: 'select',
+                name: 'dataset-select',
             });
         }
 

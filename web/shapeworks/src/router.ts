@@ -1,7 +1,9 @@
 import Vue from 'vue'
 import VueRouter, { Route, RouteConfig } from 'vue-router'
-import Select from './views/Select.vue'
 import Main from './views/Main.vue'
+import ProjectSelect from './views/ProjectSelect.vue'
+import DatasetSelect from './views/DatasetSelect.vue'
+
 
 Vue.use(VueRouter)
 
@@ -18,14 +20,24 @@ const routes: Array<RouteConfig> = [
     component: Main
   },
   {
+    path: 'dataset/:dataset/search/:searchText',
+    name: 'search',
+    component: ProjectSelect,
+  },
+  {
     path: '/search/:searchText',
     name: 'search',
-    component: Select,
+    component: DatasetSelect,
+  },
+  {
+    path: '/dataset/:dataset',
+    name: 'main',
+    component: ProjectSelect
   },
   {
     path: '/',
     name: 'select',
-    component: Select,
+    component: DatasetSelect,
   },
   {
     path: '*',

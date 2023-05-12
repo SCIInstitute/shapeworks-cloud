@@ -2,7 +2,8 @@
 import { defineComponent, ref } from '@vue/composition-api'
 import router from '@/router';
 import { getDatasets } from '@/api/rest';
-import { loadingState, allDatasets, selectedDataset, selectedProject } from '@/store';
+import { loadingState, allDatasets, allProjectsForDataset, selectedDataset, selectedProject, loadProjectsForDataset } from '@/store';
+import { getProjectsForDataset } from '@/api/rest';
 
 
 export default defineComponent({
@@ -10,15 +11,25 @@ export default defineComponent({
       const searchText = ref(router.currentRoute.params.searchText)
 
       async function navigateToResults() {
-        router.replace('/search/'+searchText.value)
+        // use store functions
         loadingState.value = true;
-        selectedDataset.value = undefined;
-        selectedProject.value = undefined
-        allDatasets.value = (await getDatasets(searchText.value)).sort((a, b) => {
-            if(a.created < b.created) return 1;
-            if(a.created > b.created) return -1;
-            return 0;
-        });
+        
+        if (selectedDataset.value) {
+            // allProjectsForDataset.value = (await getProjectsForDataset(searchText.value, selectedDataset.value.id)).sort((a, b) => {
+            //     if(a.created < b.created) return 1;
+            //     if(a.created > b.created) return -1;
+            //     return 0;
+            // });
+            router.replace(`dataset/${selectedDataset.value.id}/search/${searchText.value}`)
+            loadProjectsForDataset(selectedDataset.value.id);
+        } else {
+            router.replace('/search/'+searchText.value)
+            allDatasets.value = (await getDatasets(searchText.value)).sort((a, b) => {
+                if(a.created < b.created) return 1;
+                if(a.created > b.created) return -1;
+                return 0;
+            });
+        }
         loadingState.value = false;
       }
 
@@ -29,6 +40,8 @@ export default defineComponent({
 
       return {
         searchText,
+        selectedDataset,
+        selectedProject,
         navigateToResults
       }
     }

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
 import {
     allDatasets,
     selectedDataset,
@@ -11,16 +11,26 @@ import {
 import { Dataset } from '@/types';
 import ProjectForm from '@/components/ProjectForm.vue';
 import SubsetSelection from '@/components/SubsetSelection.vue';
+import router from '@/router';
 
 export default defineComponent({
   components: { ProjectForm, SubsetSelection },
-    setup() {
+  props: {
+    searchText: {
+        type: String,
+        required: false
+    }
+  },
+    setup(props) {
         const selectingSubsetOf = ref();
+        selectedDataset.value = undefined;
 
         async function selectOrDeselectDataset (dataset: Dataset | undefined) {
-            if(!selectedDataset.value && dataset){
+            if(!selectedDataset.value && dataset) {
                 selectedDataset.value = dataset;
                 loadProjectsForDataset(dataset.id);
+
+                router.push("/dataset/"+dataset.id);
             } else {
                 selectedDataset.value = undefined;
                 selectedDataObjects.value = [];
@@ -38,6 +48,11 @@ export default defineComponent({
                 )
             }
         })
+
+        watch(() => props, () => {
+            getAllDatasets();
+            selectedDataset.value = undefined;
+        }, {deep:true});
 
         return {
             allDatasets,

@@ -65,9 +65,6 @@ export const loadProjectsForDataset = async (datasetId: number) => {
         if(a.created > b.created) return -1;
         return 0;
     });
-    if (!selectedProject.value) {
-        router.replace(`dataset/${datasetId}`);
-    }
     loadingState.value = false;
 }
 
@@ -76,13 +73,6 @@ export const selectProject = (projectId: number | undefined) => {
         selectedProject.value = allProjectsForDataset.value.find(
             (project: Project) => project.id == projectId,
         )
-        router.push({
-            name: 'main',
-            params: {
-                dataset: String(selectedDataset.value?.id),
-                project: String(projectId),
-            }
-        });
         layersShown.value = ["Original"]
     }
 }

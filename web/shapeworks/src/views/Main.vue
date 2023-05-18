@@ -31,7 +31,6 @@ import {
     landmarkColorList,
     jobAlreadyDone,
     analysisExpandedTab,
-    selectProject
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -84,9 +83,7 @@ export default defineComponent({
                 await loadProjectsForDataset(props.dataset);
             } catch(e) {
                 console.log(e);
-                router.push({
-                    name: 'project-select'
-                })
+                toSelectPage();
             }
             nextTick(() => {
                 window.addEventListener('resize', onResize);
@@ -104,9 +101,7 @@ export default defineComponent({
         async function toSelectPage() {
             selectedProject.value = undefined;
             analysisFileShown.value = undefined;
-            router.push({
-                name: 'dataset-select',
-            });
+            router.push('/dataset/'+selectedDataset.value?.id);
         }
 
         function prepareDrawer() {

@@ -28,7 +28,9 @@ export default defineComponent({
       async function navigateToHome() {
         selectedDataset.value = undefined
         selectedProject.value = undefined
-        router.push('/')
+        if (router.currentRoute.path !== '/') {
+          router.push('/')
+        }
         loadingState.value = true;
         allDatasets.value = (await getDatasets(undefined)).sort((a, b) => {
             if(a.created < b.created) return 1;

@@ -5,7 +5,8 @@ import {
     selectedDataset,
     loadingState,
     allProjectsForDataset,
-    editingProject
+    editingProject,
+    loadProjectsForDataset,
 } from '@/store';
 
 export default defineComponent({
@@ -52,9 +53,9 @@ export default defineComponent({
 
         submitFunction().then(async (response) => {
             if(response.status === 201){
-                allProjectsForDataset.value = await getProjectsForDataset(selectedDataset.value.id);
+                loadProjectsForDataset(selectedDataset.value.id);
             } else if (response.status === 200) {
-                allProjectsForDataset.value = await getProjectsForDataset(selectedDataset.value.id);
+                loadProjectsForDataset(selectedDataset.value.id);
                 editingProject.value = undefined;
             }
 

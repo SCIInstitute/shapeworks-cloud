@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
 import { deleteProject } from '@/api/rest'
 import {
     selectedDataset,
@@ -8,22 +8,37 @@ import {
     selectedProject,
     editingProject,
     selectProject,
-selectedDataObjects,
-getAllDatasets,
+    selectedDataObjects,
+    getAllDatasets,
+    loadDataset,
+    loadProjectsForDataset,
 } from '@/store';
 import ProjectForm from '@/components/ProjectForm.vue';
 import SubsetSelection from '@/components/SubsetSelection.vue';
 import { Project } from '@/types';
+import router from '@/router';
 
 export default defineComponent({
-  components: { ProjectForm, SubsetSelection },
-    setup() {
+    components: { ProjectForm, SubsetSelection },
+    props: {
+        dataset: {
+            type: Number,
+            required: true
+        },
+        searchText: {
+            type: String,
+            required: false
+        }
+    },
+    setup(props) {
         const deleting = ref();
 
         async function selectOrDeselectProject (project: Project) {
             if(!selectedProject.value){
                 selectProject(project.id);
-            } else {selectedProject.value = undefined;
+                router.push(`/dataset/${props.dataset}/project/${project.id}`);
+            } else {
+                selectedProject.value = undefined;
                 selectedDataObjects.value = [];
                 await getAllDatasets();
             }
@@ -42,6 +57,26 @@ export default defineComponent({
             )
         }
 
+        function back() {
+            selectedDataset.value = undefined;
+            router.push("/");     
+        }
+  
+        function updateSelectedDataset() {
+            if (selectedDataset.value === undefined 
+            || selectedDataset.value.id !== props.dataset
+            ) {
+                loadDataset(props.dataset);
+                loadProjectsForDataset(props.dataset);
+            }
+        }
+
+        onMounted(updateSelectedDataset);
+
+        watch(() => props.dataset, updateSelectedDataset);
+        watch(() => props.searchText, () => loadProjectsForDataset(props.dataset));
+
+
         return {
             selectedDataset,
             allProjectsForDataset,
@@ -50,7 +85,9 @@ export default defineComponent({
             deleting,
             deleteProj,
             editingProject,
-            selectProject
+            selectProject,
+            back,
+            loadingState,
         }
     }
 })
@@ -60,7 +97,7 @@ export default defineComponent({
     <div>
         <div v-if="selectedDataset" class="flex-container pa-5">
             <div style="width:100%">
-                <v-icon @click="() => selectedDataset = undefined">
+                <v-icon @click="back">
                     mdi-arrow-left
                 </v-icon>
                 {{ selectedDataset.name }}

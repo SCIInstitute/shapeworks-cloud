@@ -1,10 +1,7 @@
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api'
+import { defineComponent, onBeforeUpdate, ref, watch } from '@vue/composition-api'
 import router from '@/router';
-import { getDatasets } from '@/api/rest';
-import { loadingState, allDatasets, allProjectsForDataset, selectedDataset, selectedProject, loadProjectsForDataset } from '@/store';
-import { getProjectsForDataset } from '@/api/rest';
-
+import { selectedDataset, selectedProject } from '@/store';
 
 export default defineComponent({
     setup() {
@@ -12,29 +9,21 @@ export default defineComponent({
 
       async function navigateToResults() {
         // use store functions
-        loadingState.value = true;
-        
+        let targetUrl = "/"
         if (selectedDataset.value) {
-            // allProjectsForDataset.value = (await getProjectsForDataset(searchText.value, selectedDataset.value.id)).sort((a, b) => {
-            //     if(a.created < b.created) return 1;
-            //     if(a.created > b.created) return -1;
-            //     return 0;
-            // });
-            router.replace(`dataset/${selectedDataset.value.id}/search/${searchText.value}`)
-            loadProjectsForDataset(selectedDataset.value.id);
-        } else {
-            router.replace('/search/'+searchText.value)
-            allDatasets.value = (await getDatasets(searchText.value)).sort((a, b) => {
-                if(a.created < b.created) return 1;
-                if(a.created > b.created) return -1;
-                return 0;
-            });
+            targetUrl = `/dataset/${selectedDataset.value.id}/`
         }
-        loadingState.value = false;
+
+        if (searchText.value) {
+            targetUrl = targetUrl + `search/${searchText.value}`
+        }
+
+        router.push(targetUrl);
       }
 
       router.beforeEach(async (to, from, next) => {
         if (!to.params.searchText) searchText.value = ''
+        searchText.value = to.params.searchText;
         next()
       })
 
@@ -44,7 +33,7 @@ export default defineComponent({
         selectedProject,
         navigateToResults
       }
-    }
+    },
 })
 </script>
 
@@ -71,7 +60,7 @@ export default defineComponent({
                             </v-icon>
                         </span>
                     </template>
-                    <span>Search ShapeWorks datasets by name, description, and keywords</span>
+                    <span>Search ShapeWorks {{(selectedDataset) ? "projects" : "datasets"}} by name, description, and keywords</span>
                 </v-tooltip>
             </template>
         </v-text-field>

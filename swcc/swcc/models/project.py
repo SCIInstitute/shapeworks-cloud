@@ -403,11 +403,12 @@ class Project(ApiModel):
         data = r.json()
         files = data['download_paths']
         print(f'Downloading {len(files)} files...')
-        print_progress_bar(0, len(files))
-        for index, (path, url) in enumerate(files.items()):
-            file_item: FileType = FileType(url=url)
-            file_item.download(Path(folder, *path.split('/')[:-1]))
-            print_progress_bar(index + 1, len(files))
+        if len(files):
+            print_progress_bar(0, len(files))
+            for index, (path, url) in enumerate(files.items()):
+                file_item: FileType = FileType(url=url)
+                file_item.download(Path(folder, *path.split('/')[:-1]))
+                print_progress_bar(index + 1, len(files))
         session.close()
         print()
 

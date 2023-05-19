@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import Dict, Type
 
 from django.db.models import Q
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -13,11 +14,9 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
-from django.utils import timezone
 
 from . import filters, models, serializers
 from .tasks import groom, optimize
-
 
 DB_WRITE_ACCESS_LOG_FILE = Path('logging/db_write_access.log')
 if not os.path.exists('logging'):

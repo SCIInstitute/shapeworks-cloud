@@ -57,6 +57,11 @@ export async function getAllDatasets() {
     loadingState.value = false;
 }
 
+export const loadProjectForDataset = async (projectId: number, datasetId: number) => {
+    await loadProjectsForDataset(datasetId);
+    selectProject(projectId);
+}
+
 export const loadProjectsForDataset = async (datasetId: number) => {
     const searchText = router.currentRoute.params.searchText;
     loadingState.value = true;

@@ -22,7 +22,7 @@ import {
     layersShown,
     groomedShapesForOriginalDataObjects,
     selectedProject,
-    loadProjectsForDataset,
+    loadProjectForDataset,
     reconstructionsForOriginalDataObjects,
     analysisFileShown,
     meanAnalysisFileParticles,
@@ -80,7 +80,7 @@ export default defineComponent({
         onMounted(async () => {
             try {
                 await loadDataset(props.dataset);
-                await loadProjectsForDataset(props.dataset);
+                await loadProjectForDataset(props.project, props.dataset);
             } catch(e) {
                 console.log(e);
                 toSelectPage();

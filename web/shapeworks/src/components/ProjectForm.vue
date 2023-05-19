@@ -1,10 +1,9 @@
 <script>
 import { defineComponent, ref } from '@vue/composition-api';
-import { createProject, getProjectsForDataset, editProject } from '../api/rest'
+import { createProject, editProject } from '../api/rest'
 import {
     selectedDataset,
     loadingState,
-    allProjectsForDataset,
     editingProject,
     loadProjectsForDataset,
 } from '@/store';

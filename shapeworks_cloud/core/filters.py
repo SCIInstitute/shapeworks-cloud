@@ -32,16 +32,15 @@ class ProjectFilter(FilterSet):
     search = CharFilter(method='multifield_search')
 
     def multifield_search(self, queryset, name, value):
-            return queryset.filter(
-                Q(name__icontains=value)
-                | Q(description__icontains=value)
-                | Q(keywords__icontains=value)
-            )
-
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(description__icontains=value)
+            | Q(keywords__icontains=value)
+        )
 
     class Meta:
         model = models.Project
-        fields = ['search','dataset']
+        fields = ['search', 'dataset']
 
 
 class SegmentationFilter(FilterSet):

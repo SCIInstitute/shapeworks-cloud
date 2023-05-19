@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, onBeforeUpdate, ref, watch } from '@vue/composition-api'
+import { defineComponent, ref } from '@vue/composition-api'
 import router from '@/router';
 import { selectedDataset, selectedProject } from '@/store';
 

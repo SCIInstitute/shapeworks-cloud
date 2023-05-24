@@ -31,6 +31,8 @@ import {
     landmarkColorList,
     jobAlreadyDone,
     analysisExpandedTab,
+allProjectsForDataset,
+loadProjectsForDataset,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -80,7 +82,7 @@ export default defineComponent({
         onMounted(async () => {
             try {
                 await loadDataset(props.dataset);
-                await loadProjectForDataset(props.project, props.dataset);
+                await loadProjectForDataset(props.project);
             } catch(e) {
                 console.log(e);
                 toSelectPage();
@@ -101,6 +103,9 @@ export default defineComponent({
         async function toSelectPage() {
             selectedProject.value = undefined;
             analysisFileShown.value = undefined;
+            if (allProjectsForDataset.value.length === 0 && selectedDataset.value) {
+                loadProjectsForDataset(selectedDataset.value.id);
+            }
             router.push('/dataset/'+selectedDataset.value?.id);
         }
 

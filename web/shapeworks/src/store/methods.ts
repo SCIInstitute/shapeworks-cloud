@@ -57,9 +57,8 @@ export async function getAllDatasets() {
     loadingState.value = false;
 }
 
-export const loadProjectForDataset = async (projectId: number, datasetId: number) => {
-    await loadProjectsForDataset(datasetId);
-    selectProject(projectId);
+export const loadProjectForDataset = async (projectId: number) => {
+    refreshProject(projectId).then((proj) => selectedProject.value = proj);
 }
 
 export const loadProjectsForDataset = async (datasetId: number) => {

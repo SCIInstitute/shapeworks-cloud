@@ -159,7 +159,8 @@
                     "x-cols": 6,
                     "enum": [
                         "Center",
-                        "Iterative Closest Point"
+                        "Iterative Closest Point",
+                        "Landmark"
                     ],
                     "x-class": "float-right pl-5",
                     "x-display": "custom-conditional",

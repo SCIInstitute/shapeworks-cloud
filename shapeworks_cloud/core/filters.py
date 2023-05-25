@@ -29,10 +29,18 @@ class SubjectFilter(FilterSet):
 
 class ProjectFilter(FilterSet):
     dataset = ModelChoiceFilter(queryset=models.Dataset.objects.all())
+    search = CharFilter(method='multifield_search')
+
+    def multifield_search(self, queryset, name, value):
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(description__icontains=value)
+            | Q(keywords__icontains=value)
+        )
 
     class Meta:
         model = models.Project
-        fields = ['dataset']
+        fields = ['search', 'dataset']
 
 
 class SegmentationFilter(FilterSet):

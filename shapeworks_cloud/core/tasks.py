@@ -38,7 +38,10 @@ def edit_swproj_section(filename, section_name, new_df):
     else:
         data[section_name] = new_contents
     data['data'] = [
-        {k: v.replace('../', '').replace('./', '') if type(v) == str else v for k, v in row.items()}
+        {
+            k: v.replace('../', '').replace('./', '') if isinstance(v, str) else v
+            for k, v in row.items()
+        }
         for row in data['data']
     ]
     with open(filename, 'w') as f:

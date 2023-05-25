@@ -2,18 +2,19 @@
 import { defineComponent, computed } from '@vue/composition-api'
 import { logout, oauthClient } from '@/api/auth';
 import { allDatasets, loadingState, selectedDataset, selectedProject } from '@/store';
-import DatasetSearch from './DatasetSearch.vue';
+import FilterSearch from './FilterSearch.vue';
 import router from '@/router';
 import { getDatasets } from '@/api/rest';
 
 
 export default defineComponent({
     components: {
-      DatasetSearch
+      FilterSearch
     },
     setup() {
       const params = computed(() => ({
         dataset: selectedDataset.value?.id,
+        project: selectedProject.value?.id
       }))
 
       async function logInOrOut() {
@@ -28,7 +29,9 @@ export default defineComponent({
       async function navigateToHome() {
         selectedDataset.value = undefined
         selectedProject.value = undefined
-        router.push('/')
+        if (router.currentRoute.path !== '/') {
+          router.push('/')
+        }
         loadingState.value = true;
         allDatasets.value = (await getDatasets(undefined)).sort((a, b) => {
             if(a.created < b.created) return 1;
@@ -43,7 +46,9 @@ export default defineComponent({
           params,
           logInOrOut,
           selectedDataset,
+          selectedProject,
           navigateToHome,
+          router,
       }
     }
 })
@@ -61,7 +66,7 @@ export default defineComponent({
       <v-toolbar-title class="text-h6">ShapeWorks</v-toolbar-title>
     </div>
     <v-spacer />
-    <dataset-search />
+    <filter-search v-if="!(selectedDataset && selectedProject) && !(router.currentRoute.params.dataset && router.currentRoute.params.project)"/>
     <v-spacer />
     <v-btn
       v-if="oauthClient.isLoggedIn"

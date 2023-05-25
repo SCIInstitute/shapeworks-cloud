@@ -46,8 +46,21 @@ export async function getSubjectsForDataset(datasetId: number): Promise<Subject[
     })).data.results
 }
 
-export async function getProjectsForDataset(datasetId: number): Promise<Project[]>{
-    return (await apiClient.get(`/projects?dataset=${datasetId}`)).data?.results
+export async function getProjectsForDataset(search: string | undefined, datasetId: number): Promise<Project[]>{
+    const results = []
+    let page = 1
+    let response = (await apiClient.get(`/projects`, {
+        params: { page, search, dataset: datasetId }
+    })).data
+    results.push(...response.results)
+    while(response.next){
+        page += 1
+        response = (await apiClient.get(`/projects`, {
+            params: { page, search, dataset: datasetId }
+        })).data
+        results.push(...response.results)
+    }
+    return results
 }
 
 export async function refreshProject(projectId: number){

@@ -1,9 +1,11 @@
 import base64
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Type
 
 from django.db.models import Q
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -15,6 +17,16 @@ from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
 from .tasks import groom, optimize
+
+DB_WRITE_ACCESS_LOG_FILE = Path('logging/db_write_access.log')
+if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
+    os.mkdir(DB_WRITE_ACCESS_LOG_FILE.parent)
+
+
+def log_write_access(*args):
+    with open(DB_WRITE_ACCESS_LOG_FILE, 'a') as log_file:
+        log_file.write('\t'.join(str(a) for a in args))
+        log_file.write('\n\n')
 
 
 def save_thumbnail_image(target, encoded_thumbnail):
@@ -68,6 +80,12 @@ class DatasetViewSet(BaseViewSet):
         user = None
         if self.request and hasattr(self.request, 'user'):
             user = self.request.user
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Create Dataset',
+            str(serializer),
+        )
         serializer.save(creator=user)
 
     @action(
@@ -81,6 +99,12 @@ class DatasetViewSet(BaseViewSet):
         form_data = request.data
         encoded_thumbnail = form_data.get('encoding')
         save_thumbnail_image(dataset, encoded_thumbnail)
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Set Dataset Thumbnail',
+            dataset.id,
+        )
         return Response(serializers.DatasetSerializer(dataset).data)
 
     @action(
@@ -123,6 +147,12 @@ class DatasetViewSet(BaseViewSet):
             target_object.id = None
             target_object.subject = new_subject
             target_object.save()
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Create Dataset Subset',
+            form_data,
+        )
         return Response(serializers.DatasetSerializer(new_dataset).data)
 
 
@@ -194,6 +224,12 @@ class ProjectViewSet(BaseViewSet):
         project = serializer.save()
         if not project.file:
             project.create_new_file()
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Create Project',
+            str(serializer),
+        )
         return Response(
             serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED
         )
@@ -209,6 +245,12 @@ class ProjectViewSet(BaseViewSet):
         form_data = request.data
         encoded_thumbnail = form_data.get('encoding')
         save_thumbnail_image(project, encoded_thumbnail)
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Set Project Thumbnail',
+            project.id,
+        )
         return Response(serializers.ProjectReadSerializer(project).data)
 
     @action(
@@ -235,6 +277,13 @@ class ProjectViewSet(BaseViewSet):
         models.TaskProgress.objects.filter(name='groom', project=project).delete()
         progress = models.TaskProgress.objects.create(name='groom', project=project)
         groom.delay(request.user.id, project.id, form_data, progress.id)
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Groom Project',
+            project.id,
+            form_data,
+        )
         return Response(
             data={'groom_task': serializers.TaskProgressSerializer(progress).data},
             status=status.HTTP_200_OK,
@@ -262,6 +311,13 @@ class ProjectViewSet(BaseViewSet):
             form_data,
             progress.id,
             analysis_progress.id,
+        )
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Optimize Project',
+            project.id,
+            form_data,
         )
         return Response(
             data={
@@ -351,6 +407,13 @@ class TaskProgressViewSet(
         for task in models.TaskProgress.objects.filter(project=progress.project):
             task.abort = True
             task.save(update_fields=['abort'])
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Abort Task',
+            progress.id,
+            progress.name,
+        )
         return Response(
             status=status.HTTP_200_OK,
         )

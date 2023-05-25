@@ -4,7 +4,7 @@ data "heroku_team" "heroku" {
 }
 
 module "django" {
-  source  = "girder/django/heroku"
+  source  = "girder/girder4/heroku"
   version = "0.10.1"
 
   project_slug     = "shapeworks-cloud"

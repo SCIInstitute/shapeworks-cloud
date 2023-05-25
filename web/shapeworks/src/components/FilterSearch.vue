@@ -1,37 +1,39 @@
 <script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api'
 import router from '@/router';
-import { getDatasets } from '@/api/rest';
-import { loadingState, allDatasets, selectedDataset, selectedProject } from '@/store';
-
+import { selectedDataset, selectedProject } from '@/store';
 
 export default defineComponent({
     setup() {
       const searchText = ref(router.currentRoute.params.searchText)
 
       async function navigateToResults() {
-        router.replace('/search/'+searchText.value)
-        loadingState.value = true;
-        selectedDataset.value = undefined;
-        selectedProject.value = undefined
-        allDatasets.value = (await getDatasets(searchText.value)).sort((a, b) => {
-            if(a.created < b.created) return 1;
-            if(a.created > b.created) return -1;
-            return 0;
-        });
-        loadingState.value = false;
+        // use store functions
+        let targetUrl = "/"
+        if (selectedDataset.value) {
+            targetUrl = `/dataset/${selectedDataset.value.id}/`
+        }
+
+        if (searchText.value) {
+            targetUrl = targetUrl + `search/${searchText.value}`
+        }
+
+        router.push(targetUrl);
       }
 
       router.beforeEach(async (to, from, next) => {
         if (!to.params.searchText) searchText.value = ''
+        searchText.value = to.params.searchText;
         next()
       })
 
       return {
         searchText,
+        selectedDataset,
+        selectedProject,
         navigateToResults
       }
-    }
+    },
 })
 </script>
 
@@ -58,7 +60,7 @@ export default defineComponent({
                             </v-icon>
                         </span>
                     </template>
-                    <span>Search ShapeWorks datasets by name, description, and keywords</span>
+                    <span>Search ShapeWorks {{(selectedDataset) ? "projects" : "datasets"}} by name, description, and keywords</span>
                 </v-tooltip>
             </template>
         </v-text-field>

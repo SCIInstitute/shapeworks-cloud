@@ -1,104 +1,92 @@
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
-import { getDatasets, getProjectsForDataset, deleteProject } from '@/api/rest'
+import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
+import { deleteProject } from '@/api/rest'
 import {
-    allDatasets,
     selectedDataset,
     loadingState,
-    selectedDataObjects,
     allProjectsForDataset,
-    loadProjectForDataset,
     selectedProject,
     editingProject,
+    selectProject,
+    selectedDataObjects,
+    getAllDatasets,
+    loadDataset,
+    loadProjectsForDataset,
 } from '@/store';
-import { Dataset, Project } from '@/types';
-import router from '@/router';
 import ProjectForm from '@/components/ProjectForm.vue';
 import SubsetSelection from '@/components/SubsetSelection.vue';
+import { Project } from '@/types';
+import router from '@/router';
 
 export default defineComponent({
-  components: { ProjectForm, SubsetSelection },
-    setup() {
+    components: { ProjectForm, SubsetSelection },
+    props: {
+        dataset: {
+            type: Number,
+            required: true
+        },
+        searchText: {
+            type: String,
+            required: false
+        }
+    },
+    setup(props) {
         const deleting = ref();
-        const selectingSubsetOf = ref();
-
-        async function getAllDatasets() {
-            const searchText = router.currentRoute.params.searchText
-            loadingState.value = true;
-            allDatasets.value = (await getDatasets(searchText)).sort((a, b) => {
-                if(a.created < b.created) return 1;
-                if(a.created > b.created) return -1;
-                return 0;
-            });
-            loadingState.value = false;
-        }
-
-        async function fetchProjectsForDataset(dataset: Dataset) {
-            allProjectsForDataset.value = await getProjectsForDataset(dataset.id);
-        }
-
-        async function selectOrDeselectDataset (dataset: Dataset | undefined) {
-            if(!selectedDataset.value && dataset){
-                selectedDataset.value = dataset;
-                fetchProjectsForDataset(dataset)
-            } else {
-                selectedDataset.value = undefined;
-                selectedDataObjects.value = [];
-                await getAllDatasets();
-            }
-        }
 
         async function selectOrDeselectProject (project: Project) {
             if(!selectedProject.value){
-                selectedProject.value = project;
-                router.push({
-                    name: 'main',
-                    params: {
-                        dataset: String(selectedDataset.value?.id),
-                        project: String(project.id),
-                    }
-                });
-            } else {selectedProject.value = undefined;
+                selectProject(project.id);
+                router.push(`/dataset/${props.dataset}/project/${project.id}`);
+            } else {
+                selectedProject.value = undefined;
                 selectedDataObjects.value = [];
                 await getAllDatasets();
             }
         }
-
+        
         function deleteProj() {
             loadingState.value = true
             deleteProject(deleting.value.id).then(
                 () => {
                     deleting.value = undefined
                     if(selectedDataset.value){
-                        loadProjectForDataset(undefined, selectedDataset.value.id)
+                        selectedProject.value = undefined;
                     }
                     loadingState.value = false
                 }
             )
         }
 
-        onMounted(async () => {
-            await getAllDatasets();
-            if(selectedDataset.value){
-                const datasetId = selectedDataset.value.id;
-                // reset selectedDataset to maintain updates from latest fetch of all datasets
-                selectedDataset.value = allDatasets.value.find(
-                    (d) => d.id == datasetId
-                )
+        function back() {
+            selectedDataset.value = undefined;
+            router.push("/");     
+        }
+  
+        function updateSelectedDataset() {
+            if (selectedDataset.value === undefined 
+            || selectedDataset.value.id !== props.dataset
+            ) {
+                loadDataset(props.dataset);
+                loadProjectsForDataset(props.dataset);
             }
-        })
+        }
+
+        onMounted(updateSelectedDataset);
+
+        watch(() => props.dataset, updateSelectedDataset);
+        watch(() => props.searchText, () => loadProjectsForDataset(props.dataset));
+
 
         return {
-            allDatasets,
             selectedDataset,
             allProjectsForDataset,
             selectedProject,
-            selectOrDeselectDataset,
             selectOrDeselectProject,
             deleting,
             deleteProj,
             editingProject,
-            selectingSubsetOf,
+            selectProject,
+            back,
             loadingState,
         }
     }
@@ -107,72 +95,9 @@ export default defineComponent({
 
 <template>
     <div>
-        <div
-            v-if="!selectedDataset"
-            class="flex-container pa-5"
-            :style="selectingSubsetOf ? 'width: calc(100% - 500px)' : ''"
-        >
-            <v-card v-if="allDatasets.length === 0 && !loadingState" width="100%">
-                <v-card-title>No datasets.</v-card-title>
-            </v-card>
-            <v-card
-                v-for="dataset in allDatasets"
-                :key="'dataset_'+dataset.id"
-                :class="dataset.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
-                v-show="!selectedDataset || selectedDataset == dataset"
-                :width="selectedDataset == dataset ? '100%' :''"
-            >
-                <div class="text-overline mb-4">
-                    DATASET ({{ dataset.created ? dataset.created.split('T')[0] : 'No creation time' }})
-                    <span v-if="dataset.private" class="red--text">
-                        (PRIVATE)
-                    </span>
-                </div>
-                <div class="card-contents">
-                    <div>
-                        <v-list-item-title class="text-h5 mb-1">
-                            {{ dataset.name }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle>
-                            {{ dataset.description }}
-                        </v-list-item-subtitle>
-                        <div class="text-overline">
-                            {{ dataset.summary }}
-                        </div>
-                        <v-list-item-subtitle v-if="dataset.keywords">
-                            <v-chip small v-for="keyword in dataset.keywords.split(',')" :key="keyword">
-                                <i>{{ keyword }}</i>
-                            </v-chip>
-                        </v-list-item-subtitle>
-                    </div>
-                    <div v-if="dataset.thumbnail">
-                        <v-img :src="dataset.thumbnail" width="100"/>
-                    </div>
-                </div>
-
-                <v-card-actions class="action-buttons">
-                <v-btn
-                    outlined
-                    rounded
-                    text
-                    @click="() => selectOrDeselectDataset(dataset)"
-                >
-                    {{ selectedDataset ?'Deselect' :'Select' }}
-                </v-btn>
-                <v-btn
-                    outlined
-                    rounded
-                    text
-                    @click="() => selectingSubsetOf = dataset"
-                >
-                    Create subset
-                </v-btn>
-                </v-card-actions>
-            </v-card>
-        </div>
-        <div v-else class="flex-container pa-5">
+        <div v-if="selectedDataset" class="flex-container pa-5">
             <div style="width:100%">
-                <v-icon @click="() => selectOrDeselectDataset(selectedDataset)">
+                <v-icon @click="back">
                     mdi-arrow-left
                 </v-icon>
                 {{ selectedDataset.name }}
@@ -223,7 +148,7 @@ export default defineComponent({
                         text
                         @click="() => selectOrDeselectProject(project)"
                     >
-                        {{ selectedProject ?'Deselect' :'Select' }}
+                        Select
                     </v-btn>
                     <v-btn
                         outlined
@@ -280,25 +205,6 @@ export default defineComponent({
             </v-card>
             </v-dialog>
         </div>
-        <v-navigation-drawer
-            right
-            absolute
-            width="500px"
-            :value="selectingSubsetOf !== undefined && !selectedDataset"
-        >
-             <v-btn
-                icon
-                @click.stop="selectingSubsetOf = undefined"
-                class="pa-3 pt-8"
-            >
-                <v-icon>mdi-close</v-icon>
-            </v-btn>
-            <subset-selection
-                :targetDataset="selectingSubsetOf"
-                v-if="selectingSubsetOf"
-                @close="selectingSubsetOf = undefined"
-            />
-        </v-navigation-drawer>
     </div>
 </template>
 

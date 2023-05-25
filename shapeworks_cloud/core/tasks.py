@@ -112,6 +112,7 @@ def run_shapeworks_command(
                 command,
                 f'--name={project_filename}',
             ]
+
             if command == 'analyze':
                 full_command.append('--output=analysis.json')
             else:

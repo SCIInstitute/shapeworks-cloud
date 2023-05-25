@@ -19,12 +19,12 @@ from . import filters, models, serializers
 from .tasks import groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path('logging/db_write_access.log')
-if not os.path.exists('logging'):
-    os.mkdir('logging')
+if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
+    os.mkdir(DB_WRITE_ACCESS_LOG_FILE.parent)
 
 
 def log_write_access(*args):
-    with open(DB_WRITE_ACCESS_LOG_FILE, 'w+') as log_file:
+    with open(DB_WRITE_ACCESS_LOG_FILE, 'a') as log_file:
         log_file.write('\t'.join(str(a) for a in args))
         log_file.write('\n\n')
 

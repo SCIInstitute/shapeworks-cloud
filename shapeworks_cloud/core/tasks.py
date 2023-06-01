@@ -246,6 +246,8 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
                     row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
             for anatomy_id, anatomy_data in row.items():
+                if 'groomed' not in anatomy_data:
+                    continue
                 groomed_filename = anatomy_data['groomed'].split('/')[-1]
                 target_segmentation = project_groomed_segmentations.filter(
                     file__endswith=groomed_filename,

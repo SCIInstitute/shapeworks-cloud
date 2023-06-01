@@ -18,7 +18,7 @@ from rest_framework.viewsets import GenericViewSet
 from . import filters, models, serializers
 from .tasks import groom, optimize
 
-DB_WRITE_ACCESS_LOG_FILE = Path('logging/db_write_access.log')
+DB_WRITE_ACCESS_LOG_FILE = Path(os.path.expanduser('~'), 'logging', 'db_write_access.log')
 if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
     os.mkdir(DB_WRITE_ACCESS_LOG_FILE.parent)
 

@@ -242,12 +242,12 @@ class ProjectViewSet(BaseViewSet):
     )
     def clone(self, request, **kwargs):
         project = self.get_object()
-        related_objects = [
-            models.GroomedMesh.objects.filter(project=project),
-            models.GroomedSegmentation.objects.filter(project=project),
-            models.OptimizedParticles.objects.filter(project=project),
-            models.Landmarks.objects.filter(project=project),
-            models.ReconstructedSample.objects.filter(project=project),
+        related_models = [
+            models.GroomedMesh,
+            models.GroomedSegmentation,
+            models.OptimizedParticles,
+            models.Landmarks,
+            models.ReconstructedSample,
         ]
         project.id = None
         project.readonly = False
@@ -255,8 +255,8 @@ class ProjectViewSet(BaseViewSet):
         project.name += ' (clone)'
         project.save()
         # project has new id now, is the cloned object
-        for related_objects_group in related_objects:
-            for related_object in related_objects_group:
+        for related_model in related_models:
+            for related_object in related_model.objects.filter(project=project):
                 related_object.id = None
                 related_object.project = project
                 related_object.save()

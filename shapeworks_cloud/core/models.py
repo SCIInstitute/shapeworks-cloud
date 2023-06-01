@@ -107,6 +107,7 @@ class Project(TimeStampedModel, models.Model):
     file = S3FileField()
     name = models.CharField(max_length=255)
     private = models.BooleanField(default=False)
+    readonly = models.BooleanField(default=False)
     creator = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     thumbnail = S3FileField(null=True, blank=True)
     keywords = models.CharField(max_length=255, blank=True, default='')

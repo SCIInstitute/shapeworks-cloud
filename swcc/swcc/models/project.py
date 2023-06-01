@@ -315,6 +315,7 @@ class Project(ApiModel):
     _endpoint = 'projects'
 
     private: bool = False
+    readonly: bool = False
     name: str = 'My Project'
     file: FileType[Literal['core.Project.file']]
     keywords: str = ''

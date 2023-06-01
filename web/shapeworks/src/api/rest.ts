@@ -119,6 +119,10 @@ export async function createProject(formData: Record<string, any>){
     return (await apiClient.post(`/projects/`, formData))
 }
 
+export async function cloneProject(projectId: number){
+    return (await apiClient.post(`/projects/${projectId}/clone/`))
+}
+
 export async function deleteProject(projectId: number){
     return (await apiClient.delete(`/projects/${projectId}/`))
 }

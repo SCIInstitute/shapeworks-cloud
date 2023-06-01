@@ -163,7 +163,7 @@ export default defineComponent({
 }
 .selectable-card{
     width: 275px;
-    padding: 10px 20px 70px 20px;
+    padding: 10px 20px 100px 20px;
 }
 .card-contents {
     display: flex;
@@ -183,6 +183,7 @@ export default defineComponent({
     display: flex;
     justify-content: space-between;
     margin-top: 10px;
+    flex-wrap: wrap;
 }
 .v-list-item__title, .v-list-item__subtitle {
     white-space: normal!important;

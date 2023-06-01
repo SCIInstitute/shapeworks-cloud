@@ -74,6 +74,7 @@ export interface Project {
     name: string,
     file: string,
     private: boolean,
+    readonly: boolean,
     thumbnail: string,
     created: string,
     modified: string,

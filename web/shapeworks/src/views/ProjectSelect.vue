@@ -1,6 +1,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
-import { deleteProject } from '@/api/rest'
+import { cloneProject, deleteProject } from '@/api/rest'
 import {
     selectedDataset,
     loadingState,
@@ -43,12 +43,22 @@ export default defineComponent({
                 await getAllDatasets();
             }
         }
-        
+
+        function cloneProj(project: Project) {
+            loadingState.value = true
+            cloneProject(project.id)
+            .then(() => {
+                loadProjectsForDataset(props.dataset);
+                loadingState.value = false;
+            })
+        }
+
         function deleteProj() {
             loadingState.value = true
             deleteProject(deleting.value.id).then(
                 () => {
                     deleting.value = undefined
+                    loadProjectsForDataset(props.dataset);
                     if(selectedDataset.value){
                         selectedProject.value = undefined;
                     }
@@ -59,11 +69,11 @@ export default defineComponent({
 
         function back() {
             selectedDataset.value = undefined;
-            router.push("/");     
+            router.push("/");
         }
-  
+
         function updateSelectedDataset() {
-            if (selectedDataset.value === undefined 
+            if (selectedDataset.value === undefined
             || selectedDataset.value.id !== props.dataset
             ) {
                 loadDataset(props.dataset);
@@ -82,6 +92,7 @@ export default defineComponent({
             allProjectsForDataset,
             selectedProject,
             selectOrDeselectProject,
+            cloneProj,
             deleting,
             deleteProj,
             editingProject,
@@ -105,11 +116,11 @@ export default defineComponent({
             <v-card v-if="(allProjectsForDataset === undefined || allProjectsForDataset.length === 0) && !loadingState" width="100%">
                 <v-card-title>No projects.</v-card-title>
             </v-card>
-            <div 
+            <div
                 v-for="project in allProjectsForDataset"
                 :key="'project_'+project.id"
             >
-            <project-form v-if="editingProject === project" editMode />
+            <project-form v-if="editingProject === project" editMode @cancel="() => editingProject = undefined"/>
                 <v-card
                     v-else
                     :class="project.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
@@ -119,6 +130,9 @@ export default defineComponent({
                     <div class="text-overline mb-4">
                         PROJECT ({{ project.created ? project.created.split('T')[0] : 'No creation time'}})
                         FOR DATASET {{ selectedDataset.id }}
+                        <span v-if="project.readonly" class="blue--text">
+                            (READ ONLY)
+                        </span>
                         <span v-if="project.private" class="red--text">
                             (PRIVATE)
                         </span>
@@ -142,31 +156,32 @@ export default defineComponent({
                         </div>
                     </div>
                     <v-card-actions class="action-buttons">
-                    <v-btn
-                        outlined
-                        rounded
-                        text
-                        @click="() => selectOrDeselectProject(project)"
-                    >
-                        Select
-                    </v-btn>
-                    <v-btn
-                        outlined
-                        rounded
-                        text
-                        @click="editingProject = project"
-                    >
-                        Edit
-                    </v-btn>
-                    <v-btn
-                        outlined
-                        rounded
-                        text
-                        color="red"
-                        @click="deleting = project"
-                    >
-                        Delete
-                    </v-btn>
+                        <v-btn
+                            outlined rounded text style="width:40%"
+                            @click="() => cloneProj(project)"
+                        >
+                            Clone
+                        </v-btn>
+                        <v-btn
+                            outlined rounded text style="width:40%"
+                            @click="editingProject = project"
+                            >
+                            Edit
+                        </v-btn>
+                        <v-btn
+                            outlined rounded text style="width:40%"
+                            color="blue"
+                            @click="() => selectOrDeselectProject(project)"
+                        >
+                            Select
+                        </v-btn>
+                        <v-btn
+                            outlined rounded text style="width:40%"
+                            color="red"
+                            @click="deleting = project"
+                        >
+                            Delete
+                        </v-btn>
                     </v-card-actions>
                 </v-card>
             </div>
@@ -207,40 +222,3 @@ export default defineComponent({
         </div>
     </div>
 </template>
-
-<style>
-.flex-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: stretch;
-    column-gap: 15px;
-    row-gap: 15px;
-    overflow: auto;
-}
-.selectable-card{
-    width: 275px;
-    padding: 10px 20px 70px 20px;
-}
-.card-contents {
-    display: flex;
-    justify-content: space-between;
-}
-.card-contents {
-    overflow-wrap: anywhere;
-}
-.selectable-card.with-thumbnail {
-    width: 375px;
-}
-.action-buttons {
-    position: absolute;
-    bottom: 10px;
-    left: 5px;
-    width: calc(100% - 10px);
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-}
-.v-list-item__title, .v-list-item__subtitle {
-    white-space: normal!important;
-}
-</style>

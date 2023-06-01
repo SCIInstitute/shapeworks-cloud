@@ -236,6 +236,36 @@ class ProjectViewSet(BaseViewSet):
 
     @action(
         detail=True,
+        url_path='clone',
+        url_name='clone',
+        methods=['POST'],
+    )
+    def clone(self, request, **kwargs):
+        project = self.get_object()
+        related_models = [
+            models.GroomedMesh,
+            models.GroomedSegmentation,
+            models.OptimizedParticles,
+            models.Landmarks,
+            models.ReconstructedSample,
+        ]
+        project.id = None
+        project.readonly = False
+        project.private = True
+        project.name += ' (clone)'
+        project.save()
+        # project has new id now, is the cloned object
+        for related_model in related_models:
+            for related_object in related_model.objects.filter(project=project):
+                related_object.id = None
+                related_object.project = project
+                related_object.save()
+        return Response(
+            serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED
+        )
+
+    @action(
+        detail=True,
         url_path='thumbnail',
         url_name='thumbnail',
         methods=['POST'],

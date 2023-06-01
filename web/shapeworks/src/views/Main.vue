@@ -167,7 +167,7 @@ export default defineComponent({
                     }
                 }
                 newRenderData =
-                    (analysisExpandedTab.value === 0) ? 
+                    (analysisExpandedTab.value === 0) ?
                     {
                         "PCA": [{
                             shape: await imageReader(
@@ -316,6 +316,7 @@ export default defineComponent({
             renderData,
             renderMetaData,
             selectedDataset,
+            selectedProject,
             selectedDataObjects,
             toSelectPage,
             refreshRender,
@@ -367,11 +368,26 @@ export default defineComponent({
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">
-                            <tab-form form="groom" @change="refreshRender"/>
+                            <span
+                                v-if="selectedProject && selectedProject.readonly"
+                                class="red--text pa-3"
+                            >
+                                This project is read only.
+                                No grooming or optimizing may be performed.
+                            </span>
+                            <tab-form v-else form="groom" @change="refreshRender"/>
                         </v-tab-item>
                         <v-tab href="#optimize">Optimize</v-tab>
                         <v-tab-item value="optimize">
+                            <span
+                                v-if="selectedProject && selectedProject.readonly"
+                                class="red--text pa-3"
+                            >
+                                This project is read only.
+                                No grooming or optimizing may be performed.
+                            </span>
                             <tab-form
+                                v-else
                                 form="optimize"
                                 @change="refreshRender"
                                 :prerequisite="() => jobAlreadyDone('groom')"

@@ -15,17 +15,26 @@ export default defineComponent({
         default: false
     },
   },
-  setup(props) {
+  setup(props, { emit }) {
     const creating = ref(false)
     const name = ref('My Project')
     const description = ref('')
     const keywords = ref('')
     const privated = ref(false);
+    const readonly = ref(false);
 
     function reset() {
         creating.value = false
         description.value = ''
         keywords.value = ''
+    }
+
+    function cancel() {
+        if(props.editMode) {
+            emit('cancel')
+        } else {
+            creating.value = false
+        }
     }
 
     function submit(e) {
@@ -38,6 +47,7 @@ export default defineComponent({
             dataset: selectedDataset.value.id,
             description: description.value,
             keywords: keywords.value,
+            readonly: readonly.value,
         };
 
         let submitFunction = async () => {
@@ -71,6 +81,7 @@ export default defineComponent({
         description.value = editingProject.value.description;
         keywords.value = editingProject.value.keywords;
         privated.value = editingProject.value.private;
+        readonly.value = editingProject.value.readonly;
     }
 
     return {
@@ -81,7 +92,9 @@ export default defineComponent({
         description,
         keywords,
         privated,
+        readonly,
         editingProject,
+        cancel,
         submit,
     }
   }
@@ -104,12 +117,13 @@ export default defineComponent({
         <div v-if="!editMode" class="text-overline mb-4">
             NEW PROJECT FOR DATASET {{selectedDataset.id}}
         </div>
-        
+
         <form :submit="submit">
             <v-text-field autofocus v-model="name" class="text-h5 mb-1"/>
             <v-text-field label="Description" v-model="description" />
             <v-text-field label="Keywords" v-model="keywords" />
-            <v-checkbox v-if="creating" label="Make this project private" v-model="privated" />
+            <v-checkbox dense label="Make this project read only" v-model="readonly" />
+            <v-checkbox  dense v-if="creating" label="Make this project private" v-model="privated" />
             <v-card-actions class="action-buttons">
                 <v-btn
                     outlined
@@ -118,7 +132,15 @@ export default defineComponent({
                     type="submit"
                     @click="submit"
                 >
-                    {{ (editMode) ? "Save" : "Create" }} 
+                    {{ (editMode) ? "Save" : "Create" }}
+                </v-btn>
+                <v-btn
+                    outlined
+                    rounded
+                    text
+                    @click="cancel"
+                >
+                    Cancel
                 </v-btn>
             </v-card-actions>
         </form>

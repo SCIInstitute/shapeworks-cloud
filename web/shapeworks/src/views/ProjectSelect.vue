@@ -157,7 +157,7 @@ export default defineComponent({
                     </div>
                     <v-card-actions class="action-buttons">
                         <v-btn
-                            outlined rounded text style="width:40%"
+                            outlined rounded text style="width:40%; margin-left: 8px;"
                             @click="() => cloneProj(project)"
                         >
                             Clone

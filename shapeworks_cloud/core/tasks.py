@@ -181,6 +181,8 @@ def groom(user_id, project_id, form_data, progress_id):
                         row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
             for anatomy_data in row.values():
+                if 'groomed' not in anatomy_data:
+                    continue
                 source_filename = anatomy_data['shape'].split('/')[-1]
                 result_file = Path(download_dir, anatomy_data['groomed'])
                 try:

@@ -1,7 +1,7 @@
 import base64
 import os
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, gettempdir
 from typing import Dict, Type
 
 from django.db.models import Q
@@ -18,7 +18,7 @@ from rest_framework.viewsets import GenericViewSet
 from . import filters, models, serializers
 from .tasks import groom, optimize
 
-DB_WRITE_ACCESS_LOG_FILE = Path('/tmp', 'logging', 'db_write_access.log')
+DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
 if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
     os.mkdir(DB_WRITE_ACCESS_LOG_FILE.parent)
 

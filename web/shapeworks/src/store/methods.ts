@@ -240,7 +240,7 @@ export async function switchTab(tabName: string) {
 }
 
 
-export function calculateComparisons(mapper: any, currentPoints: TypedArray, meanPoints: TypedArray) {
+export function calculateComparisons(mapper: any, currentPoints: number[], meanPoints: number[]) {
     const vectorValues: number[][] = []
     let colorValues = []
     for (let i = 0; i < currentPoints.length; i += 3){
@@ -303,7 +303,7 @@ export async function cacheAllComparisons(comparisons: CacheComparison[]) {
                         points: currentPoints.getPoints().getData(),
                         mapper: generateMapper(currentMesh),
                         particleUrl: g.particles,
-                    }, 
+                    },
                 }
             }
         }))
@@ -311,7 +311,7 @@ export async function cacheAllComparisons(comparisons: CacheComparison[]) {
         cachePrep.forEach((g) => {
             if (g !== undefined) {
                 const { current, compareTo } = g;
-                const comparisons = calculateComparisons(current.mapper, current.points, compareTo.points)
+                const comparisons = calculateComparisons(current.mapper, current.points as number[], compareTo.points as number[])
                 cacheComparison(comparisons.colorValues, comparisons.vectorValues, `${current.particleUrl}_${compareTo.particleUrl}`);
             }
         })

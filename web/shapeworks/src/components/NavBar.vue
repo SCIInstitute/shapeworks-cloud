@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, computed } from '@vue/composition-api'
+import { defineComponent, computed } from 'vue'
 import { logout, oauthClient } from '@/api/auth';
 import { allDatasets, loadingState, selectedDataset, selectedProject } from '@/store';
 import FilterSearch from './FilterSearch.vue';

@@ -3,7 +3,7 @@ import {
     defineComponent, onMounted, ref,
     watch, computed, nextTick,
     onBeforeUnmount,
-} from '@vue/composition-api';
+} from 'vue';
 import _ from 'lodash';
 import imageReader from '../reader/image';
 import pointsReader from '../reader/points';

@@ -5,7 +5,7 @@ import {
     ReconstructedSample, VTKInstance,
     Analysis, Task
 } from '@/types'
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 
 export * from './methods'
 

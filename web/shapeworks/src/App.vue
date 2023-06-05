@@ -1,5 +1,5 @@
 <script>
-import { defineComponent } from '@vue/composition-api'
+import { defineComponent } from 'vue'
 import NavBar from './components/NavBar';
 import { oauthClient } from './api/auth';
 import { loadingState, currentError } from './store';

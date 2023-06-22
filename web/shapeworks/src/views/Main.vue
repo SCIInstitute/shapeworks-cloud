@@ -48,6 +48,7 @@ import TabForm from '@/components/TabForm.vue';
 import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
 import { loadingState } from '../store/index';
+import DeepSSMTab from '@/components/DeepSSM/DeepSSMTab.vue';
 
 
 export default {
@@ -58,6 +59,8 @@ export default {
         RenderControls,
         TabForm,
         AnalysisTab,
+        InfoTab,
+        DeepSSMTab,
     },
     props: {
         dataset: {
@@ -409,7 +412,7 @@ export default {
                         <v-tab-item value="data">
                             <data-list :dataset="dataset" autoSelectOne/>
                         </v-tab-item>
-                        <v-tab href="#info">Info</v-tab>
+                        <v-tab v-if="selectedProject && selectedProject.landmarks.length > 0" href="#info">Info</v-tab>
                         <v-tab-item value="info">
                             <info-tab />
                         </v-tab-item>
@@ -444,6 +447,10 @@ export default {
                         <v-tab href="#analyze">Analyze</v-tab>
                         <v-tab-item value="analyze">
                             <analysis-tab @change="refreshRender" :currentTab="tab || ''"/>
+                        </v-tab-item>
+                        <v-tab href="#deepssm">DeepSSM</v-tab>
+                        <v-tab-item value="deepssm">
+                            <DeepSSMTab />
                         </v-tab-item>
                     </v-tabs>
                 </v-list-item>

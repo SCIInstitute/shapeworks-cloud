@@ -33,14 +33,14 @@
       })
 
       const stdDevRange = computed(() => {
-          if (!analysis.value || !currMode.value) return [0, 0, 0]
+          if (!analysis.value || !currMode.value) return {min: 0, max: 0, step: 0}
           const pcaValues = currMode.value.pca_values.map(p => p.pca_value)
           const min =  Math.min(...pcaValues);
           const max =  Math.max(...pcaValues)
           const step = (max - min) / pcaValues.length
-          return [
+          return {
               min, max, step
-          ]
+          }
       })
 
       const pcaInfo = computed(() => {
@@ -50,10 +50,10 @@
                   {text: 'value', value: 'value', align: 'end'}
               ],
               items: [
-                  {key: 'Lambda', value: currPCA.value?.lambda_value || 0},
-                  {key: 'Eigenvalue', value: currMode.value?.eigen_value},
-                  {key: 'Explained Variance', value: currMode.value?.explained_variance, class: 'percentage'},
-                  {key: 'Cumulative Explained Variance', value: currMode.value?.cumulative_explained_variance, class:'percentage'},
+                  {key: 'Lambda', value:currPCA.value ? Math.round(currPCA.value.lambda_value * 100) / 100 : 0},
+                  {key: 'Eigenvalue', value: currMode.value ? Math.round(currMode.value.eigen_value * 100) / 100 : 0},
+                  {key: 'Explained Variance', value: currMode.value ? Math.round(currMode.value.explained_variance * 100) / 100 : 0, class: 'percentage'},
+                  {key: 'Cumulative Explained Variance', value: currMode.value ? Math.round(currMode.value.cumulative_explained_variance * 100) / 100 : 0, class:'percentage'},
               ],
           }
       })
@@ -84,7 +84,7 @@
         },
         animateSlider() {
             if (props.openTab === AnalysisTabs.PCA) { // PCA tab animate
-                const [ min, max ] = stdDevRange.value;
+                const { min, max } = stdDevRange.value;
 
                 if (stdDev.value <= min) {
                   stdDev.value = min;
@@ -102,7 +102,7 @@
             if (currMode.value === undefined || animate === undefined) return; 
 
             if (animate.value && currentlyCaching) {
-              step = stdDevRange.value[2];
+              step = stdDevRange.value.step;
               currentlyCaching.value = true;
               await methods.cacheAllPCAComparisons();
               currentlyCaching.value = false;
@@ -159,9 +159,9 @@
       />
       <v-slider
         v-model="stdDev"
-        :min="stdDevRange[0]"
-        :max="stdDevRange[1]"
-        :step="stdDevRange[2]"
+        :min="stdDevRange.min"
+        :max="stdDevRange.max"
+        :step="stdDevRange.step"
         ticks="always"
         tick-size="4"
         thumb-label

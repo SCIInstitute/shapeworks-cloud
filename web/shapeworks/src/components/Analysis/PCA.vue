@@ -12,6 +12,16 @@
       const mode = ref(1);
       const stdDev = ref(0);
 
+      const menu = ref();
+      const params = ref({
+        stdDevRange: {
+          min: 0,
+          max: 0,
+          step: 0,
+          numSteps: 0
+        }
+      });
+
       let step = 0;
       let intervalId: number;
 
@@ -19,43 +29,45 @@
       const animate = ref<boolean>(false);
     
       const modeOptions = computed(() => {
-          return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
+        return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
       })
 
       const currMode = computed(() => {
-          return analysis.value?.modes.find((m) => m.mode == mode.value)
+        return analysis.value?.modes.find((m) => m.mode == mode.value)
       })
 
       const currPCA = computed(() => {
-          return currMode.value?.pca_values.find(
-              p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
-          )
+        return currMode.value?.pca_values.find(
+            p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
+        )
       })
 
       const stdDevRange = computed(() => {
-          if (!analysis.value || !currMode.value) return {min: 0, max: 0, step: 0}
-          const pcaValues = currMode.value.pca_values.map(p => p.pca_value)
-          const min =  Math.min(...pcaValues);
-          const max =  Math.max(...pcaValues)
-          const step = (max - min) / pcaValues.length
-          return {
-              min, max, step
-          }
+        if (!analysis.value || !currMode.value) return {min: 0, max: 0, step: 0, numSteps: 0}
+        const pcaValues = currMode.value.pca_values.map(p => p.pca_value)
+        const min =  Math.min(...pcaValues);
+        const max =  Math.max(...pcaValues);
+        const step = (max - min) / pcaValues.length;
+        const numSteps = Math.round((max - min) / step);
+        params.value.stdDevRange = {min, max, step, numSteps}
+        return {
+            min, max, step, numSteps
+        }
       })
 
       const pcaInfo = computed(() => {
-          return {
-              headers: [
-                  {text: 'key', value: 'key'},
-                  {text: 'value', value: 'value', align: 'end'}
-              ],
-              items: [
-                  {key: 'Lambda', value:currPCA.value ? Math.round(currPCA.value.lambda_value * 100) / 100 : 0},
-                  {key: 'Eigenvalue', value: currMode.value ? Math.round(currMode.value.eigen_value * 100) / 100 : 0},
-                  {key: 'Explained Variance', value: currMode.value ? Math.round(currMode.value.explained_variance * 100) / 100 : 0, class: 'percentage'},
-                  {key: 'Cumulative Explained Variance', value: currMode.value ? Math.round(currMode.value.cumulative_explained_variance * 100) / 100 : 0, class:'percentage'},
-              ],
-          }
+        return {
+            headers: [
+                {text: 'key', value: 'key'},
+                {text: 'value', value: 'value', align: 'end'}
+            ],
+            items: [
+                {key: 'Lambda', value:currPCA.value ? Math.round(currPCA.value.lambda_value * 100) / 100 : 0},
+                {key: 'Eigenvalue', value: currMode.value ? Math.round(currMode.value.eigen_value * 100) / 100 : 0},
+                {key: 'Explained Variance', value: currMode.value ? Math.round(currMode.value.explained_variance * 100) / 100 : 0, class: 'percentage'},
+                {key: 'Cumulative Explained Variance', value: currMode.value ? Math.round(currMode.value.cumulative_explained_variance * 100) / 100 : 0, class:'percentage'},
+            ],
+        }
       })
 
       const methods = {
@@ -114,7 +126,19 @@
         },
         stopAnimating() {
           animate.value = false;
-        }
+        },
+        submitParams() {
+          const { min, max, step, numSteps } = params.value.stdDevRange;
+          
+          // if the new params are within the currently loaded range in analysis
+          stdDevRange.value.min = min;
+          stdDevRange.value.max = max;
+          stdDevRange.value.step = step;
+          stdDevRange.value.numSteps = numSteps;
+
+          // otherwise, spawn a new analysis job with the provided parameters as options
+          // DEPENDS: shapeworks offline analysis command update
+        },
       }
 
       const init = () => {
@@ -135,14 +159,17 @@
       if (animate) {
         watch(animate, methods.triggerAnimate)
       }
+
       return {
         methods,
         modeOptions,
         mode,
         stdDev,
         stdDevRange,
+        params,
         pcaInfo,
         animate,
+        menu,
       };
     },
   });
@@ -157,18 +184,83 @@
         item-text="mode"
         item-value="mode"
       />
-      <v-slider
-        v-model="stdDev"
-        :min="stdDevRange.min"
-        :max="stdDevRange.max"
-        :step="stdDevRange.step"
-        ticks="always"
-        tick-size="4"
-        thumb-label
-        track-color="#aaa"
-        track-fill-color="#aaa"
-        label="Std. Devs. from Mean"
-      />
+      <v-row justify="space-between">
+        <v-slider
+          v-model="stdDev"
+          :min="stdDevRange.min"
+          :max="stdDevRange.max"
+          :step="stdDevRange.step"
+          ticks="always"
+          tick-size="4"
+          thumb-label
+          track-color="#aaa"
+          track-fill-color="#aaa"
+          label="Std. Devs. from Mean"
+        />
+        <v-menu
+          v-model="menu"
+          :close-on-content-click="false"
+          bottom
+          right
+        >
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              dark
+              icon
+              v-bind="attrs"
+              v-on="on"
+            >
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list style="margin: auto">
+            <v-list-item>
+              <v-list-item-content>
+                  <v-text-field
+                    v-model="params.stdDevRange.min"
+                    type="number"
+                    step="1.0"
+                    min="-10.0"
+                    max="9.0"
+                    label="Std. Dev. Min"
+                    hide-details
+                  />
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
+                  <v-text-field
+                    v-model="params.stdDevRange.max"
+                    type="number"
+                    step="1.0"
+                    max="10.0"
+                    min="-9.0"
+                    label="Std. Dev. Max"
+                    hide-details
+                  />
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
+                  <v-text-field
+                    v-model="params.stdDevRange.numSteps"
+                    type="number"
+                    step="1.0"
+                    min="1.0"
+                    max="100.0"
+                    label="Number of steps"
+                    hide-details
+                    @change="params.stdDevRange.step = (params.stdDevRange.max - params.stdDevRange.min) / params.stdDevRange.numSteps"
+                  />
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+          <div class="justifyAround" style="margin: auto">
+            <v-btn small color="secondary" @click="menu = false">Cancel</v-btn>
+            <v-btn small color="primary" @click="methods.submitParams(); menu = false;">{{(true) ? "Submit" : "Re-compute"}}</v-btn>
+          </div>
+        </v-menu>
+      </v-row>
       <v-row justify="center">
           <v-checkbox
               class="mt-0 mb-8 pt-0"
@@ -189,6 +281,9 @@
 </template>
 
 <style>
-
+  .justifyAround {
+    display: flex;
+    justify-content: space-around;
+  }
 </style>
   

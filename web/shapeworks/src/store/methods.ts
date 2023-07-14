@@ -23,6 +23,7 @@ import pointsReader from "@/reader/points";
 import generateMapper from "@/reader/mapper";
 import {
     abortTask,
+    analyzeProject,
     deleteTaskProgress,
     getDataset,
     getDatasets,
@@ -143,6 +144,14 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
             break;
     }
     return undefined;
+}
+
+export async function spawnAnalysisJob(params: {range: number, steps: number}): Promise<any> {
+    if (selectedProject.value) {
+        return (await analyzeProject(selectedProject.value.id, params))?.data
+    } else {
+        return undefined;
+    }
 }
 
 export async function spawnJobProgressPoll() {

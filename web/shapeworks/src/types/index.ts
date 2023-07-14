@@ -31,6 +31,12 @@ export interface AnalysisPCA {
     lambda_value: number,
 }
 
+export interface AnalysisParams {
+    range: number,
+    step: number,
+    numSteps: number,
+}
+
 export interface AnalysisMode {
     id: number,
     mode: number,

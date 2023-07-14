@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
-from typing import Dict
+from typing import Dict, List
 
 from celery import shared_task
 from django.conf import settings
@@ -80,6 +80,7 @@ def run_shapeworks_command(
     pre_command_function,
     post_command_function,
     progress_id,
+    args=[],
 ):
     user = User.objects.get(id=user_id)
     progress = models.TaskProgress.objects.get(id=progress_id)
@@ -121,6 +122,12 @@ def run_shapeworks_command(
                 full_command.append('--output=analysis.json')
             else:
                 full_command.append('--xmlconsole')
+
+            if (len(args) > 0):
+                print("ADDING ARGS", args)
+                full_command.extend(args)
+
+            print("Full command", full_command)
 
             with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
                 if process.stderr and process.stdout:
@@ -293,11 +300,11 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
         progress_id,
     )
 
-    analyze.delay(user_id, project_id, analysis_progress_id)
+    analyze.delay(user_id, project_id, analysis_progress_id, ['--range=2.0', '--steps=11'])
 
 
 @shared_task
-def analyze(user_id, project_id, progress_id):
+def analyze(user_id, project_id, progress_id, args: List[str] = []):
     def pre_command_function():
         # delete any previous results
         project = models.Project.objects.get(id=project_id)
@@ -344,4 +351,5 @@ def analyze(user_id, project_id, progress_id):
         pre_command_function,
         post_command_function,
         progress_id,
+        args,
     )

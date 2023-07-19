@@ -216,6 +216,7 @@ def groom(user_id, project_id, form_data, progress_id):
         pre_command_function,
         post_command_function,
         progress_id,
+        [],
     )
 
 
@@ -295,6 +296,7 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
         pre_command_function,
         post_command_function,
         progress_id,
+        [],
     )
 
     analyze.delay(user_id, project_id, analysis_progress_id, ['--range=2.0', '--steps=11'])

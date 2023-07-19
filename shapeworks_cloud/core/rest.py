@@ -106,6 +106,7 @@ class DatasetViewSet(BaseViewSet):
             dataset.id,
         )
         return Response(serializers.DatasetSerializer(dataset).data)
+
     @action(
         detail=True,
         url_path='subset',
@@ -368,8 +369,6 @@ class ProjectViewSet(BaseViewSet):
         params = request.data
         params = {k: str(v) for k, v in params.items()}
 
-        print("PARAMS", params)
-
         models.TaskProgress.objects.filter(name='analyze', project=project).delete()
 
         analysis_progress = models.TaskProgress.objects.create(name='analyze', project=project)
@@ -385,9 +384,7 @@ class ProjectViewSet(BaseViewSet):
 
         if len(params.keys()) > 0:
             for key in params.keys():
-                args.append(f"--{key}={params[key]}")
-
-        print("ARGS", args)
+                args.append(f'--{key}={params[key]}')
 
         analyze.delay(
             request.user.id,

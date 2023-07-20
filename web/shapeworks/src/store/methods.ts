@@ -130,9 +130,11 @@ export function jobAlreadyDone(action: string): Boolean {
 }
 
 export async function spawnJob(action: string, payload: Record<string, any>): Promise<any> {
+    console.log(payload)
     if (Object.keys(payload).every((key) => key.includes("section"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
+    console.log(payload)
     const projectId = selectedProject.value?.id;
     if (!projectId) return undefined
     switch (action) {
@@ -140,18 +142,12 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
             return (await groomProject(projectId, payload))?.data
         case 'optimize':
             return (await optimizeProject(projectId, payload))?.data
+        case 'analyze':
+            return (await analyzeProject(projectId, payload))?.data
         default:
             break;
     }
     return undefined;
-}
-
-export async function spawnAnalysisJob(params: {range: number, steps: number}): Promise<any> {
-    if (selectedProject.value) {
-        return (await analyzeProject(selectedProject.value.id, params))?.data
-    } else {
-        return undefined;
-    }
 }
 
 export async function spawnJobProgressPoll() {

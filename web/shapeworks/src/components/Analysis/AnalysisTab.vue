@@ -25,7 +25,7 @@ export default defineComponent({
     },
     setup() {
         const openTab = ref(AnalysisTabs.PCA);
-        const message = ref<string>();
+        const message = ref<string>("");
         const currentlyCaching = ref<boolean>(false);
 
         const pca = ref();

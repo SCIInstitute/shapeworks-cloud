@@ -10,7 +10,7 @@
     currentTasks,
     meanAnalysisFileParticles,
     selectedProject,
-    spawnAnalysisJob,
+    spawnJob,
     spawnJobProgressPoll
   } from '@/store';
   
@@ -25,7 +25,7 @@
 
       const menu = ref();
 
-      const message: Ref | undefined = inject('message');
+      const message: Ref = inject('message') || ref('');
       const showConfirmation = ref(false);
 
       let step = 0;
@@ -142,13 +142,13 @@
         async submitParams() {
           const { range, numSteps } = params.value;
 
-          if (!selectedProject.value || message === undefined) return;
+          if (!selectedProject.value) return;
 
           if (!currentTasks.value[selectedProject.value.id]) {
               currentTasks.value[selectedProject.value.id] = {}
           }
 
-          const taskIds = await spawnAnalysisJob({range, steps: numSteps});
+          const taskIds = await spawnJob("analyze", {"section_1": {range, steps: numSteps}});
 
           if(!taskIds || taskIds.length === 0) {
               message.value = `Failed to submit analysis job.`

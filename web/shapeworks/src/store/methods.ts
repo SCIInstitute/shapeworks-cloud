@@ -130,11 +130,9 @@ export function jobAlreadyDone(action: string): Boolean {
 }
 
 export async function spawnJob(action: string, payload: Record<string, any>): Promise<any> {
-    console.log(payload)
     if (Object.keys(payload).every((key) => key.includes("section"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
-    console.log(payload)
     const projectId = selectedProject.value?.id;
     if (!projectId) return undefined
     switch (action) {

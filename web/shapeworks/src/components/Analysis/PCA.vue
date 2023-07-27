@@ -148,7 +148,7 @@
               currentTasks.value[selectedProject.value.id] = {}
           }
 
-          const taskIds = await spawnJob("analyze", {"section_1": {range, steps: numSteps}});
+          const taskIds = await spawnJob("analyze", {"analysis": {range, steps: numSteps}}); // Record<string, any>
 
           if(!taskIds || taskIds.length === 0) {
               message.value = `Failed to submit analysis job.`

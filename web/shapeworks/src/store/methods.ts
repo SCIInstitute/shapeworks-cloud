@@ -1,4 +1,4 @@
-import { CacheComparison, Project, Task } from "@/types";
+import { AnalysisParams, CacheComparison, Project, Task } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -130,7 +130,7 @@ export function jobAlreadyDone(action: string): Boolean {
 }
 
 export async function spawnJob(action: string, payload: Record<string, any>): Promise<any> {
-    if (Object.keys(payload).every((key) => key.includes("section"))) {
+    if (Object.keys(payload).every((key) => key.includes("section") || key.includes("analysis"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
     const projectId = selectedProject.value?.id;
@@ -141,7 +141,7 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
         case 'optimize':
             return (await optimizeProject(projectId, payload))?.data
         case 'analyze':
-            return (await analyzeProject(projectId, payload))?.data
+            return (await analyzeProject(projectId, payload as AnalysisParams))?.data
         default:
             break;
     }

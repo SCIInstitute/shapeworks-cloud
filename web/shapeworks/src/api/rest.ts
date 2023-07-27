@@ -1,4 +1,4 @@
-import { DataObject, Dataset, Project, Subject } from "@/types";
+import { AnalysisParams, DataObject, Dataset, Project, Subject } from "@/types";
 import { apiClient } from "./auth";
 import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
@@ -139,7 +139,7 @@ export async function optimizeProject(projectId: number, formData: Record<string
     return (await apiClient.post(`/projects/${projectId}/optimize/`, formData))
 }
 
-export async function analyzeProject(projectId: number, params: Record<string, any>){
+export async function analyzeProject(projectId: number, params: AnalysisParams){
     return (await apiClient.post(`/projects/${projectId}/analyze/`, params))
 }
 

@@ -15,8 +15,8 @@ import logging
 from pathlib import Path
 from urllib.parse import unquote
 
-from pydantic import AnyHttpUrl, FilePath, ValidationError, parse_obj_as
-from pydantic.fields import ModelField
+from pydantic.v1 import AnyHttpUrl, FilePath, ValidationError, parse_obj_as
+from pydantic.v1.fields import ModelField
 import requests
 
 from ..api import current_session

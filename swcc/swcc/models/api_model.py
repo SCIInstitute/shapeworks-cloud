@@ -13,8 +13,8 @@ except ImportError:
         Union,
     )
 
-from pydantic import BaseModel, validator
-from pydantic.fields import ModelField
+from pydantic.v1 import BaseModel, validator
+from pydantic.v1.fields import ModelField
 import requests
 
 from ..api import current_session

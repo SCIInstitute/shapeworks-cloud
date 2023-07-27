@@ -25,7 +25,7 @@ export default defineComponent({
     },
     setup() {
         const openTab = ref(AnalysisTabs.PCA);
-        const message = ref<string>();
+        const message = ref<string>("");
         const currentlyCaching = ref<boolean>(false);
 
         const pca = ref();
@@ -33,6 +33,7 @@ export default defineComponent({
 
         // provide mutable ref for use in child components
         provide('currentlyCaching', currentlyCaching);
+        provide('message', message);
 
         const taskData = computed(
             () => {
@@ -77,7 +78,7 @@ export default defineComponent({
 
 <template>
     <div v-if="taskData" class="messages-box pa-3">
-        Running analysis after optimization step...
+        Running analysis...
         <div v-if="taskData.error">{{ taskData.error }}</div>
         <v-progress-linear v-else :value="taskData.percent_complete"/>
         <br />

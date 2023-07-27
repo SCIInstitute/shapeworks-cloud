@@ -1,7 +1,18 @@
 <script lang="ts">
-  import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
   import { computed, defineComponent, ref, Ref, watch, inject } from '@vue/composition-api';
   import { AnalysisTabs } from './util';
+  import { AnalysisParams } from '@/types';
+  import { 
+    analysis,
+    analysisFileShown,
+    cacheAllComparisons,
+    currentAnalysisFileParticles,
+    currentTasks,
+    meanAnalysisFileParticles,
+    selectedProject,
+    spawnJob,
+    spawnJobProgressPoll
+  } from '@/store';
   
   export default defineComponent({
     props: {
@@ -12,6 +23,11 @@
       const mode = ref(1);
       const stdDev = ref(0);
 
+      const menu = ref();
+
+      const message: Ref = inject('message') || ref('');
+      const showConfirmation = ref(false);
+
       let step = 0;
       let intervalId: number;
 
@@ -19,43 +35,48 @@
       const animate = ref<boolean>(false);
     
       const modeOptions = computed(() => {
-          return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
+        return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
       })
 
       const currMode = computed(() => {
-          return analysis.value?.modes.find((m) => m.mode == mode.value)
+        return analysis.value?.modes.find((m) => m.mode == mode.value)
       })
 
       const currPCA = computed(() => {
-          return currMode.value?.pca_values.find(
-              p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
-          )
+        return currMode.value?.pca_values.find(
+            p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
+        )
       })
 
       const stdDevRange = computed(() => {
-          if (!analysis.value || !currMode.value) return [0, 0, 0]
-          const pcaValues = currMode.value.pca_values.map(p => p.pca_value)
-          const min =  Math.min(...pcaValues);
-          const max =  Math.max(...pcaValues)
-          const step = (max - min) / pcaValues.length
-          return [
-              min, max, step
-          ]
+        if (!analysis.value || !currMode.value) return {range: 0.0, step: 0.0, numSteps: 0}
+        const pcaValues = currMode.value.pca_values.map(p => Math.round(p.pca_value * 100) / 100)
+        const min =  Math.min(...pcaValues);
+        const max =  Math.max(...pcaValues);
+        const range = max;
+        const step = (max - min) / pcaValues.length;
+        const numSteps = Math.round((max - min) / step) + 1;
+
+        return {
+            range, step, numSteps
+        }
       })
 
+      const params = ref<AnalysisParams>(stdDevRange.value)
+
       const pcaInfo = computed(() => {
-          return {
-              headers: [
-                  {text: 'key', value: 'key'},
-                  {text: 'value', value: 'value', align: 'end'}
-              ],
-              items: [
-                  {key: 'Lambda', value: currPCA.value?.lambda_value || 0},
-                  {key: 'Eigenvalue', value: currMode.value?.eigen_value},
-                  {key: 'Explained Variance', value: currMode.value?.explained_variance, class: 'percentage'},
-                  {key: 'Cumulative Explained Variance', value: currMode.value?.cumulative_explained_variance, class:'percentage'},
-              ],
-          }
+        return {
+            headers: [
+                {text: 'key', value: 'key'},
+                {text: 'value', value: 'value', align: 'end'}
+            ],
+            items: [
+                {key: 'Lambda', value:currPCA.value ? Math.round(currPCA.value.lambda_value * 100) / 100 : 0},
+                {key: 'Eigenvalue', value: currMode.value ? Math.round(currMode.value.eigen_value * 100) / 100 : 0},
+                {key: 'Explained Variance', value: currMode.value ? Math.round(currMode.value.explained_variance * 100) / 100 : 0, class: 'percentage'},
+                {key: 'Cumulative Explained Variance', value: currMode.value ? Math.round(currMode.value.cumulative_explained_variance * 100) / 100 : 0, class:'percentage'},
+            ],
+        }
       })
 
       const methods = {
@@ -84,7 +105,9 @@
         },
         animateSlider() {
             if (props.openTab === AnalysisTabs.PCA) { // PCA tab animate
-                const [ min, max ] = stdDevRange.value;
+                const { range } = stdDevRange.value;
+                const min = range * -1;
+                const max = range;
 
                 if (stdDev.value <= min) {
                   stdDev.value = min;
@@ -102,7 +125,7 @@
             if (currMode.value === undefined || animate === undefined) return; 
 
             if (animate.value && currentlyCaching) {
-              step = stdDevRange.value[2];
+              step = stdDevRange.value.step;
               currentlyCaching.value = true;
               await methods.cacheAllPCAComparisons();
               currentlyCaching.value = false;
@@ -114,7 +137,29 @@
         },
         stopAnimating() {
           animate.value = false;
-        }
+        },
+        // spawn an analysis job when params are changed
+        async submitParams() {
+          const { range, numSteps } = params.value;
+
+          if (!selectedProject.value) return;
+
+          if (!currentTasks.value[selectedProject.value.id]) {
+              currentTasks.value[selectedProject.value.id] = {}
+          }
+
+          const taskIds = await spawnJob("analyze", {"analysis": {range, steps: numSteps}}); // Record<string, any>
+
+          if(!taskIds || taskIds.length === 0) {
+              message.value = `Failed to submit analysis job.`
+              setTimeout(() => message.value = '', 10000)
+          } else {
+              message.value = `Successfully submitted analysis job. Awaiting results...`
+              currentTasks.value[selectedProject.value.id] = taskIds
+              
+              spawnJobProgressPoll()
+          }
+        },
       }
 
       const init = () => {
@@ -135,14 +180,18 @@
       if (animate) {
         watch(animate, methods.triggerAnimate)
       }
+
       return {
         methods,
         modeOptions,
         mode,
         stdDev,
         stdDevRange,
+        params,
         pcaInfo,
         animate,
+        menu,
+        showConfirmation
       };
     },
   });
@@ -157,18 +206,74 @@
         item-text="mode"
         item-value="mode"
       />
-      <v-slider
-        v-model="stdDev"
-        :min="stdDevRange[0]"
-        :max="stdDevRange[1]"
-        :step="stdDevRange[2]"
-        ticks="always"
-        tick-size="4"
-        thumb-label
-        track-color="#aaa"
-        track-fill-color="#aaa"
-        label="Std. Devs. from Mean"
-      />
+      <v-row justify="space-between">
+        <v-slider
+          v-model="stdDev"
+          :min="stdDevRange.range * -1"
+          :max="stdDevRange.range"
+          :step="stdDevRange.step"
+          ticks="always"
+          tick-size="4"
+          thumb-label
+          track-color="#aaa"
+          track-fill-color="#aaa"
+          label="Std. Devs. from Mean"
+        >
+          <template v-slot:thumb-label>
+            {{ Math.round(stdDev * 100) / 100 }}
+          </template>
+        </v-slider>
+        <v-menu
+          v-model="menu"
+          :close-on-content-click="false"
+          bottom
+          right
+        >
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              dark
+              icon
+              v-bind="attrs"
+              v-on="on"
+            >
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list style="margin: auto">
+            <v-list-item>
+              <v-list-item-content>
+                  <v-text-field
+                    v-model="params.range"
+                    type="number"
+                    step="1.0"
+                    max="10.0"
+                    min="1.0"
+                    label="Std. Dev. Range"
+                    hide-details
+                  />
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
+                  <v-text-field
+                    v-model="params.numSteps"
+                    type="number"
+                    step="1.0"
+                    min="1.0"
+                    max="100.0"
+                    label="Number of steps"
+                    hide-details
+                    @change="params.step = (params.range) / params.numSteps"
+                  />
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+          <div class="justifyAround" style="margin: auto">
+            <v-btn small color="secondary" @click="menu = false">Cancel</v-btn>
+            <v-btn small color="primary" @click="showConfirmation = true;">Submit</v-btn>
+          </div>
+        </v-menu>
+      </v-row>
       <v-row justify="center">
           <v-checkbox
               class="mt-0 mb-8 pt-0"
@@ -184,11 +289,49 @@
         item-class="class"
         hide-default-header
         hide-default-footer
-      />
+      />    
+      <v-dialog
+      v-model="showConfirmation"
+      width="500"
+      >
+      <v-card>
+        <v-card-title>
+        Confirmation
+        </v-card-title>
+
+        <v-card-text>
+        Are you sure you want to re-run the analysis job?
+        The previous results will be overwritten.
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+            text
+            @click="() => {showConfirmation = false}"
+        >
+            Cancel
+        </v-btn>
+        <v-btn
+            color="primary"
+            text
+            @click="() => {methods.submitParams(); showConfirmation = false;}"
+        >
+            Yes, Rerun
+        </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     </div>
+
 </template>
 
 <style>
-
+  .justifyAround {
+    display: flex;
+    justify-content: space-around;
+  }
 </style>
   

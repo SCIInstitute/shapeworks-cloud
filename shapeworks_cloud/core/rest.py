@@ -16,7 +16,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from .tasks import groom, optimize
+from .tasks import analyze, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
 if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
@@ -356,6 +356,50 @@ class ProjectViewSet(BaseViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(
+        detail=True,
+        url_path='analyze',
+        url_name='analyze',
+        methods=['POST'],
+    )
+    def analyze(self, request, **kwargs):
+        project = self.get_object()
+
+        params = request.data
+        params = {k: str(v) for k, v in params.items()}
+
+        models.TaskProgress.objects.filter(name='analyze', project=project).delete()
+
+        analysis_progress = models.TaskProgress.objects.create(name='analyze', project=project)
+
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Analyze Project',
+            project.id,
+        )
+
+        args = []
+
+        if len(params.keys()) > 0:
+            for key in params.keys():
+                args.append(f'--{key}={params[key]}')
+
+        analyze.delay(
+            request.user.id,
+            project.id,
+            analysis_progress.id,
+            args,
+        )
+
+        return Response(
+            data={
+                'analyze_task': serializers.TaskProgressSerializer(analysis_progress).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+        pass
 
 
 class GroomedSegmentationViewSet(BaseViewSet):

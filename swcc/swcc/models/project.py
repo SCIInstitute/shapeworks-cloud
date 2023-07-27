@@ -20,7 +20,7 @@ except ImportError:
         Literal,
     )
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..api import current_session
 from .api_model import ApiModel

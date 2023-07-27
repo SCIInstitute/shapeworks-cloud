@@ -1,4 +1,4 @@
-import { CacheComparison, Project, Task } from "@/types";
+import { AnalysisParams, CacheComparison, Project, Task } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -23,6 +23,7 @@ import pointsReader from "@/reader/points";
 import generateMapper from "@/reader/mapper";
 import {
     abortTask,
+    analyzeProject,
     deleteTaskProgress,
     getDataset,
     getDatasets,
@@ -129,7 +130,7 @@ export function jobAlreadyDone(action: string): Boolean {
 }
 
 export async function spawnJob(action: string, payload: Record<string, any>): Promise<any> {
-    if (Object.keys(payload).every((key) => key.includes("section"))) {
+    if (Object.keys(payload).every((key) => key.includes("section") || key.includes("analysis"))) {
         payload = Object.assign({}, ...Object.values(payload))
     }
     const projectId = selectedProject.value?.id;
@@ -139,6 +140,8 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
             return (await groomProject(projectId, payload))?.data
         case 'optimize':
             return (await optimizeProject(projectId, payload))?.data
+        case 'analyze':
+            return (await analyzeProject(projectId, payload as AnalysisParams))?.data
         default:
             break;
     }

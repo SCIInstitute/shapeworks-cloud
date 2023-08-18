@@ -45,15 +45,21 @@ export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<num
 
 export const analysis = ref<Analysis>();
 
-export const layersShown = ref<string[]>(["Original"])
-
-export const showDifferenceFromMeanMode = ref<Boolean>(false);
-
 export const analysisFileShown = ref<string>();
 
 export const currentAnalysisFileParticles = ref<string>();
 
 export const meanAnalysisFileParticles = ref<string>();
+
+export const layersShown = ref<string[]>(["Original"])
+
+export const goodBadAngles = ref<number[][]>();
+
+export const goodBadMaxAngle = ref<number>(45);
+
+export const showGoodBadParticlesMode = ref<boolean>(false);
+
+export const showDifferenceFromMeanMode = ref<boolean>(false);
 
 export const cachedMarchingCubes = ref({})
 

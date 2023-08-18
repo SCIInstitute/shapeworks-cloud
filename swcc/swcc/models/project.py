@@ -300,6 +300,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         modes=modes,
                         charts=contents['charts'],
                         groups=groups_cache,
+                        good_bad_angles=contents['good_bad_angles'],
                     ).create()
                 else:
                     return CachedAnalysis(
@@ -308,6 +309,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         modes=modes,
                         charts=contents['charts'],
                         groups=[],
+                        good_bad_angles=contents['good_bad_angles'],
                     ).create()
 
 

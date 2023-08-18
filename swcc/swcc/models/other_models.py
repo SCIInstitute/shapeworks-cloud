@@ -139,6 +139,7 @@ class CachedAnalysis(ApiModel):
     modes: List[CachedAnalysisMode]
     charts: List[dict]
     groups: Optional[List[CachedAnalysisGroup]]
+    good_bad_angles: List[list]
 
 
 from .project import Project  # noqa: E402

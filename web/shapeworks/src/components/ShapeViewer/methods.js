@@ -19,7 +19,8 @@ import {
     layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles,
-    showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList, cacheComparison, calculateComparisons
+    showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList, cacheComparison, calculateComparisons,
+    showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
 
 
@@ -37,6 +38,11 @@ export const COLORS = [
     [106, 61, 154],
     [255, 255, 153],
     [177, 89, 40],
+];
+
+export const GOOD_BAD_COLORS = [
+    [0, 255, 0],
+    [255, 0, 0],
 ];
 
 export default {
@@ -127,7 +133,7 @@ export default {
             this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
         })
     },
-    createColorFilter(landmarks = false) {
+    createColorFilter(landmarks = false, goodBad = false) {
         const filter = vtkCalculator.newInstance()
         filter.setFormula({
             getArrays() {
@@ -156,6 +162,16 @@ export default {
                             c = [0, 0, 0]
                         }
                     }
+
+                    if (goodBad && analysisFileShown.value) {
+                        // TODO: determine domain index for each particle array
+                        // MULTIDOMAIN FIX
+                        if (goodBadAngles.value[0][i] < goodBadMaxAngle.value) {
+                            c = GOOD_BAD_COLORS[0] // green
+                        } else {
+                            c = GOOD_BAD_COLORS[1] // red
+                        }
+                    }
                     color[3 * i] = c[0];
                     color[3 * i + 1] = c[1];
                     color[3 * i + 2] = c[2];
@@ -182,12 +198,13 @@ export default {
             scaleFactor: size,
         });
         const actor = vtkActor.newInstance();
-        const filter = this.createColorFilter(landmarks);
+        const filter = this.createColorFilter(landmarks, showGoodBadParticlesMode.value);
 
         filter.setInputData(points, 0);
         mapper.setInputConnection(filter.getOutputPort(), 0);
         mapper.setInputConnection(source.getOutputPort(), 1);
         actor.setMapper(mapper);
+
         renderer.addActor(actor);
         this.vtk.pointMappers.push(mapper);
     },

@@ -37,7 +37,7 @@ setup(
         'openpyxl',
         'packaging',
         'pandas',
-        'pydantic',
+        'pydantic>=2',  # Using API from v1, but with a specific import from later versions
         'pyxdg',
         'requests',
         'requests-toolbelt',

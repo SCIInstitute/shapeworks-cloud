@@ -18,8 +18,8 @@ Using `docker-compose` is the simplest configuration to start with, so it is a p
 
 ### Initial Setup
 1. Run `docker-compose run --rm django ./manage.py migrate`
-1. Run `docker-compose run --rm django ./manage.py makeclient`
 2. Run `docker-compose run --rm django ./manage.py createsuperuser`
+3. Run `docker-compose run --rm django ./manage.py makeclient`
    and follow the prompts to create your own user
 
 ### Example Data

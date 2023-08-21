@@ -1,6 +1,6 @@
 <script lang="ts">
 import { setDatasetThumbnail, setProjectThumbnail } from '@/api/rest';
-import { computed, defineComponent, ref, watch } from '@vue/composition-api';
+import { computed, defineComponent, ref, watch } from 'vue';
 import {
     particleSize,
     layers,

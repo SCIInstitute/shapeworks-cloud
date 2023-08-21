@@ -1,7 +1,7 @@
 <script lang="ts">
 import { groupBy, shortDateString, shortFileName } from '../helper';
 import { getDataObjectsForSubject } from '@/api/rest';
-import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
+import { defineComponent, onMounted, ref, watch } from 'vue';
 import { Subject } from '@/types';
 import { getSubjectsForDataset } from '@/api/rest'
 import {

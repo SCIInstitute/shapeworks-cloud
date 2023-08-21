@@ -114,6 +114,8 @@ export interface Subject {
     dataset: number,
     created: string,
     modified: string,
+    groups: string[],
+    showDetails: boolean,
 }
 
 export interface DataObject {

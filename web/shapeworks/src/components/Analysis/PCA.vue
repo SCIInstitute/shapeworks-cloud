@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { computed, defineComponent, ref, Ref, watch, inject } from '@vue/composition-api';
+  import { computed, defineComponent, ref, Ref, watch, inject } from 'vue';
   import { AnalysisTabs } from './util';
   import { AnalysisParams } from '@/types';
   import { 
@@ -31,9 +31,9 @@
       let step = 0;
       let intervalId: number;
 
-      const currentlyCaching: Ref | undefined = inject('currentlyCaching'); 
+      const currentlyCaching: Ref | undefined = inject('currentlyCaching');
       const animate = ref<boolean>(false);
-    
+
       const modeOptions = computed(() => {
         return analysis.value?.modes.sort((a, b) => a.mode - b.mode)
       })
@@ -122,7 +122,7 @@
             }
         },
         async triggerAnimate() {
-            if (currMode.value === undefined || animate === undefined) return; 
+            if (currMode.value === undefined || animate === undefined) return;
 
             if (animate.value && currentlyCaching) {
               step = stdDevRange.value.step;
@@ -196,7 +196,7 @@
     },
   });
 </script>
-  
+
 <template>
     <div>
       <v-select
@@ -334,4 +334,3 @@
     justify-content: space-around;
   }
 </style>
-  

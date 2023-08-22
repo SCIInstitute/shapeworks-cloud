@@ -17,10 +17,18 @@ For admins, visit [https://app.shapeworks-cloud.org/admin](https://app.shapework
 Using `docker-compose` is the simplest configuration to start with, so it is a prerequisite for this quick start.
 
 ### Initial Setup
-1. Run `docker-compose run --rm django ./manage.py migrate`
-2. Run `docker-compose run --rm django ./manage.py createsuperuser`
-3. Run `docker-compose run --rm django ./manage.py makeclient`
-   and follow the prompts to create your own user
+1. Run `docker-compose build`
+2. Run `docker-compose run --rm django ./manage.py migrate`
+3. Run `docker-compose run --rm django ./manage.py createsuperuser`
+4. Run `docker-compose run --rm django ./manage.py makeclient`
+
+
+### Run Application
+1. Run `docker-compose up`
+2. Access the site, starting at http://localhost:8081/
+3. Access admin console at http://localhost:8000/admin/
+4. When finished, use `Ctrl+C`
+
 
 ### Example Data
 The ShapeWorks Cloud Client ([SWCC](swcc)) is a Python library to interact with a ShapeWorks Cloud server. You can use SWCC to upload some example data.
@@ -32,12 +40,6 @@ The ShapeWorks Cloud Client ([SWCC](swcc)) is a Python library to interact with 
 2. Run `cd swcc/examples`
 3. Run `python upload_examples.py`
 
-
-### Run Application
-1. Run `docker-compose up`
-2. Access the site, starting at http://localhost:8081/
-2. Access admin console at http://localhost:8000/admin/
-3. When finished, use `Ctrl+C`
 
 ### Application Maintenance
 Occasionally, new package dependencies or schema changes will necessitate maintenance. To non-destructively update your development stack at any time:

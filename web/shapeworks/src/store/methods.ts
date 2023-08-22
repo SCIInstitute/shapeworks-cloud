@@ -17,6 +17,7 @@ import {
      cachedParticleComparisonVectors,
      meanAnalysisFileParticles,
      allDatasets,
+     goodBadAngles,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -204,6 +205,11 @@ export async function fetchJobResults(taskName: string) {
             layerName = 'Reconstructed'
             loadFunction = loadReconstructedSamplesForProject
             analysis.value = refreshedProject?.last_cached_analysis
+            if (analysis.value) {
+                if (analysis.value.good_bad_angles) {
+                    goodBadAngles.value = analysis.value.good_bad_angles
+                }
+            }
             break;
     }
     if (layerName && loadFunction) {
@@ -238,6 +244,11 @@ export async function switchTab(tabName: string) {
         case 'analyze':
             if (refreshedProject && !currentTasks.value[selectedProject.value.id]) {
                 analysis.value = refreshedProject.last_cached_analysis
+                if (analysis.value) {
+                    if (analysis.value.good_bad_angles) {
+                        goodBadAngles.value = analysis.value.good_bad_angles
+                    }
+                }
             }
     }
 }

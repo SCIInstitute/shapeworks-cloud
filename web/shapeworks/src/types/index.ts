@@ -69,6 +69,7 @@ export interface Analysis {
     created: string,
     modified: string,
     charts: AnalysisChart[],
+    good_bad_angles: number[][],
     groups: AnalysisGroup[],
     mean_shape: string,
     mean_particles: string;

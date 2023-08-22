@@ -13,7 +13,9 @@ import {
     allDatasets,
     allProjectsForDataset,
     showDifferenceFromMeanMode,
-    analysisFileShown
+    analysisFileShown,
+    showGoodBadParticlesMode,
+goodBadMaxAngle
 } from '@/store';
 
 
@@ -94,6 +96,8 @@ export default defineComponent({
             context.emit("change")
         }
         watch(showDifferenceFromMeanMode, resetView)
+        watch(showGoodBadParticlesMode, resetView)
+        watch(goodBadMaxAngle, resetView)
 
         const thumbnailTarget = computed(() => {
             if(layersShown.value.length === 1 && layersShown.value[0] === "Original") {

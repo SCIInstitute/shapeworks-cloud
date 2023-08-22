@@ -1,17 +1,16 @@
 from django.contrib.auth.models import User
-from oauth2_provider.models import Application
-from django.core.management.base import BaseCommand, CommandError
 from django.contrib.sites.models import Site
-
+from django.core.management.base import BaseCommand, CommandError
+from oauth2_provider.models import Application
 
 DEFAULT_REDIRECT_URI = 'http://localhost:8081/'
 
 
 class Command(BaseCommand):
-    help = "Closes the specified poll for voting"
+    help = 'Creates a client Application object for authentication purposes.'
 
     def add_arguments(self, parser):
-        parser.add_argument("-u", "--uri", type=str)
+        parser.add_argument('-u', '--uri', type=str)
 
     def handle(self, uri, **options):
         if not uri:
@@ -28,7 +27,6 @@ class Command(BaseCommand):
                 raise CommandError(
                     'The client already exists. You can administer it from the admin console.'
                 )
-                return
             application = Application(
                 name='client-app',
                 client_secret='',
@@ -45,7 +43,8 @@ class Command(BaseCommand):
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'Restart docker containers to complete change. Client will be available at {uri}.'
+                    f'Restart docker containers to complete change. \
+                        Client will be available at {uri}.'
                 )
             )
         except User.DoesNotExist:

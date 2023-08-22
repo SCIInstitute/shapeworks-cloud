@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref, computed } from '@vue/composition-api'
+import { defineComponent, ref, computed } from 'vue'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'

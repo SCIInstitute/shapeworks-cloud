@@ -1,5 +1,5 @@
 <script>
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, ref } from 'vue';
 import { createProject, editProject } from '../api/rest'
 import {
     selectedDataset,

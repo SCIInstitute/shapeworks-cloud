@@ -1,10 +1,10 @@
 <script lang="ts">
   import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
 import { AnalysisGroup } from '@/types';
-import { Ref, computed, defineComponent, inject, ref, watch } from '@vue/composition-api';
+import { Ref, computed, defineComponent, inject, ref, watch } from 'vue';
 
 import { AnalysisTabs } from './util';
-  
+
   export default defineComponent({
     props: {
       currentTab: String,
@@ -19,7 +19,7 @@ import { AnalysisTabs } from './util';
       const prevPairing = ref<{left: string, right: string}>({left:"", right:""}); // stores the previously selected pairing
 
       const currentlyCaching: Ref | undefined = inject('currentlyCaching');
-      const animate = ref<boolean>(false); 
+      const animate = ref<boolean>(false);
 
       let step = 0.1;
       let intervalId: number;
@@ -33,7 +33,7 @@ import { AnalysisTabs } from './util';
         updateCurrGroup() {
             currGroup.value = analysis.value?.groups.find((g) => {
                 if (g.name === groupSet.value) {
-                    if ((g.group1 === currPairing.value.left && g.group2 === currPairing.value.right) 
+                    if ((g.group1 === currPairing.value.left && g.group2 === currPairing.value.right)
                         || (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left)) { // if the groups pairings match the selected pairings
                         if (!methods.pairingIsInverted(g))  { // in-order group pairings
                             if (g.ratio === groupRatio.value) {
@@ -67,8 +67,8 @@ import { AnalysisTabs } from './util';
                 if (currPairing.value.right === prevPairing.value.right) {
                     currPairing.value.right = prevPairing.value.left;
                 }
-            }   
-            
+            }
+
             prevPairing.value.left = currPairing.value.left;
             prevPairing.value.right = currPairing.value.right;
 
@@ -136,9 +136,9 @@ import { AnalysisTabs } from './util';
           animate.value = false;
         }
       };
-  
-      const allGroupSets = computed(() => { 
-          return analysis.value?.groups.map((g) => g.name); 
+
+      const allGroupSets = computed(() => {
+          return analysis.value?.groups.map((g) => g.name);
       })
 
       // get all possible unique group pairings
@@ -153,7 +153,7 @@ import { AnalysisTabs } from './util';
         })
 
         watch(groupSet, () => {
-            methods.setDefaultPairing(); 
+            methods.setDefaultPairing();
             methods.updateGroupFileShown();
             animate.value = false;
         })
@@ -167,7 +167,7 @@ import { AnalysisTabs } from './util';
         if (animate) {
             watch(animate, methods.triggerAnimate)
         }
-        
+
       return {
         methods,
         groupRatio,
@@ -183,7 +183,7 @@ import { AnalysisTabs } from './util';
     },
   });
 </script>
-  
+
 <template>
     <div>
       <v-select
@@ -194,8 +194,8 @@ import { AnalysisTabs } from './util';
           item-value="set"
       />
       <v-divider></v-divider>
-      <v-row 
-          align="center" 
+      <v-row
+          align="center"
           justify="center"
       >
           <v-col>
@@ -247,4 +247,3 @@ import { AnalysisTabs } from './util';
 <style>
 
 </style>
-  

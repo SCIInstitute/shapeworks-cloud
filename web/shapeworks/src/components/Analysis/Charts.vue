@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api'
+import { defineComponent } from 'vue'
 import { use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
 import { LineChart } from 'echarts/charts';
@@ -46,19 +46,19 @@ export default defineComponent({
     },
     setup(props) {
       const data = {};
-  
+
       const methods = {
         generateChart: (index: number) => {
             return lineChartOptions(props.charts[index] as AnalysisChart);
         }
       };
-  
+
       const computed = {};
-  
+
       const init = () => {};
-  
+
       init();
-  
+
       return {
         data,
         methods,
@@ -67,7 +67,7 @@ export default defineComponent({
     },
 });
 </script>
-  
+
 <template>
     <div v-if="charts.length > 0">
       <v-chart class="chart" v-for="chart, index in charts" :key="chart.title" :option="methods.generateChart(index)" />
@@ -137,4 +137,3 @@ export default defineComponent({
       border: 1px solid #333333;
   }
 </style>
-  

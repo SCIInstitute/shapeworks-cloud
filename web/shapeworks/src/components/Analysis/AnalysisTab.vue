@@ -6,7 +6,7 @@ import {
     selectedProject,
     analysisExpandedTab,
 } from '@/store'
-import { defineComponent, ref, computed, watch, provide } from '@vue/composition-api'
+import { defineComponent, ref, computed, watch, provide } from 'vue'
 import Charts from './Charts.vue'
 import Groups from './Groups.vue'
 import Particles from './Particles.vue'

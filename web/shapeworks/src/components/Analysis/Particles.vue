@@ -15,9 +15,6 @@ export default defineComponent({
         if (parseFloat(angle)) {
           goodBadMaxAngle.value = parseFloat(angle);
         }
-        else {
-          console.log(angle)
-        }
       }
 
       return {
@@ -52,8 +49,3 @@ export default defineComponent({
         />
     </div>
 </template>
-
-<style>
-  
-</style>
-  

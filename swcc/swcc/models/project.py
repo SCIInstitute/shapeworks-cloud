@@ -275,8 +275,8 @@ class ProjectFileIO(BaseModel, FileIO):
                 if mean_particles_path:
                     mean_particles = analysis_file_location.parent / Path(mean_particles_path)
 
+                groups_cache = []
                 if contents['groups']:
-                    groups_cache = []
                     for group in contents['groups']:
                         for values in group['values']:
                             for i in range(0, len(values['meshes'])):
@@ -294,23 +294,14 @@ class ProjectFileIO(BaseModel, FileIO):
                                 ).create()
 
                                 groups_cache.append(cag)
-                    return CachedAnalysis(
-                        mean_shape=analysis_file_location.parent / Path(mean_shape_path),
-                        mean_particles=mean_particles,
-                        modes=modes,
-                        charts=contents['charts'],
-                        groups=groups_cache,
-                        good_bad_angles=contents['good_bad_angles'],
-                    ).create()
-                else:
-                    return CachedAnalysis(
-                        mean_shape=analysis_file_location.parent / Path(mean_shape_path),
-                        mean_particles=mean_particles,
-                        modes=modes,
-                        charts=contents['charts'],
-                        groups=[],
-                        good_bad_angles=contents['good_bad_angles'],
-                    ).create()
+                return CachedAnalysis(
+                    mean_shape=analysis_file_location.parent / Path(mean_shape_path),
+                    mean_particles=mean_particles,
+                    modes=modes,
+                    charts=contents['charts'],
+                    groups=groups_cache,
+                    good_bad_angles=contents['good_bad_angles'],
+                ).create()
 
 
 class Project(ApiModel):

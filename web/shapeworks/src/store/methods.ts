@@ -204,7 +204,6 @@ export async function fetchJobResults(taskName: string) {
         case 'analyze':
             layerName = 'Reconstructed'
             loadFunction = loadReconstructedSamplesForProject
-            console.log(analysis.value)
             analysis.value = refreshedProject?.last_cached_analysis
             if (analysis.value) {
                 if (analysis.value.good_bad_angles) {

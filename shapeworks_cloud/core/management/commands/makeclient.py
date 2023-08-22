@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from oauth2_provider.models import Application
 from django.core.management.base import BaseCommand, CommandError
+from django.contrib.sites.models import Site
 
 
 DEFAULT_REDIRECT_URI = 'http://localhost:8081/'
@@ -15,6 +16,11 @@ class Command(BaseCommand):
     def handle(self, uri, **options):
         if not uri:
             uri = DEFAULT_REDIRECT_URI
+
+        site = Site.objects.get_current()
+        site.domain = 'shapeworks-cloud.org'
+        site.name = 'ShapeWorks Cloud'
+        site.save()
 
         try:
             user = User.objects.first()

@@ -14,17 +14,17 @@ For admins, visit [https://app.shapeworks-cloud.org/admin](https://app.shapework
 
 
 ## Quick Start
-Using `docker-compose` is the simplest configuration to start with, so it is a prerequisite for this quick start.
+Using `docker compose` is the simplest configuration to start with, so it is a prerequisite for this quick start. These installation instructions assume you have a a modern linux based system with a docker version 20.10.13 or greater. It may work on other systems as well.
 
 ### Initial Setup
-1. Run `docker-compose build`
-2. Run `docker-compose run --rm django ./manage.py migrate`
-3. Run `docker-compose run --rm django ./manage.py createsuperuser`
-4. Run `docker-compose run --rm django ./manage.py makeclient`
+1. Run `docker compose build`
+2. Run `docker compose run --rm django ./manage.py migrate`
+3. Run `docker compose run --rm django ./manage.py createsuperuser`
+4. Run `docker compose run --rm django ./manage.py makeclient`
 
 
 ### Run Application
-1. Run `docker-compose up`
+1. Run `docker compose up`
 2. Access the site, starting at http://localhost:8081/
 3. Access admin console at http://localhost:8000/admin/
 4. When finished, use `Ctrl+C`
@@ -43,6 +43,6 @@ The ShapeWorks Cloud Client ([SWCC](swcc)) is a Python library to interact with 
 
 ### Application Maintenance
 Occasionally, new package dependencies or schema changes will necessitate maintenance. To non-destructively update your development stack at any time:
-1. Run `docker-compose pull`
-2. Run `docker-compose build --pull --no-cache`
-3. Run `docker-compose run --rm django ./manage.py migrate`
+1. Run `docker compose pull`
+2. Run `docker compose build --pull --no-cache`
+3. Run `docker compose run --rm django ./manage.py migrate`

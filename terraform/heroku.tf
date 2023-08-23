@@ -25,6 +25,7 @@ module "django" {
 
   additional_django_vars = {
     DJANGO_API_URL    = "https://app.shapeworks-cloud.org/api/v1"
+    DJANGO_HOMEPAGE_REDIRECT_URL = "https://www.shapeworks-cloud.org"
   }
   django_cors_origin_whitelist = ["https://www.shapeworks-cloud.org"]
 }

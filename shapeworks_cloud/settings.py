@@ -21,6 +21,8 @@ class ShapeworksCloudMixin(ConfigMixin):
 
     API_URL = values.URLValue(environ_required=True)
 
+    HOMEPAGE_REDIRECT_URL = values.URLValue(environ_required=True)
+
     # This is required for the /api/v1/logout/ view to have access to the session cookie.
     CORS_ALLOW_CREDENTIALS = True
 

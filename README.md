@@ -17,10 +17,11 @@ For admins, visit [https://app.shapeworks-cloud.org/admin](https://app.shapework
 Using `docker compose` is the simplest configuration to start with, so it is a prerequisite for this quick start. These installation instructions assume you have a a modern linux based system with a docker version 20.10.13 or greater. It may work on other systems as well.
 
 ### Initial Setup
-1. Run `docker compose build`
-2. Run `docker compose run --rm django ./manage.py migrate`
-3. Run `docker compose run --rm django ./manage.py createsuperuser`
-4. Run `docker compose run --rm django ./manage.py makeclient`
+1. Run `git clone git@github.com:girder/shapeworks-cloud.git`
+2. Run `docker compose build`
+3. Run `docker compose run --rm django ./manage.py migrate`
+4. Run `docker compose run --rm django ./manage.py createsuperuser`
+5. Run `docker compose run --rm django ./manage.py makeclient`
 
 
 ### Run Application

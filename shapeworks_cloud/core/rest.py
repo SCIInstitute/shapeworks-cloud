@@ -4,9 +4,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory, gettempdir
 from typing import Dict, Type
 
+from django.contrib.auth import logout
 from django.db.models import Q
 from django.utils import timezone
-from django.contrib.auth import logout
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -14,8 +14,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
 from .tasks import analyze, groom, optimize

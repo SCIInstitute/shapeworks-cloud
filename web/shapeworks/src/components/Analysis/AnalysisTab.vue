@@ -1,6 +1,7 @@
 <script lang="ts">
 import {
-    analysis, analysisFileShown,
+    analysis,
+    analysisFileShown,
     currentTasks,
     selectedProject,
     analysisExpandedTab,
@@ -8,6 +9,7 @@ import {
 import { defineComponent, ref, computed, watch, provide } from 'vue'
 import Charts from './Charts.vue'
 import Groups from './Groups.vue'
+import Particles from './Particles.vue'
 import PCA from './PCA.vue'
 import { AnalysisTabs } from './util';
 
@@ -21,7 +23,8 @@ export default defineComponent({
     components: {
         Charts,
         Groups,
-        PCA
+        Particles,
+        PCA,
     },
     setup() {
         const openTab = ref(AnalysisTabs.PCA);
@@ -46,17 +49,29 @@ export default defineComponent({
             analysisExpandedTab.value = openTab.value;
             switch(openTab.value) {
                 case AnalysisTabs.PCA:
-                    groups.value.methods.stopAnimating();
+                    if (groups.value) {
+                        groups.value.methods.stopAnimating();
+                    }
                     pca.value.methods.updateFileShown();
                     break;
                 case AnalysisTabs.Groups:
                     pca.value.methods.stopAnimating();
-                    if (groups.value.currGroup) {
-                        groups.value.methods.updateGroupFileShown();
+                    if (groups.value) {
+                        if (groups.value.currGroup) {
+                            groups.value.methods.updateGroupFileShown();
+                        }
                     }
                     break;
                 case AnalysisTabs.Charts:
-                    groups.value.methods.stopAnimating();
+                    if (groups.value) {
+                        groups.value.methods.stopAnimating();
+                    }
+                    pca.value.methods.stopAnimating();
+                    break;
+                case AnalysisTabs.Particles:
+                    if (groups.value) {
+                        groups.value.methods.stopAnimating();
+                    }
                     pca.value.methods.stopAnimating();
                     break;
             }
@@ -121,6 +136,14 @@ export default defineComponent({
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <charts :charts="analysis.charts"/>
+                </v-expansion-panel-content>
+            </v-expansion-panel>
+            <v-expansion-panel>
+                <v-expansion-panel-header>
+                    Particles
+                </v-expansion-panel-header>
+                <v-expansion-panel-content>
+                    <particles />
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>

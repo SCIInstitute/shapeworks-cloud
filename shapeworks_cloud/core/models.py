@@ -101,6 +101,7 @@ class CachedAnalysis(TimeStampedModel, models.Model):
     modes = models.ManyToManyField(CachedAnalysisMode)
     charts = models.JSONField()
     groups = models.ManyToManyField(CachedAnalysisGroup, blank=True)
+    good_bad_angles = models.JSONField(default=list)
 
 
 class Project(TimeStampedModel, models.Model):

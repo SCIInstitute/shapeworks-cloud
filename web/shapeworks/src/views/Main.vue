@@ -31,8 +31,8 @@ import {
     landmarkColorList,
     jobAlreadyDone,
     analysisExpandedTab,
-allProjectsForDataset,
-loadProjectsForDataset,
+    allProjectsForDataset,
+    loadProjectsForDataset,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -130,7 +130,9 @@ export default defineComponent({
                 document.addEventListener(
                     "mouseup",
                     function() {
-                        drawer.value.$el.style.transition ='';
+                        if (drawer.value) {
+                            drawer.value.$el.style.transition = '';
+                        }
                         document.body.style.cursor = "";
                         document.removeEventListener("mousemove", setDrawerWidth, false);
                     },
@@ -406,7 +408,7 @@ export default defineComponent({
             <render-controls @change="refreshRender" :currentTab="tab || ''"/>
         </v-card>
 
-        <div :style="renderAreaStyle" class="render-area pa-3">
+        <v-card :style="renderAreaStyle" class="render-area pa-3">
             <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
                 <shape-viewer
                     :data="renderData"
@@ -419,7 +421,7 @@ export default defineComponent({
                 />
             </template>
             <span v-else>Select any number of data objects</span>
-        </div>
+        </v-card>
     </div>
 </template>
 

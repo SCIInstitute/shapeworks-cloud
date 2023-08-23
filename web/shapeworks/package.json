@@ -40,7 +40,7 @@
     "sass-loader": "^10.0.0",
     "typescript": "~4.1.5",
     "vue-cli-plugin-vuetify": "~2.3.1",
-    "vue-template-compiler": "^2.6.11",
+    "vue-template-compiler": "^2.7.14",
     "vuetify-loader": "^1.7.0",
     "webpack": "^4.36.0",
     "wslink": "^1.1.0"

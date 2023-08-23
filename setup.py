@@ -8,12 +8,18 @@ if readme_file.exists():
         long_description = f.read()
 else:
     # When this is first installed in development Docker, README.md is not available
-    long_description = ''
+    long_description = """
+        This is a cloud based webapp alternative to a
+        desktop application called ShapeWorks Studio,
+        made in collaboration with ShapeWorks.
+        See the [ShapeWorks Website](http://sciinstitute.github.io/ShapeWorks/)
+        for more details.
+    """
 
 setup(
     name='shapeworks-cloud',
-    version='0.1.0',
-    description='',
+    version='1.0',  # Applies to all patches to the current minor version
+    description='A webapp alternative to ShapeWorks Studio, made in collaboration with ShapeWorks',
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='Apache 2.0',

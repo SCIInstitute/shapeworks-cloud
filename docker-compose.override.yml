@@ -4,12 +4,13 @@ services:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: ["./manage.py", "runserver", "0.0.0.0:8000"]
+    command: [ "./manage.py", "runserver", "0.0.0.0:8000" ]
     # Log printing via Rich is enhanced by a TTY
     tty: true
     env_file: ./dev/.env.docker-compose
     volumes:
       - .:/opt/django-project
+      - ./dev:/client/dev
     ports:
       - 8000:8000
     depends_on:
@@ -21,13 +22,16 @@ services:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: [
-      "celery",
-      "--app", "shapeworks_cloud.celery",
-      "worker",
-      "--loglevel", "INFO",
-      "--without-heartbeat"
-    ]
+    command:
+      [
+        "celery",
+        "--app",
+        "shapeworks_cloud.celery",
+        "worker",
+        "--loglevel",
+        "INFO",
+        "--without-heartbeat"
+      ]
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
     env_file: ./dev/.env.celery.docker-compose
@@ -41,13 +45,11 @@ services:
       - minio
 
   yarn:
-    build:
-      context: .
-      dockerfile: ./dev/yarn.Dockerfile
-    command: ["yarn", "serve"]
+    image: node:latest
+    command: [ "/bin/bash", "-c", "yarn install && yarn serve" ]
+    env_file: ./dev/yarn.env
     environment:
       - NODE_OPTIONS=--openssl-legacy-provider
-      - VUE_APP_OAUTH_CLIENT_ID=cBmD6D6F2YAmMWHNQZFPUr4OpaXVpW5w4Thod6Kj
       - VUE_APP_API_ROOT=http://localhost:8000/
       - VUE_APP_OAUTH_API_ROOT=http://localhost:8000/oauth/
     volumes:

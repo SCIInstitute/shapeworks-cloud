@@ -18,10 +18,11 @@ Using `docker compose` is the simplest configuration to start with, so it is a p
 
 ### Initial Setup
 1. Run `git clone git@github.com:girder/shapeworks-cloud.git`
-2. Run `docker compose build`
-3. Run `docker compose run --rm django ./manage.py migrate`
-4. Run `docker compose run --rm django ./manage.py createsuperuser`
-5. Run `docker compose run --rm django ./manage.py makeclient`
+2. Run `cd shapeworks-cloud`
+3. Run `docker compose build`
+4. Run `docker compose run --rm django ./manage.py migrate`
+5. Run `docker compose run --rm django ./manage.py createsuperuser`
+6. Run `docker compose run --rm django ./manage.py makeclient`
 
 
 ### Run Application

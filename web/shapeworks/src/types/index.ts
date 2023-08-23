@@ -179,6 +179,16 @@ export interface Landmarks {
     modified: string,
 }
 
+export interface LandmarkInfo {
+    id: number,
+    name: string,
+    color: number[],
+    comment: string,
+    domain: string,
+    num_set: number,
+    visible: "true" | "false",
+}
+
 export interface CacheComparison {
     file: string,
     particles: string

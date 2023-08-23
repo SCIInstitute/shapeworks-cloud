@@ -14,7 +14,7 @@ services:
       - dbdata:/var/lib/postgresql/data
 
   rabbitmq:
-    image: rabbitmq:management
+    image: rabbitmq
     logging:
       driver: none
     ports:

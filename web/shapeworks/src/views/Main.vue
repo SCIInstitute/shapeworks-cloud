@@ -1,6 +1,6 @@
 <script lang="ts">
 import {
-    defineComponent, onMounted, ref,
+    onMounted, ref,
     watch, computed, nextTick,
     onBeforeUnmount,
 } from 'vue';
@@ -12,6 +12,8 @@ import { DataObject, ShapeData } from '@/types';
 import ShapeViewer from '../components/ShapeViewer/viewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
+import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
     selectedDataset,
     allSubjectsForDataset,
@@ -40,7 +42,7 @@ import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
 
 
-export default defineComponent({
+export default {
     components: {
         ShapeViewer,
         DataList,
@@ -205,7 +207,7 @@ export default defineComponent({
                             }
                             const shapeDatas = (await Promise.all(dataObjects.map(
                                 (dataObject) => {
-                                    const shapePromises = [];
+                                    const shapePromises: Promise<vtkPolyData | vtkImageData>[] = [];
                                     if(layersShown.value.includes("Original")){
                                       shapePromises.push(
                                         imageReader(
@@ -327,7 +329,7 @@ export default defineComponent({
             analysisFileShown,
         }
     }
-})
+}
 </script>
 
 

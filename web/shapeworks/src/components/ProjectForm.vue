@@ -1,5 +1,5 @@
 <script>
-import { defineComponent, ref } from 'vue';
+import { ref } from 'vue';
 import { createProject, editProject } from '../api/rest'
 import {
     selectedDataset,
@@ -8,7 +8,7 @@ import {
     loadProjectsForDataset,
 } from '@/store';
 
-export default defineComponent({
+export default {
   props: {
     editMode: {
         type: Boolean,
@@ -98,7 +98,7 @@ export default defineComponent({
         submit,
     }
   }
-})
+}
 </script>
 
 <template>

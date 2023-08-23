@@ -1,5 +1,4 @@
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
 import _ from 'lodash';
 import {
   goodBadAngles,
@@ -7,9 +6,9 @@ import {
   goodBadMaxAngle,
 } from '@/store';
 
-export default defineComponent({
+export default {
     name: "Particles",
-    setup(props) {
+    setup() {
 
       function changeMaxAngle(angle: string) {
         if (parseFloat(angle)) {
@@ -24,9 +23,9 @@ export default defineComponent({
         goodBadMaxAngle,
       };
     },
-});
+};
 </script>
-  
+
 <template>
     <div disabled="!goodBadAngles.value">
         <v-row justify="center">

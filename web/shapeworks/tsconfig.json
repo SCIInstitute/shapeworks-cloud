@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "noImplicitAny": false,
     "sourceMap": true,
     "baseUrl": ".",
     "typeRoots": [
@@ -17,7 +18,6 @@
     ],
     "types": [
       "webpack-env",
-      "vuetify"
     ],
     "paths": {
       "@/*": [

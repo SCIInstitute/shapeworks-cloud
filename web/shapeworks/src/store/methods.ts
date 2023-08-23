@@ -258,7 +258,7 @@ export async function switchTab(tabName: string) {
 
 export function calculateComparisons(mapper: any, currentPoints: number[], meanPoints: number[]) {
     const vectorValues: number[][] = []
-    let colorValues = []
+    let colorValues: number[] = []
     for (let i = 0; i < currentPoints.length; i += 3){
         const currentParticle = currentPoints.slice(i, i+3)
         const meanParticle = meanPoints.slice(i, i+3)

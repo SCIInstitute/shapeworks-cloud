@@ -1,12 +1,12 @@
 <script lang="ts">
 import { DataObject, Dataset } from '@/types'
-import { defineComponent, ref } from 'vue'
+import { ref } from 'vue'
 import DataList from './DataList.vue'
 import { selectedDataObjects, allDatasets } from '@/store';
 import { subsetDataset } from '@/api/rest';
 
 
-export default defineComponent({
+export default {
     components: {
         DataList
     },
@@ -52,7 +52,7 @@ export default defineComponent({
             selectedDataObjects,
         }
     }
-})
+}
 </script>
 
 <template>

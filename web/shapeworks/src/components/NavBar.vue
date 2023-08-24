@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, computed } from 'vue'
+import { computed } from 'vue'
 import { logout, oauthClient } from '@/api/auth';
 import { allDatasets, loadingState, selectedDataset, selectedProject } from '@/store';
 import FilterSearch from './FilterSearch.vue';
@@ -7,7 +7,7 @@ import router from '@/router';
 import { getDatasets } from '@/api/rest';
 
 
-export default defineComponent({
+export default {
     components: {
       FilterSearch
     },
@@ -51,7 +51,7 @@ export default defineComponent({
           router,
       }
     }
-})
+}
 </script>
 
 <template>

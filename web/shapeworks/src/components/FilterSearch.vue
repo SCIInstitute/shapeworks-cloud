@@ -1,9 +1,9 @@
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { ref } from 'vue'
 import router from '@/router';
 import { selectedDataset, selectedProject } from '@/store';
 
-export default defineComponent({
+export default {
     setup() {
       const searchText = ref(router.currentRoute.params.searchText)
 
@@ -34,7 +34,7 @@ export default defineComponent({
         navigateToResults
       }
     },
-})
+}
 </script>
 
 <template>

@@ -1,9 +1,8 @@
 <script>
-import { defineComponent } from 'vue';
 import { landmarkInfo, selectedDataset, selectedProject } from '@/store';
 
 
-export default defineComponent({
+export default {
     setup() {
         const headers =  [
             {text: 'ID', value: 'id', width: '15px'},
@@ -26,7 +25,7 @@ export default defineComponent({
             getColorString,
         }
     }
-})
+}
 </script>
 
 <template>

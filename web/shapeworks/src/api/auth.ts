@@ -1,6 +1,7 @@
 import axios from 'axios';
 import OauthClient from '@girder/oauth-client';
 import { currentError } from '@/store';
+import router from '@/router';
 
 
 export const apiClient = axios.create({
@@ -47,5 +48,6 @@ export const logout = async () => {
     await apiClient.post('/logout/', null, { withCredentials: true });
   } finally {
     await oauthClient.logout();
+    router.push('/')
   }
 }

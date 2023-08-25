@@ -177,12 +177,9 @@ def groom(user_id, project_id, form_data, progress_id):
                 if len(prefixes) > 0:
                     prefix = prefixes[0]
                     anatomy_id = 'anatomy' + key.replace(prefix, '')
-                    if prefix in ['mesh', 'segmentation', 'image', 'contour']:
-                        prefix = 'shape'
-                    if prefix in ['shape', 'groomed']:
-                        if anatomy_id not in row:
-                            row[anatomy_id] = {}
-                        row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
+                    if anatomy_id not in row:
+                        row[anatomy_id] = {}
+                    row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
             for anatomy_data in row.values():
                 if 'groomed' not in anatomy_data:

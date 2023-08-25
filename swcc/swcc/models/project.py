@@ -97,25 +97,17 @@ class ProjectFileIO(BaseModel, FileIO):
                     name=entry.get('name'), groups=groups_dict, dataset=self.project.dataset
                 ).create()
 
-            entry_values: Dict = {p: [] for p in expected_key_prefixes}
-            entry_values['anatomy_ids'] = []
-            for key in entry.keys():
-                if key != 'name':
-                    prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
-                    if len(prefixes) > 0:
-                        entry_values[prefixes[0]].append(entry[key])
-                        anatomy_id = 'anatomy' + key.replace(prefixes[0], '').replace(
-                            '_particles', ''
-                        ).replace('_file', '')
-                        if anatomy_id not in entry_values['anatomy_ids']:
-                            entry_values['anatomy_ids'].append(anatomy_id)
             objects_by_domain = {}
-            for index, anatomy_id in enumerate(entry_values['anatomy_ids']):
-                objects_by_domain[anatomy_id] = {
-                    k: v[index] if len(v) > index else v[0]
-                    for k, v in entry_values.items()
-                    if len(v) > 0
-                }
+            for key in entry.keys():
+                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
+                if len(prefixes) > 0:
+                    prefix = prefixes[0]
+                    anatomy_id = 'anatomy' + key.replace(prefix, '')
+                    if anatomy_id not in objects_by_domain:
+                        objects_by_domain[anatomy_id] = {}
+                    objects_by_domain[anatomy_id][prefix] = (
+                        entry[key].replace('../', '').replace('./', '')
+                    )
             output_data.append(
                 [
                     subject,

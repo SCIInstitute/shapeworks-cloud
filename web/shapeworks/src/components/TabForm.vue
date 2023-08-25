@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
@@ -17,7 +17,7 @@ import { DataObject } from '../types/index';
 Vue.use(Vuetify)
 
 
-export default defineComponent({
+export default {
     props: {
         form: {
             type: String,
@@ -138,7 +138,7 @@ export default defineComponent({
             abort,
         }
     },
-})
+}
 </script>
 
 

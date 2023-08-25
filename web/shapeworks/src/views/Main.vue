@@ -1,6 +1,6 @@
 <script lang="ts">
 import {
-    defineComponent, onMounted, ref,
+    onMounted, ref,
     watch, computed, nextTick,
     onBeforeUnmount,
 } from 'vue';
@@ -12,6 +12,8 @@ import { DataObject, ShapeData } from '@/types';
 import ShapeViewer from '../components/ShapeViewer/viewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
+import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
+import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
     selectedDataset,
     allSubjectsForDataset,
@@ -31,8 +33,8 @@ import {
     landmarkColorList,
     jobAlreadyDone,
     analysisExpandedTab,
-allProjectsForDataset,
-loadProjectsForDataset,
+    allProjectsForDataset,
+    loadProjectsForDataset,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -40,7 +42,7 @@ import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
 
 
-export default defineComponent({
+export default {
     components: {
         ShapeViewer,
         DataList,
@@ -130,7 +132,9 @@ export default defineComponent({
                 document.addEventListener(
                     "mouseup",
                     function() {
-                        drawer.value.$el.style.transition ='';
+                        if (drawer.value) {
+                            drawer.value.$el.style.transition = '';
+                        }
                         document.body.style.cursor = "";
                         document.removeEventListener("mousemove", setDrawerWidth, false);
                     },
@@ -203,7 +207,7 @@ export default defineComponent({
                             }
                             const shapeDatas = (await Promise.all(dataObjects.map(
                                 (dataObject) => {
-                                    const shapePromises = [];
+                                    const shapePromises: Promise<vtkPolyData | vtkImageData>[] = [];
                                     if(layersShown.value.includes("Original")){
                                       shapePromises.push(
                                         imageReader(
@@ -325,7 +329,7 @@ export default defineComponent({
             analysisFileShown,
         }
     }
-})
+}
 </script>
 
 
@@ -406,7 +410,7 @@ export default defineComponent({
             <render-controls @change="refreshRender" :currentTab="tab || ''"/>
         </v-card>
 
-        <div :style="renderAreaStyle" class="render-area pa-3">
+        <v-card :style="renderAreaStyle" class="render-area pa-3">
             <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
                 <shape-viewer
                     :data="renderData"
@@ -419,7 +423,7 @@ export default defineComponent({
                 />
             </template>
             <span v-else>Select any number of data objects</span>
-        </div>
+        </v-card>
     </div>
 </template>
 

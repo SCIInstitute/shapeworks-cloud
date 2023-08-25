@@ -17,7 +17,7 @@ class Command(BaseCommand):
             uri = DEFAULT_REDIRECT_URI
 
         site = Site.objects.get_current()
-        site.domain = 'shapeworks-cloud.org'
+        site.domain = 'app.shapeworks-cloud.org'
         site.name = 'ShapeWorks Cloud'
         site.save()
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 import { groupBy, shortDateString, shortFileName } from '../helper';
 import { getDataObjectsForSubject } from '@/api/rest';
-import { defineComponent, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { Subject } from '@/types';
 import { getSubjectsForDataset } from '@/api/rest'
 import {
@@ -14,7 +14,7 @@ import {
 } from '@/store';
 
 
-export default defineComponent({
+export default {
     props: {
         dataset: {
             type: Number,
@@ -108,7 +108,7 @@ export default defineComponent({
             shortDateString,
         }
     }
-})
+}
 </script>
 
 <template>

@@ -1,10 +1,9 @@
 <script>
-import { defineComponent } from 'vue'
 import NavBar from './components/NavBar';
 import { oauthClient } from './api/auth';
 import { loadingState, currentError } from './store';
 
-export default defineComponent({
+export default {
     components: {
         NavBar,
     },
@@ -19,7 +18,7 @@ export default defineComponent({
             currentError,
         }
     },
-});
+}
 </script>
 
 <template>

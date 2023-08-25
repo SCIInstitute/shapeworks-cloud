@@ -1,6 +1,6 @@
 <script lang="ts">
 import { setDatasetThumbnail, setProjectThumbnail } from '@/api/rest';
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     particleSize,
     layers,
@@ -19,7 +19,7 @@ goodBadMaxAngle
 } from '@/store';
 
 
-export default defineComponent({
+export default {
     props: {
         currentTab: {
             type: String,
@@ -176,7 +176,7 @@ export default defineComponent({
             showAnalysisOptions,
         }
     }
-})
+}
 </script>
 
 <template>
@@ -193,10 +193,10 @@ export default defineComponent({
             small-chips
             item-text="name"
         >
-            <template #selection="{ item, index }">
+            <template #selection="{ item }">
                 <v-chip
                     close
-                    @click:close="layersShown.splice(index, 1)"
+                    @click:close="layersShown = layersShown.filter((l) => l !== item.name)"
                     :color="item.color"
                     :text-color="item.color === 'white' ? 'black' : 'white'"
                 >

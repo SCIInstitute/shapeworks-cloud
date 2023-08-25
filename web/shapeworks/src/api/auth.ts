@@ -1,6 +1,7 @@
 import axios from 'axios';
 import OauthClient from '@girder/oauth-client';
 import { currentError } from '@/store';
+import router from '@/router';
 
 
 export const apiClient = axios.create({
@@ -43,6 +44,10 @@ apiClient.interceptors.response.use(
 )
 
 export const logout = async () => {
-  await oauthClient.logout();
-  // TODO: clear cookies and local storage, which maintain csrftoken and sessionid
+  try {
+    await apiClient.post('/logout/', null, { withCredentials: true });
+  } finally {
+    await oauthClient.logout();
+    router.push('/')
+  }
 }

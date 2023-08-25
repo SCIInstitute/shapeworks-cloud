@@ -1,21 +1,8 @@
 <script>
-import pointsReader from '../reader/points';
-import { COLORS } from './ShapeViewer/methods'
-import { defineComponent, onMounted, ref } from 'vue';
-import { landmarkColorList, selectedDataset, selectedProject } from '@/store';
+import { landmarkInfo, selectedDataset, selectedProject } from '@/store';
 
 
-// from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
-function hexToRgb(hex) {
-  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16),
-    parseInt(result[2], 16),
-    parseInt(result[3], 16)
-   ] : [0, 0, 0];
-}
-
-export default defineComponent({
+export default {
     setup() {
         const headers =  [
             {text: 'ID', value: 'id', width: '15px'},
@@ -25,52 +12,6 @@ export default defineComponent({
             // {text: 'Place', value: 'placement_status'},
             {text: 'Comment', value: 'comment'},
         ];
-        const landmarkInfo = ref();
-
-        onMounted(async () => {
-            if (selectedProject.value?.landmarks){
-                const subjectParticles = await Promise.all(
-                    selectedProject.value.landmarks.map(
-                        async (subjectLandmarks) => {
-                            const locations = await pointsReader(subjectLandmarks.file)
-                            return locations.getPoints().getNumberOfPoints()
-                        }
-                    )
-                )
-                if (subjectParticles.length > 0){
-                    const numRows = Math.max(...subjectParticles)
-                    landmarkInfo.value = [...Array(numRows).keys()].map((index) => {
-                        let currentInfo = {
-                            id: index,
-                            color: COLORS[index % COLORS.length],
-                            name: `L${index}`,
-                            num_set: subjectParticles.filter(
-                                (numLocations) => numLocations > index
-                            ).length,
-                            comment: undefined,
-
-                        }
-                        if (selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > index) {
-                            currentInfo = Object.assign(
-                                currentInfo,
-                                selectedProject.value?.landmarks_info[index]
-                            )
-                        }
-                        if (currentInfo.color.toString().includes("#")) {
-                            currentInfo.color = hexToRgb(currentInfo.color.toString())
-                        }
-                        return currentInfo
-                    })
-                    updateLandmarkColorList()
-                }
-            }
-        })
-
-        function updateLandmarkColorList() {
-            landmarkColorList.value = landmarkInfo.value.map(
-                (info) => info.color
-            )
-        }
 
         function getColorString(rgb){
             return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
@@ -84,7 +25,7 @@ export default defineComponent({
             getColorString,
         }
     }
-})
+}
 </script>
 
 <template>

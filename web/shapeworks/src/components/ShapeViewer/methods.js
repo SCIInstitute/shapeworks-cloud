@@ -22,23 +22,7 @@ import {
     showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList, cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
-
-
-const SPHERE_RESOLUTION = 32;
-export const COLORS = [
-    [166, 206, 227],
-    [31, 120, 180],
-    [178, 223, 138],
-    [51, 160, 44],
-    [251, 154, 153],
-    [227, 26, 28],
-    [253, 191, 111],
-    [255, 127, 0],
-    [202, 178, 214],
-    [106, 61, 154],
-    [255, 255, 153],
-    [177, 89, 40],
-];
+import { COLORS, SPHERE_RESOLUTION } from '@/store/constants';
 
 export const GOOD_BAD_COLORS = [
     [0, 255, 0],
@@ -96,10 +80,10 @@ export default {
             this.newCameraViewUp = targetCamera.getReferenceByName('viewUp')
         }
         const positionDelta = [...this.newCameraPosition].map(
-        (num, index) => num - this.initialCameraPosition[index]
+            (num, index) => num - this.initialCameraPosition[index]
         )
         const viewUpDelta = [...this.newCameraViewUp].map(
-        (num, index) => num - this.initialCameraViewUp[index]
+            (num, index) => num - this.initialCameraViewUp[index]
         )
         return {
             positionDelta,
@@ -261,30 +245,30 @@ export default {
             || !currentAnalysisFileParticles.value
             || !meanAnalysisFileParticles.value
             || !this.metaData.current
-            || !this.metaData.mean ) return
+            || !this.metaData.mean) return
         // color values should be between 0 and 1
         // 0.5 is green, representing no difference between particles
         const currentPoints = this.metaData.current.points.getPoints().getData()
         const meanPoints = this.metaData.mean.points.getPoints().getData()
-    
+
         const particleComparisonKey = `${currentAnalysisFileParticles.value}_${meanAnalysisFileParticles.value}`
         let colorValues;
         let vectorValues;
         if (
             particleComparisonKey in cachedParticleComparisonColors.value
             && particleComparisonKey in cachedParticleComparisonVectors.value
-        ){
+        ) {
             colorValues = cachedParticleComparisonColors.value[particleComparisonKey]
             vectorValues = cachedParticleComparisonVectors.value[particleComparisonKey]
-        } else { 
+        } else {
             const comparisons = calculateComparisons(mapper, currentPoints, meanPoints);
             colorValues = comparisons.colorValues;
             vectorValues = comparisons.vectorValues;
-    
+
             cacheComparison(colorValues, vectorValues, particleComparisonKey);
         }
-    
-        if(vectorValues){
+
+        if (vectorValues) {
             const vectorMapper = vtkGlyph3DMapper.newInstance({
                 colorMode: ColorMode.MAP_SCALARS,
                 scalarMode: ScalarMode.USE_POINT_FIELD_DATA,
@@ -292,19 +276,19 @@ export default {
             const vectorActor = vtkActor.newInstance()
             const vectorSource = vtkPolyData.newInstance()
             const vectorShape = vtkArrowSource.newInstance();
-    
+
             const verts = new Uint32Array(vectorValues.length + 1)
             verts[0] = vectorValues.length
-            for (let i=0; i< vectorValues.length; i++){
-                verts[i+1] = i
+            for (let i = 0; i < vectorValues.length; i++) {
+                verts[i + 1] = i
             }
             let locations = []
             let orientations = []
             let colors = []
-    
-            for(let i = 0; i< vectorValues.length; i++){
+
+            for (let i = 0; i < vectorValues.length; i++) {
                 const [x, y, z, d, dx, dy, dz] = vectorValues[i]
-                if(d < 0) {
+                if (d < 0) {
                     const shift = 3  // based on arrow size
                     locations.push([x + dx * shift, y + dy * shift, z + dz * shift])
                     orientations.push([-dx, -dy, -dz])
@@ -315,19 +299,19 @@ export default {
                     colors.push(d / 10 + 0.5)
                 }
             }
-    
+
             vectorSource.getPointData().addArray(
-            vtkDataArray.newInstance({
-                name: 'color',
-                values: colors
-            })
+                vtkDataArray.newInstance({
+                    name: 'color',
+                    values: colors
+                })
             )
             vectorSource.getPointData().addArray(
-            vtkDataArray.newInstance({
-                name: 'normal',
-                values: orientations.flat(),
-                numberOfComponents: 3
-            })
+                vtkDataArray.newInstance({
+                    name: 'normal',
+                    values: orientations.flat(),
+                    numberOfComponents: 3
+                })
             )
             vectorSource.getPoints().setData(locations.flat(), 3)
             vectorSource.getVerts().setData(verts);
@@ -340,7 +324,7 @@ export default {
             vectorMapper.setLookupTable(this.lookupTable)
             renderer.addActor(vectorActor)
         }
-    
+
         const colorArray = vtkDataArray.newInstance({
             name: 'color',
             values: colorValues
@@ -349,9 +333,9 @@ export default {
         mapper.getInputData().modified()
         mapper.setLookupTable(this.lookupTable)
         mapper.setColorByArrayName('color')
-    
+
         this.prepareColorScale()
-    
+
         this.render()
     },
     prepareColorScale() {

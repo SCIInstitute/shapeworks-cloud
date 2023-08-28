@@ -1,4 +1,4 @@
-import { AnalysisParams, CacheComparison, Project, Task } from "@/types";
+import { AnalysisParams, CacheComparison, LandmarkInfo, Project, Task } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -18,6 +18,7 @@ import {
      meanAnalysisFileParticles,
      allDatasets,
      goodBadAngles,
+     landmarkColorList, landmarkInfo,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -32,11 +33,10 @@ import {
     getProjectsForDataset,
     getReconstructedSamplesForProject,
     getTaskProgress,
-    groomProject, optimizeProject, refreshProject
+    groomProject, optimizeProject, refreshProject,
 } from '@/api/rest';
-import { layers } from "./constants";
-import { getDistance } from "@/helper";
-import { TypedArray } from "vtk.js/Sources/types";
+import { layers, COLORS } from "./constants";
+import { getDistance, hexToRgb } from "@/helper";
 import router from "@/router";
 
 export const loadDataset = async (datasetId: number) => {
@@ -60,7 +60,10 @@ export async function getAllDatasets() {
 }
 
 export const loadProjectForDataset = async (projectId: number) => {
-    refreshProject(projectId).then((proj) => selectedProject.value = proj);
+    refreshProject(projectId).then((proj) => {
+        selectedProject.value = proj
+        getLandmarks()
+    });
 }
 
 export const loadProjectsForDataset = async (datasetId: number) => {
@@ -80,6 +83,7 @@ export const selectProject = (projectId: number | undefined) => {
             (project: Project) => project.id == projectId,
         )
         layersShown.value = ["Original"]
+        getLandmarks();
     }
 }
 
@@ -112,7 +116,6 @@ export const loadReconstructedSamplesForProject = async (type: string, id: numbe
         )
     }
 }
-
 
 export function jobAlreadyDone(action: string): Boolean {
     let layer;
@@ -253,10 +256,9 @@ export async function switchTab(tabName: string) {
     }
 }
 
-
 export function calculateComparisons(mapper: any, currentPoints: number[], meanPoints: number[]) {
     const vectorValues: number[][] = []
-    let colorValues = []
+    let colorValues: number[] = []
     for (let i = 0; i < currentPoints.length; i += 3){
         const currentParticle = currentPoints.slice(i, i+3)
         const meanParticle = meanPoints.slice(i, i+3)
@@ -329,5 +331,50 @@ export async function cacheAllComparisons(comparisons: CacheComparison[]) {
                 cacheComparison(comparisons.colorValues, comparisons.vectorValues, `${current.particleUrl}_${compareTo.particleUrl}`);
             }
         })
+    }
+}
+
+export function updateLandmarkColorList() {
+    landmarkColorList.value = landmarkInfo.value.map(
+        (info: LandmarkInfo) => info.color
+    )
+}
+
+export async function getLandmarks() {
+    if (selectedProject.value?.landmarks){
+        const subjectParticles = await Promise.all(
+            selectedProject.value.landmarks.map(
+                async (subjectLandmarks) => {
+                    const locations = await pointsReader(subjectLandmarks.file)
+                    return locations.getPoints().getNumberOfPoints()
+                }
+            )
+        )
+        if (subjectParticles.length > 0){
+            const numRows = Math.max(...subjectParticles)
+            landmarkInfo.value = [...Array(numRows).keys()].map((index) => {
+                let currentInfo = {
+                    id: index,
+                    color: COLORS[index % COLORS.length],
+                    name: `L${index}`,
+                    num_set: subjectParticles.filter(
+                        (numLocations) => numLocations > index
+                    ).length,
+                    comment: undefined,
+
+                }
+                if (selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > index) {
+                    currentInfo = Object.assign(
+                        currentInfo,
+                        selectedProject.value?.landmarks_info[index]
+                    )
+                }
+                if (currentInfo.color.toString().includes("#")) {
+                    currentInfo.color = hexToRgb(currentInfo.color.toString())
+                }
+                return currentInfo
+            })
+            updateLandmarkColorList()
+        }
     }
 }

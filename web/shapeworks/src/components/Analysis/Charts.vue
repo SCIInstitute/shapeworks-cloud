@@ -1,5 +1,4 @@
 <script lang="ts">
-import { defineComponent } from 'vue'
 import { use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
 import { LineChart } from 'echarts/charts';
@@ -17,7 +16,7 @@ import { AnalysisChart } from '@/types';
 // registers required echarts components
 use([SVGRenderer,LineChart,TitleComponent,TooltipComponent,GridComponent,ToolboxComponent,DataZoomComponent]);
 
-export default defineComponent({
+export default {
     name: "Charts",
     props: {
       charts: {
@@ -65,7 +64,7 @@ export default defineComponent({
         computed,
       };
     },
-});
+};
 </script>
 
 <template>

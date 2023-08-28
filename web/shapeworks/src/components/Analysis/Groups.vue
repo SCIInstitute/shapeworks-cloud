@@ -1,11 +1,11 @@
 <script lang="ts">
   import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
 import { AnalysisGroup } from '@/types';
-import { Ref, computed, defineComponent, inject, ref, watch } from 'vue';
+import { Ref, computed, inject, ref, watch } from 'vue';
 
 import { AnalysisTabs } from './util';
 
-  export default defineComponent({
+  export default {
     props: {
       currentTab: String,
       openTab: Number,
@@ -75,8 +75,8 @@ import { AnalysisTabs } from './util';
             methods.updateGroupFileShown();
         },
         updateGroupFileShown() {
-            let fileShown = undefined;
-            let particles = undefined;
+            let fileShown: string | undefined = undefined;
+            let particles: string | undefined = undefined;
             methods.updateCurrGroup();
 
             if (props.currentTab === 'analyze' && analysis.value && currGroup.value){
@@ -181,7 +181,7 @@ import { AnalysisTabs } from './util';
         currentlyCaching
       };
     },
-  });
+  };
 </script>
 
 <template>

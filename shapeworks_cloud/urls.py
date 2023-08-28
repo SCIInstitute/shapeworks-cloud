@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -57,11 +58,13 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
+    path('api/v1/logout/', rest.LogoutView.as_view()),
     path('api/v1/s3-upload/', include('s3_file_field.urls', namespace='s3ff')),
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
     path('api-token-auth/', obtain_auth_token),
+    path('', RedirectView.as_view(url=settings.HOMEPAGE_REDIRECT_URL)),
 ]
 
 if settings.DEBUG:

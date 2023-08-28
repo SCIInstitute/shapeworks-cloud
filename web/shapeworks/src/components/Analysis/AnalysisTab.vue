@@ -6,14 +6,14 @@ import {
     selectedProject,
     analysisExpandedTab,
 } from '@/store'
-import { defineComponent, ref, computed, watch, provide } from 'vue'
+import { ref, computed, watch, provide } from 'vue'
 import Charts from './Charts.vue'
 import Groups from './Groups.vue'
 import Particles from './Particles.vue'
 import PCA from './PCA.vue'
 import { AnalysisTabs } from './util';
 
-export default defineComponent({
+export default {
     props: {
         currentTab: {
             type: String,
@@ -88,7 +88,7 @@ export default defineComponent({
             groups
         }
     },
-})
+}
 </script>
 
 <template>

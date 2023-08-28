@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { computed, defineComponent, ref, Ref, watch, inject } from 'vue';
+  import { computed, ref, Ref, watch, inject } from 'vue';
   import { AnalysisTabs } from './util';
   import { AnalysisParams } from '@/types';
-  import { 
+  import {
     analysis,
     analysisFileShown,
     cacheAllComparisons,
@@ -13,8 +13,8 @@
     spawnJob,
     spawnJobProgressPoll
   } from '@/store';
-  
-  export default defineComponent({
+
+  export default {
     props: {
       currentTab: String,
       openTab: Number
@@ -81,8 +81,8 @@
 
       const methods = {
         updateFileShown() {
-            let fileShown = undefined
-            let particles = undefined
+            let fileShown: string | undefined = undefined
+            let particles: string | undefined = undefined
             if (props.currentTab === 'analyze' && analysis.value){
                 if (stdDev.value === 0) {
                     fileShown = analysis.value.mean_shape
@@ -156,7 +156,7 @@
           } else {
               message.value = `Successfully submitted analysis job. Awaiting results...`
               currentTasks.value[selectedProject.value.id] = taskIds
-              
+
               spawnJobProgressPoll()
           }
         },
@@ -194,7 +194,7 @@
         showConfirmation
       };
     },
-  });
+  };
 </script>
 
 <template>
@@ -289,7 +289,7 @@
         item-class="class"
         hide-default-header
         hide-default-footer
-      />    
+      />
       <v-dialog
       v-model="showConfirmation"
       width="500"

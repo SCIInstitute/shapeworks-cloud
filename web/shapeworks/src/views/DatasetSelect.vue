@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import {
     allDatasets,
     selectedDataset,
@@ -9,12 +9,11 @@ import {
     getAllDatasets,
 } from '@/store';
 import { Dataset } from '@/types';
-import ProjectForm from '@/components/ProjectForm.vue';
 import SubsetSelection from '@/components/SubsetSelection.vue';
 import router from '@/router';
 
-export default defineComponent({
-  components: { ProjectForm, SubsetSelection },
+export default {
+  components: { SubsetSelection },
   props: {
     searchText: {
         type: String,
@@ -62,7 +61,7 @@ export default defineComponent({
             loadingState,
         }
     }
-})
+}
 </script>
 
 <template>

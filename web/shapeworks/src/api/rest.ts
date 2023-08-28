@@ -4,7 +4,7 @@ import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
 
 export async function getDatasets(search: string | undefined): Promise<Dataset[]>{
-    const results = []
+    const results: Dataset[] = []
     let page = 1
     let response = (await apiClient.get('/datasets', {
         params: { page, search }
@@ -47,7 +47,7 @@ export async function getSubjectsForDataset(datasetId: number): Promise<Subject[
 }
 
 export async function getProjectsForDataset(search: string | undefined, datasetId: number): Promise<Project[]>{
-    const results = []
+    const results: Project[] = []
     let page = 1
     let response = (await apiClient.get(`/projects`, {
         params: { page, search, dataset: datasetId }

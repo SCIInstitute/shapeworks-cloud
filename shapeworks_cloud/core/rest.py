@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory, gettempdir
 from typing import Dict, Type
 
+from django.contrib.auth import logout
 from django.db.models import Q
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,6 +14,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
@@ -21,6 +23,13 @@ from .tasks import analyze, groom, optimize
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
 if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
     os.mkdir(DB_WRITE_ACCESS_LOG_FILE.parent)
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        if request.user.is_authenticated:
+            logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 def log_write_access(*args):

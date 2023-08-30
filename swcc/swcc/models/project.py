@@ -24,7 +24,7 @@ from pydantic.v1 import BaseModel
 
 from ..api import current_session
 from .api_model import ApiModel
-from .constants import expected_key_prefixes
+from .constants import expected_key_prefixes, required_key_prefixes
 from .dataset import Dataset
 from .file_type import FileType
 from .other_models import (
@@ -102,9 +102,15 @@ class ProjectFileIO(BaseModel, FileIO):
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
                     prefix = prefixes[0]
-                    anatomy_id = 'anatomy' + key.replace(prefix, '')
+                    anatomy_id = 'anatomy' + key.replace(prefix, '').replace('_file', '')
+                    # Only create a new domain object if a shape exists for that suffix
                     if anatomy_id not in objects_by_domain:
-                        objects_by_domain[anatomy_id] = {}
+                        if prefix in required_key_prefixes:
+                            objects_by_domain[anatomy_id] = {}
+                        else:
+                            raise ValueError(
+                                f'No shape exists for {anatomy_id}. Cannot create {key}.'
+                            )
                     objects_by_domain[anatomy_id][prefix] = (
                         entry[key].replace('../', '').replace('./', '')
                     )

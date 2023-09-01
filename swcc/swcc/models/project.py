@@ -8,12 +8,13 @@ import requests
 import warnings
 
 try:
-    from typing import Any, Dict, Iterator, Literal, Optional, Union
+    from typing import Any, Dict, Iterator, Literal, List, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
+        List,
         Optional,
         Union,
     )
@@ -98,7 +99,7 @@ class ProjectFileIO(BaseModel, FileIO):
                     name=entry.get('name'), groups=groups_dict, dataset=self.project.dataset
                 ).create()
 
-            objects_by_domain = {}
+            objects_by_domain: Dict[str, List[Dict]] = {}
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:

@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import requests
+import warnings
 
 try:
     from typing import Any, Dict, Iterator, Literal, Optional, Union
@@ -102,15 +103,19 @@ class ProjectFileIO(BaseModel, FileIO):
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
                     prefix = prefixes[0]
-                    anatomy_id = 'anatomy' + key.replace(prefix, '').replace('_file', '')
+                    anatomy_id = 'anatomy' + key
+                    anatomy_id = (
+                        anatomy_id.replace(prefix, '')
+                        .replace('_file', '')
+                        .replace('_particles', '')
+                    )
                     # Only create a new domain object if a shape exists for that suffix
                     if anatomy_id not in objects_by_domain:
                         if prefix in required_key_prefixes:
                             objects_by_domain[anatomy_id] = {}
                         else:
-                            raise ValueError(
-                                f'No shape exists for {anatomy_id}. Cannot create {key}.'
-                            )
+                            warnings.warn(f'No shape exists for {anatomy_id}. Cannot create {key}.')
+                            continue
                     objects_by_domain[anatomy_id][prefix] = (
                         entry[key].replace('../', '').replace('./', '')
                     )

@@ -141,10 +141,19 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
     if (!projectId) return undefined
     switch (action) {
         case 'groom':
+            layersShown.value = layersShown.value.filter(
+                (l) => l !== 'Groomed'
+            )
             return (await groomProject(projectId, payload))?.data
         case 'optimize':
+            layersShown.value = layersShown.value.filter(
+                (l) => l !== 'Particles'
+            )
             return (await optimizeProject(projectId, payload))?.data
         case 'analyze':
+            layersShown.value = layersShown.value.filter(
+                (l) => l !== 'Reconstructed'
+            )
             return (await analyzeProject(projectId, payload as AnalysisParams))?.data
         default:
             break;
@@ -224,7 +233,9 @@ export async function fetchJobResults(taskName: string) {
                 ([cachedLabel]) => !cachedLabel.includes(layerName)
             )
         )
-        if (!layersShown.value.includes(layerName)) layersShown.value.push(layerName)
+        if (!layersShown.value.includes(layerName)) {
+            layersShown.value = [...layersShown.value, layerName]
+        }
     }
 }
 

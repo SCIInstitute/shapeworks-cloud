@@ -63,7 +63,7 @@ def interpret_form_data(data, command, swcc_project):
         num_particles = data.get('number_of_particles')
         if num_particles:
             max_num_domains = max(s.num_domains for s in swcc_project.subjects)
-            data['number_of_particles'] = " ".join(
+            data['number_of_particles'] = ' '.join(
                 str(num_particles) for i in range(max_num_domains)
             )
 
@@ -254,9 +254,9 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
                 target_mesh = project_groomed_meshes.filter(
                     file__endswith=groomed_filename,
                 ).first()
-                if target_mesh:
+                if target_mesh and target_mesh.mesh:
                     subject = target_mesh.mesh.subject
-                elif target_segmentation:
+                elif target_segmentation and target_segmentation.segmentation:
                     subject = target_segmentation.segmentation.subject
                 result_particles_object = models.OptimizedParticles.objects.create(
                     groomed_segmentation=target_segmentation,

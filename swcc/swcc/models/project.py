@@ -3,18 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
-import requests
 import warnings
 
+import requests
+
 try:
-    from typing import Any, Dict, Iterator, Literal, List, Optional, Union
+    from typing import Any, Dict, Iterator, Literal, Optional, Union
 except ImportError:
     from typing import (
         Any,
         Dict,
         Iterator,
-        List,
         Optional,
         Union,
     )
@@ -99,7 +98,7 @@ class ProjectFileIO(BaseModel, FileIO):
                     name=entry.get('name'), groups=groups_dict, dataset=self.project.dataset
                 ).create()
 
-            objects_by_domain: Dict[str, List[Dict]] = {}
+            objects_by_domain: Dict[str, Dict] = {}
             for key in entry.keys():
                 prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
                 if len(prefixes) > 0:
@@ -115,7 +114,10 @@ class ProjectFileIO(BaseModel, FileIO):
                         if prefix in required_key_prefixes:
                             objects_by_domain[anatomy_id] = {}
                         else:
-                            warnings.warn(f'No shape exists for {anatomy_id}. Cannot create {key}.')
+                            warnings.warn(
+                                f'No shape exists for {anatomy_id}. Cannot create {key}.',
+                                stacklevel=2,
+                            )
                             continue
                     objects_by_domain[anatomy_id][prefix] = (
                         entry[key].replace('../', '').replace('./', '')

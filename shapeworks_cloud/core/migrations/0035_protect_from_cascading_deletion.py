@@ -6,7 +6,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('core', '0034_good_bad_particles'),
@@ -16,41 +15,77 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='constraints',
             name='optimized_particles',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='constraints', to='core.optimizedparticles'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='constraints',
+                to='core.optimizedparticles',
+            ),
         ),
         migrations.AlterField(
             model_name='dataset',
             name='creator',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AlterField(
             model_name='groomedmesh',
             name='mesh',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='groomed', to='core.mesh'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='groomed',
+                to='core.mesh',
+            ),
         ),
         migrations.AlterField(
             model_name='groomedsegmentation',
             name='segmentation',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='groomed', to='core.segmentation'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='groomed',
+                to='core.segmentation',
+            ),
         ),
         migrations.AlterField(
             model_name='optimizedparticles',
             name='groomed_mesh',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.groomedmesh'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='+',
+                to='core.groomedmesh',
+            ),
         ),
         migrations.AlterField(
             model_name='optimizedparticles',
             name='groomed_segmentation',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.groomedsegmentation'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='+',
+                to='core.groomedsegmentation',
+            ),
         ),
         migrations.AlterField(
             model_name='project',
             name='creator',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AlterField(
             model_name='reconstructedsample',
             name='particles',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reconstructed_samples', to='core.optimizedparticles'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='reconstructed_samples',
+                to='core.optimizedparticles',
+            ),
         ),
     ]

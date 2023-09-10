@@ -155,12 +155,14 @@ class Project(TimeStampedModel, models.Model):
                     'groomed': [
                         (gm.mesh.anatomy_type, gm.file)
                         for gm in GroomedMesh.objects.filter(project=self, mesh__subject=subject)
+                        if gm.mesh
                     ]
                     + [
                         (gs.segmentation.anatomy_type, gs.file)
                         for gs in GroomedSegmentation.objects.filter(
                             project=self, segmentation__subject=subject
                         )
+                        if gs.segmentation
                     ],
                     'local': [(p.anatomy_type, p.local) for p in particles],
                     'world': [(p.anatomy_type, p.world) for p in particles],

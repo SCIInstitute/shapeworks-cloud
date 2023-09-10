@@ -327,6 +327,10 @@ class Project(ApiModel):
         return ProjectFileIO(project=self)
 
     @property
+    def subjects(self) -> Iterator[Subject]:
+        return Subject.list(project=self)
+
+    @property
     def groomed_segmentations(self) -> Iterator[GroomedSegmentation]:
         self.assert_remote()
         return GroomedSegmentation.list(project=self)

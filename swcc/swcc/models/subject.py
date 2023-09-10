@@ -15,6 +15,15 @@ class Subject(ApiModel):
     groups: Optional[Dict[str, str]]
 
     @property
+    def num_domains(self) -> int:
+        return (
+            len(list(self.segmentations))
+            + len(list(self.meshes))
+            + len(list(self.contours))
+            + len(list(self.images))
+        )
+
+    @property
     def segmentations(self) -> Iterator[Segmentation]:
         return Segmentation.list(subject=self)
 

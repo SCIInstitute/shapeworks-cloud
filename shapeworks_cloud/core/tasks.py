@@ -320,16 +320,16 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
             project_data = json.load(pf)['data']
             for i, sample in enumerate(project_data):
                 reconstructed_filenames = result_data['reconstructed_samples'][i]
-                particles = (
-                    models.OptimizedParticles.objects.filter(project=project)
-                    .filter(
+                subject_particles = list(
+                    models.OptimizedParticles.objects.filter(project=project).filter(
                         Q(groomed_mesh__mesh__subject__name=sample['name'])
                         | Q(groomed_segmentation__segmentation__subject__name=sample['name'])
                     )
-                    .first()
                 )
-                for reconstructed_filename in reconstructed_filenames:
-                    reconstructed = models.ReconstructedSample(project=project, particles=particles)
+                for j, reconstructed_filename in enumerate(reconstructed_filenames):
+                    reconstructed = models.ReconstructedSample(
+                        project=project, particles=subject_particles[j]
+                    )
                     reconstructed.file.save(
                         reconstructed_filename,
                         open(Path(download_dir, reconstructed_filename), 'rb'),

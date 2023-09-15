@@ -38,6 +38,8 @@ class ShapeworksCloudMixin(ConfigMixin):
             's3_file_field',
         ]
 
+        configuration.MIDDLEWARE += ['allauth.account.middleware.AccountMiddleware']
+
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             'rest_framework.authentication.TokenAuthentication',
         ]

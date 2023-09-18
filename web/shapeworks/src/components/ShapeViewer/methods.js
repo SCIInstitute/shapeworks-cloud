@@ -1,7 +1,9 @@
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
-import vtkCubeSource from 'vtk.js/Sources/Filters/Sources/CubeSource';
+import vtkPickerManipulator from 'vtk.js/Sources/Widgets/Manipulators/PickerManipulator';
+import vtkSeedWidget from 'vtk.js/Sources/Widgets/Widgets3D/SeedWidget';
+import vtkWidgetManager from 'vtk.js/Sources/Widgets/Core/WidgetManager';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource'
@@ -19,7 +21,9 @@ import {
     layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
-    showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList, cacheComparison, calculateComparisons,
+    showDifferenceFromMeanMode, cachedParticleComparisonVectors,
+    landmarkColorList, activeLandmark, landmarkInfo, landmarkWidgets,
+    cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
 import { COLORS, SPHERE_RESOLUTION } from '@/store/constants';
@@ -163,6 +167,39 @@ export default {
         });
         return filter;
     },
+    addLandmarks(renderer, points) {
+        const widgetManager = vtkWidgetManager.newInstance();
+        widgetManager.setRenderer(renderer);
+
+        const manipulator = vtkPickerManipulator.newInstance();
+        const actors = renderer.getActors();
+        if (actors.length > 0) {
+            manipulator.getPicker().addPickList(actors[0]);
+
+            const landmarkCoordsData = points.getPoints().getData()
+            landmarkInfo.value.forEach((lInfo, index) => {
+                let widget = undefined;
+                if (landmarkWidgets.value[lInfo.id]) {
+                    widget = landmarkWidgets.value[lInfo.id]
+                } else {
+                    widget = vtkSeedWidget.newInstance();
+                    widget.setManipulator(manipulator);
+
+                    const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
+                    const handle = widget.getWidgetState().getMoveHandle();
+                    // handle.setScaleInPixels(true);
+                    handle.setColor3(...lInfo.color);
+                    handle.setOrigin(coords);
+                    landmarkWidgets.value[lInfo.id] = widget;
+                }
+
+                widgetManager.addWidget(widget)
+                if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
+                    widget.getWidgetState().getMoveHandle().setScale1(30);
+                }
+            })
+        }
+    },
     addPoints(renderer, points, i, landmarks = false) {
         let size = this.glyphSize
         let source = vtkSphereSource.newInstance({
@@ -170,10 +207,8 @@ export default {
             phiResolution: SPHERE_RESOLUTION,
         });
         if (landmarks) {
-            size *= 2
-            source = vtkCubeSource.newInstance(
-                { xLength: 1, yLength: 1, zLength: 1 }
-            )
+            this.addLandmarks(renderer, points)
+            return;
         }
         const mapper = vtkGlyph3DMapper.newInstance({
             scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
@@ -416,12 +451,12 @@ export default {
         const data = Object.entries(this.data)
         for (let i = 0; i < this.grid.length; i += 1) {
             let newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
-            if (i < data.length) {
-                this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
-            }
             newRenderer.setViewport.apply(newRenderer, this.grid[i]);
             this.vtk.renderers.push(newRenderer);
             this.vtk.renderWindow.addRenderer(newRenderer);
+            if (i < data.length) {
+                this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
+            }
         }
         this.initializeCameras()
 

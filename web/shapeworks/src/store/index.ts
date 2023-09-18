@@ -69,6 +69,10 @@ export const cachedParticleComparisonColors = ref<{[key: string]: number[]}>({})
 
 export const landmarkInfo = ref();
 
+export const activeLandmark = ref();
+
+export const landmarkWidgets = ref({});
+
 export const landmarkColorList = ref<number[][]>([])
 
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})

@@ -1,6 +1,5 @@
 <script>
-import { landmarkInfo, selectedDataset, selectedProject } from '@/store';
-
+import { landmarkInfo, activeLandmark, selectedDataset, selectedProject } from '@/store';
 
 export default {
     setup() {
@@ -22,6 +21,7 @@ export default {
             selectedProject,
             headers,
             landmarkInfo,
+            activeLandmark,
             getColorString,
         }
     }
@@ -40,13 +40,16 @@ export default {
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-data-table
+                        :value="[activeLandmark]"
                         :headers="headers"
                         :items="landmarkInfo"
-                        item-key="uid"
+                        item-key="id"
                         disable-pagination
                         hide-default-footer
+                        single-select
                         dense
                         width="100%"
+                        @click:row="(l) => activeLandmark = l"
                     >
                         <!-- eslint-disable-next-line -->
                         <template v-slot:item.color="{ item }">

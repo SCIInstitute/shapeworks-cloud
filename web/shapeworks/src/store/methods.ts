@@ -19,6 +19,7 @@ import {
      goodBadAngles,
      landmarkColorList,
      landmarkInfo,
+     landmarkWidgets,
      analysisExpandedTab,
      selectedDataObjects,
      particleSize,
@@ -399,6 +400,7 @@ export function updateLandmarkColorList() {
 }
 
 export async function getLandmarks() {
+    landmarkWidgets.value = {}
     if (selectedProject.value?.landmarks){
         const subjectParticles = await Promise.all(
             selectedProject.value.landmarks.map(

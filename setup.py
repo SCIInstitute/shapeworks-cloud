@@ -45,7 +45,7 @@ setup(
         'celery',
         'django<4.0',
         'django-admin-display',
-        'django-allauth',
+        'django-allauth<0.56',
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',

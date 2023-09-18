@@ -167,9 +167,20 @@ export default {
         });
         return filter;
     },
+    setActiveLandmark() {
+        Object.entries(landmarkWidgets.value).some(([wid, w]) => {
+            const active = this.widgetManager.getActiveWidget()
+            if (active && w.getWidgetState() === active.getWidgetState()) {
+                activeLandmark.value = landmarkInfo.value.find(({ id }) => id === parseInt(wid))
+                return true;
+            } else {
+                return false;
+            }
+        })
+    },
     addLandmarks(renderer, points) {
-        const widgetManager = vtkWidgetManager.newInstance();
-        widgetManager.setRenderer(renderer);
+        this.widgetManager = vtkWidgetManager.newInstance();
+        this.widgetManager.setRenderer(renderer);
 
         const manipulator = vtkPickerManipulator.newInstance();
         const actors = renderer.getActors();
@@ -187,15 +198,17 @@ export default {
 
                     const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
                     const handle = widget.getWidgetState().getMoveHandle();
-                    // handle.setScaleInPixels(true);
                     handle.setColor3(...lInfo.color);
                     handle.setOrigin(coords);
                     landmarkWidgets.value[lInfo.id] = widget;
                 }
 
-                widgetManager.addWidget(widget)
+                const widgetHandle = this.widgetManager.addWidget(widget)
+                widgetHandle.setScaleInPixels(false);
                 if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
-                    widget.getWidgetState().getMoveHandle().setScale1(30);
+                    widget.getWidgetState().getMoveHandle().setScale1(2);
+                } else {
+                    widget.getWidgetState().getMoveHandle().setScale1(1);
                 }
             })
         }
@@ -208,7 +221,10 @@ export default {
         });
         if (landmarks) {
             this.addLandmarks(renderer, points)
+            document.addEventListener('click', this.setActiveLandmark)
             return;
+        } else {
+            document.removeEventListener('click', this.setActiveLandmark)
         }
         const mapper = vtkGlyph3DMapper.newInstance({
             scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,

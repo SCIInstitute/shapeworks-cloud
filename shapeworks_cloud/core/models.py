@@ -164,8 +164,8 @@ class Project(TimeStampedModel, models.Model):
                         )
                         if gs.segmentation
                     ],
-                    'local': [(p.anatomy_type, p.local) for p in particles],
-                    'world': [(p.anatomy_type, p.world) for p in particles],
+                    'local': [(p.anatomy_type, p.local) for p in particles if p.local],
+                    'world': [(p.anatomy_type, p.world) for p in particles if p.world],
                 }
                 related_files['shape'] = (
                     related_files['mesh']

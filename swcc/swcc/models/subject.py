@@ -13,15 +13,7 @@ class Subject(ApiModel):
     name: NonEmptyString
     dataset: Dataset
     groups: Optional[Dict[str, str]]
-
-    @property
-    def num_domains(self) -> int:
-        return (
-            len(list(self.segmentations))
-            + len(list(self.meshes))
-            + len(list(self.contours))
-            + len(list(self.images))
-        )
+    num_domains: int
 
     @property
     def segmentations(self) -> Iterator[Segmentation]:

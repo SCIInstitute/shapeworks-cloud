@@ -112,6 +112,16 @@ class DatasetSerializer(serializers.ModelSerializer):
 
 
 class SubjectSerializer(serializers.ModelSerializer):
+    num_domains = serializers.SerializerMethodField('get_num_domains')
+
+    def get_num_domains(self, obj):
+        return (
+            len(list(obj.segmentations.all()))
+            + len(list(obj.meshes.all()))
+            + len(list(obj.contours.all()))
+            + len(list(obj.images.all()))
+        )
+
     class Meta:
         model = models.Subject
         fields = '__all__'

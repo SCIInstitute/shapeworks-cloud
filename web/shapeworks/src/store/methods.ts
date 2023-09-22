@@ -18,7 +18,17 @@ import {
      meanAnalysisFileParticles,
      allDatasets,
      goodBadAngles,
-     landmarkColorList, landmarkInfo,
+     landmarkColorList,
+     landmarkInfo,
+     analysisExpandedTab,
+     selectedDataObjects,
+     particleSize,
+     analysisFileShown,
+     currentAnalysisFileParticles,
+     goodBadMaxAngle,
+     showDifferenceFromMeanMode,
+     showGoodBadParticlesMode,
+     analysisAnimate,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -38,6 +48,32 @@ import {
 import { layers, COLORS } from "./constants";
 import { getDistance, hexToRgb } from "@/helper";
 import router from "@/router";
+
+export const resetState = () => {
+    selectedDataObjects.value = [];
+    layersShown.value = ['Original'];
+    landmarkInfo.value = undefined;
+    landmarkColorList.value = [];
+    currentTasks.value = {};
+    jobProgressPoll.value = undefined;
+    particleSize.value = 2;
+    analysis.value = undefined;
+    analysisExpandedTab.value = 0;
+    analysisFileShown.value = undefined;
+    currentAnalysisFileParticles.value = undefined;
+    meanAnalysisFileParticles.value = undefined;
+    goodBadAngles.value = undefined;
+    goodBadMaxAngle.value = 45;
+    showGoodBadParticlesMode.value = false;
+    showDifferenceFromMeanMode.value = false;
+    cachedMarchingCubes.value = {};
+    cachedParticleComparisonVectors.value = {};
+    cachedParticleComparisonColors.value = {};
+    landmarkInfo.value = undefined;
+    landmarkColorList.value = [];
+    analysisExpandedTab.value = 0;
+    analysisAnimate.value = false;
+}
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
@@ -79,10 +115,10 @@ export const loadProjectsForDataset = async (datasetId: number) => {
 
 export const selectProject = (projectId: number | undefined) => {
     if (projectId) {
+        resetState();
         selectedProject.value = allProjectsForDataset.value.find(
             (project: Project) => project.id == projectId,
         )
-        layersShown.value = ["Original"]
         getLandmarks();
     }
 }
@@ -233,7 +269,8 @@ export async function fetchJobResults(taskName: string) {
                 ([cachedLabel]) => !cachedLabel.includes(layerName)
             )
         )
-        if (!layersShown.value.includes(layerName)) {
+        const layer = layers.value.find((l) => l.name === layerName)
+        if (layer?.available() && !layersShown.value.includes(layerName)) {
             layersShown.value = [...layersShown.value, layerName]
         }
     }

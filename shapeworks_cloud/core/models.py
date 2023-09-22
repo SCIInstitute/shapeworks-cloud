@@ -10,7 +10,7 @@ from s3_file_field import S3FileField
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
     private = models.BooleanField(default=False)
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     thumbnail = S3FileField(null=True, blank=True)
     license = models.TextField()
     description = models.TextField()
@@ -109,13 +109,17 @@ class Project(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     private = models.BooleanField(default=False)
     readonly = models.BooleanField(default=False)
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     thumbnail = S3FileField(null=True, blank=True)
     keywords = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='projects')
-    last_cached_analysis = models.ForeignKey(CachedAnalysis, on_delete=models.SET_NULL, null=True)
     landmarks_info = models.JSONField(default=list, null=True)
+    last_cached_analysis = models.ForeignKey(
+        CachedAnalysis,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
 
     def create_new_file(self):
         file_contents = {
@@ -151,12 +155,14 @@ class Project(TimeStampedModel, models.Model):
                     'groomed': [
                         (gm.mesh.anatomy_type, gm.file)
                         for gm in GroomedMesh.objects.filter(project=self, mesh__subject=subject)
+                        if gm.mesh
                     ]
                     + [
                         (gs.segmentation.anatomy_type, gs.file)
                         for gs in GroomedSegmentation.objects.filter(
                             project=self, segmentation__subject=subject
                         )
+                        if gs.segmentation
                     ],
                     'local': [(p.anatomy_type, p.local) for p in particles],
                     'world': [(p.anatomy_type, p.world) for p in particles],
@@ -194,8 +200,9 @@ class GroomedSegmentation(TimeStampedModel, models.Model):
 
     segmentation = models.ForeignKey(
         Segmentation,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='groomed',
+        null=True,
     )
 
     project = models.ForeignKey(
@@ -213,8 +220,9 @@ class GroomedMesh(TimeStampedModel, models.Model):
 
     mesh = models.ForeignKey(
         Mesh,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='groomed',
+        null=True,
     )
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='groomed_meshes')
@@ -232,14 +240,14 @@ class OptimizedParticles(TimeStampedModel, models.Model):
 
     groomed_segmentation = models.ForeignKey(
         GroomedSegmentation,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='+',
         blank=True,
         null=True,
     )
     groomed_mesh = models.ForeignKey(
         GroomedMesh,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='+',
         blank=True,
         null=True,
@@ -260,7 +268,10 @@ class Constraints(TimeStampedModel, models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='constraints')
     anatomy_type = models.CharField(max_length=255)
     optimized_particles = models.ForeignKey(
-        OptimizedParticles, on_delete=models.CASCADE, related_name='constraints', null=True
+        OptimizedParticles,
+        on_delete=models.SET_NULL,
+        related_name='constraints',
+        null=True,
     )
 
 
@@ -270,7 +281,10 @@ class ReconstructedSample(TimeStampedModel, models.Model):
         Project, on_delete=models.CASCADE, related_name='reconstructed_samples'
     )
     particles = models.ForeignKey(
-        OptimizedParticles, on_delete=models.CASCADE, related_name='reconstructed_samples'
+        OptimizedParticles,
+        on_delete=models.SET_NULL,
+        related_name='reconstructed_samples',
+        null=True,
     )
 
 

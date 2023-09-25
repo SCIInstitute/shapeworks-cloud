@@ -12,4 +12,8 @@ expected_key_prefixes = [
     'segmentation',
     'contour',
     'image',
+    'groomed',
+    'local',
+    'world',
+    'alignment',
 ]

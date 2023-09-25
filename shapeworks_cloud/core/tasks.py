@@ -306,6 +306,8 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
             cachedanalysismode__cachedanalysis__project=project
         ).delete()
         models.CachedAnalysisMode.objects.filter(cachedanalysis__project=project).delete()
+        models.CachedAnalysisGroup.objects.filter(cachedanalysis__project=project).delete()
+        models.CachedAnalysisMeanShape.objects.filter(cachedanalysis__project=project).delete()
         models.CachedAnalysis.objects.filter(project=project).delete()
 
     def post_command_function(project, download_dir, result_data, project_filename):

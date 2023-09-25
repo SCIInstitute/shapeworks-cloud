@@ -18,6 +18,12 @@ class CachedAnalysisGroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CachedAnalysisMeanShapeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisMeanShape
+        fields = '__all__'
+
+
 class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CachedAnalysisModePCA
@@ -55,6 +61,7 @@ class CachedAnalysisModeReadSerializer(serializers.ModelSerializer):
 class CachedAnalysisReadSerializer(serializers.ModelSerializer):
     modes = CachedAnalysisModeReadSerializer(many=True)
     groups = CachedAnalysisGroupSerializer(many=True)
+    mean_shapes = CachedAnalysisMeanShapeSerializer(many=True)
 
     class Meta:
         model = models.CachedAnalysis

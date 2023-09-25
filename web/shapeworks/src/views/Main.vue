@@ -154,19 +154,19 @@ export default {
             renderMetaData.value = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
             if (analysisFileShown.value) {
-                const currParticles = await pointsReader(
+                const currParticles = await pointsReader(  // TODO: adapt to multi-domain
                     currentAnalysisFileParticles.value
                 )
-                const meanParticles = await pointsReader(
+                const meanParticles = await pointsReader(  // TODO: adapt to multi-domain
                     meanAnalysisFileParticles.value
                 )
                 renderMetaData.value = {
                     "mean": {
-                        shape: await imageReader(undefined),
+                        shape: await imageReader(undefined),  // TODO: adapt to multi-domain
                         points: meanParticles,
                     },
                     "current": {
-                        shape: await imageReader(undefined),
+                        shape: await imageReader(undefined),  // TODO: adapt to multi-domain
                         points: currParticles,
                     }
                 }
@@ -174,22 +174,22 @@ export default {
                     (analysisExpandedTab.value === 0) ?
                     {
                         "PCA": [{
-                            shape: await imageReader(
+                            shape: await imageReader(  // TODO: adapt to multi-domain
                                 analysisFileShown.value,
                                 shortFileName(analysisFileShown.value),
                             ),
-                            points: await pointsReader(
+                            points: await pointsReader(  // TODO: adapt to multi-domain
                                 currentAnalysisFileParticles.value
                             )
                         }]
                     }:
                     {
                         "GROUP": [{
-                            shape: await imageReader(
+                            shape: await imageReader(  // TODO: adapt to multi-domain
                                 analysisFileShown.value,
                                 shortFileName(analysisFileShown.value),
                             ),
-                            points: await pointsReader(
+                            points: await pointsReader(  // TODO: adapt to multi-domain
                                 currentAnalysisFileParticles.value
                             )
                         }]
@@ -304,9 +304,9 @@ export default {
         watch(drawer, prepareDrawer)
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
-        watch(analysisFileShown, debouncedRefreshRender)
+        watch(analysisFileShown, debouncedRefreshRender)  // TODO: adapt to multi-domain
         watch(landmarkColorList, debouncedRefreshRender)
-        watch(meanAnalysisFileParticles, debouncedRefreshRender)
+        watch(meanAnalysisFileParticles, debouncedRefreshRender)  // TODO: adapt to multi-domain
         watch(tab, switchTab)
 
         return {

@@ -95,7 +95,7 @@ import { AnalysisTabs } from './util';
                     }
                 })?.particles // account for inverted-pairings
             } else {
-                meanAnalysisFileParticles.value = analysis.value?.mean_particles;
+                meanAnalysisFileParticles.value = analysis.value?.mean_shapes[0].particles;  // TODO: adjust for multi-domain
             }
 
             analysisFileShown.value = fileShown;

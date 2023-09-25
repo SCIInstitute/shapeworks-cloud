@@ -50,6 +50,7 @@
 
       const stdDevRange = computed(() => {
         if (!analysis.value || !currMode.value) return {range: 0.0, step: 0.0, numSteps: 0}
+        console.log(currMode.value.pca_values)
         const pcaValues = currMode.value.pca_values.map(p => Math.round(p.pca_value * 100) / 100)
         const min =  Math.min(...pcaValues);
         const max =  Math.max(...pcaValues);
@@ -85,15 +86,15 @@
             let particles: string | undefined = undefined
             if (props.currentTab === 'analyze' && analysis.value){
                 if (stdDev.value === 0) {
-                    fileShown = analysis.value.mean_shape
-                    particles = analysis.value.mean_particles;
+                    fileShown = analysis.value.mean_shapes[0].file  // TODO: adjust for multi-domain
+                    particles = analysis.value.mean_shapes[0].particles;  // TODO: adjust for multi-domain
                 } else {
-                    fileShown = currPCA.value?.file
-                    particles = currPCA.value?.particles
+                    fileShown = currPCA.value?.file  // TODO: adjust for multi-domain
+                    particles = currPCA.value?.particles  // TODO: adjust for multi-domain
                 }
             }
             currentAnalysisFileParticles.value = particles;
-            meanAnalysisFileParticles.value =  analysis.value?.mean_particles;
+            meanAnalysisFileParticles.value =  analysis.value?.mean_shapes[0].particles; // TODO: adjust for multi-domain
             analysisFileShown.value = fileShown;
         },
         async cacheAllPCAComparisons() {

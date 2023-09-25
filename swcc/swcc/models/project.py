@@ -33,6 +33,7 @@ from .other_models import (
     CachedAnalysisGroup,
     CachedAnalysisMode,
     CachedAnalysisModePCA,
+    CachedAnalysisMeanShape,
     Constraints,
     Contour,
     GroomedMesh,
@@ -241,12 +242,23 @@ class ProjectFileIO(BaseModel, FileIO):
         analysis_file_location = project_root / Path(file_path)
         contents = json.load(open(analysis_file_location))
         if contents['mean'] and contents['mean']['meshes']:
-            mean_shape_path = contents['mean']['meshes'][0]
-            mean_particles_path = None
+            mean_shapes_cache = []
+            mean_shapes = []
+            for mean_shape in contents['mean']['meshes']:
+                mean_shapes.append(analysis_file_location.parent / Path(mean_shape))
+
             if 'particle_files' in contents['mean']:
-                mean_particles_path = contents['mean']['particle_files'][0]
-            if 'particles' in contents['mean']:
-                mean_particles_path = contents['mean']['particles'][0]
+                mean_particles = []
+                for mean_particle_path in contents['mean']['particle_files']:
+                    mean_particles.append(analysis_file_location.parent / Path(mean_particle_path))
+
+            for i in range(len(mean_shapes)):
+                cams = CachedAnalysisMeanShape(
+                    file=mean_shapes[i],
+                    particles=mean_particles[i] if mean_particles else None,
+                ).create()
+                mean_shapes_cache.append(cams)
+
             modes = []
             for mode in contents['modes']:
                 pca_values = []
@@ -277,10 +289,6 @@ class ProjectFileIO(BaseModel, FileIO):
                     modes.append(cam)
 
             if len(modes) > 0:
-                mean_particles = None
-                if mean_particles_path:
-                    mean_particles = analysis_file_location.parent / Path(mean_particles_path)
-
                 groups_cache = []
                 if contents['groups']:
                     for group in contents['groups']:
@@ -301,8 +309,7 @@ class ProjectFileIO(BaseModel, FileIO):
 
                                 groups_cache.append(cag)
                 return CachedAnalysis(
-                    mean_shape=analysis_file_location.parent / Path(mean_shape_path),
-                    mean_particles=mean_particles,
+                    mean_shapes=mean_shapes_cache,
                     modes=modes,
                     charts=contents['charts'],
                     groups=groups_cache,

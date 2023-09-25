@@ -460,6 +460,11 @@ class CachedAnalysisGroupViewSet(BaseViewSet):
     serializer_class = serializers.CachedAnalysisGroupSerializer
 
 
+class CachedAnalysisMeanShapeViewSet(BaseViewSet):
+    queryset = models.CachedAnalysisMeanShape.objects.all()
+    serializer_class = serializers.CachedAnalysisMeanShapeSerializer
+
+
 class ReconstructedSampleViewSet(
     GenericViewSet,
     mixins.ListModelMixin,

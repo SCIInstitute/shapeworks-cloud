@@ -350,10 +350,10 @@ export function cacheComparison(colorValues: number[], vectorValues: number[][],
 export async function cacheAllComparisons(comparisons: CacheComparison[]) {
     if (comparisons !== undefined) {
         const cachePrep = await Promise.all(comparisons?.map(async (g) => {
-            const particleComparisonKey = `${g.particles}_${meanAnalysisFileParticles.value}`;
+            const particleComparisonKey = `${g.particles}_${meanAnalysisFileParticles.value}`;  // TODO: adapt to multi-domain
 
             if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
-                const compareToPoints = await pointsReader(meanAnalysisFileParticles.value);
+                const compareToPoints = await pointsReader(meanAnalysisFileParticles.value);  // TODO: adapt to multi-domain
                 const currentPoints = await pointsReader(g.particles);
 
                 const currentMesh = await imageReader(g.file, "current_mesh.vtk");
@@ -361,7 +361,7 @@ export async function cacheAllComparisons(comparisons: CacheComparison[]) {
                 return {
                     "compareTo": {
                         points: compareToPoints.getPoints().getData(),
-                        particleUrl: meanAnalysisFileParticles.value,
+                        particleUrl: meanAnalysisFileParticles.value,  // TODO: adapt to multi-domain
                     },
                     "current":  {
                         points: currentPoints.getPoints().getData(),

@@ -42,6 +42,11 @@ router.register(
     basename='cached_analysis_group',
 )
 router.register(
+    'cached-analysis-mean-shape',
+    rest.CachedAnalysisMeanShapeViewSet,
+    basename='cached_analysis_mean_shape',
+)
+router.register(
     'reconstructed-samples', rest.ReconstructedSampleViewSet, basename='reconstructed_sample'
 )
 router.register('task-progress', rest.TaskProgressViewSet, basename='task_progress')

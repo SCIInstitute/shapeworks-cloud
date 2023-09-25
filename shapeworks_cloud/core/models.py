@@ -95,9 +95,13 @@ class CachedAnalysisMode(models.Model):
     pca_values = models.ManyToManyField(CachedAnalysisModePCA)
 
 
+class CachedAnalysisMeanShape(models.Model):
+    file = S3FileField()
+    particles = S3FileField(null=True)
+
+
 class CachedAnalysis(TimeStampedModel, models.Model):
-    mean_shape = S3FileField()
-    mean_particles = S3FileField(null=True)
+    mean_shapes = models.ManyToManyField(CachedAnalysisMeanShape)
     modes = models.ManyToManyField(CachedAnalysisMode)
     charts = models.JSONField()
     groups = models.ManyToManyField(CachedAnalysisGroup, blank=True)

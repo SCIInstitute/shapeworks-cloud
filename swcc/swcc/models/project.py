@@ -31,9 +31,9 @@ from .file_type import FileType
 from .other_models import (
     CachedAnalysis,
     CachedAnalysisGroup,
+    CachedAnalysisMeanShape,
     CachedAnalysisMode,
     CachedAnalysisModePCA,
-    CachedAnalysisMeanShape,
     Constraints,
     Contour,
     GroomedMesh,

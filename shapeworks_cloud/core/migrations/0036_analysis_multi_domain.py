@@ -5,7 +5,6 @@ import s3_file_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0035_protect_from_cascading_deletion'),
     ]
@@ -14,7 +13,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CachedAnalysisMeanShape',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('file', s3_file_field.fields.S3FileField()),
                 ('particles', s3_file_field.fields.S3FileField(null=True)),
             ],

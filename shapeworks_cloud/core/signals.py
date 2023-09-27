@@ -18,5 +18,5 @@ def delete_cached_analysis(sender, instance, using, **kwargs):
     ).delete()
     CachedAnalysisMode.objects.filter(cachedanalysis__project=instance).delete()
     CachedAnalysis.objects.filter(project=instance).delete()
-    CachedAnalysisGroup.objects.filter(project=instance).delete()
-    CachedAnalysisMeanShape.objects.filter(project=instance).delete()
+    CachedAnalysisGroup.objects.filter(cachedanalysis__project=instance).delete()
+    CachedAnalysisMeanShape.objects.filter(cachedanalysis__project=instance).delete()

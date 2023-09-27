@@ -18,7 +18,7 @@ import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
     layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
-    analysisFileShown, currentAnalysisFileParticles, meanAnalysisFileParticles,
+    analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList, cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -117,7 +117,7 @@ export default {
             this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
         })
     },
-    createColorFilter(landmarks = false, goodBad = false) {
+    createColorFilter(domainIndex = 0, landmarks = false, goodBad = false) {
         const filter = vtkCalculator.newInstance()
         filter.setFormula({
             getArrays() {
@@ -147,10 +147,8 @@ export default {
                         }
                     }
 
-                    if (goodBad && analysisFileShown.value) {
-                        // TODO: determine domain index for each particle array
-                        // MULTIDOMAIN FIX
-                        if (goodBadAngles.value[0][i] < goodBadMaxAngle.value) {
+                    if (goodBad && analysisFilesShown.value?.length) {
+                        if (goodBadAngles.value[domainIndex][i] < goodBadMaxAngle.value) {
                             c = GOOD_BAD_COLORS[0] // green
                         } else {
                             c = GOOD_BAD_COLORS[1] // red
@@ -165,7 +163,7 @@ export default {
         });
         return filter;
     },
-    addPoints(renderer, points, landmarks = false) {
+    addPoints(renderer, points, i, landmarks = false) {
         let size = this.glyphSize
         let source = vtkSphereSource.newInstance({
             thetaResolution: SPHERE_RESOLUTION,
@@ -182,7 +180,7 @@ export default {
             scaleFactor: size,
         });
         const actor = vtkActor.newInstance();
-        const filter = this.createColorFilter(landmarks, showGoodBadParticlesMode.value);
+        const filter = this.createColorFilter(i, landmarks, showGoodBadParticlesMode.value);
 
         filter.setInputData(points, 0);
         mapper.setInputConnection(filter.getOutputPort(), 0);
@@ -203,7 +201,7 @@ export default {
                 layerName = layerName.length ? layerName[0] : "Original"
                 const type = layers.value.find((layer) => layer.name === layerName)
                 let opacity = 1;
-                if (!analysisFileShown.value) {
+                if (!analysisFilesShown.value?.length) {
                     const numLayers = layersShown.value.filter(
                         (layerName) => layers.value.find((layer) => layer.name == layerName).rgb
                     ).length
@@ -234,24 +232,26 @@ export default {
                     cachedMarchingCubes.value[cacheLabel] = marchingCube.getOutputData()
                 }
                 if (showDifferenceFromMeanMode.value) {
-                    this.showDifferenceFromMean(mapper, renderer)
+                    this.showDifferenceFromMean(mapper, renderer, label, index)
                 }
                 renderer.addActor(actor);
             }
         )
     },
-    showDifferenceFromMean(mapper, renderer) {
-        if (!analysisFileShown.value
-            || !currentAnalysisFileParticles.value
-            || !meanAnalysisFileParticles.value
-            || !this.metaData.current
-            || !this.metaData.mean) return
+    showDifferenceFromMean(mapper, renderer, label, index) {
+        if (!analysisFilesShown.value
+            || !currentAnalysisParticlesFiles.value
+            || !meanAnalysisParticlesFiles.value
+            || !this.metaData[label]
+            || !this.metaData[label][index]) return
+
         // color values should be between 0 and 1
         // 0.5 is green, representing no difference between particles
-        const currentPoints = this.metaData.current.points.getPoints().getData()
-        const meanPoints = this.metaData.mean.points.getPoints().getData()
+        const targetMetaData = this.metaData[label][index]
+        const currentPoints = targetMetaData.current.points.getPoints().getData()
+        const meanPoints = targetMetaData.mean.points.getPoints().getData()
 
-        const particleComparisonKey = `${currentAnalysisFileParticles.value}_${meanAnalysisFileParticles.value}`
+        const particleComparisonKey = currentAnalysisParticlesFiles.value[index]
         let colorValues;
         let vectorValues;
         if (
@@ -382,14 +382,14 @@ export default {
         );
 
         this.addShapes(renderer, label, shapes.map(({ shape }) => shape));
-        shapes.map(({ points }) => points).forEach((pointSet) => {
+        shapes.map(({ points }) => points).forEach((pointSet, i) => {
             if (pointSet.getNumberOfPoints() > 0) {
-                this.addPoints(renderer, pointSet);
+                this.addPoints(renderer, pointSet, i);
             }
         })
-        shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet) => {
+        shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet, i) => {
             if (landmarkSet && landmarkSet.getNumberOfPoints() > 0) {
-                this.addPoints(renderer, landmarkSet, true);
+                this.addPoints(renderer, landmarkSet, i, true);
             }
         })
 

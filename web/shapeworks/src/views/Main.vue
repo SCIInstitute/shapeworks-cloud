@@ -26,9 +26,9 @@ import {
     selectedProject,
     loadProjectForDataset,
     reconstructionsForOriginalDataObjects,
-    analysisFileShown,
-    meanAnalysisFileParticles,
-    currentAnalysisFileParticles,
+    analysisFilesShown,
+    meanAnalysisParticlesFiles,
+    currentAnalysisParticlesFiles,
     switchTab,
     landmarkColorList,
     jobAlreadyDone,
@@ -79,7 +79,7 @@ export default {
         const rows = ref<number>(1);
         const cols = ref<number>(1);
         const renderData = ref<Record<string, ShapeData[]>>({});
-        const renderMetaData = ref<Record<string, ShapeData>>({});
+        const renderMetaData = ref<Record<string, ShapeData[]>>({});
 
         onMounted(async () => {
             try {
@@ -104,7 +104,7 @@ export default {
 
         async function toSelectPage() {
             selectedProject.value = undefined;
-            analysisFileShown.value = undefined;
+            analysisFilesShown.value = undefined;
             if (allProjectsForDataset.value.length === 0 && selectedDataset.value) {
                 loadProjectsForDataset(selectedDataset.value.id);
             }
@@ -151,49 +151,49 @@ export default {
 
         async function refreshRender() {
             let newRenderData = {}
-            renderMetaData.value = {}
+            let newRenderMetaData = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
-            if (analysisFileShown.value) {
-                const currParticles = await pointsReader(  // TODO: adapt to multi-domain
-                    currentAnalysisFileParticles.value
-                )
-                const meanParticles = await pointsReader(  // TODO: adapt to multi-domain
-                    meanAnalysisFileParticles.value
-                )
-                renderMetaData.value = {
-                    "mean": {
-                        shape: await imageReader(undefined),  // TODO: adapt to multi-domain
-                        points: meanParticles,
-                    },
-                    "current": {
-                        shape: await imageReader(undefined),  // TODO: adapt to multi-domain
-                        points: currParticles,
-                    }
-                }
-                newRenderData =
-                    (analysisExpandedTab.value === 0) ?
-                    {
-                        "PCA": [{
-                            shape: await imageReader(  // TODO: adapt to multi-domain
-                                analysisFileShown.value,
-                                shortFileName(analysisFileShown.value),
-                            ),
-                            points: await pointsReader(  // TODO: adapt to multi-domain
-                                currentAnalysisFileParticles.value
+
+            if (
+                analysisFilesShown.value?.length &&
+                currentAnalysisParticlesFiles.value?.length &&
+                meanAnalysisParticlesFiles.value?.length
+            ) {
+                // populate newRenderData and renderMetaData
+                await Promise.all(
+                    analysisFilesShown.value.map(async (f, i) => {
+                        if(meanAnalysisParticlesFiles.value && currentAnalysisParticlesFiles.value){
+                            const key = analysisExpandedTab.value === 0 ? "PCA": "GROUP"
+                            if (!newRenderData[key]) {
+                                newRenderData[key] = []
+                            }
+                            newRenderData[key].push({
+                                shape: await imageReader(f, shortFileName(f)),
+                                points: await pointsReader(currentAnalysisParticlesFiles.value[i])
+                            })
+
+                            if (!newRenderMetaData[key]) {
+                                newRenderMetaData[key] = []
+                            }
+                            const meanParticles = await pointsReader(
+                                meanAnalysisParticlesFiles.value[i]
                             )
-                        }]
-                    }:
-                    {
-                        "GROUP": [{
-                            shape: await imageReader(  // TODO: adapt to multi-domain
-                                analysisFileShown.value,
-                                shortFileName(analysisFileShown.value),
-                            ),
-                            points: await pointsReader(  // TODO: adapt to multi-domain
-                                currentAnalysisFileParticles.value
+                            const currParticles = await pointsReader(
+                                currentAnalysisParticlesFiles.value[i]
                             )
-                        }]
-                    }
+                            newRenderMetaData[key].push({
+                                "mean": {
+                                    shape: await imageReader(undefined),
+                                    points: meanParticles,
+                                },
+                                "current": {
+                                    shape: await imageReader(undefined),
+                                    points: currParticles,
+                                }
+                            })
+                        }
+                    })
+                )
             } else {
                 newRenderData = Object.fromEntries(
                     await Promise.all(Object.entries(groupedSelections).map(
@@ -297,6 +297,7 @@ export default {
                 rows.value = numGroups;
             }
             renderData.value = newRenderData
+            renderMetaData.value = newRenderMetaData
         }
 
         const debouncedRefreshRender = _.debounce(refreshRender, 300)
@@ -304,9 +305,9 @@ export default {
         watch(drawer, prepareDrawer)
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
-        watch(analysisFileShown, debouncedRefreshRender)  // TODO: adapt to multi-domain
+        watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
         watch(landmarkColorList, debouncedRefreshRender)
-        watch(meanAnalysisFileParticles, debouncedRefreshRender)  // TODO: adapt to multi-domain
+        watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(tab, switchTab)
 
         return {
@@ -326,7 +327,7 @@ export default {
             refreshRender,
             jobAlreadyDone,
             particleSize,
-            analysisFileShown,
+            analysisFilesShown,
         }
     }
 }
@@ -411,7 +412,7 @@ export default {
         </v-card>
 
         <v-card :style="renderAreaStyle" class="render-area pa-3">
-            <template v-if="selectedDataObjects.length > 0 || analysisFileShown">
+            <template v-if="selectedDataObjects.length > 0 || analysisFilesShown && analysisFilesShown.length">
                 <shape-viewer
                     :data="renderData"
                     :metaData="renderMetaData"

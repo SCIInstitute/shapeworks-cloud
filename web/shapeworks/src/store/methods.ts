@@ -15,7 +15,6 @@ import {
      reconstructionsForOriginalDataObjects,
      cachedParticleComparisonColors,
      cachedParticleComparisonVectors,
-     meanAnalysisFileParticles,
      allDatasets,
      goodBadAngles,
      landmarkColorList,
@@ -23,8 +22,9 @@ import {
      analysisExpandedTab,
      selectedDataObjects,
      particleSize,
-     analysisFileShown,
-     currentAnalysisFileParticles,
+     analysisFilesShown,
+     meanAnalysisParticlesFiles,
+     currentAnalysisParticlesFiles,
      goodBadMaxAngle,
      showDifferenceFromMeanMode,
      showGoodBadParticlesMode,
@@ -59,9 +59,9 @@ export const resetState = () => {
     particleSize.value = 2;
     analysis.value = undefined;
     analysisExpandedTab.value = 0;
-    analysisFileShown.value = undefined;
-    currentAnalysisFileParticles.value = undefined;
-    meanAnalysisFileParticles.value = undefined;
+    analysisFilesShown.value = undefined;
+    currentAnalysisParticlesFiles.value = undefined;
+    meanAnalysisParticlesFiles.value = undefined;
     goodBadAngles.value = undefined;
     goodBadMaxAngle.value = 45;
     showGoodBadParticlesMode.value = false;
@@ -347,36 +347,46 @@ export function cacheComparison(colorValues: number[], vectorValues: number[][],
     cachedParticleComparisonVectors.value[particleComparisonKey] = vectorValues
 }
 
-export async function cacheAllComparisons(comparisons: CacheComparison[]) {
+export async function cacheAllComparisons(comparisons: CacheComparison[][]) {
     if (comparisons !== undefined) {
         const cachePrep = await Promise.all(comparisons?.map(async (g) => {
-            const particleComparisonKey = `${g.particles}_${meanAnalysisFileParticles.value}`;  // TODO: adapt to multi-domain
+            return await Promise.all(
+                g.map(async (domain, i) => {
+                    if(meanAnalysisParticlesFiles.value && meanAnalysisParticlesFiles.value.length > i){
+                        const particleComparisonKey = domain.particles;
 
-            if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
-                const compareToPoints = await pointsReader(meanAnalysisFileParticles.value);  // TODO: adapt to multi-domain
-                const currentPoints = await pointsReader(g.particles);
+                        if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
+                            const compareToPoints = await pointsReader(meanAnalysisParticlesFiles.value[i]);
+                            const currentPoints = await pointsReader(domain.particles);
 
-                const currentMesh = await imageReader(g.file, "current_mesh.vtk");
+                            const currentMesh = await imageReader(domain.file, "current_mesh.vtk");
 
-                return {
-                    "compareTo": {
-                        points: compareToPoints.getPoints().getData(),
-                        particleUrl: meanAnalysisFileParticles.value,  // TODO: adapt to multi-domain
-                    },
-                    "current":  {
-                        points: currentPoints.getPoints().getData(),
-                        mapper: generateMapper(currentMesh),
-                        particleUrl: g.particles,
-                    },
-                }
-            }
+                            return {
+                                "compareTo": {
+                                    points: compareToPoints.getPoints().getData(),
+                                    particleUrl: domain,
+                                },
+                                "current":  {
+                                    points: currentPoints.getPoints().getData(),
+                                    mapper: generateMapper(currentMesh),
+                                    particleUrl: domain.particles,
+                                },
+                            }
+                        }
+                    }
+                })
+            )
         }))
 
         cachePrep.forEach((g) => {
             if (g !== undefined) {
-                const { current, compareTo } = g;
-                const comparisons = calculateComparisons(current.mapper, current.points as number[], compareTo.points as number[])
-                cacheComparison(comparisons.colorValues, comparisons.vectorValues, `${current.particleUrl}_${compareTo.particleUrl}`);
+                g.forEach((c) => {
+                    if (c){
+                        const { current, compareTo } = c;
+                        const comparisons = calculateComparisons(current.mapper, current.points as number[], compareTo.points as number[])
+                        cacheComparison(comparisons.colorValues, comparisons.vectorValues, current.particleUrl);
+                    }
+                })
             }
         })
     }

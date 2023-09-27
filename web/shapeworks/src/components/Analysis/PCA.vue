@@ -1,14 +1,15 @@
 <script lang="ts">
   import { computed, ref, Ref, watch, inject } from 'vue';
   import { AnalysisTabs } from './util';
-  import { AnalysisParams } from '@/types';
+  import { AnalysisParams, CacheComparison } from '@/types';
+import { groupBy } from '../../helper';
   import {
     analysis,
-    analysisFileShown,
+    analysisFilesShown,
     cacheAllComparisons,
-    currentAnalysisFileParticles,
+    currentAnalysisParticlesFiles,
     currentTasks,
-    meanAnalysisFileParticles,
+    meanAnalysisParticlesFiles,
     selectedProject,
     spawnJob,
     spawnJobProgressPoll
@@ -42,20 +43,20 @@
         return analysis.value?.modes.find((m) => m.mode == mode.value)
       })
 
-      const currPCA = computed(() => {
-        return currMode.value?.pca_values.find(
+      const currPCAs = computed(() => {
+        return currMode.value?.pca_values.filter(
             p => p.pca_value.toPrecision(2) === stdDev.value.toPrecision(2)
         )
       })
 
       const stdDevRange = computed(() => {
         if (!analysis.value || !currMode.value) return {range: 0.0, step: 0.0, numSteps: 0}
-        console.log(currMode.value.pca_values)
         const pcaValues = currMode.value.pca_values.map(p => Math.round(p.pca_value * 100) / 100)
+        const numDomains = analysis.value.mean_shapes.length || 1
         const min =  Math.min(...pcaValues);
         const max =  Math.max(...pcaValues);
         const range = max;
-        const step = (max - min) / pcaValues.length;
+        const step = (max - min) / (pcaValues.length / numDomains);
         const numSteps = Math.round((max - min) / step) + 1;
 
         return {
@@ -72,7 +73,7 @@
                 {text: 'value', value: 'value', align: 'end'}
             ],
             items: [
-                {key: 'Lambda', value:currPCA.value ? Math.round(currPCA.value.lambda_value * 100) / 100 : 0},
+                {key: 'Lambda', value: currPCAs.value?.length ? Math.round(currPCAs.value[0].lambda_value * 100) / 100 : 0},
                 {key: 'Eigenvalue', value: currMode.value ? Math.round(currMode.value.eigen_value * 100) / 100 : 0},
                 {key: 'Explained Variance', value: currMode.value ? Math.round(currMode.value.explained_variance * 100) / 100 : 0, class: 'percentage'},
                 {key: 'Cumulative Explained Variance', value: currMode.value ? Math.round(currMode.value.cumulative_explained_variance * 100) / 100 : 0, class:'percentage'},
@@ -82,25 +83,24 @@
 
       const methods = {
         updateFileShown() {
-            let fileShown: string | undefined = undefined
-            let particles: string | undefined = undefined
+            let filesShown: string[] = []
+            let particles: string[] = []
             if (props.currentTab === 'analyze' && analysis.value){
-                if (stdDev.value === 0) {
-                    fileShown = analysis.value.mean_shapes[0].file  // TODO: adjust for multi-domain
-                    particles = analysis.value.mean_shapes[0].particles;  // TODO: adjust for multi-domain
-                } else {
-                    fileShown = currPCA.value?.file  // TODO: adjust for multi-domain
-                    particles = currPCA.value?.particles  // TODO: adjust for multi-domain
-                }
+              if (stdDev.value === 0) {
+                filesShown = analysis.value.mean_shapes.map((m) => m.file)
+                particles = analysis.value.mean_shapes.map((m) => m.particles);
+              } else if (currPCAs.value) {
+                filesShown = currPCAs.value.map(p => p.file)
+                particles = currPCAs.value.map(p => p.particles)
+              }
             }
-            currentAnalysisFileParticles.value = particles;
-            meanAnalysisFileParticles.value =  analysis.value?.mean_shapes[0].particles; // TODO: adjust for multi-domain
-            analysisFileShown.value = fileShown;
+            currentAnalysisParticlesFiles.value = particles;
+            meanAnalysisParticlesFiles.value =  analysis.value?.mean_shapes.map((m) => m.particles);
+            analysisFilesShown.value = filesShown;
         },
         async cacheAllPCAComparisons() {
           if (currMode.value !== undefined) {
-            const allInMode = currMode.value.pca_values;
-
+            const allInMode: CacheComparison[][] = Object.values(groupBy(currMode.value.pca_values, 'pca_value'));
             await cacheAllComparisons(allInMode);
           }
         },

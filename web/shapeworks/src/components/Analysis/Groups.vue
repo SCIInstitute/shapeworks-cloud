@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { analysis, analysisFileShown, cacheAllComparisons, currentAnalysisFileParticles, meanAnalysisFileParticles } from '@/store';
+import {
+    analysis,
+    cacheAllComparisons,
+    analysisFilesShown,
+    currentAnalysisParticlesFiles,
+    meanAnalysisParticlesFiles
+} from '@/store';
 import { AnalysisGroup } from '@/types';
 import { Ref, computed, inject, ref, watch } from 'vue';
 
@@ -75,17 +81,17 @@ import { AnalysisTabs } from './util';
             methods.updateGroupFileShown();
         },
         updateGroupFileShown() {
-            let fileShown: string | undefined = undefined;
-            let particles: string | undefined = undefined;
+            let filesShown: string[] | undefined = undefined;
+            let particles: string[] | undefined = undefined;
             methods.updateCurrGroup();
 
             if (props.currentTab === 'analyze' && analysis.value && currGroup.value){
-                fileShown = currGroup.value.file;
-                particles = currGroup.value.particles;
+                filesShown = [currGroup.value.file];
+                particles = [currGroup.value.particles];
             }
-            currentAnalysisFileParticles.value = particles;
+            currentAnalysisParticlesFiles.value = particles;
             if (groupDiff.value) {
-                meanAnalysisFileParticles.value = analysis.value?.groups.find((g) => {
+                const meanParticles = analysis.value?.groups.find((g) => {
                     if (g.name === groupSet.value) {
                       if (!methods.pairingIsInverted(g)) {
                         if (g.ratio === 1.0) return true;
@@ -94,11 +100,14 @@ import { AnalysisTabs } from './util';
                       }
                     }
                 })?.particles // account for inverted-pairings
+                if (meanParticles) {
+                    meanAnalysisParticlesFiles.value = [meanParticles]
+                }
             } else {
-                meanAnalysisFileParticles.value = analysis.value?.mean_shapes[0].particles;  // TODO: adjust for multi-domain
+                meanAnalysisParticlesFiles.value = analysis.value?.mean_shapes.map((m) => m.particles)
             }
 
-            analysisFileShown.value = fileShown;
+            analysisFilesShown.value = filesShown;
         },
         async cacheAllGroupComparisons() {
             const allInPairing = analysis.value?.groups.filter((g) => {
@@ -109,7 +118,7 @@ import { AnalysisTabs } from './util';
             })
 
             if (allInPairing !== undefined) {
-                await cacheAllComparisons(allInPairing);
+                await cacheAllComparisons([allInPairing]);
             }
         },
         animateSlider() {

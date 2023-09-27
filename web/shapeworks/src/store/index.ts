@@ -45,11 +45,11 @@ export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<num
 
 export const analysis = ref<Analysis>();
 
-export const analysisFileShown = ref<string>();  // TODO: adapt to multi-domain
+export const analysisFilesShown = ref<string[]>();
 
-export const currentAnalysisFileParticles = ref<string>();  // TODO: adapt to multi-domain
+export const currentAnalysisParticlesFiles = ref<string[]>();
 
-export const meanAnalysisFileParticles = ref<string>();  // TODO: adapt to multi-domain
+export const meanAnalysisParticlesFiles = ref<string[]>();
 
 export const layersShown = ref<string[]>(["Original"])
 

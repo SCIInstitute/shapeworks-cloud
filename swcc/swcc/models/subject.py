@@ -13,7 +13,7 @@ class Subject(ApiModel):
     name: NonEmptyString
     dataset: Dataset
     groups: Optional[Dict[str, str]]
-    num_domains: int
+    num_domains: Optional[int]
 
     @property
     def segmentations(self) -> Iterator[Segmentation]:

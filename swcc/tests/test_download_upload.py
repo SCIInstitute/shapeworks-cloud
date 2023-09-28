@@ -50,7 +50,7 @@ def public_server_download(download_dir):
     with swcc_session() as public_server_session:
         public_server_session.login('testuser@noemail.nil', 'cicdtest')
         all_datasets = list(models.Dataset.list())
-        tiny_tests = [d for d in all_datasets if "tiny_test" in d.name]
+        tiny_tests = [d for d in all_datasets if 'tiny_test' in d.name]
         dataset_subset = (
             random.sample(tiny_tests, SAMPLE_SIZE) if len(tiny_tests) >= SAMPLE_SIZE else tiny_tests
         )

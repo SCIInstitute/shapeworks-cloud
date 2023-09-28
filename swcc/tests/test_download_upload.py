@@ -49,12 +49,12 @@ def is_same(dir1, dir2):
 def public_server_download(download_dir):
     with swcc_session() as public_server_session:
         public_server_session.login('testuser@noemail.nil', 'cicdtest')
-        all_projects = list(models.Project.list())
-        project_subset = (
-            random.sample(all_projects, SAMPLE_SIZE)
-            if len(all_projects) >= SAMPLE_SIZE
-            else all_projects
+        all_datasets = list(models.Dataset.list())
+        tiny_tests = [d for d in all_datasets if "tiny_test" in d.name]
+        dataset_subset = (
+            random.sample(tiny_tests, SAMPLE_SIZE) if len(tiny_tests) >= SAMPLE_SIZE else tiny_tests
         )
+        project_subset = [next(d.projects) for d in dataset_subset]
         for project in project_subset:
             project.download(download_dir)
         return project_subset

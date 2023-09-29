@@ -7,7 +7,7 @@ import {
     meanAnalysisParticlesFiles
 } from '@/store';
 import { AnalysisGroup } from '@/types';
-import { Ref, computed, inject, ref, watch } from 'vue';
+import { Ref, computed, inject, ref, watch, onMounted } from 'vue';
 
 import { AnalysisTabs } from './util';
 
@@ -17,7 +17,7 @@ import { AnalysisTabs } from './util';
       openTab: Number,
     },
     setup(props) {
-      const currGroup = ref<AnalysisGroup>();
+      const currGroup = ref<AnalysisGroup[]>();
       const groupRatio = ref(0.5);
       const groupDiff = ref(false);
       const groupSet = ref<string>();
@@ -37,7 +37,7 @@ import { AnalysisTabs } from './util';
             return (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left)
         },
         updateCurrGroup() {
-            currGroup.value = analysis.value?.groups.find((g) => {
+            currGroup.value = analysis.value?.groups.filter((g) => {
                 if (g.name === groupSet.value) {
                     if ((g.group1 === currPairing.value.left && g.group2 === currPairing.value.right)
                         || (g.group1 === currPairing.value.right && g.group2 === currPairing.value.left)) { // if the groups pairings match the selected pairings
@@ -55,6 +55,9 @@ import { AnalysisTabs } from './util';
             })
         },
         setDefaultPairing() {
+            if (groupSet.value === undefined && allGroupSets.value?.length) {
+                groupSet.value = allGroupSets.value[0];
+            }
             // default left and right group selections: first and second item in groupSet pairings list
             if (groupSet.value !== undefined) {
                 currPairing.value.left = groupPairings.value[groupSet.value][0];
@@ -86,12 +89,12 @@ import { AnalysisTabs } from './util';
             methods.updateCurrGroup();
 
             if (props.currentTab === 'analyze' && analysis.value && currGroup.value){
-                filesShown = [currGroup.value.file];
-                particles = [currGroup.value.particles];
+                filesShown = currGroup.value.map((g) => g.file);
+                particles = currGroup.value.map((g) => g.particles);
             }
             currentAnalysisParticlesFiles.value = particles;
             if (groupDiff.value) {
-                const meanParticles = analysis.value?.groups.find((g) => {
+                const meanParticles = analysis.value?.groups.filter((g) => {
                     if (g.name === groupSet.value) {
                       if (!methods.pairingIsInverted(g)) {
                         if (g.ratio === 1.0) return true;
@@ -99,9 +102,9 @@ import { AnalysisTabs } from './util';
                         if (g.ratio === 0.0) return true;
                       }
                     }
-                })?.particles // account for inverted-pairings
+                }) // account for inverted-pairings
                 if (meanParticles) {
-                    meanAnalysisParticlesFiles.value = [meanParticles]
+                    meanAnalysisParticlesFiles.value = meanParticles.map((p) => p.particles)
                 }
             } else {
                 meanAnalysisParticlesFiles.value = analysis.value?.mean_shapes.map((m) => m.particles)
@@ -161,14 +164,15 @@ import { AnalysisTabs } from './util';
             return g;
         })
 
+        onMounted(methods.setDefaultPairing);
         watch(groupSet, () => {
             methods.setDefaultPairing();
             methods.updateGroupFileShown();
-            animate.value = false;
+            methods.stopAnimating();
         })
         watch(currPairing.value, () => {
             methods.updateGroupSelections();
-            animate.value = false;
+            methods.stopAnimating();
         })
         watch(groupRatio, methods.updateGroupFileShown)
         watch(groupDiff, methods.updateGroupFileShown)
@@ -187,7 +191,7 @@ import { AnalysisTabs } from './util';
         currGroup,
         currPairing,
         animate,
-        currentlyCaching
+        currentlyCaching,
       };
     },
   };
@@ -246,9 +250,9 @@ import { AnalysisTabs } from './util';
           ></v-checkbox>
       </v-row>
       <v-card align="center" justify="center" class="ma-auto mb-3" :disabled="currGroup === undefined">
-          <v-btn class="ms-4" color="grey darken-3" @click="() => { groupRatio = 0.0;}">Left Mean</v-btn>
+          <v-btn class="ms-4" color="grey darken-3" @click="() => { groupRatio = 0.0; methods.stopAnimating()}">Left Mean</v-btn>
           <v-btn-toggle class="ms-4" color="white"><v-btn color="grey darken-4" :disabled="animate || currentlyCaching" @click="() => groupDiff = !groupDiff">Diff --></v-btn></v-btn-toggle>
-          <v-btn class="ms-4" color="grey darken-3" @click="() => { groupRatio = 1.0;}">Right Mean</v-btn>
+          <v-btn class="ms-4" color="grey darken-3" @click="() => { groupRatio = 1.0; methods.stopAnimating()}">Right Mean</v-btn>
       </v-card>
     </div>
 </template>

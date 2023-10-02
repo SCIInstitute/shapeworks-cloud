@@ -17,7 +17,6 @@ import {
      cachedParticleComparisonVectors,
      allDatasets,
      goodBadAngles,
-     landmarkColorList,
      landmarkInfo,
      landmarkWidgets,
      analysisExpandedTab,
@@ -54,7 +53,6 @@ export const resetState = () => {
     selectedDataObjects.value = [];
     layersShown.value = ['Original'];
     landmarkInfo.value = undefined;
-    landmarkColorList.value = [];
     currentTasks.value = {};
     jobProgressPoll.value = undefined;
     particleSize.value = 2;
@@ -71,7 +69,6 @@ export const resetState = () => {
     cachedParticleComparisonVectors.value = {};
     cachedParticleComparisonColors.value = {};
     landmarkInfo.value = undefined;
-    landmarkColorList.value = [];
     analysisExpandedTab.value = 0;
     analysisAnimate.value = false;
 }
@@ -393,12 +390,6 @@ export async function cacheAllComparisons(comparisons: CacheComparison[][]) {
     }
 }
 
-export function updateLandmarkColorList() {
-    landmarkColorList.value = landmarkInfo.value.map(
-        (info: LandmarkInfo) => info.color
-    )
-}
-
 export async function getLandmarks() {
     landmarkWidgets.value = {}
     if (selectedProject.value?.landmarks){
@@ -434,7 +425,6 @@ export async function getLandmarks() {
                 }
                 return currentInfo
             })
-            updateLandmarkColorList()
         }
     }
 }

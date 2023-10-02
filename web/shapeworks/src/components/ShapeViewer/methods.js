@@ -22,11 +22,11 @@ import {
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    landmarkColorList, activeLandmark, landmarkInfo, landmarkWidgets,
+    activeLandmark, landmarkInfo, landmarkWidgets,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
-import { COLORS, SPHERE_RESOLUTION } from '@/store/constants';
+import { SPHERE_RESOLUTION } from '@/store/constants';
 
 export const GOOD_BAD_COLORS = [
     [0, 255, 0],
@@ -121,7 +121,7 @@ export default {
             this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
         })
     },
-    createColorFilter(domainIndex = 0, landmarks = false, goodBad = false) {
+    createColorFilter(domainIndex = 0, goodBad = false) {
         const filter = vtkCalculator.newInstance()
         filter.setFormula({
             getArrays() {
@@ -142,14 +142,7 @@ export default {
 
                 const n = coords.length / 3;
                 for (let i = 0; i < n; i += 1) {
-                    let c = COLORS[i % COLORS.length];
-                    if (landmarks) {
-                        if (landmarkColorList.value[i]) {
-                            c = landmarkColorList.value[i]
-                        } else {
-                            c = [0, 0, 0]
-                        }
-                    }
+                    let c;
 
                     if (goodBad && analysisFilesShown.value?.length) {
                         if (goodBadAngles.value[domainIndex][i] < goodBadMaxAngle.value) {
@@ -195,13 +188,13 @@ export default {
                 } else {
                     widget = vtkSeedWidget.newInstance();
                     widget.setManipulator(manipulator);
-
-                    const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
-                    const handle = widget.getWidgetState().getMoveHandle();
-                    handle.setColor3(...lInfo.color);
-                    handle.setOrigin(coords);
                     landmarkWidgets.value[lInfo.id] = widget;
+
                 }
+                const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
+                const handle = widget.getWidgetState().getMoveHandle();
+                handle.setOrigin(coords);
+                handle.setColor3(...lInfo.color);
 
                 const widgetHandle = this.widgetManager.addWidget(widget)
                 widgetHandle.setScaleInPixels(false);
@@ -231,7 +224,7 @@ export default {
             scaleFactor: size,
         });
         const actor = vtkActor.newInstance();
-        const filter = this.createColorFilter(i, landmarks, showGoodBadParticlesMode.value);
+        const filter = this.createColorFilter(i, showGoodBadParticlesMode.value);
 
         filter.setInputData(points, 0);
         mapper.setInputConnection(filter.getOutputPort(), 0);

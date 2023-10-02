@@ -30,11 +30,11 @@ import {
     meanAnalysisParticlesFiles,
     currentAnalysisParticlesFiles,
     switchTab,
-    landmarkColorList,
     jobAlreadyDone,
     analysisExpandedTab,
     allProjectsForDataset,
     loadProjectsForDataset,
+    landmarkInfo,
     activeLandmark,
 } from '@/store';
 import router from '@/router';
@@ -309,7 +309,7 @@ export default {
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
-        watch(landmarkColorList, debouncedRefreshRender)
+        watch(landmarkInfo, debouncedRefreshRender)
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(activeLandmark, debouncedRefreshRender)
         watch(tab, switchTab)

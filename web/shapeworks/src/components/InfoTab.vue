@@ -1,6 +1,16 @@
 <script>
-import { landmarkInfo, activeLandmark, selectedDataset, selectedProject, allSubjectsForDataset } from '@/store';
-import { computed, ref } from 'vue';
+import {
+    landmarkInfo,
+    activeLandmark,
+    selectedDataset,
+    selectedProject,
+    allSubjectsForDataset,
+    landmarkWidgets,
+    layersShown,
+    selectedDataObjects
+} from '@/store';
+import { computed, onMounted, ref } from 'vue';
+import { saveLandmarkData } from '@/api/rest'
 
 export default {
     setup() {
@@ -12,7 +22,6 @@ export default {
             {text: '# set', value: 'num_set', width: '70px'},
         ];
         const colorDialog = ref(false);
-        const changesMade = ref(false);
 
         const colorStrings = computed(() => {
             return landmarkInfo.value.map(({color}) => {
@@ -32,7 +41,6 @@ export default {
             landmarkInfo.value[landmarkIndex] = Object.assign(
                 {}, landmarkInfo.value[landmarkIndex], {name, comment}
             )
-            changesMade.value = true;
         }
 
         function updateLandmarkColor(landmarkIndex, color) {
@@ -44,8 +52,45 @@ export default {
             )
             // overwrite landmarkInfo so colorStrings will recompute
             landmarkInfo.value = [...landmarkInfo.value]
-            changesMade.value = true;
         }
+
+        function submit() {
+            const landmarksLocations = {}
+            allSubjectsForDataset.value.forEach((subject) => {
+                const shapesShown = selectedDataObjects.value.filter((o) => o.subject === subject.id)
+                shapesShown.forEach((shape, actorIndex) => {
+                    landmarkInfo.value.forEach((lInfo) => {
+                        const anatomyId = shape.anatomy_type
+                        let widgetId = `${subject.name}_${actorIndex}_${lInfo.id}`
+                        const widget = landmarkWidgets.value[widgetId]
+                        if (widget) {
+                            if (!landmarksLocations[subject.id]) {
+                                landmarksLocations[subject.id] = {}
+                            }
+                            if (!landmarksLocations[subject.id][anatomyId]) {
+                                landmarksLocations[subject.id][anatomyId] = []
+                            }
+                            const handle = widget.getWidgetState().getMoveHandle();
+                            landmarksLocations[subject.id][anatomyId].push(handle.getOrigin())
+                        }
+
+                    })
+                })
+            })
+            saveLandmarkData(
+                selectedProject.value.id,
+                landmarkInfo.value,
+                landmarksLocations
+            ).then((response) => {
+                console.log(response)
+            })
+        }
+
+        onMounted(() => {
+            if (!layersShown.value.includes('Landmarks')) {
+                layersShown.value = [...layersShown.value, 'Landmarks']
+            }
+        })
 
         return {
             selectedDataset,
@@ -55,11 +100,11 @@ export default {
             landmarkInfo,
             activeLandmark,
             colorStrings,
+            colorDialog,
             getColorObject,
             updateLandmarkInfo,
             updateLandmarkColor,
-            colorDialog,
-            changesMade,
+            submit,
         }
     }
 }
@@ -128,7 +173,13 @@ export default {
                             {{ item.num_set }} / {{ allSubjectsForDataset.length }}
                         </template>
                     </v-data-table>
-                    <v-btn v-if="changesMade" style="width: 100%" color="primary">Save Changes</v-btn>
+                    <v-btn
+                        style="width: 100%"
+                        color="primary"
+                        @click="submit"
+                    >
+                        Save Landmarks
+                    </v-btn>
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>

@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory, gettempdir
 from typing import Dict, Type
 
 from django.contrib.auth import logout
+from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -301,6 +302,39 @@ class ProjectViewSet(BaseViewSet):
     def download(self, request, **kwargs):
         project = self.get_object()
         return Response(serializers.ProjectDownloadSerializer(project).data)
+
+    @action(
+        detail=True,
+        url_path='landmarks',
+        url_name='landmarks',
+        methods=['POST'],
+    )
+    def set_landmarks(self, request, **kwargs):
+        project = self.get_object()
+        form_data = request.data
+        landmarks_info = form_data.get('info')
+        landmarks_locations = form_data.get('locations')
+        project.landmarks_info = landmarks_info
+
+        for subject_id, data in landmarks_locations.items():
+            for anatomy_type, locations in data.items():
+                landmarks_object = models.Landmarks.objects.get(
+                    project=project, subject__id=subject_id, anatomy_type=anatomy_type
+                )
+                landmarks_object.file.save(
+                    landmarks_object.file.name,
+                    ContentFile(
+                        '\n'.join(' '.join(str(n) for n in loc) for loc in locations).encode()
+                    ),
+                )
+
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Set Project Landmarks',
+            project.id,
+        )
+        return Response(serializers.ProjectReadSerializer(project).data)
 
     @action(
         detail=True,

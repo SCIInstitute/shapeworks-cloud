@@ -171,49 +171,52 @@ export default {
             }
         })
     },
-    addLandmarks(renderer, points) {
+    addLandmarks(label, renderer, points) {
         this.widgetManager = vtkWidgetManager.newInstance();
         this.widgetManager.setRenderer(renderer);
 
-        const manipulator = vtkPickerManipulator.newInstance();
         const actors = renderer.getActors();
         if (actors.length > 0) {
-            manipulator.getPicker().addPickList(actors[0]);
+            actors.forEach((actor, actorIndex) => {
+                const manipulator = vtkPickerManipulator.newInstance();
+                manipulator.getPicker().addPickList(actor);
 
-            const landmarkCoordsData = points.getPoints().getData()
-            landmarkInfo.value.forEach((lInfo, index) => {
-                let widget = undefined;
-                if (landmarkWidgets.value[lInfo.id]) {
-                    widget = landmarkWidgets.value[lInfo.id]
-                } else {
-                    widget = vtkSeedWidget.newInstance();
-                    widget.setManipulator(manipulator);
-                    landmarkWidgets.value[lInfo.id] = widget;
+                const landmarkCoordsData = points.getPoints().getData()
+                landmarkInfo.value.forEach((lInfo, index) => {
+                    let widgetId = `${label}_${actorIndex}_${lInfo.id}`
+                    let widget = undefined;
+                    if (landmarkWidgets.value[widgetId]) {
+                        widget = landmarkWidgets.value[widgetId]
+                    } else {
+                        widget = vtkSeedWidget.newInstance();
+                        widget.setManipulator(manipulator);
+                        landmarkWidgets.value[widgetId] = widget;
 
-                }
-                const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
-                const handle = widget.getWidgetState().getMoveHandle();
-                handle.setOrigin(coords);
-                handle.setColor3(...lInfo.color);
+                    }
+                    const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
+                    const handle = widget.getWidgetState().getMoveHandle();
+                    handle.setOrigin(coords);
+                    handle.setColor3(...lInfo.color);
 
-                const widgetHandle = this.widgetManager.addWidget(widget)
-                widgetHandle.setScaleInPixels(false);
-                if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
-                    widget.getWidgetState().getMoveHandle().setScale1(2);
-                } else {
-                    widget.getWidgetState().getMoveHandle().setScale1(1);
-                }
+                    const widgetHandle = this.widgetManager.addWidget(widget)
+                    widgetHandle.setScaleInPixels(false);
+                    if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
+                        widget.getWidgetState().getMoveHandle().setScale1(2);
+                    } else {
+                        widget.getWidgetState().getMoveHandle().setScale1(1);
+                    }
+                })
             })
         }
     },
-    addPoints(renderer, points, i, landmarks = false) {
+    addPoints(label, renderer, points, i, landmarks = false) {
         let size = this.glyphSize
         let source = vtkSphereSource.newInstance({
             thetaResolution: SPHERE_RESOLUTION,
             phiResolution: SPHERE_RESOLUTION,
         });
         if (landmarks) {
-            this.addLandmarks(renderer, points)
+            this.addLandmarks(label, renderer, points)
             document.addEventListener('click', this.setActiveLandmark)
             return;
         } else {
@@ -432,12 +435,12 @@ export default {
         this.addShapes(renderer, label, shapes.map(({ shape }) => shape));
         shapes.map(({ points }) => points).forEach((pointSet, i) => {
             if (pointSet.getNumberOfPoints() > 0) {
-                this.addPoints(renderer, pointSet, i);
+                this.addPoints(label, renderer, pointSet, i);
             }
         })
         shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet, i) => {
             if (landmarkSet && landmarkSet.getNumberOfPoints() > 0) {
-                this.addPoints(renderer, landmarkSet, i, true);
+                this.addPoints(label, renderer, landmarkSet, i, true);
             }
         })
 

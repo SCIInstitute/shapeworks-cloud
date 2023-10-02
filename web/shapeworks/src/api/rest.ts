@@ -1,4 +1,4 @@
-import { AnalysisParams, DataObject, Dataset, Project, Subject } from "@/types";
+import { AnalysisParams, DataObject, Dataset, LandmarkInfo, Project, Subject } from "@/types";
 import { apiClient } from "./auth";
 import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
@@ -153,4 +153,15 @@ export async function deleteTaskProgress(taskId: number){
 
 export async function abortTask(taskId: number) {
     return (await apiClient.post(`/task-progress/${taskId}/abort/`)).data
+}
+
+export async function saveLandmarkData(
+    projectId: number,
+    landmarkInfo: LandmarkInfo[],
+    landmarkLocations: Record<number, Record<number, number[][]>>
+) {
+    return (await apiClient.post(`/projects/${projectId}/landmarks/`, {
+        info: landmarkInfo,
+        locations: landmarkLocations,
+    }))
 }

@@ -191,50 +191,54 @@ export default {
         this.vtk.pointMappers.push(mapper);
     },
     addShapes(renderer, label, shapes) {
-        shapes.flat().forEach(
-            (shape, index) => {
-                let layerName = Object.entries(vtkShapesByType.value).filter(
-                    ([, shapes]) => shapes.includes(shape)
-                ).map(
-                    ([layerName,]) => layerName
-                )
-                layerName = layerName.length ? layerName[0] : "Original"
-                const type = layers.value.find((layer) => layer.name === layerName)
-                let opacity = 1;
-                if (!analysisFilesShown.value?.length) {
-                    const numLayers = layersShown.value.filter(
-                        (layerName) => layers.value.find((layer) => layer.name == layerName).rgb
-                    ).length
-                    if (numLayers > 0) opacity /= numLayers
-                }
-                const cacheLabel = `${label}_${layerName}_${index}`
+        shapes.forEach(
+            (shapeDatas, domainIndex) => {
+                shapeDatas.forEach(
+                    (shapeData) => {
+                        let layerName = Object.entries(vtkShapesByType.value).filter(
+                            ([, shapes]) => shapes.includes(shapeData)
+                        ).map(
+                            ([layerName,]) => layerName
+                        )
+                        layerName = layerName.length ? layerName[0] : "Original"
+                        const type = layers.value.find((layer) => layer.name === layerName)
+                        let opacity = 1;
+                        if (!analysisFilesShown.value?.length) {
+                            const numLayers = layersShown.value.filter(
+                                (layerName) => layers.value.find((layer) => layer.name == layerName).rgb
+                            ).length
+                            if (numLayers > 0) opacity /= numLayers
+                        }
+                        const cacheLabel = `${label}_${layerName}_${domainIndex}`
 
-                const mapper = vtkMapper.newInstance({
-                    colorMode: ColorMode.MAP_SCALARS,
-                    scalarMode: ScalarMode.USE_POINT_FIELD_DATA,
-                });
-                const actor = vtkActor.newInstance();
-                actor.getProperty().setColor(...type.rgb);
-                actor.getProperty().setOpacity(opacity);
-                actor.setMapper(mapper);
-                if (shape.getClassName() == 'vtkPolyData') {
-                    mapper.setInputData(shape);
-                } else if (cachedMarchingCubes.value[cacheLabel]) {
-                    mapper.setInputData(cachedMarchingCubes.value[cacheLabel])
-                } else {
-                    const marchingCube = vtkImageMarchingCubes.newInstance({
-                        contourValue: 0.001,
-                        computeNormals: true,
-                        mergePoints: true,
-                    });
-                    marchingCube.setInputData(shape)
-                    mapper.setInputConnection(marchingCube.getOutputPort());
-                    cachedMarchingCubes.value[cacheLabel] = marchingCube.getOutputData()
-                }
-                if (showDifferenceFromMeanMode.value) {
-                    this.showDifferenceFromMean(mapper, renderer, label, index)
-                }
-                renderer.addActor(actor);
+                        const mapper = vtkMapper.newInstance({
+                            colorMode: ColorMode.MAP_SCALARS,
+                            scalarMode: ScalarMode.USE_POINT_FIELD_DATA,
+                        });
+                        const actor = vtkActor.newInstance();
+                        actor.getProperty().setColor(...type.rgb);
+                        actor.getProperty().setOpacity(opacity);
+                        actor.setMapper(mapper);
+                        if (shapeData.getClassName() == 'vtkPolyData') {
+                            mapper.setInputData(shapeData);
+                        } else if (cachedMarchingCubes.value[cacheLabel]) {
+                            mapper.setInputData(cachedMarchingCubes.value[cacheLabel])
+                        } else {
+                            const marchingCube = vtkImageMarchingCubes.newInstance({
+                                contourValue: 0.001,
+                                computeNormals: true,
+                                mergePoints: true,
+                            });
+                            marchingCube.setInputData(shapeData)
+                            mapper.setInputConnection(marchingCube.getOutputPort());
+                            cachedMarchingCubes.value[cacheLabel] = marchingCube.getOutputData()
+                        }
+                        if (showDifferenceFromMeanMode.value) {
+                            this.showDifferenceFromMean(mapper, renderer, label, domainIndex)
+                        }
+                        renderer.addActor(actor);
+                    }
+                )
             }
         )
     },

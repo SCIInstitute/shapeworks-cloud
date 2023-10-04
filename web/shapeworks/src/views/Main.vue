@@ -168,7 +168,9 @@ export default {
                                 newRenderData[key] = []
                             }
                             newRenderData[key].push({
-                                shape: await imageReader(f, shortFileName(f)),
+                                shape: [  // only one layer, no overlapping shapes
+                                    await imageReader(f, shortFileName(f))
+                                ],
                                 points: await pointsReader(currentAnalysisParticlesFiles.value[i])
                             })
 

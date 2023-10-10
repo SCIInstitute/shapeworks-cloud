@@ -36,6 +36,7 @@ import {
     loadProjectsForDataset,
     landmarkInfo,
     activeLandmark,
+    landmarkSize,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -310,8 +311,9 @@ export default {
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
         watch(landmarkInfo, debouncedRefreshRender)
-        watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
+        watch(landmarkSize, debouncedRefreshRender)
         watch(activeLandmark, debouncedRefreshRender)
+        watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(tab, switchTab)
 
         return {

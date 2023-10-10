@@ -73,6 +73,8 @@ export const activeLandmark = ref();
 
 export const landmarkWidgets = ref({});
 
+export const landmarkSize = ref(2);
+
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 
 export const jobProgressPoll = ref();

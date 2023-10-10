@@ -11,6 +11,7 @@ import {
 } from '@/store';
 import { computed, onMounted, ref } from 'vue';
 import { saveLandmarkData } from '@/api/rest'
+import { landmarkSize } from '../store/index';
 
 export default {
     setup() {
@@ -98,6 +99,7 @@ export default {
             allSubjectsForDataset,
             headers,
             landmarkInfo,
+            landmarkSize,
             activeLandmark,
             colorStrings,
             colorDialog,
@@ -119,6 +121,16 @@ export default {
             <v-expansion-panel>
                 <v-expansion-panel-header>
                     Landmarks
+                    <v-spacer/>
+                    <v-text-field
+                        v-model.number="landmarkSize"
+                        label="Size"
+                        type="number"
+                        min="1"
+                        max="15"
+                        style="max-width: 50px"
+                        @click.stop
+                    />
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-data-table

@@ -15,5 +15,6 @@ expected_key_prefixes = [
     'groomed',
     'local',
     'world',
+    'landmarks',
     'constraints',
 ]

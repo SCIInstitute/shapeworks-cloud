@@ -22,7 +22,7 @@ import {
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    activeLandmark, landmarkInfo, landmarkWidgets,
+    activeLandmark, landmarkInfo, landmarkWidgets, landmarkSize,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -201,9 +201,9 @@ export default {
                     const widgetHandle = this.widgetManager.addWidget(widget)
                     widgetHandle.setScaleInPixels(false);
                     if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
-                        widget.getWidgetState().getMoveHandle().setScale1(2);
+                        widget.getWidgetState().getMoveHandle().setScale1(2 * landmarkSize.value);
                     } else {
-                        widget.getWidgetState().getMoveHandle().setScale1(1);
+                        widget.getWidgetState().getMoveHandle().setScale1(1 * landmarkSize.value);
                     }
                 })
             })

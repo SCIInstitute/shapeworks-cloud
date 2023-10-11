@@ -183,27 +183,29 @@ export default {
 
                 const landmarkCoordsData = points.getPoints().getData()
                 landmarkInfo.value.forEach((lInfo, index) => {
-                    let widgetId = `${label}_${actorIndex}_${lInfo.id}`
-                    let widget = undefined;
-                    if (landmarkWidgets.value[widgetId]) {
-                        widget = landmarkWidgets.value[widgetId]
-                    } else {
-                        widget = vtkSeedWidget.newInstance();
-                        widget.setManipulator(manipulator);
-                        landmarkWidgets.value[widgetId] = widget;
+                    if (landmarkCoordsData.length >= index * 3 + 3) {
+                        let widgetId = `${label}_${actorIndex}_${lInfo.id}`
+                        let widget = undefined;
+                        if (landmarkWidgets.value[widgetId]) {
+                            widget = landmarkWidgets.value[widgetId]
+                        } else {
+                            widget = vtkSeedWidget.newInstance();
+                            widget.setManipulator(manipulator);
+                            landmarkWidgets.value[widgetId] = widget;
 
-                    }
-                    const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
-                    const handle = widget.getWidgetState().getMoveHandle();
-                    handle.setOrigin(coords);
-                    handle.setColor3(...lInfo.color);
+                        }
+                        const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
+                        const handle = widget.getWidgetState().getMoveHandle();
+                        handle.setOrigin(coords);
+                        handle.setColor3(...lInfo.color);
 
-                    const widgetHandle = this.widgetManager.addWidget(widget)
-                    widgetHandle.setScaleInPixels(false);
-                    if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
-                        widget.getWidgetState().getMoveHandle().setScale1(2 * landmarkSize.value);
-                    } else {
-                        widget.getWidgetState().getMoveHandle().setScale1(1 * landmarkSize.value);
+                        const widgetHandle = this.widgetManager.addWidget(widget)
+                        widgetHandle.setScaleInPixels(false);
+                        if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
+                            widget.getWidgetState().getMoveHandle().setScale1(2 * landmarkSize.value);
+                        } else {
+                            widget.getWidgetState().getMoveHandle().setScale1(1 * landmarkSize.value);
+                        }
                     }
                 })
             })

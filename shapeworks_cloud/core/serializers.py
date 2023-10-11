@@ -122,12 +122,14 @@ class SubjectSerializer(serializers.ModelSerializer):
     num_domains = serializers.SerializerMethodField('get_num_domains')
 
     def get_num_domains(self, obj):
-        return (
-            len(list(obj.segmentations.all()))
-            + len(list(obj.meshes.all()))
-            + len(list(obj.contours.all()))
-            + len(list(obj.images.all()))
-        )
+        shapes = list(obj.segmentations.all()) + list(obj.meshes.all()) + list(obj.contours.all())
+        domains = []
+        for shape in shapes:
+            # get unique values for anatomy_type
+            domain = shape.anatomy_type
+            if domain not in domains:
+                domains.append(domain)
+        return len(domains)
 
     class Meta:
         model = models.Subject

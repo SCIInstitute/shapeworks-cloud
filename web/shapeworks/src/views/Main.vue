@@ -35,8 +35,8 @@ import {
     allProjectsForDataset,
     loadProjectsForDataset,
     landmarkInfo,
-    activeLandmark,
     landmarkSize,
+    currentLandmarkPlacement,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -312,7 +312,7 @@ export default {
         watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
         watch(landmarkInfo, debouncedRefreshRender)
         watch(landmarkSize, debouncedRefreshRender)
-        watch(activeLandmark, debouncedRefreshRender)
+        watch(currentLandmarkPlacement, debouncedRefreshRender)
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(tab, switchTab)
 

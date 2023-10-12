@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory, gettempdir
@@ -315,6 +316,12 @@ class ProjectViewSet(BaseViewSet):
         landmarks_info = form_data.get('info')
         landmarks_locations = form_data.get('locations')
         project.landmarks_info = landmarks_info
+        project_file_contents = json.loads(project.file.read())
+        project_file_contents['landmarks'] = landmarks_info
+        project.file.save(
+            project.file.name,
+            ContentFile(json.dumps(project_file_contents).encode()),
+        )
 
         for subject_id, data in landmarks_locations.items():
             for anatomy_type, locations in data.items():

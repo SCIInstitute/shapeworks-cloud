@@ -22,7 +22,8 @@ import {
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    activeLandmark, landmarkInfo, landmarkWidgets, landmarkSize,
+    landmarkInfo, landmarkWidgets, landmarkSize,
+    currentLandmarkPlacement, allSetLandmarks,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -160,18 +161,8 @@ export default {
         });
         return filter;
     },
-    setActiveLandmark() {
-        Object.entries(landmarkWidgets.value).some(([wid, w]) => {
-            const active = this.widgetManager.getActiveWidget()
-            if (active && w.getWidgetState() === active.getWidgetState()) {
-                activeLandmark.value = landmarkInfo.value.find(({ id }) => id === parseInt(wid))
-                return true;
-            } else {
-                return false;
-            }
-        })
-    },
     addLandmarks(label, renderer, points) {
+        console.log('addLandmarks')
         this.widgetManager = vtkWidgetManager.newInstance();
         this.widgetManager.setRenderer(renderer);
 
@@ -181,31 +172,50 @@ export default {
                 const manipulator = vtkPickerManipulator.newInstance();
                 manipulator.getPicker().addPickList(actor);
 
-                const landmarkCoordsData = points.getPoints().getData()
+                const landmarkCoordsData = points?.getPoints().getData()
                 landmarkInfo.value.forEach((lInfo, index) => {
-                    if (landmarkCoordsData.length >= index * 3 + 3) {
-                        let widgetId = `${label}_${actorIndex}_${lInfo.id}`
-                        let widget = undefined;
-                        if (landmarkWidgets.value[widgetId]) {
-                            widget = landmarkWidgets.value[widgetId]
-                        } else {
-                            widget = vtkSeedWidget.newInstance();
-                            widget.setManipulator(manipulator);
-                            landmarkWidgets.value[widgetId] = widget;
+                    let widgetId = `${label}_${actorIndex}_${lInfo.id}`
+                    console.log(currentLandmarkPlacement.value, widgetId)
+                    let widget = undefined;
+                    let handle = undefined;
+                    if (landmarkWidgets.value[widgetId]) {
+                        widget = landmarkWidgets.value[widgetId]
+                    } else {
+                        widget = vtkSeedWidget.newInstance();
+                        widget.setManipulator(manipulator);
+                        landmarkWidgets.value[widgetId] = widget;
+                    }
 
-                        }
+                    this.widgetManager.addWidget(widget).setScaleInPixels(false);
+                    handle = widget.getWidgetState().getMoveHandle();
+                    handle.setColor3(...lInfo.color);
+
+                    if (currentLandmarkPlacement.value === widgetId) {
+                        widget.placeWidget(actor.getBounds());
+                        this.widgetManager.grabFocus(widget);
+                        this.widgetManager.onModified(() => {
+                            const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
+                            if (currentLandmarkPlacement.value && landmarkCoord) {
+                                this.widgetManager.releaseFocus(widget)
+                                currentLandmarkPlacement.value = undefined;
+
+                                const shapeKey = `${label}_${actorIndex}`;
+                                if (allSetLandmarks.value[shapeKey]) {
+                                    allSetLandmarks.value[shapeKey].push(landmarkCoord)
+                                } else {
+                                    allSetLandmarks.value[shapeKey] = [landmarkCoord]
+                                }
+                                // reassign store var for listeners
+                                allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+                            }
+                        })
+                    }
+
+                    handle.setScale1(1 * landmarkSize.value);
+
+                    if (landmarkCoordsData && landmarkCoordsData.length >= index * 3 + 3) {
                         const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
-                        const handle = widget.getWidgetState().getMoveHandle();
                         handle.setOrigin(coords);
-                        handle.setColor3(...lInfo.color);
-
-                        const widgetHandle = this.widgetManager.addWidget(widget)
-                        widgetHandle.setScaleInPixels(false);
-                        if (activeLandmark.value && lInfo.id === activeLandmark.value.id) {
-                            widget.getWidgetState().getMoveHandle().setScale1(2 * landmarkSize.value);
-                        } else {
-                            widget.getWidgetState().getMoveHandle().setScale1(1 * landmarkSize.value);
-                        }
                     }
                 })
             })
@@ -219,10 +229,7 @@ export default {
         });
         if (landmarks) {
             this.addLandmarks(label, renderer, points)
-            document.addEventListener('click', this.setActiveLandmark)
             return;
-        } else {
-            document.removeEventListener('click', this.setActiveLandmark)
         }
         const mapper = vtkGlyph3DMapper.newInstance({
             scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
@@ -443,6 +450,8 @@ export default {
         shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet, i) => {
             if (landmarkSet && landmarkSet.getNumberOfPoints() > 0) {
                 this.addPoints(label, renderer, landmarkSet, i, true);
+            } else if (currentLandmarkPlacement.value) {
+                this.addLandmarks(label, renderer, undefined)
             }
         })
 

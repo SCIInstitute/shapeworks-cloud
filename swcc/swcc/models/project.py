@@ -105,11 +105,7 @@ class ProjectFileIO(BaseModel, FileIO):
                 if len(prefixes) > 0:
                     prefix = prefixes[0]
                     anatomy_id = 'anatomy' + key
-                    anatomy_id = (
-                        anatomy_id.replace(prefix, '')
-                        .replace('_file', '')
-                        .replace('_particles', '')
-                    )
+                    anatomy_id = anatomy_id.replace(prefix, '').replace('_particles', '')
                     # Only create a new domain object if a shape exists for that suffix
                     if anatomy_id not in objects_by_domain:
                         if prefix in required_key_prefixes:

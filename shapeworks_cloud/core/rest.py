@@ -315,26 +315,43 @@ class ProjectViewSet(BaseViewSet):
         form_data = request.data
         landmarks_info = form_data.get('info')
         landmarks_locations = form_data.get('locations')
+
         project.landmarks_info = landmarks_info
         project_file_contents = json.loads(project.file.read())
         project_file_contents['landmarks'] = landmarks_info
         project.file.save(
-            project.file.name,
+            project.file.name.split('/')[-1],
             ContentFile(json.dumps(project_file_contents).encode()),
         )
+        project.save()
 
+        ids_existing_with_coords = []
         for subject_id, data in landmarks_locations.items():
             for anatomy_type, locations in data.items():
-                landmarks_object = models.Landmarks.objects.get(
-                    project=project, subject__id=subject_id, anatomy_type=anatomy_type
+                target_subject = models.Subject.objects.get(id=subject_id)
+                landmarks_object, created = models.Landmarks.objects.get_or_create(
+                    project=project, subject=target_subject, anatomy_type=anatomy_type
                 )
+                file_content = ''
+                if (
+                    locations is not None
+                    and len(locations) > 0
+                    and locations[0] is not None
+                    and len(locations[0]) == 3
+                ):
+                    file_content = '\n'.join(' '.join(str(n) for n in loc) for loc in locations)
+                file_name = 'landmarks.csv'
+                if landmarks_object.file:
+                    file_name = landmarks_object.file.name.split('/')[-1]
                 landmarks_object.file.save(
-                    landmarks_object.file.name,
-                    ContentFile(
-                        '\n'.join(' '.join(str(n) for n in loc) for loc in locations).encode()
-                    ),
+                    file_name,
+                    ContentFile(file_content.encode()),
                 )
+                ids_existing_with_coords.append(landmarks_object.id)
 
+        models.Landmarks.objects.filter(project=project).exclude(
+            id__in=ids_existing_with_coords
+        ).delete()
         log_write_access(
             timezone.now(),
             self.request.user.username,

@@ -265,7 +265,7 @@ export default {
                                     let landmarksURL;
                                     if(layersShown.value.includes("Landmarks")) {
                                         landmarksURL = selectedProject.value?.landmarks?.find(
-                                            (l) => l.subject.toString() === subjectId
+                                            (l) => l.subject?.toString() === subjectId
                                         )?.file
                                     }
 

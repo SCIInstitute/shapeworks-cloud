@@ -18,6 +18,7 @@ import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constant
 
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
+    selectedProject,
     layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
@@ -162,7 +163,6 @@ export default {
         return filter;
     },
     addLandmarks(label, renderer, points) {
-        console.log('addLandmarks')
         this.widgetManager = vtkWidgetManager.newInstance();
         this.widgetManager.setRenderer(renderer);
 
@@ -175,7 +175,6 @@ export default {
                 const landmarkCoordsData = points?.getPoints().getData()
                 landmarkInfo.value.forEach((lInfo, index) => {
                     let widgetId = `${label}_${actorIndex}_${lInfo.id}`
-                    console.log(currentLandmarkPlacement.value, widgetId)
                     let widget = undefined;
                     let handle = undefined;
                     if (landmarkWidgets.value[widgetId]) {
@@ -195,7 +194,7 @@ export default {
                         this.widgetManager.grabFocus(widget);
                         this.widgetManager.onModified(() => {
                             const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
-                            if (currentLandmarkPlacement.value && landmarkCoord) {
+                            if (label && actorIndex >= 0 && currentLandmarkPlacement.value && landmarkCoord) {
                                 this.widgetManager.releaseFocus(widget)
                                 currentLandmarkPlacement.value = undefined;
 
@@ -450,8 +449,6 @@ export default {
         shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet, i) => {
             if (landmarkSet && landmarkSet.getNumberOfPoints() > 0) {
                 this.addPoints(label, renderer, landmarkSet, i, true);
-            } else if (currentLandmarkPlacement.value) {
-                this.addLandmarks(label, renderer, undefined)
             }
         })
 
@@ -483,9 +480,20 @@ export default {
         }
         this.initializeCameras()
 
-        this.vtk.renderers.forEach((renderer) => {
+        this.vtk.renderers.forEach((renderer, i) => {
             if (positionDelta && viewUpDelta) {
                 this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
+            }
+            if (
+                data[i] &&
+                (currentLandmarkPlacement.value ||
+                    selectedProject.value.landmarks.some(
+                        ({ newAddition }) => newAddition
+                    )
+                )
+            ) {
+                let label = data[i][0]
+                this.addLandmarks(label, renderer, undefined)
             }
         })
         const targetRenderer = this.vtk.renderers[this.columns - 1]

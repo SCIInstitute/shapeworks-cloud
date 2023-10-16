@@ -163,5 +163,5 @@ export async function saveLandmarkData(
     return (await apiClient.post(`/projects/${projectId}/landmarks/`, {
         info: landmarkInfo,
         locations: landmarkLocations,
-    }))
+    })).data
 }

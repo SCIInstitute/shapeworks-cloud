@@ -162,6 +162,20 @@ export default {
         });
         return filter;
     },
+    updateLandmarkLocation(label, actorIndex, landmarkIndex, landmarkCoord) {
+        const shapeKey = `${label}_${actorIndex}`;
+        if (allSetLandmarks.value[shapeKey]) {
+            if (allSetLandmarks.value[shapeKey].length <= landmarkIndex) {
+                allSetLandmarks.value[shapeKey].push(landmarkCoord)
+            } else {
+                allSetLandmarks.value[shapeKey][landmarkIndex] = landmarkCoord
+            }
+        } else {
+            allSetLandmarks.value[shapeKey] = [landmarkCoord]
+        }
+        // reassign store var for listeners
+        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+    },
     addLandmarks(label, renderer, points) {
         this.widgetManager = vtkWidgetManager.newInstance();
         this.widgetManager.setRenderer(renderer);
@@ -197,15 +211,6 @@ export default {
                             if (label && actorIndex >= 0 && currentLandmarkPlacement.value && landmarkCoord) {
                                 this.widgetManager.releaseFocus(widget)
                                 currentLandmarkPlacement.value = undefined;
-
-                                const shapeKey = `${label}_${actorIndex}`;
-                                if (allSetLandmarks.value[shapeKey]) {
-                                    allSetLandmarks.value[shapeKey].push(landmarkCoord)
-                                } else {
-                                    allSetLandmarks.value[shapeKey] = [landmarkCoord]
-                                }
-                                // reassign store var for listeners
-                                allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
                             }
                         })
                     }
@@ -216,6 +221,13 @@ export default {
                         const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
                         handle.setOrigin(coords);
                     }
+
+                    widget.onWidgetChange(() => {
+                        const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
+                        if (landmarkCoord) {
+                            this.updateLandmarkLocation(label, actorIndex, index, landmarkCoord)
+                        }
+                    })
                 })
             })
         }

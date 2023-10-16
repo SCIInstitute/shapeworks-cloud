@@ -88,10 +88,10 @@ export default {
         function selectedObjectsUpdated() {
             const uniqueAnatomies = [...new Set(selectedDataObjects.value.map(item => item.anatomy_type))]
             const uniqueSubjects = [...new Set(selectedDataObjects.value.map(item => item.subject))]
-            if (uniqueAnatomies !== selectedAnatomies.value) {
+            if (JSON.stringify(uniqueAnatomies) !== JSON.stringify(selectedAnatomies.value)) {
                 selectedAnatomies.value = uniqueAnatomies
             }
-            if (uniqueSubjects !== selectedSubjects.value) {
+            if (JSON.stringify(uniqueSubjects) !== JSON.stringify(selectedSubjects.value)) {
                 selectedSubjects.value = uniqueSubjects
             }
         }

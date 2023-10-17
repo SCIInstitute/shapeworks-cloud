@@ -1,8 +1,8 @@
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
 import vtkPickerManipulator from 'vtk.js/Sources/Widgets/Manipulators/PickerManipulator';
-import vtkSeedWidget from 'vtk.js/Sources/Widgets/Widgets3D/SeedWidget';
 import vtkWidgetManager from 'vtk.js/Sources/Widgets/Core/WidgetManager';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
@@ -16,7 +16,7 @@ import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttribute
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
-import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
+import vtkLandmarkWidget from '../../plugins/LandmarkWidget';
 import {
     layers, layersShown, orientationIndicator, anatomies,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
@@ -180,7 +180,7 @@ export default {
                 let widgetKey = `${shapeKey}_${lInfo.id}`
                 const setLandmarkCoords = allSetLandmarks.value[shapeKey]
 
-                let widget = vtkSeedWidget.newInstance();
+                let widget = vtkLandmarkWidget.newInstance();
                 widget.setManipulator(manipulator);
                 this.widgetManager.addWidget(widget).setScaleInPixels(false);
                 let handle = widget.getWidgetState().getMoveHandle();

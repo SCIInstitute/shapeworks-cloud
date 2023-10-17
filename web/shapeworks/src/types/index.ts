@@ -181,6 +181,7 @@ export interface Landmarks {
     subject: number,
     created: string,
     modified: string,
+    anatomy_type: string,
 }
 
 export interface LandmarkInfo {

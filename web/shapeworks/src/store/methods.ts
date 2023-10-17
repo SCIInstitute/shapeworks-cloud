@@ -1,4 +1,4 @@
-import { AnalysisParams, CacheComparison, LandmarkInfo, Project, Task } from "@/types";
+import { AnalysisParams, CacheComparison, Project, Task } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -18,7 +18,6 @@ import {
      allDatasets,
      goodBadAngles,
      landmarkInfo,
-     landmarkWidgets,
      analysisExpandedTab,
      selectedDataObjects,
      particleSize,
@@ -29,6 +28,9 @@ import {
      showDifferenceFromMeanMode,
      showGoodBadParticlesMode,
      analysisAnimate,
+     allSetLandmarks,
+     allSubjectsForDataset,
+     anatomies,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -52,7 +54,7 @@ import router from "@/router";
 export const resetState = () => {
     selectedDataObjects.value = [];
     layersShown.value = ['Original'];
-    landmarkInfo.value = undefined;
+    landmarkInfo.value = [];
     currentTasks.value = {};
     jobProgressPoll.value = undefined;
     particleSize.value = 2;
@@ -68,7 +70,6 @@ export const resetState = () => {
     cachedMarchingCubes.value = {};
     cachedParticleComparisonVectors.value = {};
     cachedParticleComparisonColors.value = {};
-    landmarkInfo.value = undefined;
     analysisExpandedTab.value = 0;
     analysisAnimate.value = false;
 }
@@ -96,7 +97,6 @@ export async function getAllDatasets() {
 export const loadProjectForDataset = async (projectId: number) => {
     refreshProject(projectId).then((proj) => {
         selectedProject.value = proj
-        getLandmarks()
     });
 }
 
@@ -117,7 +117,6 @@ export const selectProject = (projectId: number | undefined) => {
         selectedProject.value = allProjectsForDataset.value.find(
             (project: Project) => project.id == projectId,
         )
-        getLandmarks();
     }
 }
 
@@ -390,41 +389,69 @@ export async function cacheAllComparisons(comparisons: CacheComparison[][]) {
     }
 }
 
-export async function getLandmarks() {
-    landmarkWidgets.value = {}
-    if (selectedProject.value?.landmarks){
-        const subjectParticles = await Promise.all(
-            selectedProject.value.landmarks.map(
-                async (subjectLandmarks) => {
-                    const locations = await pointsReader(subjectLandmarks.file)
-                    return locations.getPoints().getNumberOfPoints()
-                }
-            )
-        )
-        if (subjectParticles.length > 0){
-            const numRows = Math.max(...subjectParticles)
-            landmarkInfo.value = [...Array(numRows).keys()].map((index) => {
-                let currentInfo = {
-                    id: index,
-                    color: COLORS[index % COLORS.length],
-                    name: `L${index}`,
-                    num_set: subjectParticles.filter(
-                        (numLocations) => numLocations > index
-                    ).length,
-                    comment: undefined,
+export function reassignLandmarkNumSetValues() {
+    const setLandmarksPerDomain = {}
+    if (allSetLandmarks.value){
+        Object.entries(allSetLandmarks.value).forEach(([shapeKey, setLocations]) => {
+            const anatomyIndex = shapeKey.split('_')[shapeKey.split('_').length -1]
+            const domain = anatomies.value[anatomyIndex].replace('anatomy_', '')
+            if (!setLandmarksPerDomain[domain]) {
+                setLandmarksPerDomain[domain] = []
+            }
+            setLandmarksPerDomain[domain].push(setLocations.length)
+        })
+        landmarkInfo.value = landmarkInfo.value.map((lInfo) => {
+            const indexForDomain = landmarkInfo.value.filter(
+                (i) => i.domain === lInfo.domain
+            ).map((i) => i.id).indexOf(lInfo.id)
+            lInfo.num_set = 0
+            if (setLandmarksPerDomain[lInfo.domain]) {
+                setLandmarksPerDomain[lInfo.domain].forEach((subjectSetCount) => {
+                    if (subjectSetCount > indexForDomain) {
+                        lInfo.num_set += 1
+                    }
+                })
+            }
+            return lInfo
+        })
+    }
+}
 
-                }
-                if (selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > index) {
-                    currentInfo = Object.assign(
-                        currentInfo,
-                        selectedProject.value?.landmarks_info[index]
-                    )
-                }
-                if (currentInfo.color.toString().includes("#")) {
-                    currentInfo.color = hexToRgb(currentInfo.color.toString())
-                }
-                return currentInfo
-            })
+export async function getLandmarks() {
+    allSetLandmarks.value = {}
+    if(selectedProject.value?.landmarks) {
+        landmarkInfo.value = selectedProject.value.landmarks_info.map((lInfo, index) => {
+            if(!lInfo.name) {
+                lInfo.name = `L${index}`
+            }
+            if (!lInfo.color) {
+                lInfo.color = COLORS[index % COLORS.length]
+            }
+            if (lInfo.color.toString().includes('#')) {
+                lInfo.color = hexToRgb(lInfo.color.toString())
+            }
+            lInfo.num_set = 0
+            return lInfo
+        })
+
+        for (let i = 0; i < selectedProject.value.landmarks.length; i++) {
+            const landmarksObject = selectedProject.value.landmarks[i]
+            const subject = allSubjectsForDataset.value.find((s) => s.id === landmarksObject.subject)
+            const pointData = await pointsReader(landmarksObject.file)
+            const locationData = pointData.getPoints().getData()
+            const locations: number[][] = []
+            for (let p = 0; p< locationData.length; p+=3) {
+                const location = locationData.slice(p, p+3) as number[]
+                if (location.every((v) => !isNaN(v))) locations.push(location)
+            }
+            if (subject) {
+                const anatomyIndex = anatomies.value.findIndex((a) => a === landmarksObject.anatomy_type)
+                const shapeKey = `${subject.name}_${anatomyIndex}`;
+                allSetLandmarks.value[shapeKey] = locations
+            }
         }
+        // reassign store var for listeners
+        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+        reassignLandmarkNumSetValues();
     }
 }

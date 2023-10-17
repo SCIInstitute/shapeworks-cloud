@@ -3,7 +3,7 @@ import {
     DataObject, Dataset, Subject,
     Particles, GroomedShape, Project,
     ReconstructedSample, VTKInstance,
-    Analysis, Task
+    Analysis, Task, LandmarkInfo
 } from '@/types'
 import { ref } from 'vue'
 
@@ -30,6 +30,8 @@ export const editingProject = ref<undefined | Project>();
 export const allSubjectsForDataset = ref<Subject[]>([])
 
 export const allDataObjectsInDataset = ref<DataObject[]>([])
+
+export const anatomies = ref<string[]>([]);
 
 export const selectedDataObjects = ref<DataObject[]>([])
 
@@ -67,13 +69,11 @@ export const cachedParticleComparisonVectors = ref<{[key: string]: number[][]}>(
 
 export const cachedParticleComparisonColors = ref<{[key: string]: number[]}>({})
 
-export const landmarkInfo = ref();
-
-export const landmarkWidgets = ref({});
+export const landmarkInfo = ref<LandmarkInfo[]>([]);
 
 export const landmarkSize = ref(2);
 
-export const allSetLandmarks = ref({});
+export const allSetLandmarks = ref<Record<string, number[][]>>();
 
 export const currentLandmarkPlacement = ref();
 

@@ -37,6 +37,8 @@ import {
     landmarkInfo,
     landmarkSize,
     currentLandmarkPlacement,
+getLandmarks,
+allSetLandmarks,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -262,17 +264,18 @@ export default {
                                         particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
                                     }
 
-                                    let landmarksURL;
-                                    if(layersShown.value.includes("Landmarks")) {
-                                        landmarksURL = selectedProject.value?.landmarks?.find(
-                                            (l) => l.subject?.toString() === subjectId
-                                        )?.file
+                                    let landmarksPromise;
+                                    if(
+                                        layersShown.value.includes("Landmarks") &&
+                                        !allSetLandmarks.value
+                                    ) {
+                                        landmarksPromise = getLandmarks()
                                     }
 
                                     return Promise.all([
                                         Promise.all(shapePromises),
                                         pointsReader(particleURL),
-                                        pointsReader(landmarksURL)
+                                        landmarksPromise
                                     ])
                                 }
                             )))

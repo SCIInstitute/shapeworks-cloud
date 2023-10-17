@@ -18,13 +18,12 @@ import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constant
 
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
-    selectedProject,
-    layers, layersShown, orientationIndicator,
+    layers, layersShown, orientationIndicator, anatomies,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    landmarkInfo, landmarkWidgets, landmarkSize,
-    currentLandmarkPlacement, allSetLandmarks,
+    landmarkInfo, landmarkSize, currentLandmarkPlacement,
+    allSetLandmarks, reassignLandmarkNumSetValues,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -162,86 +161,79 @@ export default {
         });
         return filter;
     },
-    updateLandmarkLocation(label, actorIndex, landmarkIndex, landmarkCoord) {
-        const shapeKey = `${label}_${actorIndex}`;
-        if (allSetLandmarks.value[shapeKey]) {
-            if (allSetLandmarks.value[shapeKey].length <= landmarkIndex) {
-                allSetLandmarks.value[shapeKey].push(landmarkCoord)
-            } else {
-                allSetLandmarks.value[shapeKey][landmarkIndex] = landmarkCoord
-            }
-        } else {
-            allSetLandmarks.value[shapeKey] = [landmarkCoord]
-        }
-        // reassign store var for listeners
-        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
-    },
-    addLandmarks(label, renderer, points) {
+    addLandmarks(label, renderer) {
         this.widgetManager = vtkWidgetManager.newInstance();
         this.widgetManager.setRenderer(renderer);
 
-        const actors = renderer.getActors();
-        if (actors.length > 0) {
-            actors.forEach((actor, actorIndex) => {
+        landmarkInfo.value.forEach((lInfo) => {
+            const anatomyIndex = anatomies.value.findIndex((a) => a.replace('anatomy_', '') === lInfo.domain)
+            const indexForDomain = landmarkInfo.value.filter(
+                (i) => i.domain === lInfo.domain
+            ).map((i) => i.id).indexOf(lInfo.id)
+
+            if (renderer.getActors().length > anatomyIndex) {
+                const actor = renderer.getActors()[anatomyIndex]
                 const manipulator = vtkPickerManipulator.newInstance();
                 manipulator.getPicker().addPickList(actor);
 
-                const landmarkCoordsData = points?.getPoints().getData()
-                landmarkInfo.value.forEach((lInfo, index) => {
-                    let widgetId = `${label}_${actorIndex}_${lInfo.id}`
-                    let widget = undefined;
-                    let handle = undefined;
-                    if (landmarkWidgets.value[widgetId]) {
-                        widget = landmarkWidgets.value[widgetId]
-                    } else {
-                        widget = vtkSeedWidget.newInstance();
-                        widget.setManipulator(manipulator);
-                        landmarkWidgets.value[widgetId] = widget;
-                    }
+                let shapeKey = `${label}_${anatomyIndex}`
+                let widgetKey = `${shapeKey}_${lInfo.id}`
+                const setLandmarkCoords = allSetLandmarks.value[shapeKey]
 
-                    this.widgetManager.addWidget(widget).setScaleInPixels(false);
-                    handle = widget.getWidgetState().getMoveHandle();
-                    handle.setColor3(...lInfo.color);
+                let widget = vtkSeedWidget.newInstance();
+                widget.setManipulator(manipulator);
+                this.widgetManager.addWidget(widget).setScaleInPixels(false);
+                let handle = widget.getWidgetState().getMoveHandle();
 
-                    if (currentLandmarkPlacement.value === widgetId) {
-                        widget.placeWidget(actor.getBounds());
-                        this.widgetManager.grabFocus(widget);
-                        this.widgetManager.onModified(() => {
-                            const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
-                            if (label && actorIndex >= 0 && currentLandmarkPlacement.value && landmarkCoord) {
-                                this.widgetManager.releaseFocus(widget)
-                                currentLandmarkPlacement.value = undefined;
-                            }
-                        })
-                    }
-
-                    handle.setScale1(1 * landmarkSize.value);
-
-                    if (landmarkCoordsData && landmarkCoordsData.length >= index * 3 + 3) {
-                        const coords = landmarkCoordsData.slice(index * 3, index * 3 + 3)
-                        handle.setOrigin(coords);
-                    }
-
-                    widget.onWidgetChange(() => {
-                        const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
-                        if (landmarkCoord) {
-                            this.updateLandmarkLocation(label, actorIndex, index, landmarkCoord)
+                // Handle current landmark placement widget
+                if (currentLandmarkPlacement.value === widgetKey) {
+                    widget.placeWidget(actor.getBounds());
+                    this.widgetManager.grabFocus(widget);
+                    this.widgetManager.onModified(() => {
+                        const landmarkCoord = handle.getOrigin()
+                        if (currentLandmarkPlacement.value && landmarkCoord) {
+                            this.widgetManager.releaseFocus(widget)
+                            currentLandmarkPlacement.value = undefined;
                         }
                     })
+                }
+
+                // Set color, scale, and position of widget
+                handle.setColor3(...lInfo.color);
+                handle.setScale1(landmarkSize.value);
+                if (setLandmarkCoords && setLandmarkCoords.length > indexForDomain) {
+                    const coord = setLandmarkCoords[indexForDomain]
+                    handle.setOrigin(coord);
+                }
+
+                widget.onWidgetChange(() => {
+                    // When widget moved, update value in allSetLandmarks
+                    const landmarkCoord = handle.getOrigin()
+                    if (landmarkCoord) {
+                        this.widgetManager.releaseFocus(widget);
+                        if (allSetLandmarks.value[shapeKey]) {
+                            if (allSetLandmarks.value[shapeKey].length > indexForDomain) {
+                                allSetLandmarks.value[shapeKey][indexForDomain] = landmarkCoord
+                            } else {
+                                allSetLandmarks.value[shapeKey].push(landmarkCoord)
+                            }
+                        } else {
+                            allSetLandmarks.value[shapeKey] = [landmarkCoord]
+                        }
+                        // reassign store var for listeners
+                        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+                        reassignLandmarkNumSetValues()
+                    }
                 })
-            })
-        }
+            }
+        })
     },
-    addPoints(label, renderer, points, i, landmarks = false) {
+    addPoints(label, renderer, points, i) {
         let size = this.glyphSize
         let source = vtkSphereSource.newInstance({
             thetaResolution: SPHERE_RESOLUTION,
             phiResolution: SPHERE_RESOLUTION,
         });
-        if (landmarks) {
-            this.addLandmarks(label, renderer, points)
-            return;
-        }
         const mapper = vtkGlyph3DMapper.newInstance({
             scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
             scaleFactor: size,
@@ -458,11 +450,6 @@ export default {
                 this.addPoints(label, renderer, pointSet, i);
             }
         })
-        shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet, i) => {
-            if (landmarkSet && landmarkSet.getNumberOfPoints() > 0) {
-                this.addPoints(label, renderer, landmarkSet, i, true);
-            }
-        })
 
         const camera = vtkCamera.newInstance();
         renderer.setActiveCamera(camera);
@@ -498,14 +485,10 @@ export default {
             }
             if (
                 data[i] &&
-                (currentLandmarkPlacement.value ||
-                    selectedProject.value.landmarks.some(
-                        ({ newAddition }) => newAddition
-                    )
-                )
+                layersShown.value.includes('Landmarks')
             ) {
                 let label = data[i][0]
-                this.addLandmarks(label, renderer, undefined)
+                this.addLandmarks(label, renderer)
             }
         })
         const targetRenderer = this.vtk.renderers[this.columns - 1]

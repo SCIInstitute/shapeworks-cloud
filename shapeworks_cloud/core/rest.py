@@ -352,6 +352,7 @@ class ProjectViewSet(BaseViewSet):
         models.Landmarks.objects.filter(project=project).exclude(
             id__in=ids_existing_with_coords
         ).delete()
+
         log_write_access(
             timezone.now(),
             self.request.user.username,

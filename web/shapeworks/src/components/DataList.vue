@@ -8,6 +8,7 @@ import {
     selectedDataset,
     allSubjectsForDataset,
     allDataObjectsInDataset,
+    anatomies,
     selectedDataObjects,
     loadingState,
     loadReconstructedSamplesForProject,
@@ -30,7 +31,7 @@ export default {
         }
     },
     setup(props) {
-        const anatomies = ref<string[]>([]);
+
         const selectedAnatomies = ref<string[]>([]);
         const selectedSubjects = ref<number[]>([])
         const headers =  [

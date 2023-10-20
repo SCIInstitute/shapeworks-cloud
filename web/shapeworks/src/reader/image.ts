@@ -1,8 +1,8 @@
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import vtkPLYReader from 'vtk.js/Sources/IO/Geometry/PLYReader';
+import vtkSTLReader from 'vtk.js/Sources/IO/Geometry/STLReader';
 import vtkPolyDataReader from 'vtk.js/Sources/IO/Legacy/PolyDataReader';
-import vtkStringArray from 'vtk.js/Sources/Common/Core/StringArray'
 import readImageArrayBuffer from 'itk/readImageArrayBuffer';
 import ITKHelper from 'vtk.js/Sources/Common/DataModel/ITKHelper';
 import axios from 'axios';
@@ -23,8 +23,7 @@ export default async function (
         responseType: 'arraybuffer'
     })).data;
 
-    if(
-        filename.toLowerCase().endsWith('ply')){
+    if(filename.toLowerCase().endsWith('ply')){
         const reader = vtkPLYReader.newInstance();
         await reader.parseAsArrayBuffer(arrayBuffer)
         shape =  reader.getOutputData();
@@ -41,6 +40,10 @@ export default async function (
         const reader = vtkPolyDataReader.newInstance();
         await reader.setUrl(url)
         shape = reader.getOutputData();
+    } else if (filename.toLowerCase().endsWith('stl')) {
+        const reader = vtkSTLReader.newInstance();
+        await reader.parseAsArrayBuffer(arrayBuffer)
+        shape =  reader.getOutputData();
     } else {
         console.log('Unknown file type for', filename)
         shape = vtkPolyData.newInstance()

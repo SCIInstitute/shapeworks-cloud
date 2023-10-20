@@ -186,7 +186,7 @@ class Project(TimeStampedModel, models.Model):
                         for related in related_files[prefix]:
                             if not target_file:
                                 # subject and anatomy type must match
-                                if suffix in related[0]:
+                                if suffix == related[0].replace('anatomy_', ''):
                                     target_file = related[1].url
                     if target_file:
                         value = value.replace('../', '')

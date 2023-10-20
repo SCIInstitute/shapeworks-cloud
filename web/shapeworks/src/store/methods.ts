@@ -389,6 +389,12 @@ export async function cacheAllComparisons(comparisons: CacheComparison[][]) {
     }
 }
 
+export function reassignLandmarkIDsByIndex() {
+    landmarkInfo.value = landmarkInfo.value.map((info, index) => {
+        return Object.assign(info, {id: index})
+    })
+}
+
 export function reassignLandmarkNumSetValues() {
     const setLandmarksPerDomain = {}
     if (allSetLandmarks.value){
@@ -452,6 +458,7 @@ export async function getLandmarks() {
         }
         // reassign store var for listeners
         allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+        reassignLandmarkIDsByIndex();
         reassignLandmarkNumSetValues();
     }
 }

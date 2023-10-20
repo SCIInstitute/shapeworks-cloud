@@ -11,6 +11,7 @@ import {
     selectedDataObjects,
     allDataObjectsInDataset,
     currentLandmarkPlacement,
+    reassignLandmarkIDsByIndex,
     reassignLandmarkNumSetValues,
 } from '@/store';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -109,12 +110,6 @@ export default {
             landmarkInfo.value = [...landmarkInfo.value]
         }
 
-        function reassignIDsByIndex() {
-            landmarkInfo.value = landmarkInfo.value.map((info, index) => {
-                return Object.assign(info, {id: index})
-            })
-        }
-
         function deleteLandmark(landmarkIndex, landmarkDomain) {
             const indexForDomain = landmarkInfo.value.filter(
                 (i) => i.domain === landmarkDomain
@@ -132,7 +127,7 @@ export default {
                     ([, locations]) => locations.length
                 )
             )
-            reassignIDsByIndex()
+            reassignLandmarkIDsByIndex()
             dialogs.value = []
             expandedRows.value = []
             changesMade.value = true
@@ -161,7 +156,7 @@ export default {
             } else {
                 landmarkInfo.value = [landmark]
             }
-            reassignIDsByIndex()
+            reassignLandmarkIDsByIndex()
             expandedRows.value = [landmark]
             selectedProject.value.landmarks = [
                 ...selectedProject.value.landmarks,

@@ -57,7 +57,7 @@ setup(
         'swcc',
         # Production-only
         'django-composed-configuration[prod]',
-        'django-s3-file-field[boto3]',
+        'django-s3-file-field[boto3]<1',  # v1 has breaking changes
         'gunicorn',
         'numpy',
     ],

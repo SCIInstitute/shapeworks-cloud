@@ -65,7 +65,7 @@ setup(
         'dev': [
             'django-composed-configuration[dev]',
             'django-debug-toolbar',
-            'django-s3-file-field[minio]',
+            'django-s3-file-field[minio]<1',
             'ipython',
             'openpyxl',
             'tox',

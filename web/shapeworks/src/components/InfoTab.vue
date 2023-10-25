@@ -300,7 +300,7 @@ export default {
                                     </v-card-title>
                                     <v-card-actions>
                                         <v-spacer/>
-                                        <v-btn color="warning" @click="deleteLandmark(index)">
+                                        <v-btn color="red" @click="deleteLandmark(index)">
                                             Yes, Delete This Landmark
                                         </v-btn>
                                     </v-card-actions>
@@ -346,6 +346,7 @@ export default {
                             <v-select
                                 v-model="item.domain"
                                 :items="anatomies.map((a) => a.replace('anatomy_', ''))"
+                                :disabled="item.num_set > 0"
                                 style="width: 80px"
                             />
                         </template>

@@ -45,7 +45,7 @@ services:
       - minio
 
   yarn:
-    image: node:latest
+    image: node:lts
     command: [ "/bin/bash", "-c", "yarn install && yarn serve" ]
     env_file: ./dev/yarn.env
     environment:

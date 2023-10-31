@@ -64,6 +64,11 @@ export interface AnalysisGroup {
     ratio: number,
 }
 
+export interface AnalysisMeanShape {
+    file: string,
+    particles: string,
+}
+
 export interface Analysis {
     id: number,
     created: string,
@@ -71,8 +76,7 @@ export interface Analysis {
     charts: AnalysisChart[],
     good_bad_angles: number[][],
     groups: AnalysisGroup[],
-    mean_shape: string,
-    mean_particles: string;
+    mean_shapes: AnalysisMeanShape[],
     modes: AnalysisMode[],
 }
 

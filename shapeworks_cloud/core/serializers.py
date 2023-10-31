@@ -18,6 +18,12 @@ class CachedAnalysisGroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CachedAnalysisMeanShapeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CachedAnalysisMeanShape
+        fields = '__all__'
+
+
 class CachedAnalysisModePCASerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CachedAnalysisModePCA
@@ -55,6 +61,7 @@ class CachedAnalysisModeReadSerializer(serializers.ModelSerializer):
 class CachedAnalysisReadSerializer(serializers.ModelSerializer):
     modes = CachedAnalysisModeReadSerializer(many=True)
     groups = CachedAnalysisGroupSerializer(many=True)
+    mean_shapes = CachedAnalysisMeanShapeSerializer(many=True)
 
     class Meta:
         model = models.CachedAnalysis
@@ -112,6 +119,18 @@ class DatasetSerializer(serializers.ModelSerializer):
 
 
 class SubjectSerializer(serializers.ModelSerializer):
+    num_domains = serializers.SerializerMethodField('get_num_domains')
+
+    def get_num_domains(self, obj):
+        shapes = list(obj.segmentations.all()) + list(obj.meshes.all()) + list(obj.contours.all())
+        domains = []
+        for shape in shapes:
+            # get unique values for anatomy_type
+            domain = shape.anatomy_type
+            if domain not in domains:
+                domains.append(domain)
+        return len(domains)
+
     class Meta:
         model = models.Subject
         fields = '__all__'

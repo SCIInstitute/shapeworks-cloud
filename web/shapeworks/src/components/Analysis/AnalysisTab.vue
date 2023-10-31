@@ -1,7 +1,6 @@
 <script lang="ts">
 import {
     analysis,
-    analysisFileShown,
     currentTasks,
     selectedProject,
     analysisExpandedTab,
@@ -79,7 +78,6 @@ export default {
 
         return {
             analysis,
-            analysisFileShown,
             message,
             taskData,
             openTab,

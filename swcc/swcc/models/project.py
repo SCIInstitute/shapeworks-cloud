@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import warnings
 
 import requests
 
@@ -24,12 +25,13 @@ from pydantic.v1 import BaseModel
 
 from ..api import current_session
 from .api_model import ApiModel
-from .constants import expected_key_prefixes
+from .constants import expected_key_prefixes, required_key_prefixes
 from .dataset import Dataset
 from .file_type import FileType
 from .other_models import (
     CachedAnalysis,
     CachedAnalysisGroup,
+    CachedAnalysisMeanShape,
     CachedAnalysisMode,
     CachedAnalysisModePCA,
     Constraints,
@@ -97,25 +99,26 @@ class ProjectFileIO(BaseModel, FileIO):
                     name=entry.get('name'), groups=groups_dict, dataset=self.project.dataset
                 ).create()
 
-            entry_values: Dict = {p: [] for p in expected_key_prefixes}
-            entry_values['anatomy_ids'] = []
+            objects_by_domain: Dict[str, Dict] = {}
             for key in entry.keys():
-                if key != 'name':
-                    prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
-                    if len(prefixes) > 0:
-                        entry_values[prefixes[0]].append(entry[key])
-                        anatomy_id = 'anatomy' + key.replace(prefixes[0], '').replace(
-                            '_particles', ''
-                        ).replace('_file', '')
-                        if anatomy_id not in entry_values['anatomy_ids']:
-                            entry_values['anatomy_ids'].append(anatomy_id)
-            objects_by_domain = {}
-            for index, anatomy_id in enumerate(entry_values['anatomy_ids']):
-                objects_by_domain[anatomy_id] = {
-                    k: v[index] if len(v) > index else v[0]
-                    for k, v in entry_values.items()
-                    if len(v) > 0
-                }
+                prefixes = [p for p in expected_key_prefixes if key.startswith(p)]
+                if len(prefixes) > 0:
+                    prefix = prefixes[0]
+                    anatomy_id = 'anatomy' + key
+                    anatomy_id = anatomy_id.replace(prefix, '').replace('_particles', '')
+                    # Only create a new domain object if a shape exists for that suffix
+                    if anatomy_id not in objects_by_domain:
+                        if prefix in required_key_prefixes:
+                            objects_by_domain[anatomy_id] = {}
+                        else:
+                            warnings.warn(
+                                f'No shape exists for {anatomy_id}. Cannot create {key}.',
+                                stacklevel=2,
+                            )
+                            continue
+                    objects_by_domain[anatomy_id][prefix] = (
+                        entry[key].replace('../', '').replace('./', '')
+                    )
             output_data.append(
                 [
                     subject,
@@ -235,12 +238,23 @@ class ProjectFileIO(BaseModel, FileIO):
         analysis_file_location = project_root / Path(file_path)
         contents = json.load(open(analysis_file_location))
         if contents['mean'] and contents['mean']['meshes']:
-            mean_shape_path = contents['mean']['meshes'][0]
-            mean_particles_path = None
+            mean_shapes_cache = []
+            mean_shapes = []
+            for mean_shape in contents['mean']['meshes']:
+                mean_shapes.append(analysis_file_location.parent / Path(mean_shape))
+
             if 'particle_files' in contents['mean']:
-                mean_particles_path = contents['mean']['particle_files'][0]
-            if 'particles' in contents['mean']:
-                mean_particles_path = contents['mean']['particles'][0]
+                mean_particles = []
+                for mean_particle_path in contents['mean']['particle_files']:
+                    mean_particles.append(analysis_file_location.parent / Path(mean_particle_path))
+
+            for i in range(len(mean_shapes)):
+                cams = CachedAnalysisMeanShape(
+                    file=mean_shapes[i],
+                    particles=mean_particles[i] if mean_particles else None,
+                ).create()
+                mean_shapes_cache.append(cams)
+
             modes = []
             for mode in contents['modes']:
                 pca_values = []
@@ -271,10 +285,6 @@ class ProjectFileIO(BaseModel, FileIO):
                     modes.append(cam)
 
             if len(modes) > 0:
-                mean_particles = None
-                if mean_particles_path:
-                    mean_particles = analysis_file_location.parent / Path(mean_particles_path)
-
                 groups_cache = []
                 if contents['groups']:
                     for group in contents['groups']:
@@ -295,8 +305,7 @@ class ProjectFileIO(BaseModel, FileIO):
 
                                 groups_cache.append(cag)
                 return CachedAnalysis(
-                    mean_shape=analysis_file_location.parent / Path(mean_shape_path),
-                    mean_particles=mean_particles,
+                    mean_shapes=mean_shapes_cache,
                     modes=modes,
                     charts=contents['charts'],
                     groups=groups_cache,
@@ -321,6 +330,10 @@ class Project(ApiModel):
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
+
+    @property
+    def subjects(self) -> Iterator[Subject]:
+        return Subject.list(project=self)
 
     @property
     def groomed_segmentations(self) -> Iterator[GroomedSegmentation]:

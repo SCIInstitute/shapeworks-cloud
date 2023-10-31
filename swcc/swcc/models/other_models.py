@@ -131,11 +131,17 @@ class CachedAnalysisMode(ApiModel):
     pca_values: List[CachedAnalysisModePCA]
 
 
+class CachedAnalysisMeanShape(ApiModel):
+    _endpoint = 'cached-analysis-mean-shape'
+
+    file: FileType[Literal['core.CachedAnalysisMeanShape.file']]
+    particles: FileType[Literal['core.CachedAnalysisMeanShape.particles']]
+
+
 class CachedAnalysis(ApiModel):
     _endpoint = 'cached-analysis'
 
-    mean_shape: FileType[Literal['core.CachedAnalysis.mean_shape']]
-    mean_particles: FileType[Literal['core.CachedAnalysis.mean_particles']]
+    mean_shapes: List[CachedAnalysisMeanShape]
     modes: List[CachedAnalysisMode]
     charts: List[dict]
     groups: Optional[List[CachedAnalysisGroup]]

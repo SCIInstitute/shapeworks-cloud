@@ -15,10 +15,20 @@ import {
      reconstructionsForOriginalDataObjects,
      cachedParticleComparisonColors,
      cachedParticleComparisonVectors,
-     meanAnalysisFileParticles,
      allDatasets,
      goodBadAngles,
-     landmarkColorList, landmarkInfo,
+     landmarkColorList,
+     landmarkInfo,
+     analysisExpandedTab,
+     selectedDataObjects,
+     particleSize,
+     analysisFilesShown,
+     meanAnalysisParticlesFiles,
+     currentAnalysisParticlesFiles,
+     goodBadMaxAngle,
+     showDifferenceFromMeanMode,
+     showGoodBadParticlesMode,
+     analysisAnimate,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -38,6 +48,32 @@ import {
 import { layers, COLORS } from "./constants";
 import { getDistance, hexToRgb } from "@/helper";
 import router from "@/router";
+
+export const resetState = () => {
+    selectedDataObjects.value = [];
+    layersShown.value = ['Original'];
+    landmarkInfo.value = undefined;
+    landmarkColorList.value = [];
+    currentTasks.value = {};
+    jobProgressPoll.value = undefined;
+    particleSize.value = 2;
+    analysis.value = undefined;
+    analysisExpandedTab.value = 0;
+    analysisFilesShown.value = undefined;
+    currentAnalysisParticlesFiles.value = undefined;
+    meanAnalysisParticlesFiles.value = undefined;
+    goodBadAngles.value = undefined;
+    goodBadMaxAngle.value = 45;
+    showGoodBadParticlesMode.value = false;
+    showDifferenceFromMeanMode.value = false;
+    cachedMarchingCubes.value = {};
+    cachedParticleComparisonVectors.value = {};
+    cachedParticleComparisonColors.value = {};
+    landmarkInfo.value = undefined;
+    landmarkColorList.value = [];
+    analysisExpandedTab.value = 0;
+    analysisAnimate.value = false;
+}
 
 export const loadDataset = async (datasetId: number) => {
     // Only reload if something has changed
@@ -79,10 +115,10 @@ export const loadProjectsForDataset = async (datasetId: number) => {
 
 export const selectProject = (projectId: number | undefined) => {
     if (projectId) {
+        resetState();
         selectedProject.value = allProjectsForDataset.value.find(
             (project: Project) => project.id == projectId,
         )
-        layersShown.value = ["Original"]
         getLandmarks();
     }
 }
@@ -141,10 +177,19 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
     if (!projectId) return undefined
     switch (action) {
         case 'groom':
+            layersShown.value = layersShown.value.filter(
+                (l) => l !== 'Groomed'
+            )
             return (await groomProject(projectId, payload))?.data
         case 'optimize':
+            layersShown.value = layersShown.value.filter(
+                (l) => l !== 'Particles'
+            )
             return (await optimizeProject(projectId, payload))?.data
         case 'analyze':
+            layersShown.value = layersShown.value.filter(
+                (l) => l !== 'Reconstructed'
+            )
             return (await analyzeProject(projectId, payload as AnalysisParams))?.data
         default:
             break;
@@ -224,7 +269,10 @@ export async function fetchJobResults(taskName: string) {
                 ([cachedLabel]) => !cachedLabel.includes(layerName)
             )
         )
-        if (!layersShown.value.includes(layerName)) layersShown.value.push(layerName)
+        const layer = layers.value.find((l) => l.name === layerName)
+        if (layer?.available() && !layersShown.value.includes(layerName)) {
+            layersShown.value = [...layersShown.value, layerName]
+        }
     }
 }
 
@@ -299,36 +347,46 @@ export function cacheComparison(colorValues: number[], vectorValues: number[][],
     cachedParticleComparisonVectors.value[particleComparisonKey] = vectorValues
 }
 
-export async function cacheAllComparisons(comparisons: CacheComparison[]) {
+export async function cacheAllComparisons(comparisons: CacheComparison[][]) {
     if (comparisons !== undefined) {
         const cachePrep = await Promise.all(comparisons?.map(async (g) => {
-            const particleComparisonKey = `${g.particles}_${meanAnalysisFileParticles.value}`;
+            return await Promise.all(
+                g.map(async (domain, i) => {
+                    if(meanAnalysisParticlesFiles.value && meanAnalysisParticlesFiles.value.length > i){
+                        const particleComparisonKey = domain.particles;
 
-            if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
-                const compareToPoints = await pointsReader(meanAnalysisFileParticles.value);
-                const currentPoints = await pointsReader(g.particles);
+                        if (!cachedParticleComparisonColors.value[particleComparisonKey]) { // if the comparison is NOT already cached
+                            const compareToPoints = await pointsReader(meanAnalysisParticlesFiles.value[i]);
+                            const currentPoints = await pointsReader(domain.particles);
 
-                const currentMesh = await imageReader(g.file, "current_mesh.vtk");
+                            const currentMesh = await imageReader(domain.file, "current_mesh.vtk");
 
-                return {
-                    "compareTo": {
-                        points: compareToPoints.getPoints().getData(),
-                        particleUrl: meanAnalysisFileParticles.value,
-                    },
-                    "current":  {
-                        points: currentPoints.getPoints().getData(),
-                        mapper: generateMapper(currentMesh),
-                        particleUrl: g.particles,
-                    },
-                }
-            }
+                            return {
+                                "compareTo": {
+                                    points: compareToPoints.getPoints().getData(),
+                                    particleUrl: domain,
+                                },
+                                "current":  {
+                                    points: currentPoints.getPoints().getData(),
+                                    mapper: generateMapper(currentMesh),
+                                    particleUrl: domain.particles,
+                                },
+                            }
+                        }
+                    }
+                })
+            )
         }))
 
         cachePrep.forEach((g) => {
             if (g !== undefined) {
-                const { current, compareTo } = g;
-                const comparisons = calculateComparisons(current.mapper, current.points as number[], compareTo.points as number[])
-                cacheComparison(comparisons.colorValues, comparisons.vectorValues, `${current.particleUrl}_${compareTo.particleUrl}`);
+                g.forEach((c) => {
+                    if (c){
+                        const { current, compareTo } = c;
+                        const comparisons = calculateComparisons(current.mapper, current.points as number[], compareTo.points as number[])
+                        cacheComparison(comparisons.colorValues, comparisons.vectorValues, current.particleUrl);
+                    }
+                })
             }
         })
     }

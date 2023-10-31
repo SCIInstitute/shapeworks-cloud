@@ -13,7 +13,7 @@ import {
     allDatasets,
     allProjectsForDataset,
     showDifferenceFromMeanMode,
-    analysisFileShown,
+    analysisFilesShown,
     showGoodBadParticlesMode,
 goodBadMaxAngle
 } from '@/store';
@@ -158,7 +158,7 @@ export default {
         }
 
         const showAnalysisOptions = computed(() => {
-            return props.currentTab === 'analyze' && analysisFileShown.value;
+            return props.currentTab === 'analyze' && analysisFilesShown.value?.length;
         })
 
         return {

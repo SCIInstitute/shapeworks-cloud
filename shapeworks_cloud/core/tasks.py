@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.db.models import Q
-import pandas
 from rest_framework.authtoken.models import Token
 
 from shapeworks_cloud.core import models
@@ -28,10 +27,9 @@ def parse_progress(xml_string):
     return 0
 
 
-def edit_swproj_section(filename, section_name, new_df):
+def edit_swproj_section(filename, section_name, new_contents):
     with open(filename, 'r') as f:
         data = json.load(f)
-    new_contents = {item['key']: item['value'] for item in new_df.to_dict(orient='records')}
     if section_name == 'groom':
         data[section_name] = {}
         data[section_name]['shape'] = new_contents
@@ -48,28 +46,28 @@ def edit_swproj_section(filename, section_name, new_df):
         json.dump(data, f)
 
 
-def interpret_form_df(df, command):
-    if command == 'groom' and df['key'].str.contains('anisotropic_').any():
-        # consolidate anisotropic values to one row
-        anisotropic_values = {
-            axis: str(df.loc[df['key'] == 'anisotropic_' + axis].iloc[0]['value'])
-            for axis in ['x', 'y', 'z']
-        }
-        df_filter = df['key'].map(lambda key: 'anisotropic_' not in key)
-        df = df[df_filter]
-        return pandas.concat(
-            [
-                df,
-                pandas.DataFrame.from_dict(
-                    {
-                        'key': ['spacing'],
-                        'value': [' '.join(anisotropic_values.values())],
-                    }
-                ),
-            ]
-        )
-    else:
-        return df
+def interpret_form_data(data, command, swcc_project):
+    anisotropic_values = []
+    del_keys = []
+    for key, value in data.items():
+        if 'anisotropic' in key:
+            anisotropic_values.append(value)
+            del_keys.append(key)
+
+    for del_key in del_keys:
+        del data[del_key]
+
+    if command == 'groom' and len(anisotropic_values) > 0:
+        data['spacing'] = ' '.join(anisotropic_values)
+    elif command == 'optimize':
+        num_particles = data.get('number_of_particles')
+        if num_particles:
+            max_num_domains = max(s.num_domains for s in swcc_project.subjects)
+            data['number_of_particles'] = ' '.join(
+                str(num_particles) for i in range(max_num_domains)
+            )
+
+    return data
 
 
 def run_shapeworks_command(
@@ -93,22 +91,19 @@ def run_shapeworks_command(
             session.set_token(token.key)
             project = models.Project.objects.get(id=project_id)
             project_filename = project.file.name.split('/')[-1]
-            SWCCProject.from_id(project.id).download(download_dir)
+            swcc_project = SWCCProject.from_id(project.id)
+            swcc_project.download(download_dir)
 
             pre_command_function()
             progress.update_percentage(10)
 
             if form_data:
                 # write the form data to the project file
-                form_df = pandas.DataFrame(
-                    list(form_data.items()),
-                    columns=['key', 'value'],
-                )
-                form_df = interpret_form_df(form_df, command)
+                form_data = interpret_form_data(form_data, command, swcc_project)
                 edit_swproj_section(
                     Path(download_dir, project_filename),
                     command,
-                    form_df,
+                    form_data,
                 )
 
             # perform command
@@ -177,12 +172,9 @@ def groom(user_id, project_id, form_data, progress_id):
                 if len(prefixes) > 0:
                     prefix = prefixes[0]
                     anatomy_id = 'anatomy' + key.replace(prefix, '')
-                    if prefix in ['mesh', 'segmentation', 'image', 'contour']:
-                        prefix = 'shape'
-                    if prefix in ['shape', 'groomed']:
-                        if anatomy_id not in row:
-                            row[anatomy_id] = {}
-                        row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
+                    if anatomy_id not in row:
+                        row[anatomy_id] = {}
+                    row[anatomy_id][prefix] = entry[key].replace('../', '').replace('./', '')
 
             for anatomy_data in row.values():
                 if 'groomed' not in anatomy_data:
@@ -262,9 +254,9 @@ def optimize(user_id, project_id, form_data, progress_id, analysis_progress_id):
                 target_mesh = project_groomed_meshes.filter(
                     file__endswith=groomed_filename,
                 ).first()
-                if target_mesh:
+                if target_mesh and target_mesh.mesh:
                     subject = target_mesh.mesh.subject
-                elif target_segmentation:
+                elif target_segmentation and target_segmentation.segmentation:
                     subject = target_segmentation.segmentation.subject
                 result_particles_object = models.OptimizedParticles.objects.create(
                     groomed_segmentation=target_segmentation,
@@ -314,6 +306,8 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
             cachedanalysismode__cachedanalysis__project=project
         ).delete()
         models.CachedAnalysisMode.objects.filter(cachedanalysis__project=project).delete()
+        models.CachedAnalysisGroup.objects.filter(cachedanalysis__project=project).delete()
+        models.CachedAnalysisMeanShape.objects.filter(cachedanalysis__project=project).delete()
         models.CachedAnalysis.objects.filter(project=project).delete()
 
     def post_command_function(project, download_dir, result_data, project_filename):
@@ -328,16 +322,16 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
             project_data = json.load(pf)['data']
             for i, sample in enumerate(project_data):
                 reconstructed_filenames = result_data['reconstructed_samples'][i]
-                particles = (
-                    models.OptimizedParticles.objects.filter(project=project)
-                    .filter(
+                subject_particles = list(
+                    models.OptimizedParticles.objects.filter(project=project).filter(
                         Q(groomed_mesh__mesh__subject__name=sample['name'])
                         | Q(groomed_segmentation__segmentation__subject__name=sample['name'])
                     )
-                    .first()
                 )
-                for reconstructed_filename in reconstructed_filenames:
-                    reconstructed = models.ReconstructedSample(project=project, particles=particles)
+                for j, reconstructed_filename in enumerate(reconstructed_filenames):
+                    reconstructed = models.ReconstructedSample(
+                        project=project, particles=subject_particles[j]
+                    )
                     reconstructed.file.save(
                         reconstructed_filename,
                         open(Path(download_dir, reconstructed_filename), 'rb'),

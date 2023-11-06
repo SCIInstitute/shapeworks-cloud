@@ -19,8 +19,10 @@ export default function widgetBehavior(publicAPI, model) {
   function currentWorldCoords(e) {
     const manipulator =
       model.activeState?.getManipulator?.() ?? model.manipulator;
-    return manipulator.handleEvent(e, model._apiSpecificRenderWindow)
-      .worldCoords;
+    if (manipulator && model._apiSpecificRenderWindow) {
+      return manipulator.handleEvent(e, model._apiSpecificRenderWindow)
+        .worldCoords;
+    }
   }
 
   // Update the handle's center.  Example:

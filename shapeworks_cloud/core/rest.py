@@ -333,13 +333,18 @@ class ProjectViewSet(BaseViewSet):
                     project=project, subject=target_subject, anatomy_type=anatomy_type
                 )
                 file_content = ''
+                print(locations)
                 if (
                     locations is not None
                     and len(locations) > 0
                     and locations[0] is not None
                     and len(locations[0]) == 3
                 ):
-                    file_content = '\n'.join(' '.join(str(n) for n in loc) for loc in locations)
+                    file_content = '\n'.join(
+                        ' '.join(
+                            str(n) for n in
+                            (loc.values() if isinstance(loc, dict) else loc)
+                        ) for loc in locations)
                 file_name = 'landmarks.csv'
                 if landmarks_object.file:
                     file_name = landmarks_object.file.name.split('/')[-1]

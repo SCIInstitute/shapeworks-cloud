@@ -43,17 +43,17 @@ allSetLandmarks,
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
-import InfoTab from '@/components/InfoTab.vue';
+import Landmarks from '@/components/Landmarks.vue';
 
 
 export default {
     components: {
         ShapeViewer,
         DataList,
+        Landmarks,
         RenderControls,
         TabForm,
         AnalysisTab,
-        InfoTab,
     },
     props: {
         dataset: {
@@ -378,7 +378,9 @@ export default {
                         </v-tab-item>
                         <v-tab href="#info">Info</v-tab>
                         <v-tab-item value="info">
-                            <info-tab />
+                            <v-expansion-panels :value="[0]" multiple>
+                                <landmarks />
+                            </v-expansion-panels>
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">

@@ -1,21 +1,19 @@
 <script>
+import { computed, onMounted, ref, watch } from 'vue';
 import {
     landmarkInfo,
-    selectedDataset,
     selectedProject,
     allSubjectsForDataset,
     anatomies,
     allSetLandmarks,
     landmarkSize,
     layersShown,
-    selectedDataObjects,
-    allDataObjectsInDataset,
     currentLandmarkPlacement,
     reassignLandmarkIDsByIndex,
     reassignLandmarkNumSetValues,
 } from '@/store';
-import { computed, onMounted, ref, watch } from 'vue';
 import { saveLandmarkData } from '@/api/rest'
+import { getShapeKey, isShapeShown, showShape } from '../store/methods';
 
 export default {
     setup() {
@@ -29,9 +27,9 @@ export default {
 
         const changesMade = ref(false);
 
-        const dialogs = ref([]);
-
         const expandedRows = ref([]);
+
+        const dialogs = ref([]);
 
         const colorStrings = computed(() => {
             return landmarkInfo.value.map(({color}) => {
@@ -39,99 +37,44 @@ export default {
             })
         })
 
-        const placementStatuses = computed(() => {
-            const statuses = {}
-            landmarkInfo.value.forEach((l) => {
-                statuses[l.id] = {}
-                allSubjectsForDataset.value.forEach((s) => {
-                    let placementStatus = 'NOT SET';
-                    const anatomyIndex = anatomies.value.findIndex((a) => a.replace('anatomy_', '') === l.domain)
-                    const shapeKey = `${s.name}_${anatomyIndex}`
-                    const landmarkKey = `${shapeKey}_${l.id}`
-                    const numSet = allSetLandmarks.value[shapeKey]?.length || 0
-                    const indexForDomain = landmarkInfo.value.filter(
-                        (i) => i.domain === l.domain
-                    ).map((i) => i.id).indexOf(l.id)
-                    if (currentLandmarkPlacement.value === landmarkKey) {
-                        placementStatus = `Click anywhere on ${s.name} ${l.domain}`
-                    } else if (allSetLandmarks.value[shapeKey] && numSet > indexForDomain) {
-                        const coordinateStrings = []
-                        allSetLandmarks.value[shapeKey][indexForDomain].forEach((v) => {
-                            coordinateStrings.push(v.toFixed(2))
-                        })
-                        placementStatus = coordinateStrings.join(', ')
-                    } else if (indexForDomain >= numSet + 1) {
-                        // Check if any previous landmarks are missing placements on this shape
-                        const preReqLandmark = landmarkInfo.value[numSet]?.name
-                        placementStatus = `${preReqLandmark} must be set first.`
-                    }
-                    statuses[l.id][shapeKey] = placementStatus
-                })
-            })
-            return statuses
-        })
+        function getColorObject(rgb) {
+            return {'r': rgb[0], 'g': rgb[1], 'b': rgb[2]}
+        }
 
-        function getPlacementStatus(lInfo, subjectName) {
-            const anatomyIndex = anatomies.value.findIndex((a) => a.replace('anatomy_', '') === lInfo.domain)
-            const shapeKey = `${subjectName}_${anatomyIndex}`
-            return placementStatuses.value[lInfo.id][shapeKey]
+        function getSameDomainLandmarks(item) {
+            return landmarkInfo.value.filter(
+                (i) => i.domain === item.domain
+            )
+        }
+
+        function getShapePlacementIndex(item) {
+            return  getSameDomainLandmarks(item).map((i) => i.id).indexOf(item.id)
+        }
+
+        function getPlacementStatus(item, subject) {
+            const shapeKey = getShapeKey(item, subject)
+            const currentShapePlacements = allSetLandmarks.value[shapeKey]
+            const shapePlacementIndex = getShapePlacementIndex(item)
+            if (currentShapePlacements && currentShapePlacements.length > shapePlacementIndex) {
+                const placement = currentShapePlacements[shapePlacementIndex]
+                const coordStrings = []
+                placement.forEach(v => coordStrings.push(v.toFixed(2)))
+                return coordStrings.join(", ")
+            }
+            else if (shapePlacementIndex >= (currentShapePlacements?.length || 0) + 1) {
+                const preReq = getSameDomainLandmarks(item)[currentShapePlacements?.length || 0]
+                return `${preReq.name} must be set first.`
+            }
+            else if (currentLandmarkPlacement.value === shapeKey) {
+                return `Click anywhere on ${subject.name} ${item.domain}`
+            }
+            return 'NOT SET'
         }
 
         function beginPlacement(subject, item) {
-            const anatomyIndex = anatomies.value.findIndex((a) => a.replace('anatomy_', '') === item.domain)
-            currentLandmarkPlacement.value = `${subject.name}_${anatomyIndex}_${item.id}`
+            currentLandmarkPlacement.value = `${getShapeKey(item, subject)}_${item.id}`
         }
 
-        function getColorObject(rgb) {
-            return {
-                'r': rgb[0],
-                'g': rgb[1],
-                'b': rgb[2]
-            }
-        }
-
-        function updateLandmarkInfo(landmarkIndex, name, comment) {
-            landmarkInfo.value[landmarkIndex] = Object.assign(
-                {}, landmarkInfo.value[landmarkIndex], {name, comment}
-            )
-            // reassign store var for listeners
-            landmarkInfo.value = [...landmarkInfo.value]
-            changesMade.value = true
-        }
-
-        function updateLandmarkColor(landmarkIndex, color) {
-            color = [
-                color.rgba.r, color.rgba.g, color.rgba.b
-            ]
-            landmarkInfo.value[landmarkIndex] = Object.assign(
-                {}, landmarkInfo.value[landmarkIndex], {color}
-            )
-            // overwrite landmarkInfo so colorStrings will recompute
-            landmarkInfo.value = [...landmarkInfo.value]
-        }
-
-        function deleteLandmark(landmarkIndex, landmarkDomain) {
-            const indexForDomain = landmarkInfo.value.filter(
-                (i) => i.domain === landmarkDomain
-            ).map((i) => i.id).indexOf(landmarkIndex)
-            landmarkInfo.value.splice(landmarkIndex, 1)
-            allSetLandmarks.value = Object.fromEntries(
-                Object.entries(allSetLandmarks.value).map(
-                    ([shapeKey, locations]) => {
-                        if (locations.length > indexForDomain) {
-                            locations.splice(indexForDomain, 1)
-                        }
-                        return [shapeKey, locations]
-                    }
-                ).filter(
-                    ([, locations]) => locations.length
-                )
-            )
-            reassignLandmarkIDsByIndex()
-            dialogs.value = []
-            expandedRows.value = []
-            changesMade.value = true
-        }
 
         function newLandmark() {
             const newID = landmarkInfo.value?.length || 0
@@ -165,23 +108,48 @@ export default {
             changesMade.value = true
         }
 
-        function isShapeShown(subjectID, domain) {
-            return selectedDataObjects.value.some((d) => (
-                d.subject === subjectID && d.anatomy_type.replace('anatomy_', '') === domain
-            ))
+        function deleteLandmark(item) {
+            landmarkInfo.value.splice(item.id, 1)
+            const shapePlacementIndex = getShapePlacementIndex(item)
+            allSetLandmarks.value = Object.fromEntries(
+                Object.entries(allSetLandmarks.value).map(
+                    ([shapeKey, locations]) => {
+                        if (shapeKey.includes(item.domain) && locations.length > shapePlacementIndex) {
+                            locations.splice(shapePlacementIndex, 1)
+                        }
+                        return [shapeKey, locations]
+                    }
+                ).filter(
+                    ([, locations]) => locations.length
+                )
+            )
+            reassignLandmarkIDsByIndex()
+            currentLandmarkPlacement.value = undefined
+            dialogs.value = []
+            expandedRows.value = []
+            changesMade.value = true
         }
 
-        function showSubject(subjectID, domain) {
-            const shape = allDataObjectsInDataset.value.find((d) => (
-                d.subject === subjectID && d.anatomy_type.replace('anatomy_', '') === domain
-            ))
-            if (shape) {
-                selectedDataObjects.value = [
-                    ...selectedDataObjects.value,
-                    shape
-                ]
-            }
+        function updateLandmarkInfo(landmarkIndex, name, comment) {
+            landmarkInfo.value[landmarkIndex] = Object.assign(
+                {}, landmarkInfo.value[landmarkIndex], {name, comment}
+            )
+            // reassign store var for listeners
+            landmarkInfo.value = [...landmarkInfo.value]
+            changesMade.value = true
         }
+
+        function updateLandmarkColor(landmarkIndex, color) {
+            color = [
+                color.rgba.r, color.rgba.g, color.rgba.b
+            ]
+            landmarkInfo.value[landmarkIndex] = Object.assign(
+                {}, landmarkInfo.value[landmarkIndex], {color}
+            )
+            // overwrite landmarkInfo so colorStrings will recompute
+            landmarkInfo.value = [...landmarkInfo.value]
+        }
+
 
         function submit() {
             const locationData = {}
@@ -192,8 +160,10 @@ export default {
                     const subjectName = shapeKey.replace('_'+anatomyIndex, '')
                     const subjectID = allSubjectsForDataset.value.find((s) => s.name === subjectName)?.id
 
-                    if (!locationData[subjectID]) locationData[subjectID] = {}
-                    locationData[subjectID][anatomyType] = landmarkLocations
+                    if(subjectID) {
+                        if (!locationData[subjectID]) locationData[subjectID] = {}
+                        locationData[subjectID][anatomyType] = landmarkLocations
+                    }
                 }
             )
             saveLandmarkData(
@@ -209,6 +179,7 @@ export default {
         }
 
         watch(allSetLandmarks, () => changesMade.value = true)
+
         watch(currentLandmarkPlacement, (curr) => {
             reassignLandmarkNumSetValues()
             if (!curr) changesMade.value = true
@@ -221,41 +192,33 @@ export default {
         })
 
         return {
-            selectedDataset,
-            selectedProject,
-            allSubjectsForDataset,
             headers,
             changesMade,
             dialogs,
-            anatomies,
             expandedRows,
-            landmarkInfo,
-            landmarkSize,
-            currentLandmarkPlacement,
             colorStrings,
-            placementStatuses,
-            getPlacementStatus,
-            getColorObject,
-            updateLandmarkInfo,
-            updateLandmarkColor,
-            deleteLandmark,
-            newLandmark,
+            landmarkSize,
+            landmarkInfo,
+            anatomies,
+            allSubjectsForDataset,
+            currentLandmarkPlacement,
             isShapeShown,
-            showSubject,
+            showShape,
+            getColorObject,
+            getPlacementStatus,
+            beginPlacement,
+            newLandmark,
+            deleteLandmark,
+            updateLandmarkColor,
+            updateLandmarkInfo,
             submit,
-            beginPlacement
         }
     }
 }
 </script>
 
 <template>
-    <div>
-        <div class="pa-6">
-            View other project information
-        </div>
-        <v-expansion-panels :value="0">
-            <v-expansion-panel>
+    <v-expansion-panel>
                 <v-expansion-panel-header>
                     Landmarks
                     <v-spacer/>
@@ -300,7 +263,7 @@ export default {
                                     </v-card-title>
                                     <v-card-actions>
                                         <v-spacer/>
-                                        <v-btn color="red" @click="deleteLandmark(index)">
+                                        <v-btn color="red" @click="deleteLandmark(item)">
                                             Yes, Delete This Landmark
                                         </v-btn>
                                     </v-card-actions>
@@ -370,24 +333,24 @@ export default {
                                     <v-btn
                                         small
                                         v-if="!isShapeShown(subject.id, item.domain)"
-                                        @click="showSubject(subject.id, item.domain)"
+                                        @click="showShape(subject.id, item.domain)"
                                     >
                                         Show subject
                                     </v-btn>
                                     <v-spacer v-else />
                                     <div
-                                        v-if="placementStatuses[item.id]"
+                                        v-if="getPlacementStatus(item, subject)"
                                         style="width: 170px; text-align: right;"
                                     >
                                         <v-btn
-                                            v-if="!currentLandmarkPlacement && getPlacementStatus(item, subject.name) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
+                                            v-if="!currentLandmarkPlacement && getPlacementStatus(item, subject) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
                                             @click="beginPlacement(subject, item)"
                                             small
                                         >
                                             BEGIN PLACEMENT
                                         </v-btn>
                                         <span v-else>
-                                            {{ getPlacementStatus(item, subject.name) }}
+                                            {{ getPlacementStatus(item, subject) }}
                                         </span>
                                     </div>
                                 </div>
@@ -405,8 +368,6 @@ export default {
                     </div>
                 </v-expansion-panel-content>
             </v-expansion-panel>
-        </v-expansion-panels>
-    </div>
 </template>
 
 <style>

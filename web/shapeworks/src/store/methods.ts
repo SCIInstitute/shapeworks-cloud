@@ -389,6 +389,32 @@ export async function cacheAllComparisons(comparisons: CacheComparison[][]) {
     }
 }
 
+export function getDomainIndex(item) {
+    return anatomies.value.findIndex((a) => a.replace('anatomy_', '') === item.domain)
+}
+
+export function getShapeKey(item, subject) {
+    return `${subject.name}_${getDomainIndex(item)}`
+}
+
+export function isShapeShown(subjectID, domain) {
+    return selectedDataObjects.value.some((d) => (
+        d.subject === subjectID && d.anatomy_type.replace('anatomy_', '') === domain
+    ))
+}
+
+export function showShape(subjectID, domain) {
+    const shape = allDataObjectsInDataset.value.find((d) => (
+        d.subject === subjectID && d.anatomy_type.replace('anatomy_', '') === domain
+    ))
+    if (shape) {
+        selectedDataObjects.value = [
+            ...selectedDataObjects.value,
+            shape
+        ]
+    }
+}
+
 export function reassignLandmarkIDsByIndex() {
     landmarkInfo.value = landmarkInfo.value.map((info, index) => {
         return Object.assign(info, {id: index})

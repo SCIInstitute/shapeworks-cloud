@@ -13,7 +13,7 @@ import {
     reassignLandmarkNumSetValues,
 } from '@/store';
 import { saveLandmarkData } from '@/api/rest'
-import { getShapeKey, isShapeShown, showShape } from '../store/methods';
+import { getShapeKey, isShapeShown, showShape, getDomainIndex } from '../store/methods';
 
 export default {
     setup() {
@@ -109,12 +109,12 @@ export default {
         }
 
         function deleteLandmark(item) {
-            landmarkInfo.value.splice(item.id, 1)
+            const domainIndex =  getDomainIndex(item)
             const shapePlacementIndex = getShapePlacementIndex(item)
             allSetLandmarks.value = Object.fromEntries(
                 Object.entries(allSetLandmarks.value).map(
                     ([shapeKey, locations]) => {
-                        if (shapeKey.includes(item.domain) && locations.length > shapePlacementIndex) {
+                        if (shapeKey.split('_').includes(domainIndex.toString()) && locations.length > shapePlacementIndex) {
                             locations.splice(shapePlacementIndex, 1)
                         }
                         return [shapeKey, locations]
@@ -123,6 +123,7 @@ export default {
                     ([, locations]) => locations.length
                 )
             )
+            landmarkInfo.value.splice(item.id, 1)
             reassignLandmarkIDsByIndex()
             currentLandmarkPlacement.value = undefined
             dialogs.value = []

@@ -340,10 +340,9 @@ class ProjectViewSet(BaseViewSet):
                     and len(locations[0]) == 3
                 ):
                     file_content = '\n'.join(
-                        ' '.join(
-                            str(n) for n in
-                            (loc.values() if isinstance(loc, dict) else loc)
-                        ) for loc in locations)
+                        ' '.join(str(n) for n in (loc.values() if isinstance(loc, dict) else loc))
+                        for loc in locations
+                    )
                 file_name = 'landmarks.csv'
                 if landmarks_object.file:
                     file_name = landmarks_object.file.name.split('/')[-1]

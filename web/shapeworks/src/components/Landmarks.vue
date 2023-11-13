@@ -188,7 +188,6 @@ export default {
         })
 
         onMounted(() => {
-            console.log(selectedProject.value)
             if (!layersShown.value.includes('Landmarks')) {
                 layersShown.value = [...layersShown.value, 'Landmarks']
             }

@@ -333,7 +333,6 @@ class ProjectViewSet(BaseViewSet):
                     project=project, subject=target_subject, anatomy_type=anatomy_type
                 )
                 file_content = ''
-                print(locations)
                 if (
                     locations is not None
                     and len(locations) > 0

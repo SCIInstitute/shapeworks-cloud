@@ -1,27 +1,23 @@
 <script>
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 import {
-    landmarkInfo,
+    constraintInfo,
     selectedProject,
     allSubjectsForDataset,
     anatomies,
-    allSetLandmarks,
-    landmarkSize,
+    allSetConstraints,
+    currentConstraintPlacement,
+    reassignConstraintIDsByIndex,
     layersShown,
-    currentLandmarkPlacement,
-    reassignLandmarkIDsByIndex,
-    reassignLandmarkNumSetValues,
+    layers,
 } from '@/store';
-import { saveLandmarkData } from '@/api/rest'
 import { getShapeKey, isShapeShown, showShape, getDomainIndex } from '../store/methods';
-import { layers } from '../store/constants';
 
 export default {
     setup() {
         const headers =  [
-            {text: '', value: 'color', width: '20px', sortable: false},
-            {text: 'Name', value: 'name', width: '120px'},
-            {text: 'Comment', value: 'comment', width: '150px'},
+            {text: '', value: 'id', width: '20px', sortable: false},
+            {text: 'Type', value: 'type', width: '270px', sortable: false},
             {text: 'Domain', value: 'domain', width: '100px'},
             {text: '# set', value: 'num_set', width: '60px', sortable: false},
         ];
@@ -32,88 +28,67 @@ export default {
 
         const dialogs = ref([]);
 
-        const colorStrings = computed(() => {
-            return landmarkInfo.value.map(({color}) => {
-                return `rgb(${color[0]},${color[1]},${color[2]})`
-            })
-        })
-
-        function getColorObject(rgb) {
-            return {'r': rgb[0], 'g': rgb[1], 'b': rgb[2]}
-        }
-
-        function getSameDomainLandmarks(item) {
-            return landmarkInfo.value.filter(
+        function getSameDomainConstraints(item) {
+            return constraintInfo.value.filter(
                 (i) => i.domain === item.domain
             )
         }
 
         function getShapePlacementIndex(item) {
-            return  getSameDomainLandmarks(item).map((i) => i.id).indexOf(item.id)
+            return  getSameDomainConstraints(item).map((i) => i.id).indexOf(item.id)
         }
 
         function getPlacementStatus(item, subject) {
             const shapeKey = getShapeKey(item, subject)
-            const currentShapePlacements = allSetLandmarks.value[shapeKey]
+            const currentShapePlacements = allSetConstraints.value[shapeKey]
             const shapePlacementIndex = getShapePlacementIndex(item)
             if (currentShapePlacements && currentShapePlacements.length > shapePlacementIndex) {
                 const placement = currentShapePlacements[shapePlacementIndex]
-                const coordStrings = []
-                placement.forEach(v => coordStrings.push(v.toFixed(2)))
-                return coordStrings.join(", ")
+                return placement.type + ' placed'
             }
-            else if (shapePlacementIndex >= (currentShapePlacements?.length || 0) + 1) {
-                const preReq = getSameDomainLandmarks(item)[currentShapePlacements?.length || 0]
-                return `${preReq.name} must be set first.`
-            }
-            else if (currentLandmarkPlacement.value === shapeKey) {
-                return `Click anywhere on ${subject.name} ${item.domain}`
+            else if (currentConstraintPlacement.value === shapeKey) {
+                if (item.type === 'plane') return `Configure plane placement on ${subject.name} ${item.domain}`
+                if (item.type === 'paint') return `Draw anywhere on ${subject.name} ${item.domain}`
             }
             return 'NOT SET'
         }
 
         function beginPlacement(subject, item) {
-            currentLandmarkPlacement.value = `${getShapeKey(item, subject)}_${item.id}`
+            currentConstraintPlacement.value = `${getShapeKey(item, subject)}_${item.id}`
         }
 
 
-        function newLandmark() {
-            const newID = landmarkInfo.value?.length || 0
-            const landmark = {
-                color: [
-                    100 * (newID % 2),
-                    50 * (newID % 5),
-                    80 * (newID % 3)
-                ],
-                comment: '',
+        function newConstraint() {
+            const newID = constraintInfo.value?.length || 0
+            const constraint = {
+                type: 'plane',
                 domain: anatomies.value[0].replace('anatomy_', ''),
                 id: newID,
-                name: `L${newID}`,
                 num_set: 0,
                 visible: true,
             }
-            if (landmarkInfo.value?.length) {
-                landmarkInfo.value = [
-                    ...landmarkInfo.value,
-                    landmark
+            if (constraintInfo.value?.length) {
+                constraintInfo.value = [
+                    ...constraintInfo.value,
+                    constraint
                 ]
             } else {
-                landmarkInfo.value = [landmark]
+                constraintInfo.value = [constraint]
             }
-            reassignLandmarkIDsByIndex()
-            expandedRows.value = [landmark]
-            selectedProject.value.landmarks = [
-                ...selectedProject.value.landmarks,
+            reassignConstraintIDsByIndex()
+            expandedRows.value = [constraint]
+            selectedProject.value.constraints = [
+                ...selectedProject.value.constraints,
                 { newAddition: true }
             ]
             changesMade.value = true
         }
 
-        function deleteLandmark(item) {
+        function deleteConstraint(item) {
             const domainIndex =  getDomainIndex(item)
             const shapePlacementIndex = getShapePlacementIndex(item)
-            allSetLandmarks.value = Object.fromEntries(
-                Object.entries(allSetLandmarks.value).map(
+            allSetConstraints.value = Object.fromEntries(
+                Object.entries(allSetConstraints.value).map(
                     ([shapeKey, locations]) => {
                         if (shapeKey.split('_').includes(domainIndex.toString()) && locations.length > shapePlacementIndex) {
                             locations.splice(shapePlacementIndex, 1)
@@ -124,39 +99,18 @@ export default {
                     ([, locations]) => locations.length
                 )
             )
-            landmarkInfo.value.splice(item.id, 1)
-            reassignLandmarkIDsByIndex()
-            currentLandmarkPlacement.value = undefined
+            constraintInfo.value.splice(item.id, 1)
+            reassignConstraintIDsByIndex()
+            currentConstraintPlacement.value = undefined
             dialogs.value = []
             expandedRows.value = []
             changesMade.value = true
         }
 
-        function updateLandmarkInfo(landmarkIndex, name, comment) {
-            landmarkInfo.value[landmarkIndex] = Object.assign(
-                {}, landmarkInfo.value[landmarkIndex], {name, comment}
-            )
-            // reassign store var for listeners
-            landmarkInfo.value = [...landmarkInfo.value]
-            changesMade.value = true
-        }
-
-        function updateLandmarkColor(landmarkIndex, color) {
-            color = [
-                color.rgba.r, color.rgba.g, color.rgba.b
-            ]
-            landmarkInfo.value[landmarkIndex] = Object.assign(
-                {}, landmarkInfo.value[landmarkIndex], {color}
-            )
-            // overwrite landmarkInfo so colorStrings will recompute
-            landmarkInfo.value = [...landmarkInfo.value]
-        }
-
-
         function submit() {
             const locationData = {}
-            Object.entries(allSetLandmarks.value).forEach(
-                ([shapeKey, landmarkLocations]) => {
+            Object.entries(allSetConstraints.value).forEach(
+                ([shapeKey, constraintLocations]) => {
                     const splitShapeKey = shapeKey.split('_')
                     const anatomyIndex = shapeKey.split('_')[shapeKey.split('_').length - 1]
                     const anatomyType = anatomies.value[anatomyIndex]
@@ -165,35 +119,29 @@ export default {
 
                     if(subjectID) {
                         if (!locationData[subjectID]) locationData[subjectID] = {}
-                        locationData[subjectID][anatomyType] = landmarkLocations
+                        locationData[subjectID][anatomyType] = constraintLocations
                     }
                 }
             )
-            saveLandmarkData(
-                selectedProject.value.id,
-                landmarkInfo.value || {},
-                locationData
-            ).then((response) => {
-                if (response.id === selectedProject.value.id) {
-                    selectedProject.value = response
-                    changesMade.value = false
-                }
-            })
+            console.log('submit constraints', constraintInfo.value, locationData)
+            // saveConstraintData(
+            //     selectedProject.value.id,
+            //     constraintInfo.value || {},
+            //     locationData
+            // ).then((response) => {
+            //     if (response.id === selectedProject.value.id) {
+            //         selectedProject.value = response
+            //         changesMade.value = false
+            //     }
+            // })
         }
-
-        watch(allSetLandmarks, () => changesMade.value = true)
-
-        watch(currentLandmarkPlacement, (curr) => {
-            reassignLandmarkNumSetValues()
-            if (!curr) changesMade.value = true
-        })
 
         onMounted(() => {
             if (
-                !layersShown.value.includes('Landmarks') &&
-                layers.value.find(l => l.name === 'Landmarks')?.available()
+                !layersShown.value.includes('Constraints') &&
+                layers.value.find(l => l.name === 'Constraints')?.available()
             ) {
-                layersShown.value = [...layersShown.value, 'Landmarks']
+                layersShown.value = [...layersShown.value, 'Constraints']
             }
         })
 
@@ -202,21 +150,16 @@ export default {
             changesMade,
             dialogs,
             expandedRows,
-            colorStrings,
-            landmarkSize,
-            landmarkInfo,
+            constraintInfo,
             anatomies,
             allSubjectsForDataset,
-            currentLandmarkPlacement,
+            currentConstraintPlacement,
             isShapeShown,
             showShape,
-            getColorObject,
             getPlacementStatus,
             beginPlacement,
-            newLandmark,
-            deleteLandmark,
-            updateLandmarkColor,
-            updateLandmarkInfo,
+            newConstraint,
+            deleteConstraint,
             submit,
         }
     }
@@ -226,22 +169,13 @@ export default {
 <template>
     <v-expansion-panel>
                 <v-expansion-panel-header>
-                    Landmarks
+                    Constraints
                     <v-spacer/>
-                    <v-text-field
-                        v-model.number="landmarkSize"
-                        label="Size"
-                        type="number"
-                        min="1"
-                        max="15"
-                        style="max-width: 50px"
-                        @click.stop
-                    />
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-data-table
                         :headers="headers"
-                        :items="landmarkInfo"
+                        :items="constraintInfo"
                         :expanded="expandedRows"
                         item-key="id"
                         disable-pagination
@@ -251,7 +185,7 @@ export default {
                         width="100%"
                     >
                         <!-- eslint-disable-next-line -->
-                        <template v-slot:item.color="{ index, item }">
+                        <template v-slot:item.id="{ index, item }">
                             <v-dialog
                                 v-model="dialogs[index]"
                                 value="index"
@@ -269,45 +203,20 @@ export default {
                                     </v-card-title>
                                     <v-card-actions>
                                         <v-spacer/>
-                                        <v-btn color="red" @click="deleteLandmark(item)">
-                                            Yes, Delete This Landmark
+                                        <v-btn color="red" @click="deleteConstraint(item)">
+                                            Yes, Delete This Constraint
                                         </v-btn>
                                     </v-card-actions>
                                 </v-card>
                             </v-dialog>
-                            <v-dialog width="300">
-                                <template v-slot:activator="{ on, attrs }">
-                                    <v-btn
-                                        class='color-square'
-                                        :style="{backgroundColor: colorStrings[index]}"
-                                        v-bind="attrs"
-                                        v-on="on"
-                                    />
-                                </template>
-                                <v-card>
-                                    <v-card-title>Change color for {{ item.name }}</v-card-title>
-                                    <v-color-picker
-                                        :value="getColorObject(item.color)"
-                                        dot-size="25"
-                                        @update:color="(c) => updateLandmarkColor(index, c)"
-                                    ></v-color-picker>
-                                </v-card>
-                            </v-dialog>
                         </template>
                         <!-- eslint-disable-next-line -->
-                        <template v-slot:item.name="{ index, item }">
-                            <v-text-field
-                                v-model="item.name"
-                                style="width: 100px"
-                                @input="(v) => updateLandmarkInfo(index, v, item.comment)"
-                            />
-                        </template>
-                        <!-- eslint-disable-next-line -->
-                        <template v-slot:item.comment="{ index, item }">
-                            <v-text-field
-                                v-model="item.comment"
-                                style="width: 130px"
-                                @input="(v) => updateLandmarkInfo(index, item.name, v)"
+                        <template v-slot:item.type="{ index, item }">
+                            <v-select
+                                v-model="item.type"
+                                :items="['plane', 'paint']"
+                                :disabled="item.num_set > 0"
+                                style="width: 270px"
                             />
                         </template>
                         <!-- eslint-disable-next-line -->
@@ -349,7 +258,7 @@ export default {
                                         style="width: 170px; text-align: right;"
                                     >
                                         <v-btn
-                                            v-if="!currentLandmarkPlacement && getPlacementStatus(item, subject) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
+                                            v-if="!currentConstraintPlacement && getPlacementStatus(item, subject) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
                                             @click="beginPlacement(subject, item)"
                                             small
                                         >
@@ -364,13 +273,13 @@ export default {
                         </template>
                     </v-data-table>
                     <div class="d-flex py-3" style="justify-content: space-between;">
-                        <v-btn @click="newLandmark">
-                            + New Landmark
+                        <v-btn @click="newConstraint">
+                            + New Constraint
                         </v-btn>
                         <v-btn v-if="changesMade" color="primary" @click="submit">
-                            Save Landmarks
+                            Save Constraints
                         </v-btn>
-                        <span v-else>Landmarks Saved.</span>
+                        <span v-else>Constraints Saved.</span>
                     </div>
                 </v-expansion-panel-content>
             </v-expansion-panel>
@@ -401,11 +310,6 @@ export default {
 .delete-icon {
     position: absolute !important;
     left: 5px;
-}
-.color-square {
-    height: 20px !important;
-    width: 20px !important;
-    min-width: 15px !important;
-    padding: 0 !important;
+    bottom: 30%
 }
 </style>

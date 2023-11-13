@@ -6,8 +6,11 @@ import vtkPickerManipulator from 'vtk.js/Sources/Widgets/Manipulators/PickerMani
 import vtkWidgetManager from 'vtk.js/Sources/Widgets/Core/WidgetManager';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
+import vtkSeedWidget from 'vtk.js/Sources/Widgets/Widgets3D/SeedWidget';
+import vtkImplicitPlaneWidget from 'vtk.js/Sources/Widgets/Widgets3D/ImplicitPlaneWidget'
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
+import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkCalculator from 'vtk.js/Sources/Filters/General/Calculator';
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera';
@@ -16,7 +19,6 @@ import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttribute
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
-import vtkLandmarkWidget from '../../plugins/LandmarkWidget';
 import {
     layers, layersShown, orientationIndicator, anatomies,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
@@ -24,6 +26,7 @@ import {
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
     landmarkInfo, landmarkSize, currentLandmarkPlacement,
     allSetLandmarks, reassignLandmarkNumSetValues,
+    constraintInfo, currentConstraintPlacement, allSetConstraints,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -161,10 +164,7 @@ export default {
         });
         return filter;
     },
-    addLandmarks(label, renderer) {
-        this.widgetManager = vtkWidgetManager.newInstance();
-        this.widgetManager.setRenderer(renderer);
-
+    addLandmarks(label, renderer, widgetManager) {
         landmarkInfo.value.forEach((lInfo) => {
             const anatomyIndex = anatomies.value.findIndex((a) => a.replace('anatomy_', '') === lInfo.domain)
             const indexForDomain = landmarkInfo.value.filter(
@@ -180,19 +180,19 @@ export default {
                 let widgetKey = `${shapeKey}_${lInfo.id}`
                 const setLandmarkCoords = allSetLandmarks.value[shapeKey]
 
-                let widget = vtkLandmarkWidget.newInstance();
+                let widget = vtkSeedWidget.newInstance();
                 widget.setManipulator(manipulator);
-                this.widgetManager.addWidget(widget).setScaleInPixels(false);
+                widgetManager.addWidget(widget).setScaleInPixels(false);
                 let handle = widget.getWidgetState().getMoveHandle();
 
                 // Handle current landmark placement widget
                 if (currentLandmarkPlacement.value === widgetKey) {
                     widget.placeWidget(actor.getBounds());
-                    this.widgetManager.grabFocus(widget);
-                    this.widgetManager.onModified(() => {
+                    widgetManager.grabFocus(widget);
+                    widgetManager.onModified(() => {
                         const landmarkCoord = handle.getOrigin()
                         if (currentLandmarkPlacement.value && landmarkCoord) {
-                            this.widgetManager.releaseFocus(widget)
+                            widgetManager.releaseFocus(widget)
                             currentLandmarkPlacement.value = undefined;
                         }
                     })
@@ -210,7 +210,7 @@ export default {
                     // When widget moved, update value in allSetLandmarks
                     const landmarkCoord = handle.getOrigin()
                     if (landmarkCoord) {
-                        this.widgetManager.releaseFocus(widget);
+                        widgetManager.releaseFocus(widget);
                         if (allSetLandmarks.value[shapeKey]) {
                             if (allSetLandmarks.value[shapeKey].length > indexForDomain) {
                                 allSetLandmarks.value[shapeKey][indexForDomain] = landmarkCoord
@@ -226,6 +226,91 @@ export default {
                     }
                 })
             }
+        })
+    },
+    addConstraints(label, renderer, widgetManager) {
+        // TODO: accommodate newly added constraints
+        const ctfun = vtkColorTransferFunction.newInstance();
+        ctfun.addRGBPoint(0, 1.0, 1.0, 1.0); // 0: white has not been excluded
+        ctfun.addRGBPoint(1, 0.2, 0.2, 0.2); // 1: gray has been excluded
+        ctfun.setMappingRange(0, 1)
+        ctfun.updateRange()
+
+        renderer.getActors().forEach((actor, index) => {
+            const mapper = actor.getMapper()
+            mapper.setLookupTable(ctfun)
+            mapper.setColorByArrayName('color')
+
+            const inputData = mapper.getInputData()
+            const bounds = inputData.getBounds()
+            const allPoints = inputData.getPoints()
+            const colorArray = vtkDataArray.newInstance({
+                name: 'color',
+                values: Array.from(
+                    { length: allPoints.getNumberOfPoints() },
+                    () => 0 // start all white
+                )
+            })
+            inputData.getPointData().addArray(colorArray)
+            const allPointColors = inputData.getPointData().getArrayByName('color')
+            // TODO: use this manipulator for the paint widget
+            // const manipulator = vtkPickerManipulator.newInstance();
+            // manipulator.getPicker().addPickList(actor);
+
+            const updateColors = () => {
+                const newColorArray = Array.from(
+                    { length: allPoints.getNumberOfPoints() },
+                    () => 0 // start all white
+                )
+                widgetManager.getWidgets().forEach((widget) => {
+                    if (widget.getClassName() === 'vtkPlaneWidget') {
+                        const origin = widget.getWidgetState().getOrigin()
+                        const normal = widget.getWidgetState().getNormal()
+                        let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+                        for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
+                            const point = allPoints.getPoint(i)
+                            const pointColor = newColorArray[i]
+                            if (!pointColor) {
+                                const dotProduct = dot(normal, [
+                                    origin[0] - point[0],
+                                    origin[1] - point[1],
+                                    origin[2] - point[2],
+                                ])
+                                if (dotProduct <= 0) {
+                                    // negative dotProduct means point is below plane
+                                    newColorArray[i] = 1
+                                }
+                            }
+                        }
+                    }
+                    // TODO: color for painted constraints
+                })
+                allPointColors.setData(newColorArray)
+                inputData.modified()
+                console.log('new colors', allPointColors)
+            }
+
+            let shapeKey = `${label}_${index}`
+            allSetConstraints.value[shapeKey].forEach((cData) => {
+                let widget;
+                let widgetHandle;
+                if (cData.type === 'plane') {
+                    const { origin, normal } = cData.data
+                    widget = vtkImplicitPlaneWidget.newInstance()
+                    widget.placeWidget(bounds);
+                    widget.setPlaceFactor(2);
+                    widget.getWidgetState().setOrigin(origin);
+                    widget.getWidgetState().setNormal(normal)
+                    widgetHandle = widgetManager.addWidget(widget);
+                    widgetHandle.onEndInteractionEvent(() => {
+                        updateColors()
+                        // TODO: update allSetConstraints
+                    })
+                } else if (cData.type === 'paint') {
+                    // TODO create paint widget
+                }
+            })
+            updateColors()
         })
     },
     addPoints(label, renderer, points, i) {
@@ -483,12 +568,17 @@ export default {
             if (positionDelta && viewUpDelta) {
                 this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
             }
-            if (
-                data[i] &&
-                layersShown.value.includes('Landmarks')
-            ) {
+
+            if (data[i]) {
+                const widgetManager = vtkWidgetManager.newInstance()
+                widgetManager.setRenderer(renderer)
                 let label = data[i][0]
-                this.addLandmarks(label, renderer)
+                if (layersShown.value.includes('Landmarks')) {
+                    this.addLandmarks(label, renderer, widgetManager)
+                }
+                if (layersShown.value.includes('Constraints')) {
+                    this.addConstraints(label, renderer, widgetManager)
+                }
             }
         })
         const targetRenderer = this.vtk.renderers[this.columns - 1]

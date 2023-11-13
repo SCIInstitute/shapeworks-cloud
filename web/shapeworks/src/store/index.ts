@@ -3,7 +3,7 @@ import {
     DataObject, Dataset, Subject,
     Particles, GroomedShape, Project,
     ReconstructedSample, VTKInstance,
-    Analysis, Task, LandmarkInfo
+    Analysis, Task, LandmarkInfo, Constraints
 } from '@/types'
 import { ref } from 'vue'
 
@@ -76,6 +76,12 @@ export const landmarkSize = ref(2);
 export const allSetLandmarks = ref<Record<string, number[][]>>();
 
 export const currentLandmarkPlacement = ref();
+
+export const constraintInfo = ref<Constraints[]>([]);
+
+export const allSetConstraints = ref<Record<string, {type: string, data: any}[]>>();
+
+export const currentConstraintPlacement = ref();
 
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 

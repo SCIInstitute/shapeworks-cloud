@@ -1,4 +1,4 @@
-import { AnalysisParams, CacheComparison, Project, Task } from "@/types";
+import { AnalysisParams, CacheComparison, Project, Task, Constraints } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -31,10 +31,13 @@ import {
      allSetLandmarks,
      allSubjectsForDataset,
      anatomies,
+     constraintInfo,
+     allSetConstraints,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
 import generateMapper from "@/reader/mapper";
+import constraintsReader from "@/reader/constraints";
 import {
     abortTask,
     analyzeProject,
@@ -421,6 +424,12 @@ export function reassignLandmarkIDsByIndex() {
     })
 }
 
+export function reassignConstraintIDsByIndex() {
+    constraintInfo.value = constraintInfo.value.map((info, index) => {
+        return Object.assign(info, {id: index})
+    })
+}
+
 export function reassignLandmarkNumSetValues() {
     const setLandmarksPerDomain = {}
     if (allSetLandmarks.value){
@@ -449,11 +458,39 @@ export function reassignLandmarkNumSetValues() {
     }
 }
 
+export function reassignConstraintNumSetValues() {
+    const setConstraintsPerDomain = {}
+    if (allSetConstraints.value){
+        Object.entries(allSetConstraints.value).forEach(([shapeKey, setLocations]) => {
+            const anatomyIndex = shapeKey.split('_')[shapeKey.split('_').length -1]
+            const domain = anatomies.value[anatomyIndex].replace('anatomy_', '')
+            if (!setConstraintsPerDomain[domain]) {
+                setConstraintsPerDomain[domain] = []
+            }
+            setConstraintsPerDomain[domain].push(setLocations.length)
+        })
+        constraintInfo.value = constraintInfo.value.map((cInfo) => {
+            const indexForDomain = constraintInfo.value.filter(
+                (i) => i.domain === cInfo.domain
+            ).map((i) => i.id).indexOf(cInfo.id)
+            cInfo.num_set = 0
+            if (cInfo.domain && setConstraintsPerDomain[cInfo.domain]) {
+                setConstraintsPerDomain[cInfo.domain].forEach((subjectSetCount) => {
+                    if (cInfo.num_set !== undefined && subjectSetCount > indexForDomain) {
+                        cInfo.num_set += 1
+                    }
+                })
+            }
+            return cInfo
+        })
+    }
+}
+
 export async function getLandmarks() {
     allSetLandmarks.value = {}
     if(selectedProject.value?.landmarks) {
         landmarkInfo.value = selectedProject.value.landmarks_info.map((lInfo, index) => {
-            if(!lInfo.name) {
+            if (!lInfo.name) {
                 lInfo.name = `L${index}`
             }
             if (!lInfo.color) {
@@ -486,5 +523,58 @@ export async function getLandmarks() {
         allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
         reassignLandmarkIDsByIndex();
         reassignLandmarkNumSetValues();
+    }
+}
+
+export async function getConstraints() {
+    allSetConstraints.value = {}
+    constraintInfo.value = []
+    if(selectedProject.value?.constraints) {
+        const maxNumConstraintTypesPerAnatomy = {}
+        for (let i = 0; i < selectedProject.value.constraints.length; i++) {
+            const constraintsObject = selectedProject.value.constraints[i]
+            const subject = allSubjectsForDataset.value.find((s) => s.id === constraintsObject.subject)
+            const anatomyIndex = anatomies.value.findIndex((a) => a === constraintsObject.anatomy_type)
+            if (subject) {
+                const shapeKey = `${subject.name}_${anatomyIndex}`;
+                const allConstraintDatas = await constraintsReader(constraintsObject.file)
+                allSetConstraints.value[shapeKey] = allConstraintDatas
+
+                if (!maxNumConstraintTypesPerAnatomy[constraintsObject.anatomy_type]) {
+                    maxNumConstraintTypesPerAnatomy[constraintsObject.anatomy_type] = {
+                        plane: 0,
+                        paint: 0,
+                    }
+                }
+                const numPlanes = allConstraintDatas.filter((cInfo) => cInfo.type === 'plane').length
+                const numPainted = allConstraintDatas.filter((cInfo) => cInfo.type === 'paint').length
+                if (numPlanes > maxNumConstraintTypesPerAnatomy[constraintsObject.anatomy_type].plane) {
+                    maxNumConstraintTypesPerAnatomy[constraintsObject.anatomy_type].plane = numPlanes
+                }
+                if (numPainted > maxNumConstraintTypesPerAnatomy[constraintsObject.anatomy_type].paint) {
+                    maxNumConstraintTypesPerAnatomy[constraintsObject.anatomy_type].paint = numPainted
+                }
+            }
+        }
+        anatomies.value.forEach((a) => {
+            if (maxNumConstraintTypesPerAnatomy[a]) {
+                [...Array(maxNumConstraintTypesPerAnatomy[a].plane)].forEach(() => {
+                    constraintInfo.value.push({
+                        type: 'plane',
+                        domain: a.replace('anatomy_', '')
+                    })
+                });
+                [...Array(maxNumConstraintTypesPerAnatomy[a].paint)].forEach(() => {
+                    constraintInfo.value.push({
+                        type: 'paint',
+                        domain: a.replace('anatomy_', '')
+                    })
+                })
+
+            }
+        })
+
+        reassignConstraintIDsByIndex();
+        reassignConstraintNumSetValues();
     }
 }

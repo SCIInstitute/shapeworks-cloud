@@ -94,6 +94,7 @@ export interface Project {
     dataset: number,
     landmarks: Landmarks[],
     landmarks_info: any,
+    constraints: Constraints[],
     last_cached_analysis: Analysis | undefined,
 }
 
@@ -192,6 +193,19 @@ export interface LandmarkInfo {
     domain: string,
     num_set: number,
     visible: "true" | "false",
+}
+
+export interface Constraints {
+    id?: number,
+    file?: string,
+    type: string,
+    project?: number,
+    subject?: number,
+    created?: string,
+    modified?: string,
+    anatomy_type?: string,
+    domain?: string,
+    num_set?: number,
 }
 
 export interface CacheComparison {

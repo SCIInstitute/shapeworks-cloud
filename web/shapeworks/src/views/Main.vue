@@ -37,13 +37,18 @@ import {
     landmarkInfo,
     landmarkSize,
     currentLandmarkPlacement,
-getLandmarks,
-allSetLandmarks,
+    getLandmarks,
+    allSetLandmarks,
+    constraintInfo,
+    currentConstraintPlacement,
+    getConstraints,
+    allSetConstraints,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import Landmarks from '@/components/Landmarks.vue';
+import Constraints from '@/components/Constraints.vue';
 
 
 export default {
@@ -54,6 +59,7 @@ export default {
         RenderControls,
         TabForm,
         AnalysisTab,
+        Constraints,
     },
     props: {
         dataset: {
@@ -272,16 +278,28 @@ export default {
                                         landmarksPromise = getLandmarks()
                                     }
 
+                                    let constraintsPromise;
+                                    if(
+                                        layersShown.value.includes("Constraints") &&
+                                        !allSetConstraints.value
+                                    ) {
+                                        constraintsPromise = getConstraints()
+                                    }
+
                                     return Promise.all([
                                         Promise.all(shapePromises),
                                         pointsReader(particleURL),
-                                        landmarksPromise
+                                        landmarksPromise,
+                                        constraintsPromise,
                                     ])
                                 }
                             )))
-                            .map(([imageData, particleData, landmarkData]) => (
-                                {shape: imageData, points: particleData, landmarks: landmarkData}
-                            ))
+                            .map(([imageData, particleData, landmarkData, constraintData]) => ({
+                                shape: imageData,
+                                points: particleData,
+                                landmarks: landmarkData,
+                                constraints: constraintData
+                            }))
                             return [
                                 subjectName, shapeDatas
                             ]
@@ -316,6 +334,8 @@ export default {
         watch(landmarkInfo, debouncedRefreshRender)
         watch(landmarkSize, debouncedRefreshRender)
         watch(currentLandmarkPlacement, debouncedRefreshRender)
+        watch(constraintInfo, debouncedRefreshRender)
+        watch(currentConstraintPlacement, debouncedRefreshRender)
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(tab, switchTab)
 
@@ -378,8 +398,9 @@ export default {
                         </v-tab-item>
                         <v-tab href="#info">Info</v-tab>
                         <v-tab-item value="info">
-                            <v-expansion-panels :value="[0]" multiple>
+                            <v-expansion-panels :value="[0, 1]" multiple>
                                 <landmarks />
+                                <constraints />
                             </v-expansion-panels>
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>

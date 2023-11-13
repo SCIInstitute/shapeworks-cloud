@@ -156,9 +156,10 @@ export default {
             const locationData = {}
             Object.entries(allSetLandmarks.value).forEach(
                 ([shapeKey, landmarkLocations]) => {
+                    const splitShapeKey = shapeKey.split('_')
                     const anatomyIndex = shapeKey.split('_')[shapeKey.split('_').length - 1]
                     const anatomyType = anatomies.value[anatomyIndex]
-                    const subjectName = shapeKey.replace('_'+anatomyIndex, '')
+                    const subjectName = splitShapeKey.slice(0, splitShapeKey.length - 1).join('_')
                     const subjectID = allSubjectsForDataset.value.find((s) => s.name === subjectName)?.id
 
                     if(subjectID) {
@@ -187,6 +188,7 @@ export default {
         })
 
         onMounted(() => {
+            console.log(selectedProject.value)
             if (!layersShown.value.includes('Landmarks')) {
                 layersShown.value = [...layersShown.value, 'Landmarks']
             }

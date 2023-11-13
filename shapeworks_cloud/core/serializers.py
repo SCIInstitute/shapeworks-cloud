@@ -12,6 +12,14 @@ class LandmarksSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ConstraintsSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
+
+    class Meta:
+        model = models.Constraints
+        fields = '__all__'
+
+
 class CachedAnalysisGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CachedAnalysisGroup
@@ -72,6 +80,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
     last_cached_analysis = CachedAnalysisReadSerializer(allow_null=True)
     landmarks = LandmarksSerializer(many=True)
+    constraints = ConstraintsSerializer(many=True)
 
     class Meta:
         model = models.Project
@@ -165,14 +174,6 @@ class ImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Image
-        fields = '__all__'
-
-
-class ConstraintsSerializer(serializers.ModelSerializer):
-    file = S3FileSerializerField()
-
-    class Meta:
-        model = models.Constraints
         fields = '__all__'
 
 

@@ -271,11 +271,8 @@ class Constraints(TimeStampedModel, models.Model):
     file = S3FileField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='constraints')
     anatomy_type = models.CharField(max_length=255)
-    optimized_particles = models.ForeignKey(
-        OptimizedParticles,
-        on_delete=models.SET_NULL,
-        related_name='constraints',
-        null=True,
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='constraints', null=True
     )
 
 

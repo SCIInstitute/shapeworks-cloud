@@ -109,7 +109,7 @@ class Constraints(ApiModel):
     file_source: Union[str, Path]
     subject: Subject
     anatomy_type: str = Field(min_length=1)
-    optimized_particles: Optional[OptimizedParticles]
+    project: Project
 
 
 class CachedAnalysisGroup(ApiModel):

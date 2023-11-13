@@ -212,12 +212,15 @@ class ProjectFileIO(BaseModel, FileIO):
                         anatomy_type=anatomy_id,
                     ).create()
                 if constraints_path:
-                    Constraints(
-                        file_source=constraints_path,
-                        subject=subject,
-                        optimized_particles=particles,
-                        anatomy_type=anatomy_id,
-                    ).create()
+                    with open(constraints_path) as f:
+                        constraints_contents = json.load(f)
+                    if constraints_contents:
+                        Constraints(
+                            file_source=constraints_path,
+                            subject=subject,
+                            project=self.project,
+                            anatomy_type=anatomy_id,
+                        ).create()
 
     def load_analysis_from_json(self, file_path):
         project_root = Path(str(self.project.file.path)).parent

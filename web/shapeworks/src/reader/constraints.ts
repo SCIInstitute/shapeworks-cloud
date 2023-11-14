@@ -10,14 +10,14 @@ export default async function (url: string | undefined) {
             if (points.length === 3) {
                 const [p1, p2, p3] = points
                 const v1 = [
-                    p1[0] - p2[0],
-                    p1[1] - p2[1],
-                    p1[2] - p2[2],
-                ]
-                const v2 = [
                     p2[0] - p3[0],
                     p2[1] - p3[1],
                     p2[2] - p3[2],
+                ]
+                const v2 = [
+                    p1[0] - p2[0],
+                    p1[1] - p2[1],
+                    p1[2] - p2[2],
                 ]
                 // v1 and v2 are parallel to plane, normal is vector product of v1 and v2
                 const normal = [

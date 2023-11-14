@@ -183,7 +183,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         transform = Path(temp_dir) / 'transform'
                         with transform.open('w') as f:
                             f.write(value)
-                    elif key == 'landmarks':
+                    elif key == 'landmarks_file':
                         Landmarks(
                             file_source=relative_path(value),
                             subject=subject,

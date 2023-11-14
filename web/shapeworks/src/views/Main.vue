@@ -47,19 +47,17 @@ import {
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
-import Landmarks from '@/components/Landmarks.vue';
-import Constraints from '@/components/Constraints.vue';
+import InfoTab from '@/components/InfoTab.vue';
 
 
 export default {
     components: {
         ShapeViewer,
         DataList,
-        Landmarks,
+        InfoTab,
         RenderControls,
         TabForm,
         AnalysisTab,
-        Constraints,
     },
     props: {
         dataset: {
@@ -402,10 +400,7 @@ export default {
                         </v-tab-item>
                         <v-tab href="#info">Info</v-tab>
                         <v-tab-item value="info">
-                            <v-expansion-panels :value="[0, 1]" multiple>
-                                <landmarks />
-                                <constraints />
-                            </v-expansion-panels>
+                            <info-tab />
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">

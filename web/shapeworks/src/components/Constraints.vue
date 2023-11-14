@@ -1,5 +1,5 @@
 <script>
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import {
     constraintInfo,
     selectedProject,
@@ -8,8 +8,6 @@ import {
     allSetConstraints,
     currentConstraintPlacement,
     reassignConstraintIDsByIndex,
-    layersShown,
-    layers,
 } from '@/store';
 import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocation, showShape } from '../store/methods';
 import { saveConstraintData } from '@/api/rest';
@@ -107,15 +105,6 @@ export default {
                 }
             })
         }
-
-        onMounted(() => {
-            if (
-                !layersShown.value.includes('Constraints') &&
-                layers.value.find(l => l.name === 'Constraints')?.available()
-            ) {
-                layersShown.value = [...layersShown.value, 'Constraints']
-            }
-        })
 
         return {
             headers,

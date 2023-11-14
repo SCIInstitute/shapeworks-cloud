@@ -1,5 +1,5 @@
 <script>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     landmarkInfo,
     selectedProject,
@@ -7,14 +7,12 @@ import {
     anatomies,
     allSetLandmarks,
     landmarkSize,
-    layersShown,
     currentLandmarkPlacement,
     reassignLandmarkIDsByIndex,
     reassignLandmarkNumSetValues,
 } from '@/store';
 import { saveLandmarkData } from '@/api/rest'
 import { getLandmarkLocation, getWidgetInfo, isShapeShown, setLandmarkLocation, showShape } from '../store/methods';
-import { layers } from '../store/constants';
 
 export default {
     setup() {
@@ -157,15 +155,6 @@ export default {
         watch(currentLandmarkPlacement, (curr) => {
             reassignLandmarkNumSetValues()
             if (!curr) changesMade.value = true
-        })
-
-        onMounted(() => {
-            if (
-                !layersShown.value.includes('Landmarks') &&
-                layers.value.find(l => l.name === 'Landmarks')?.available()
-            ) {
-                layersShown.value = [...layersShown.value, 'Landmarks']
-            }
         })
 
         return {

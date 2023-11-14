@@ -225,6 +225,8 @@ export default {
                                         imageReader(
                                             dataObject.file,
                                             shortFileName(dataObject.file),
+                                            "Original",
+                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
                                         )
                                       )
                                     }
@@ -237,6 +239,7 @@ export default {
                                             shapeURL,
                                             shortFileName(shapeURL),
                                             "Groomed",
+                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
                                         )
                                       )
                                     }
@@ -259,7 +262,8 @@ export default {
                                                 imageReader(
                                                     shapeURL,
                                                     shortFileName(shapeURL),
-                                                    "Reconstructed"
+                                                    "Reconstructed",
+                                                    { domain: targetReconstruction.anatomy_type.replace('anatomy_', '') }
                                                 )
                                             )
                                         }

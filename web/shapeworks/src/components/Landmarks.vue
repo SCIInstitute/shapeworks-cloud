@@ -13,7 +13,7 @@ import {
     reassignLandmarkNumSetValues,
 } from '@/store';
 import { saveLandmarkData } from '@/api/rest'
-import { getShapeKey, isShapeShown, showShape, getDomainIndex } from '../store/methods';
+import { getLandmarkLocation, getWidgetInfo, isShapeShown, setLandmarkLocation, showShape } from '../store/methods';
 import { layers } from '../store/constants';
 
 export default {
@@ -42,38 +42,25 @@ export default {
             return {'r': rgb[0], 'g': rgb[1], 'b': rgb[2]}
         }
 
-        function getSameDomainLandmarks(item) {
-            return landmarkInfo.value.filter(
-                (i) => i.domain === item.domain
-            )
-        }
-
-        function getShapePlacementIndex(item) {
-            return  getSameDomainLandmarks(item).map((i) => i.id).indexOf(item.id)
-        }
-
-        function getPlacementStatus(item, subject) {
-            const shapeKey = getShapeKey(item, subject)
-            const currentShapePlacements = allSetLandmarks.value[shapeKey]
-            const shapePlacementIndex = getShapePlacementIndex(item)
-            if (currentShapePlacements && currentShapePlacements.length > shapePlacementIndex) {
-                const placement = currentShapePlacements[shapePlacementIndex]
+        function getPlacementStatus(subject, item) {
+            const placement = getLandmarkLocation(subject, item)
+            if(placement) {
+                if (currentLandmarkPlacement.value === getWidgetInfo(subject, item)) {
+                    return `Click anywhere on ${subject.name} ${item.domain}`
+                }
                 const coordStrings = []
                 placement.forEach(v => coordStrings.push(v.toFixed(2)))
                 return coordStrings.join(", ")
             }
-            else if (shapePlacementIndex >= (currentShapePlacements?.length || 0) + 1) {
-                const preReq = getSameDomainLandmarks(item)[currentShapePlacements?.length || 0]
-                return `${preReq.name} must be set first.`
-            }
-            else if (currentLandmarkPlacement.value === shapeKey) {
-                return `Click anywhere on ${subject.name} ${item.domain}`
-            }
+            // else if (shapePlacementIndex >= (currentShapePlacements?.length || 0) + 1) {
+            //     const preReq = getSameDomainLandmarks(item)[currentShapePlacements?.length || 0]
+            //     return `${preReq.name} must be set first.`
+            // }
             return 'NOT SET'
         }
 
         function beginPlacement(subject, item) {
-            currentLandmarkPlacement.value = `${getShapeKey(item, subject)}_${item.id}`
+            currentLandmarkPlacement.value = getWidgetInfo(subject, item)
         }
 
 
@@ -110,20 +97,9 @@ export default {
         }
 
         function deleteLandmark(item) {
-            const domainIndex =  getDomainIndex(item)
-            const shapePlacementIndex = getShapePlacementIndex(item)
-            allSetLandmarks.value = Object.fromEntries(
-                Object.entries(allSetLandmarks.value).map(
-                    ([shapeKey, locations]) => {
-                        if (shapeKey.split('_').includes(domainIndex.toString()) && locations.length > shapePlacementIndex) {
-                            locations.splice(shapePlacementIndex, 1)
-                        }
-                        return [shapeKey, locations]
-                    }
-                ).filter(
-                    ([, locations]) => locations.length
-                )
-            )
+            allSubjectsForDataset.value.forEach((subject) => {
+                setLandmarkLocation(subject, item, undefined)
+            })
             landmarkInfo.value.splice(item.id, 1)
             reassignLandmarkIDsByIndex()
             currentLandmarkPlacement.value = undefined
@@ -154,20 +130,15 @@ export default {
 
 
         function submit() {
-            const locationData = {}
-            Object.entries(allSetLandmarks.value).forEach(
-                ([shapeKey, landmarkLocations]) => {
-                    const splitShapeKey = shapeKey.split('_')
-                    const anatomyIndex = shapeKey.split('_')[shapeKey.split('_').length - 1]
-                    const anatomyType = anatomies.value[anatomyIndex]
-                    const subjectName = splitShapeKey.slice(0, splitShapeKey.length - 1).join('_')
+            const locationData = Object.fromEntries(
+                Object.entries(allSetLandmarks.value).map(([subjectName, subjectRecords]) => {
                     const subjectID = allSubjectsForDataset.value.find((s) => s.name === subjectName)?.id
-
-                    if(subjectID) {
-                        if (!locationData[subjectID]) locationData[subjectID] = {}
-                        locationData[subjectID][anatomyType] = landmarkLocations
-                    }
-                }
+                    return [subjectID, Object.fromEntries(
+                        Object.entries(subjectRecords).map(([domain, domainRecords]) => {
+                            return [domain, Object.values(domainRecords)]
+                        })
+                    )]
+                })
             )
             saveLandmarkData(
                 selectedProject.value.id,
@@ -345,18 +316,18 @@ export default {
                                     </v-btn>
                                     <v-spacer v-else />
                                     <div
-                                        v-if="getPlacementStatus(item, subject)"
+                                        v-if="getPlacementStatus(subject, item)"
                                         style="width: 170px; text-align: right;"
                                     >
                                         <v-btn
-                                            v-if="!currentLandmarkPlacement && getPlacementStatus(item, subject) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
+                                            v-if="!currentLandmarkPlacement && getPlacementStatus(subject, item) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
                                             @click="beginPlacement(subject, item)"
                                             small
                                         >
                                             BEGIN PLACEMENT
                                         </v-btn>
                                         <span v-else>
-                                            {{ getPlacementStatus(item, subject) }}
+                                            {{ getPlacementStatus(subject, item) }}
                                         </span>
                                     </div>
                                 </div>

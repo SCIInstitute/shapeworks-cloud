@@ -73,13 +73,13 @@ export const landmarkInfo = ref<LandmarkInfo[]>([]);
 
 export const landmarkSize = ref(2);
 
-export const allSetLandmarks = ref<Record<string, number[][]>>();
+export const allSetLandmarks = ref<Record<string, object>>();
 
 export const currentLandmarkPlacement = ref();
 
 export const constraintInfo = ref<Constraints[]>([]);
 
-export const allSetConstraints = ref<Record<string, {type: string, data: any}[]>>();
+export const allSetConstraints = ref<Record<string, object>>();
 
 export const currentConstraintPlacement = ref();
 

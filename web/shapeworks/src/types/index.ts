@@ -150,6 +150,7 @@ export interface Particles {
 export interface GroomedShape {
     id: number,
     file: string,
+    anatomy_type: string,
     pre_alignment: string,
     pre_cropping: string,
     project: number,
@@ -164,6 +165,7 @@ export interface ReconstructedSample {
     file: string,
     project: number,
     particles: Particles,
+    anatomy_type: string
 }
 
 export interface Task {

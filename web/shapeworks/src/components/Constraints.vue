@@ -11,7 +11,8 @@ import {
     layersShown,
     layers,
 } from '@/store';
-import { getShapeKey, isShapeShown, showShape, getDomainIndex } from '../store/methods';
+import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocation, showShape } from '../store/methods';
+import { saveConstraintData } from '@/api/rest';
 
 export default {
     setup() {
@@ -28,33 +29,21 @@ export default {
 
         const dialogs = ref([]);
 
-        function getSameDomainConstraints(item) {
-            return constraintInfo.value.filter(
-                (i) => i.domain === item.domain
-            )
-        }
 
-        function getShapePlacementIndex(item) {
-            return  getSameDomainConstraints(item).map((i) => i.id).indexOf(item.id)
-        }
-
-        function getPlacementStatus(item, subject) {
-            const shapeKey = getShapeKey(item, subject)
-            const currentShapePlacements = allSetConstraints.value[shapeKey]
-            const shapePlacementIndex = getShapePlacementIndex(item)
-            if (currentShapePlacements && currentShapePlacements.length > shapePlacementIndex) {
-                const placement = currentShapePlacements[shapePlacementIndex]
+        function getPlacementStatus(subject, item) {
+            const placement = getConstraintLocation(subject, item)
+            if(placement) {
+                if (currentConstraintPlacement.value === getWidgetInfo(subject, item)) {
+                    if (item.type === 'plane') return `Configure plane placement on ${subject.name} ${item.domain}`
+                    if (item.type === 'paint') return `Draw anywhere on ${subject.name} ${item.domain}`
+                }
                 return placement.type + ' placed'
-            }
-            else if (currentConstraintPlacement.value === shapeKey) {
-                if (item.type === 'plane') return `Configure plane placement on ${subject.name} ${item.domain}`
-                if (item.type === 'paint') return `Draw anywhere on ${subject.name} ${item.domain}`
             }
             return 'NOT SET'
         }
 
         function beginPlacement(subject, item) {
-            currentConstraintPlacement.value = `${getShapeKey(item, subject)}_${item.id}`
+            currentConstraintPlacement.value = getWidgetInfo(subject, item)
         }
 
 
@@ -85,20 +74,9 @@ export default {
         }
 
         function deleteConstraint(item) {
-            const domainIndex =  getDomainIndex(item)
-            const shapePlacementIndex = getShapePlacementIndex(item)
-            allSetConstraints.value = Object.fromEntries(
-                Object.entries(allSetConstraints.value).map(
-                    ([shapeKey, locations]) => {
-                        if (shapeKey.split('_').includes(domainIndex.toString()) && locations.length > shapePlacementIndex) {
-                            locations.splice(shapePlacementIndex, 1)
-                        }
-                        return [shapeKey, locations]
-                    }
-                ).filter(
-                    ([, locations]) => locations.length
-                )
-            )
+            allSubjectsForDataset.value.forEach((subject) => {
+                setConstraintLocation(subject, item, undefined)
+            })
             constraintInfo.value.splice(item.id, 1)
             reassignConstraintIDsByIndex()
             currentConstraintPlacement.value = undefined
@@ -108,32 +86,26 @@ export default {
         }
 
         function submit() {
-            const locationData = {}
-            Object.entries(allSetConstraints.value).forEach(
-                ([shapeKey, constraintLocations]) => {
-                    const splitShapeKey = shapeKey.split('_')
-                    const anatomyIndex = shapeKey.split('_')[shapeKey.split('_').length - 1]
-                    const anatomyType = anatomies.value[anatomyIndex]
-                    const subjectName = splitShapeKey.slice(0, splitShapeKey.length - 1).join('_')
+            const locationData = Object.fromEntries(
+                Object.entries(allSetConstraints.value).map(([subjectName, subjectRecords]) => {
                     const subjectID = allSubjectsForDataset.value.find((s) => s.name === subjectName)?.id
-
-                    if(subjectID) {
-                        if (!locationData[subjectID]) locationData[subjectID] = {}
-                        locationData[subjectID][anatomyType] = constraintLocations
-                    }
-                }
+                    return [subjectID, Object.fromEntries(
+                        Object.entries(subjectRecords).map(([domain, domainRecords]) => {
+                            return [domain, Object.values(domainRecords)]
+                        })
+                    )]
+                })
             )
-            console.log('submit constraints', constraintInfo.value, locationData)
-            // saveConstraintData(
-            //     selectedProject.value.id,
-            //     constraintInfo.value || {},
-            //     locationData
-            // ).then((response) => {
-            //     if (response.id === selectedProject.value.id) {
-            //         selectedProject.value = response
-            //         changesMade.value = false
-            //     }
-            // })
+            saveConstraintData(
+                selectedProject.value.id,
+                constraintInfo.value || {},
+                locationData
+            ).then((response) => {
+                if (response.id === selectedProject.value.id) {
+                    selectedProject.value = response
+                    changesMade.value = false
+                }
+            })
         }
 
         onMounted(() => {
@@ -254,18 +226,18 @@ export default {
                                     </v-btn>
                                     <v-spacer v-else />
                                     <div
-                                        v-if="getPlacementStatus(item, subject)"
+                                        v-if="getPlacementStatus(subject, item)"
                                         style="width: 170px; text-align: right;"
                                     >
                                         <v-btn
-                                            v-if="!currentConstraintPlacement && getPlacementStatus(item, subject) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
+                                            v-if="!currentConstraintPlacement && getPlacementStatus(subject, item) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
                                             @click="beginPlacement(subject, item)"
                                             small
                                         >
                                             BEGIN PLACEMENT
                                         </v-btn>
                                         <span v-else>
-                                            {{ getPlacementStatus(item, subject) }}
+                                            {{ getPlacementStatus(subject, item) }}
                                         </span>
                                     </div>
                                 </div>

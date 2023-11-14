@@ -20,13 +20,15 @@ import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Cons
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
 import {
-    layers, layersShown, orientationIndicator, anatomies,
+    layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    landmarkInfo, landmarkSize, currentLandmarkPlacement,
+    getWidgetInfo, landmarkInfo, landmarkSize, currentLandmarkPlacement,
+    getLandmarkLocation, setLandmarkLocation,
     allSetLandmarks, reassignLandmarkNumSetValues,
-    constraintInfo, currentConstraintPlacement, allSetConstraints,
+    constraintInfo,
+    getConstraintLocation,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -165,67 +167,52 @@ export default {
         return filter;
     },
     addLandmarks(label, renderer, widgetManager) {
-        landmarkInfo.value.forEach((lInfo) => {
-            const anatomyIndex = anatomies.value.findIndex((a) => a.replace('anatomy_', '') === lInfo.domain)
-            const indexForDomain = landmarkInfo.value.filter(
-                (i) => i.domain === lInfo.domain
-            ).map((i) => i.id).indexOf(lInfo.id)
+        renderer.getActors().forEach((actor) => {
+            const manipulator = vtkPickerManipulator.newInstance();
+            manipulator.getPicker().addPickList(actor);
+            const mapper = actor.getMapper()
+            const inputData = mapper.getInputData()
+            const inputDataDomain = inputData.getFieldData().getArrayByName('domain').getData()[0]
 
-            if (renderer.getActors().length > anatomyIndex) {
-                const actor = renderer.getActors()[anatomyIndex]
-                const manipulator = vtkPickerManipulator.newInstance();
-                manipulator.getPicker().addPickList(actor);
+            landmarkInfo.value.forEach((lInfo) => {
+                if (lInfo.domain === inputDataDomain) {
+                    let widget = vtkSeedWidget.newInstance();
+                    widget.setManipulator(manipulator);
+                    widgetManager.addWidget(widget).setScaleInPixels(false);
+                    let handle = widget.getWidgetState().getMoveHandle();
 
-                let shapeKey = `${label}_${anatomyIndex}`
-                let widgetKey = `${shapeKey}_${lInfo.id}`
-                const setLandmarkCoords = allSetLandmarks.value[shapeKey]
+                    // Handle current landmark placement widget
+                    if (currentLandmarkPlacement.value === getWidgetInfo({ name: label }, lInfo)) {
+                        widget.placeWidget(actor.getBounds());
+                        widgetManager.grabFocus(widget);
+                        widgetManager.onModified(() => {
+                            const landmarkCoord = handle.getOrigin()
+                            if (currentLandmarkPlacement.value && landmarkCoord) {
+                                widgetManager.releaseFocus(widget)
+                                currentLandmarkPlacement.value = undefined;
+                            }
+                        })
+                    }
 
-                let widget = vtkSeedWidget.newInstance();
-                widget.setManipulator(manipulator);
-                widgetManager.addWidget(widget).setScaleInPixels(false);
-                let handle = widget.getWidgetState().getMoveHandle();
+                    // Set color, scale, and position of widget
+                    handle.setColor3(...lInfo.color);
+                    handle.setScale1(landmarkSize.value);
+                    const location = getLandmarkLocation({ name: label }, lInfo)
+                    if (location) handle.setOrigin(location);
 
-                // Handle current landmark placement widget
-                if (currentLandmarkPlacement.value === widgetKey) {
-                    widget.placeWidget(actor.getBounds());
-                    widgetManager.grabFocus(widget);
-                    widgetManager.onModified(() => {
+                    widget.onWidgetChange(() => {
+                        // When widget moved, update value in allSetLandmarks
                         const landmarkCoord = handle.getOrigin()
-                        if (currentLandmarkPlacement.value && landmarkCoord) {
-                            widgetManager.releaseFocus(widget)
-                            currentLandmarkPlacement.value = undefined;
+                        if (landmarkCoord) {
+                            widgetManager.releaseFocus(widget);
+                            setLandmarkLocation({ name: label }, lInfo, landmarkCoord)
+                            // reassign store var for listeners
+                            allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+                            reassignLandmarkNumSetValues()
                         }
                     })
                 }
-
-                // Set color, scale, and position of widget
-                handle.setColor3(...lInfo.color);
-                handle.setScale1(landmarkSize.value);
-                if (setLandmarkCoords && setLandmarkCoords.length > indexForDomain) {
-                    const coord = setLandmarkCoords[indexForDomain]
-                    handle.setOrigin(coord);
-                }
-
-                widget.onWidgetChange(() => {
-                    // When widget moved, update value in allSetLandmarks
-                    const landmarkCoord = handle.getOrigin()
-                    if (landmarkCoord) {
-                        widgetManager.releaseFocus(widget);
-                        if (allSetLandmarks.value[shapeKey]) {
-                            if (allSetLandmarks.value[shapeKey].length > indexForDomain) {
-                                allSetLandmarks.value[shapeKey][indexForDomain] = landmarkCoord
-                            } else {
-                                allSetLandmarks.value[shapeKey].push(landmarkCoord)
-                            }
-                        } else {
-                            allSetLandmarks.value[shapeKey] = [landmarkCoord]
-                        }
-                        // reassign store var for listeners
-                        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
-                        reassignLandmarkNumSetValues()
-                    }
-                })
-            }
+            })
         })
     },
     addConstraints(label, renderer, widgetManager) {
@@ -236,12 +223,13 @@ export default {
         ctfun.setMappingRange(0, 1)
         ctfun.updateRange()
 
-        renderer.getActors().forEach((actor, index) => {
+        renderer.getActors().forEach((actor) => {
             const mapper = actor.getMapper()
             mapper.setLookupTable(ctfun)
             mapper.setColorByArrayName('color')
 
             const inputData = mapper.getInputData()
+            const inputDataDomain = inputData.getFieldData().getArrayByName('domain').getData()[0]
             const bounds = inputData.getBounds()
             const allPoints = inputData.getPoints()
             const colorArray = vtkDataArray.newInstance({
@@ -263,54 +251,68 @@ export default {
                     () => 0 // start all white
                 )
                 widgetManager.getWidgets().forEach((widget) => {
-                    if (widget.getClassName() === 'vtkPlaneWidget') {
-                        const origin = widget.getWidgetState().getOrigin()
-                        const normal = widget.getWidgetState().getNormal()
-                        let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
-                        for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
-                            const point = allPoints.getPoint(i)
-                            const pointColor = newColorArray[i]
-                            if (!pointColor) {
-                                const dotProduct = dot(normal, [
-                                    origin[0] - point[0],
-                                    origin[1] - point[1],
-                                    origin[2] - point[2],
-                                ])
-                                if (dotProduct <= 0) {
-                                    // negative dotProduct means point is below plane
-                                    newColorArray[i] = 1
+                    const widgetLabels = widget.getRepresentations()[0].getLabels()[0]
+                    // only apply to widgets on this domain
+                    if (widgetLabels.subject === label && widgetLabels.domain === inputDataDomain) {
+                        if (widget.getClassName() === 'vtkPlaneWidget') {
+                            const origin = widget.getWidgetState().getOrigin()
+                            const normal = widget.getWidgetState().getNormal()
+                            let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+                            for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
+                                const point = allPoints.getPoint(i)
+                                const pointColor = newColorArray[i]
+                                if (!pointColor) {
+                                    const dotProduct = dot(normal, [
+                                        origin[0] - point[0],
+                                        origin[1] - point[1],
+                                        origin[2] - point[2],
+                                    ])
+                                    if (dotProduct <= 0) {
+                                        // negative dotProduct means point is below plane
+                                        newColorArray[i] = 1
+                                    }
                                 }
                             }
                         }
+                        // TODO: color for painted constraints
                     }
-                    // TODO: color for painted constraints
                 })
                 allPointColors.setData(newColorArray)
                 inputData.modified()
-                console.log('new colors', allPointColors)
             }
 
-            let shapeKey = `${label}_${index}`
-            allSetConstraints.value[shapeKey].forEach((cData) => {
-                let widget;
-                let widgetHandle;
-                if (cData.type === 'plane') {
-                    const { origin, normal } = cData.data
-                    widget = vtkImplicitPlaneWidget.newInstance()
-                    widget.placeWidget(bounds);
-                    widget.setPlaceFactor(2);
-                    widget.getWidgetState().setOrigin(origin);
-                    widget.getWidgetState().setNormal(normal)
-                    widgetHandle = widgetManager.addWidget(widget);
-                    widgetHandle.onEndInteractionEvent(() => {
-                        updateColors()
-                        // TODO: update allSetConstraints
-                    })
-                } else if (cData.type === 'paint') {
-                    // TODO create paint widget
+            constraintInfo.value.forEach((cInfo) => {
+                if (cInfo.domain === inputDataDomain) {
+                    const cData = getConstraintLocation({ name: label }, cInfo)
+                    if (cData) {
+                        let widget;
+                        let widgetState;
+                        let widgetHandle;
+                        if (cData.type === 'plane') {
+                            const { origin, normal } = cData.data
+                            widget = vtkImplicitPlaneWidget.newInstance()
+                            widget.placeWidget(bounds);
+                            widget.setPlaceFactor(2);
+                            // widget.setOutlineVisible(false)
+                            widgetState = widget.getWidgetState()
+                            widgetState.setOrigin(origin);
+                            widgetState.setNormal(normal)
+                            widgetHandle = widgetManager.addWidget(widget);
+                            widgetHandle.getRepresentations()[0].setLabels({
+                                'subject': label,
+                                'domain': inputDataDomain
+                            })
+                            widgetHandle.onEndInteractionEvent(() => {
+                                updateColors()
+                                // TODO: update allSetConstraints
+                            })
+                        } else if (cData.type === 'paint') {
+                            // TODO create paint widget
+                        }
+                    }
+                    updateColors()
                 }
             })
-            updateColors()
         })
     },
     addPoints(label, renderer, points, i) {

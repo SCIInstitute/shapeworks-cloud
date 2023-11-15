@@ -235,8 +235,7 @@ export default {
             const colorArray = vtkDataArray.newInstance({
                 name: 'color',
                 values: Array.from(
-                    { length: allPoints.getNumberOfPoints() },
-                    () => 0 // start all white
+                    { length: allPoints.getNumberOfPoints() }, () => 0
                 )
             })
             inputData.getPointData().addArray(colorArray)
@@ -247,8 +246,7 @@ export default {
 
             const updateColors = () => {
                 const newColorArray = Array.from(
-                    { length: allPoints.getNumberOfPoints() },
-                    () => 0 // start all white
+                    { length: allPoints.getNumberOfPoints() }, () => 0
                 )
                 if (allSetConstraints.value[label]) {
                     const currShapeConstraints = Object.values(allSetConstraints.value[label][inputDataDomain])
@@ -302,11 +300,11 @@ export default {
                             widget = vtkImplicitPlaneWidget.newInstance()
                             widget.placeWidget(bounds);
                             widget.setPlaceFactor(2);
-                            // widget.setOutlineVisible(false)
                             widgetState = widget.getWidgetState()
                             widgetState.setOrigin(origin);
                             widgetState.setNormal(normal)
                             widgetHandle = widgetManager.addWidget(widget);
+                            widgetHandle.setOutlineVisible(false)
                             widgetHandle.getRepresentations()[0].setLabels({
                                 'subject': label,
                                 'domain': inputDataDomain

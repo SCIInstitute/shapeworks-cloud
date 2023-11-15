@@ -33,6 +33,12 @@ export default async function (url: string | undefined) {
                 })
             }
         })
+        if (json.free_form_constraints) {
+            constraintList.push({
+                type: 'paint',
+                data: json.free_form_constraints
+            })
+        }
     }
     return constraintList
 }

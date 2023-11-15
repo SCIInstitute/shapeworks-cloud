@@ -217,13 +217,13 @@ export default {
     },
     addConstraints(label, renderer, widgetManager) {
         // TODO: accommodate newly added constraints
-        const ctfun = vtkColorTransferFunction.newInstance();
-        ctfun.addRGBPoint(0, 1.0, 1.0, 1.0); // 0: white has not been excluded
-        ctfun.addRGBPoint(1, 0.2, 0.2, 0.2); // 1: gray has been excluded
-        ctfun.setMappingRange(0, 1)
-        ctfun.updateRange()
-
         renderer.getActors().forEach((actor) => {
+            const ctfun = vtkColorTransferFunction.newInstance();
+            ctfun.addRGBPoint(0, ...actor.getProperty().getColor()); // 0: default color has not been excluded
+            ctfun.addRGBPoint(1, 0.2, 0.2, 0.2); // 1: gray has been excluded
+            ctfun.setMappingRange(0, 1)
+            ctfun.updateRange()
+
             const mapper = actor.getMapper()
             mapper.setLookupTable(ctfun)
             mapper.setColorByArrayName('color')
@@ -276,7 +276,8 @@ export default {
                             const { scalars } = cData.data.field
                             if (scalars.length === allPoints.getNumberOfPoints()) {
                                 for (let i = 0; i < scalars.length; i++) {
-                                    if (scalars[i] === 1) {
+                                    // scalar assignment is swapped in stored constraint data
+                                    if (scalars[i] === 0) {
                                         newColorArray[i] = 1
                                     }
                                 }

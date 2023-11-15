@@ -27,8 +27,8 @@ import {
     getWidgetInfo, landmarkInfo, landmarkSize, currentLandmarkPlacement,
     getLandmarkLocation, setLandmarkLocation,
     allSetLandmarks, reassignLandmarkNumSetValues,
-    constraintInfo,
-    getConstraintLocation,
+    constraintInfo, allSetConstraints,
+    getConstraintLocation, setConstraintLocation,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -250,13 +250,11 @@ export default {
                     { length: allPoints.getNumberOfPoints() },
                     () => 0 // start all white
                 )
-                widgetManager.getWidgets().forEach((widget) => {
-                    const widgetLabels = widget.getRepresentations()[0].getLabels()[0]
-                    // only apply to widgets on this domain
-                    if (widgetLabels.subject === label && widgetLabels.domain === inputDataDomain) {
-                        if (widget.getClassName() === 'vtkPlaneWidget') {
-                            const origin = widget.getWidgetState().getOrigin()
-                            const normal = widget.getWidgetState().getNormal()
+                if (allSetConstraints.value[label]) {
+                    const currShapeConstraints = Object.values(allSetConstraints.value[label][inputDataDomain])
+                    currShapeConstraints.forEach((cData) => {
+                        if (cData.type === 'plane') {
+                            const { normal, origin } = cData.data
                             let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
                             for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
                                 const point = allPoints.getPoint(i)
@@ -273,10 +271,20 @@ export default {
                                     }
                                 }
                             }
+
+                        } else if (cData.type === 'paint') {
+                            const { scalars } = cData.data.field
+                            if (scalars.length === allPoints.getNumberOfPoints()) {
+                                for (let i = 0; i < scalars.length; i++) {
+                                    if (scalars[i] === 1) {
+                                        newColorArray[i] = 1
+                                    }
+                                }
+                            }
                         }
-                        // TODO: color for painted constraints
-                    }
-                })
+                    })
+                }
+
                 allPointColors.setData(newColorArray)
                 inputData.modified()
             }
@@ -303,8 +311,15 @@ export default {
                                 'domain': inputDataDomain
                             })
                             widgetHandle.onEndInteractionEvent(() => {
+                                setConstraintLocation(label, cInfo, Object.assign(
+                                    cData, {
+                                    data: {
+                                        origin: widgetState.getOrigin(),
+                                        normal: widgetState.getNormal(),
+                                    }
+                                }
+                                ))
                                 updateColors()
-                                // TODO: update allSetConstraints
                             })
                         } else if (cData.type === 'paint') {
                             // TODO create paint widget

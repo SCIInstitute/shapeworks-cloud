@@ -266,8 +266,8 @@ class ProjectViewSet(BaseViewSet):
         # project has new id now, is the cloned object
         for related_model in related_models:
             for related_object in related_model.objects.filter(project=project):
-                related_object.id = None
-                related_object.project = project
+                related_object.id = None  # type: ignore
+                related_object.project = project  # type: ignore
                 related_object.save()
         return Response(
             serializers.ProjectReadSerializer(project).data, status=status.HTTP_201_CREATED

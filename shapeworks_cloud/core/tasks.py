@@ -83,7 +83,7 @@ def run_shapeworks_command(
     user = User.objects.get(id=user_id)
     progress = models.TaskProgress.objects.get(id=progress_id)
     token, _created = Token.objects.get_or_create(user=user)
-    base_url = settings.API_URL
+    base_url = settings.API_URL  # type: ignore
 
     with TemporaryDirectory() as download_dir:
         with swcc_session(base_url=base_url) as session:

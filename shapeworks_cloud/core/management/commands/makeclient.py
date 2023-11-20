@@ -16,7 +16,7 @@ class Command(BaseCommand):
         if not uri:
             uri = DEFAULT_REDIRECT_URI
 
-        site = Site.objects.get_current()
+        site = Site.objects.get_current()  # type: ignore
         site.domain = 'app.shapeworks-cloud.org'
         site.name = 'ShapeWorks Cloud'
         site.save()

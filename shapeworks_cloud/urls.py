@@ -69,7 +69,7 @@ urlpatterns = [
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
     path('api-token-auth/', obtain_auth_token),
-    path('', RedirectView.as_view(url=settings.HOMEPAGE_REDIRECT_URL)),
+    path('', RedirectView.as_view(url=settings.HOMEPAGE_REDIRECT_URL)),  # type: ignore
 ]
 
 if settings.DEBUG:

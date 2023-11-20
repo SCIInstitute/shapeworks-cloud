@@ -131,7 +131,6 @@ class ProjectFileIO(BaseModel, FileIO):
                 groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
                 world_particles_path = None
                 local_particles_path = None
-                particles = None
                 constraints_path = None
                 transform = None
 
@@ -201,7 +200,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         groomed_mesh = groomed_shape
                     elif type(groomed_shape) == GroomedSegmentation:
                         groomed_segmentation = groomed_shape
-                    particles = OptimizedParticles(
+                    OptimizedParticles(
                         world_source=world_particles_path,
                         local_source=local_particles_path,
                         transform_source=transform,

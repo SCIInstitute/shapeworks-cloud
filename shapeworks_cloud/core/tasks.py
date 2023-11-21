@@ -385,6 +385,9 @@ def deepssm(progress_id):
     time.sleep(20)
 
 
+print("ARE YOU READING ME? ******************************")
+
+
 # DeepSSM tasks, Augmentation, Training, Testing
 # TODO: Implement these tasks
 # "Command" here is not a shapeworks executable command, but rather a DeepSSM process
@@ -393,6 +396,8 @@ def deepssm(progress_id):
 #   and let it handle the distinction between shapeworks and deepssm tasks
 @shared_task
 def deepssm_augment(user_id, project_id, form_data):
+    print("test :D")
+
     def pre_command_function():
         # delete any previous results
         # Augmented data is provided in an output file
@@ -403,7 +408,7 @@ def deepssm_augment(user_id, project_id, form_data):
         print("Post command function")
 
     print(dir(DataAugmentationUtils))
-    
+
     run_deepssm_command(
         user_id,
         project_id,

@@ -11,16 +11,16 @@ except ImportError:
         Literal,
     )
 
+from pydantic.v1 import Field
 from .api_model import ApiModel
 from .file_type import FileType
-from .utils import NonEmptyString
 
 
 class Segmentation(ApiModel):
     _endpoint = 'segmentations'
 
     file: FileType[Literal['core.Segmentation.file']]
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     subject: Subject
 
 
@@ -28,7 +28,7 @@ class Mesh(ApiModel):
     _endpoint = 'meshes'
 
     file: FileType[Literal['core.Mesh.file']]
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     subject: Subject
 
 
@@ -36,7 +36,7 @@ class Contour(ApiModel):
     _endpoint = 'contours'
 
     file: FileType[Literal['core.Contour.file']]
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     subject: Subject
 
 
@@ -78,7 +78,7 @@ class OptimizedParticles(ApiModel):
     transform: Optional[FileType[Literal['core.OptimizedParticles.transform']]]
     project: Project
     subject: Subject
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     groomed_segmentation: Optional[GroomedSegmentation]
     groomed_mesh: Optional[GroomedMesh]
 
@@ -88,7 +88,7 @@ class Landmarks(ApiModel):
 
     file: Optional[FileType[Literal['core.Landmarks.file']]]
     subject: Subject
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     project: Project
 
 
@@ -97,7 +97,7 @@ class Constraints(ApiModel):
 
     file: Optional[FileType[Literal['core.Constraints.file']]]
     subject: Subject
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     optimized_particles: Optional[OptimizedParticles]
 
 
@@ -106,9 +106,9 @@ class CachedAnalysisGroup(ApiModel):
 
     file: FileType[Literal['core.CachedAnalysisGroup.file']]
     particles: Optional[FileType[Literal['core.CachedAnalysisGroup.particles']]]
-    name: NonEmptyString
-    group1: NonEmptyString
-    group2: NonEmptyString
+    name: str = Field(min_length=1)
+    group1: str = Field(min_length=1)
+    group2: str = Field(min_length=1)
     ratio: float
 
 

@@ -325,8 +325,8 @@ class Project(ApiModel):
     creator: Optional[str] = ''
     dataset: Dataset
     # sent in as a filepath string, interpreted as CachedAnalysis object
-    last_cached_analysis: Optional[Any]
-    landmarks_info: Optional[Any]
+    last_cached_analysis: Optional[Any] = None
+    landmarks_info: Optional[Any] = None
 
     def get_file_io(self):
         return ProjectFileIO(project=self)

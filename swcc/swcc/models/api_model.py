@@ -23,9 +23,9 @@ ModelType = TypeVar('ModelType', bound='ApiModel')
 
 
 class ApiModel(BaseModel):
-    _endpoint: str
+    _endpoint: Optional[str] = None
 
-    id: Optional[int]
+    id: Optional[int] = None
 
     @validator('*', pre=True)
     def fetch_entity(cls, v, field: ModelField):

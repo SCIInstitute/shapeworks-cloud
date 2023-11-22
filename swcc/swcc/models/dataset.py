@@ -1,18 +1,19 @@
 import re
 from typing import Iterator
+from pydantic.v1 import Field
 
 from .api_model import ApiModel
-from .utils import NonEmptyString, logger
+from .utils import logger
 
 
 class Dataset(ApiModel):
     _endpoint = 'datasets'
 
-    name: NonEmptyString
+    name: str = Field(min_length=3, max_length=255)
     private: bool = False
-    license: NonEmptyString
-    description: NonEmptyString
-    acknowledgement: NonEmptyString
+    license: str = Field(min_length=3)
+    description: str = Field(min_length=3)
+    acknowledgement: str = Field(min_length=3)
     creator: str = ''
     keywords: str = ''
     contributors: str = ''
@@ -98,10 +99,10 @@ class Dataset(ApiModel):
                     name, old_version = match.groups()
                     logger.info('Trying a new name: %s, %s', name, old_version)
                     new_version = int(old_version) + 1
-                    self.name = f'{name}-v{new_version}'  # type: ignore
+                    self.name = f'{name}-v{new_version}'
                 else:
                     # The old name had no suffix, so append "-v1"
-                    self.name = f'{self.name}-v1'  # type: ignore
+                    self.name = f'{self.name}-v1'
             # We have a new name now, but that new name might also conflict.
             # Keep looping until there is no conflict.
             old_dataset = Dataset.from_name(self.name)

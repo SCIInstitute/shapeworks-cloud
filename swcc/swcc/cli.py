@@ -8,7 +8,7 @@ import traceback
 
 import click
 from packaging.version import parse as parse_version
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 import requests
 from requests.exceptions import RequestException
 

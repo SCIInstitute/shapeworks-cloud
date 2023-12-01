@@ -3,31 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, Dict, Iterator, Optional, Union
 import warnings
 
-import requests
-
-try:
-    from typing import Any, Dict, Iterator, Literal, Optional, Union
-except ImportError:
-    from typing import (
-        Any,
-        Dict,
-        Iterator,
-        Optional,
-        Union,
-    )
-    from typing_extensions import (  # type: ignore
-        Literal,
-    )
-
 from pydantic.v1 import BaseModel
+import requests
 
 from ..api import current_session
 from .api_model import ApiModel
 from .constants import expected_key_prefixes, required_key_prefixes
 from .dataset import Dataset
-from .file_type import FileType
+from .file import File
 from .other_models import (
     CachedAnalysis,
     CachedAnalysisGroup,
@@ -155,38 +141,38 @@ class ProjectFileIO(BaseModel, FileIO):
 
                     if key == 'mesh':
                         original_shape = Mesh(
-                            file=relative_path(value),
+                            file_source=relative_path(value),
                             anatomy_type=anatomy_id,
                             subject=subject,
                         ).create()
                     elif key == 'segmentation':
                         original_shape = Segmentation(
-                            file=relative_path(value),
+                            file_source=relative_path(value),
                             anatomy_type=anatomy_id,
                             subject=subject,
                         ).create()
                         pass
                     elif key == 'contour':
                         original_shape = Contour(
-                            file=relative_path(value),
+                            file_source=relative_path(value),
                             anatomy_type=anatomy_id,
                             subject=subject,
                         ).create()
                     elif key == 'image':
                         Image(
-                            file=relative_path(value),
+                            file_source=relative_path(value),
                             modality=anatomy_id,
                             subject=subject,
                         ).create()
                     elif key == 'groomed':
                         if type(original_shape) == Mesh:
                             groomed_shape = self.project.add_groomed_mesh(
-                                file=relative_path(value),
+                                file_source=relative_path(value),
                                 mesh=original_shape,
                             )
                         elif type(original_shape) == Segmentation:
                             groomed_shape = self.project.add_groomed_segmentation(
-                                file=relative_path(value),
+                                file_source=relative_path(value),
                                 segmentation=original_shape,
                             )
                     elif key == 'local':
@@ -199,7 +185,7 @@ class ProjectFileIO(BaseModel, FileIO):
                             f.write(value)
                     elif key == 'landmarks':
                         Landmarks(
-                            file=relative_path(value),
+                            file_source=relative_path(value),
                             subject=subject,
                             project=self.project,
                             anatomy_type=anatomy_id,
@@ -211,14 +197,14 @@ class ProjectFileIO(BaseModel, FileIO):
                 if world_particles_path or local_particles_path:
                     groomed_mesh = None
                     groomed_segmentation = None
-                    if type(original_shape) == Mesh:
+                    if type(groomed_shape) == GroomedMesh:
                         groomed_mesh = groomed_shape
-                    elif type(original_shape) == Segmentation:
+                    elif type(groomed_shape) == GroomedSegmentation:
                         groomed_segmentation = groomed_shape
                     particles = OptimizedParticles(
-                        world=world_particles_path,
-                        local=local_particles_path,
-                        transform=transform,
+                        world_source=world_particles_path,
+                        local_source=local_particles_path,
+                        transform_source=transform,
                         groomed_segmentation=groomed_segmentation,
                         groomed_mesh=groomed_mesh,
                         project=self.project,
@@ -227,7 +213,7 @@ class ProjectFileIO(BaseModel, FileIO):
                     ).create()
                 if constraints_path:
                     Constraints(
-                        file=constraints_path,
+                        file_source=constraints_path,
                         subject=subject,
                         optimized_particles=particles,
                         anatomy_type=anatomy_id,
@@ -250,8 +236,8 @@ class ProjectFileIO(BaseModel, FileIO):
 
             for i in range(len(mean_shapes)):
                 cams = CachedAnalysisMeanShape(
-                    file=mean_shapes[i],
-                    particles=mean_particles[i] if mean_particles else None,
+                    file_source=mean_shapes[i],
+                    particles_source=mean_particles[i] if mean_particles else None,
                 ).create()
                 mean_shapes_cache.append(cams)
 
@@ -269,8 +255,9 @@ class ProjectFileIO(BaseModel, FileIO):
                         cam_pca = CachedAnalysisModePCA(
                             pca_value=pca['pca_value'],
                             lambda_value=pca['lambda'],
-                            file=analysis_file_location.parent / Path(pca['meshes'][i]),
-                            particles=analysis_file_location.parent / Path(pca['particles'][i]),
+                            file_source=analysis_file_location.parent / Path(pca['meshes'][i]),
+                            particles_source=analysis_file_location.parent
+                            / Path(pca['particles'][i]),
                         ).create()
                         pca_values.append(cam_pca)
                         i += 1
@@ -295,10 +282,10 @@ class ProjectFileIO(BaseModel, FileIO):
                                     group1=group['group1'],
                                     group2=group['group2'],
                                     ratio=values['ratio'],
-                                    file=(
+                                    file_source=(
                                         analysis_file_location.parent / Path(values['meshes'][i])
                                     ),
-                                    particles=(
+                                    particles_source=(
                                         analysis_file_location.parent / Path(values['particles'][i])
                                     ),
                                 ).create()
@@ -319,7 +306,7 @@ class Project(ApiModel):
     private: bool = False
     readonly: bool = False
     name: str = 'My Project'
-    file: FileType[Literal['core.Project.file']]
+    file_source: Union[Path, str]
     keywords: str = ''
     description: str = ''
     creator: Optional[str] = ''
@@ -330,6 +317,10 @@ class Project(ApiModel):
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
+
+    @property
+    def file(self):
+        return File(self.file_source, field_id='core.Project.file')
 
     @property
     def subjects(self) -> Iterator[Subject]:
@@ -347,32 +338,32 @@ class Project(ApiModel):
 
     def add_groomed_segmentation(
         self,
-        file: Path,
+        file_source: Path,
         segmentation: Segmentation,
-        pre_cropping: Optional[Path] = None,
-        pre_alignment: Optional[Path] = None,
+        pre_cropping_source: Optional[Path] = None,
+        pre_alignment_source: Optional[Path] = None,
     ) -> GroomedSegmentation:
         return GroomedSegmentation(
-            file=file,
+            file_source=file_source,
             segmentation=segmentation,
             project=self,
-            pre_cropping=pre_cropping,
-            pre_alignment=pre_alignment,
+            pre_cropping_source=pre_cropping_source,
+            pre_alignment_source=pre_alignment_source,
         ).create()
 
     def add_groomed_mesh(
         self,
-        file: Path,
+        file_source: Path,
         mesh: Mesh,
-        pre_cropping: Optional[Path] = None,
-        pre_alignment: Optional[Path] = None,
+        pre_cropping_source: Optional[Path] = None,
+        pre_alignment_source: Optional[Path] = None,
     ) -> GroomedMesh:
         return GroomedMesh(
-            file=file,
+            file_source=file_source,
             mesh=mesh,
             project=self,
-            pre_cropping=pre_cropping,
-            pre_alignment=pre_alignment,
+            pre_cropping_source=pre_cropping_source,
+            pre_alignment_source=pre_alignment_source,
         ).create()
 
     @property
@@ -413,7 +404,7 @@ class Project(ApiModel):
         if len(files):
             print_progress_bar(0, len(files))
             for index, (path, url) in enumerate(files.items()):
-                file_item: FileType = FileType(url=url)
+                file_item: File = File(url)
                 file_item.download(Path(folder, *path.split('/')[:-1]))
                 print_progress_bar(index + 1, len(files))
         session.close()

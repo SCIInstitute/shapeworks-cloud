@@ -97,7 +97,7 @@ class ApiModel(BaseModel):
         self.id = None
 
     def create(self: ModelType) -> ModelType:
-        from .file_type import FileType
+        from .file import File
         from .utils import raise_for_status
 
         session = current_session()
@@ -107,7 +107,7 @@ class ApiModel(BaseModel):
         if 'file_io' in json:
             del json['file_io']
         for key, value in self:
-            if isinstance(value, FileType):
+            if isinstance(value, File):
                 json[key] = value.upload()
             if isinstance(value, ApiModel):
                 if value.id is None:
@@ -130,10 +130,10 @@ class ApiModel(BaseModel):
         return self
 
     def download_files(self, path: Union[Path, str]) -> Iterator[Path]:
-        from .file_type import FileType
+        from .file import File
 
         for _, value in self:
-            if isinstance(value, FileType):
+            if isinstance(value, File):
                 yield value.download(path)
 
     def assert_remote(self):

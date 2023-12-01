@@ -22,7 +22,7 @@ with swcc_session(base_url='http://localhost:8000/api/v1') as session:
 
     project_file_1 = Path('left_atrium/left_atrium.swproj')
     project_1 = Project(
-        file=project_file_1,
+        file_source=project_file_1,
         description='First project for left atrium data',
         dataset=dataset_1,
         last_cached_analysis='analysis/left_atrium_analysis.json',
@@ -39,7 +39,7 @@ with swcc_session(base_url='http://localhost:8000/api/v1') as session:
 
     project_file_2 = Path('ellipsoid/ellipsoid.swproj')
     project_2 = Project(
-        file=project_file_2,
+        file_source=project_file_2,
         description='First project for ellipsoid data',
         dataset=dataset_2,
     ).create()

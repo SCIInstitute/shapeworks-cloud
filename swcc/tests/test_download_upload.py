@@ -84,7 +84,7 @@ def test_download_upload_cycle(session):
                 models.Project(
                     dataset=d,
                     name=project.name,
-                    file=project.file.path,
+                    file_source=project.file.path,
                     private=project.private,
                     readonly=project.readonly,
                     description=project.description,

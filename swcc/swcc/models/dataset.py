@@ -1,5 +1,6 @@
 import re
 from typing import Iterator
+
 from pydantic.v1 import Field
 
 from .api_model import ApiModel

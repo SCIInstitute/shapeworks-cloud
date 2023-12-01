@@ -1,35 +1,22 @@
 from __future__ import annotations
 
-try:
-    from typing import Generic, Optional, TypeVar, Union, get_args
-except ImportError:
-    from typing import (
-        Generic,
-        Optional,
-        Union,
-        TypeVar,
-    )
-    from typing_extensions import get_args
-
 import logging
 from pathlib import Path
+from typing import Optional, Union
 from urllib.parse import unquote
 
-from pydantic.v1 import AnyHttpUrl, FilePath, ValidationError, parse_obj_as
-from pydantic.v1.fields import ModelField
+from pydantic.v1 import AnyHttpUrl, BaseModel, FilePath, ValidationError, parse_obj_as
 import requests
 
 from ..api import current_session
 
 logger = logging.getLogger(__name__)
-FieldId = TypeVar('FieldId', bound=str)
 
 
-class FileType(Generic[FieldId]):
+class File(BaseModel):
     def __init__(
         self,
-        path: Optional[Union[Path, str]] = None,
-        url: Optional[str] = None,
+        v: Optional[Union[Path, str]],
         field_id: Optional[str] = None,
     ):
         self.field_id: Optional[str] = field_id
@@ -37,43 +24,18 @@ class FileType(Generic[FieldId]):
         self.url: Optional[AnyHttpUrl] = None
         self.field_value: Optional[str] = None
 
-        if path:
-            self.path = parse_obj_as(FilePath, path)
-
-        if url:
-            self.url = parse_obj_as(AnyHttpUrl, url)
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v, field: ModelField, **kwargs):
-        # this is probably a bad idea...
-        if not field.sub_fields:
-            raise SyntaxError('A field id must be provided when using FileType')
-
-        field_id = get_args(field.sub_fields[0].type_)[0]
-        if isinstance(v, FileType):
-            v.field_id = field_id
-            return v
-
-        path = None
-        url = None
         try:
-            path = parse_obj_as(FilePath, v)
+            self.path = parse_obj_as(FilePath, v)
         except ValidationError:
             pass
 
         try:
-            url = parse_obj_as(AnyHttpUrl, v)
+            self.url = parse_obj_as(AnyHttpUrl, v)
         except ValidationError:
             pass
 
-        if path is None and url is None:
-            raise ValueError(f'Could not parse {v} as a local path or a remote url')
-
-        return FileType(path=path, url=url, field_id=field_id)
+        if self.path is None and self.url is None:
+            raise ValueError('Could not parse File as a local path or a remote url')
 
     def upload(self):
         session = current_session()
@@ -88,7 +50,7 @@ class FileType(Generic[FieldId]):
         if self.field_id is None:
             # I assume validate will always get called, but pydantic *might* be doing something
             # unusual in some cases.
-            raise Exception('Unknown field id, this is likely a bug in the FileType class')
+            raise Exception('Unknown field id, this is likely a bug in the File class')
 
         with self.path.open('rb') as f:
             logger.info('Uploading file %s', self.path.name)

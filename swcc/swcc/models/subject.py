@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional
+
 from pydantic.v1 import Field
 
 from .api_model import ApiModel
@@ -40,16 +41,16 @@ class Subject(ApiModel):
         return Constraints.list(subject=self)
 
     def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
-        return Segmentation(file=file, anatomy_type=anatomy_type, subject=self).create()
+        return Segmentation(file_source=file, anatomy_type=anatomy_type, subject=self).create()
 
     def add_mesh(self, file: Path, anatomy_type: str) -> Mesh:
-        return Mesh(file=file, anatomy_type=anatomy_type, subject=self).create()
+        return Mesh(file_source=file, anatomy_type=anatomy_type, subject=self).create()
 
     def add_contour(self, file: Path, anatomy_type: str) -> Contour:
-        return Contour(file=file, anatomy_type=anatomy_type, subject=self).create()
+        return Contour(file_source=file, anatomy_type=anatomy_type, subject=self).create()
 
     def add_image(self, file: Path, modality: str) -> Image:
-        return Image(file=file, modality=modality, subject=self).create()
+        return Image(file_source=file, modality=modality, subject=self).create()
 
     @classmethod
     def from_name_and_dataset(cls, name: str, dataset: Dataset):

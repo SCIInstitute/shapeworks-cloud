@@ -18,7 +18,10 @@ def project_as_dict_repr(project):
 
     # remove keys that are expected to differ between servers
     del project_repr['id']
-    del project_repr['file']
+    if 'file' in project_repr:
+        del project_repr['file']
+    if 'file_source' in project_repr:
+        del project_repr['file_source']
     del project_repr['creator']
     del project_repr['dataset']['id']
     del project_repr['dataset']['creator']
@@ -54,9 +57,10 @@ def public_server_download(download_dir):
         dataset_subset = (
             random.sample(tiny_tests, SAMPLE_SIZE) if len(tiny_tests) >= SAMPLE_SIZE else tiny_tests
         )
-        project_subset = [next(d.projects) for d in dataset_subset]
+        project_subset = [next(d.projects, None) for d in dataset_subset]
         for project in project_subset:
-            project.download(download_dir)
+            if project is not None:
+                project.download(download_dir)
         return project_subset
 
 

@@ -307,7 +307,7 @@ class Project(ApiModel):
     private: bool = False
     readonly: bool = False
     name: str = 'My Project'
-    file_source: Union[Path, str]
+    file_source: Union[str, Path]
     keywords: str = ''
     description: str = ''
     creator: Optional[str] = ''
@@ -390,7 +390,7 @@ class Project(ApiModel):
         assert result.id
         return Project.from_id(result.id)
 
-    def download(self, folder: Union[Path, str]):
+    def download(self, folder: Union[str, Path]):
         session = current_session()
         self.file.download(folder)
         r: requests.Response = session.get(f'{self._endpoint}/{self.id}/download/')

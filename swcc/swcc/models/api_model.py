@@ -2,7 +2,7 @@ import inspect
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Type, TypeVar, Union
 
-from pydantic.v1 import AnyHttpUrl, BaseModel, parse_obj_as, validator
+from pydantic.v1 import AnyHttpUrl, BaseModel, PrivateAttr, parse_obj_as, validator
 import requests
 
 from ..api import current_session
@@ -14,7 +14,7 @@ ModelType = TypeVar('ModelType', bound='ApiModel')
 class ApiModel(BaseModel):
     _endpoint: Optional[str] = None
     _file_fields: Dict = {}
-    _files: Dict = {}
+    _files: Dict = PrivateAttr(default_factory=dict)
 
     id: Optional[int] = None
 
@@ -150,7 +150,7 @@ class ApiModel(BaseModel):
             self.creator = r.json()['creator']
         return self
 
-    def download_files(self, path: Union[Path, str]) -> Iterator[Path]:
+    def download_files(self, path: Union[str, Path]) -> Iterator[Path]:
         for file in self._files.values():
             yield file.download(path)
 

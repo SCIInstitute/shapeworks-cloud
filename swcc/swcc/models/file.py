@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class File:
-    def __init__(self, v: Optional[Union[Path, str]], field_id: Optional[str] = None, **kwargs):
+    def __init__(self, v: Optional[Union[str, Path]], field_id: Optional[str] = None, **kwargs):
         self.field_id: Optional[str] = field_id
         self.path: Optional[Path] = None
         self.url: Optional[AnyHttpUrl] = None
@@ -59,7 +59,7 @@ class File:
 
         return self.field_value
 
-    def download(self, path: Union[Path, str]) -> Path:
+    def download(self, path: Union[str, Path]) -> Path:
         from .utils import raise_for_status
 
         if self.url is None:

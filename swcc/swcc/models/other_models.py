@@ -12,7 +12,7 @@ class Segmentation(ApiModel):
     _endpoint = 'segmentations'
     _file_fields = {'file': 'core.Segmentation.file'}
 
-    file_source: Union[Path, str]
+    file_source: Union[str, Path]
     anatomy_type: str = Field(min_length=1)
     subject: Subject
 
@@ -21,7 +21,7 @@ class Mesh(ApiModel):
     _endpoint = 'meshes'
     _file_fields = {'file': 'core.Mesh.file'}
 
-    file_source: Union[Path, str]
+    file_source: Union[str, Path]
     anatomy_type: str = Field(min_length=1)
     subject: Subject
 
@@ -30,7 +30,7 @@ class Contour(ApiModel):
     _endpoint = 'contours'
     _file_fields = {'file': 'core.Contour.file'}
 
-    file_source: Union[Path, str]
+    file_source: Union[str, Path]
     anatomy_type: str = Field(min_length=1)
     subject: Subject
 
@@ -39,7 +39,7 @@ class Image(ApiModel):
     _endpoint = 'images'
     _file_fields = {'file': 'core.Image.file'}
 
-    file_source: Union[Path, str]
+    file_source: Union[str, Path]
     modality: str
     subject: Subject
 
@@ -52,9 +52,9 @@ class GroomedSegmentation(ApiModel):
         'pre_alignment': 'core.GroomedSegmentation.pre_alignment',
     }
 
-    file_source: Union[Path, str]
-    pre_cropping_source: Optional[Union[Path, str]] = None
-    pre_alignment_source: Optional[Union[Path, str]] = None
+    file_source: Union[str, Path]
+    pre_cropping_source: Optional[Union[str, Path]] = None
+    pre_alignment_source: Optional[Union[str, Path]] = None
     segmentation: Segmentation
     project: Project
 
@@ -67,9 +67,9 @@ class GroomedMesh(ApiModel):
         'pre_alignment': 'core.GroomedMesh.pre_alignment',
     }
 
-    file_source: Union[Path, str]
-    pre_cropping_source: Optional[Union[Path, str]] = None
-    pre_alignment_source: Optional[Union[Path, str]] = None
+    file_source: Union[str, Path]
+    pre_cropping_source: Optional[Union[str, Path]] = None
+    pre_alignment_source: Optional[Union[str, Path]] = None
     mesh: Mesh
     project: Project
 
@@ -82,9 +82,9 @@ class OptimizedParticles(ApiModel):
         'transform': 'core.OptimizedParticles.transform',
     }
 
-    world_source: Optional[Union[Path, str]] = None
-    local_source: Optional[Union[Path, str]] = None
-    transform_source: Optional[Union[Path, str]] = None
+    world_source: Optional[Union[str, Path]] = None
+    local_source: Optional[Union[str, Path]] = None
+    transform_source: Optional[Union[str, Path]] = None
     project: Project
     subject: Subject
     anatomy_type: str = Field(min_length=1)
@@ -96,7 +96,7 @@ class Landmarks(ApiModel):
     _endpoint = 'landmarks'
     _file_fields = {'file': 'core.Landmarks.file'}
 
-    file_source: Union[Path, str]
+    file_source: Union[str, Path]
     subject: Subject
     anatomy_type: str = Field(min_length=1)
     project: Project
@@ -106,7 +106,7 @@ class Constraints(ApiModel):
     _endpoint = 'constraints'
     _file_fields = {'file': 'core.Constraints.file'}
 
-    file_source: Union[Path, str]
+    file_source: Union[str, Path]
     subject: Subject
     anatomy_type: str = Field(min_length=1)
     optimized_particles: Optional[OptimizedParticles]
@@ -119,8 +119,8 @@ class CachedAnalysisGroup(ApiModel):
         'particles': 'core.CachedAnalysisGroup.particles',
     }
 
-    file_source: Union[Path, str]
-    particles_source: Optional[Union[Path, str]] = None
+    file_source: Union[str, Path]
+    particles_source: Optional[Union[str, Path]] = None
     name: str = Field(min_length=1)
     group1: str = Field(min_length=1)
     group2: str = Field(min_length=1)
@@ -136,8 +136,8 @@ class CachedAnalysisModePCA(ApiModel):
 
     pca_value: float
     lambda_value: float
-    file_source: Union[Path, str]
-    particles_source: Optional[Union[Path, str]] = None
+    file_source: Union[str, Path]
+    particles_source: Optional[Union[str, Path]] = None
 
 
 class CachedAnalysisMode(ApiModel):
@@ -157,8 +157,8 @@ class CachedAnalysisMeanShape(ApiModel):
         'particles': 'core.CachedAnalysisMeanShape.particles',
     }
 
-    file_source: Union[Path, str]
-    particles_source: Optional[Union[Path, str]] = None
+    file_source: Union[str, Path]
+    particles_source: Optional[Union[str, Path]] = None
 
 
 class CachedAnalysis(ApiModel):

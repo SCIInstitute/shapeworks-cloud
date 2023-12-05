@@ -302,6 +302,7 @@ class ProjectFileIO(BaseModel, FileIO):
 
 class Project(ApiModel):
     _endpoint = 'projects'
+    _file_fields = {'file': 'core.Project.file'}
 
     private: bool = False
     readonly: bool = False
@@ -317,10 +318,6 @@ class Project(ApiModel):
 
     def get_file_io(self):
         return ProjectFileIO(project=self)
-
-    @property
-    def file(self):
-        return File(self.file_source, field_id='core.Project.file')
 
     @property
     def subjects(self) -> Iterator[Subject]:

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import unquote
 
-from pydantic.v1 import AnyHttpUrl, BaseModel, FilePath, ValidationError, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, FilePath, ValidationError, parse_obj_as
 import requests
 
 from ..api import current_session
@@ -13,26 +13,26 @@ from ..api import current_session
 logger = logging.getLogger(__name__)
 
 
-class File(BaseModel):
-    def __init__(
-        self,
-        v: Optional[Union[Path, str]],
-        field_id: Optional[str] = None,
-    ):
+class File:
+    def __init__(self, v: Optional[Union[Path, str]], field_id: Optional[str] = None, **kwargs):
         self.field_id: Optional[str] = field_id
         self.path: Optional[Path] = None
         self.url: Optional[AnyHttpUrl] = None
         self.field_value: Optional[str] = None
 
-        try:
-            self.path = parse_obj_as(FilePath, v)
-        except ValidationError:
-            pass
+        if v is not None:
+            if isinstance(v, Path):
+                self.path = v
+            else:
+                try:
+                    self.path = parse_obj_as(FilePath, v)
+                except ValidationError:
+                    pass
 
-        try:
-            self.url = parse_obj_as(AnyHttpUrl, v)
-        except ValidationError:
-            pass
+                try:
+                    self.url = parse_obj_as(AnyHttpUrl, v)
+                except ValidationError:
+                    pass
 
         if self.path is None and self.url is None:
             raise ValueError('Could not parse File as a local path or a remote url')

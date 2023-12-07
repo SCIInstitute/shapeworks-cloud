@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 import click
-from pydantic import StrictStr
 import requests
 import toml
 from tqdm import tqdm
@@ -28,10 +27,6 @@ class FileIO(ABC):
     @abstractmethod
     def interpret_data(self, data, root):
         pass
-
-
-class NonEmptyString(StrictStr):
-    min_length = 1
 
 
 def shape_file_type(path: Path):

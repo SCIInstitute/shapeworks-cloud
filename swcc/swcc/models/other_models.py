@@ -1,124 +1,143 @@
 from __future__ import annotations
 
-try:
-    from typing import List, Literal, Optional
-except ImportError:
-    from typing import (
-        List,
-        Optional,
-    )
-    from typing_extensions import (  # type: ignore
-        Literal,
-    )
+from pathlib import Path
+from typing import List, Optional, Union
+
+from pydantic.v1 import Field
 
 from .api_model import ApiModel
-from .file_type import FileType
-from .utils import NonEmptyString
 
 
 class Segmentation(ApiModel):
     _endpoint = 'segmentations'
+    _file_fields = {'file': 'core.Segmentation.file'}
 
-    file: FileType[Literal['core.Segmentation.file']]
-    anatomy_type: NonEmptyString
+    file_source: Union[str, Path]
+    anatomy_type: str = Field(min_length=1)
     subject: Subject
 
 
 class Mesh(ApiModel):
     _endpoint = 'meshes'
+    _file_fields = {'file': 'core.Mesh.file'}
 
-    file: FileType[Literal['core.Mesh.file']]
-    anatomy_type: NonEmptyString
+    file_source: Union[str, Path]
+    anatomy_type: str = Field(min_length=1)
     subject: Subject
 
 
 class Contour(ApiModel):
     _endpoint = 'contours'
+    _file_fields = {'file': 'core.Contour.file'}
 
-    file: FileType[Literal['core.Contour.file']]
-    anatomy_type: NonEmptyString
+    file_source: Union[str, Path]
+    anatomy_type: str = Field(min_length=1)
     subject: Subject
 
 
 class Image(ApiModel):
     _endpoint = 'images'
+    _file_fields = {'file': 'core.Image.file'}
 
-    file: FileType[Literal['core.Image.file']]
+    file_source: Union[str, Path]
     modality: str
     subject: Subject
 
 
 class GroomedSegmentation(ApiModel):
     _endpoint = 'groomed-segmentations'
+    _file_fields = {
+        'file': 'core.GroomedSegmentation.file',
+        'pre_cropping': 'core.GroomedSegmentation.pre_cropping',
+        'pre_alignment': 'core.GroomedSegmentation.pre_alignment',
+    }
 
-    file: Optional[FileType[Literal['core.GroomedSegmentation.file']]]
-    pre_cropping: Optional[FileType[Literal['core.GroomedSegmentation.pre_cropping']]] = None
-    pre_alignment: Optional[FileType[Literal['core.GroomedSegmentation.pre_alignment']]] = None
-
+    file_source: Union[str, Path]
+    pre_cropping_source: Optional[Union[str, Path]] = None
+    pre_alignment_source: Optional[Union[str, Path]] = None
     segmentation: Segmentation
     project: Project
 
 
 class GroomedMesh(ApiModel):
     _endpoint = 'groomed-meshes'
+    _file_fields = {
+        'file': 'core.GroomedMesh.file',
+        'pre_cropping': 'core.GroomedMesh.pre_cropping',
+        'pre_alignment': 'core.GroomedMesh.pre_alignment',
+    }
 
-    file: Optional[FileType[Literal['core.GroomedMesh.file']]]
-    pre_cropping: Optional[FileType[Literal['core.GroomedMesh.pre_cropping']]] = None
-    pre_alignment: Optional[FileType[Literal['core.GroomedMesh.pre_alignment']]] = None
-
+    file_source: Union[str, Path]
+    pre_cropping_source: Optional[Union[str, Path]] = None
+    pre_alignment_source: Optional[Union[str, Path]] = None
     mesh: Mesh
     project: Project
 
 
 class OptimizedParticles(ApiModel):
     _endpoint = 'optimized-particles'
+    _file_fields = {
+        'world': 'core.OptimizedParticles.world',
+        'local': 'core.OptimizedParticles.local',
+        'transform': 'core.OptimizedParticles.transform',
+    }
 
-    world: Optional[FileType[Literal['core.OptimizedParticles.world']]]
-    local: Optional[FileType[Literal['core.OptimizedParticles.local']]]
-    transform: Optional[FileType[Literal['core.OptimizedParticles.transform']]]
+    world_source: Optional[Union[str, Path]] = None
+    local_source: Optional[Union[str, Path]] = None
+    transform_source: Optional[Union[str, Path]] = None
     project: Project
     subject: Subject
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     groomed_segmentation: Optional[GroomedSegmentation]
     groomed_mesh: Optional[GroomedMesh]
 
 
 class Landmarks(ApiModel):
     _endpoint = 'landmarks'
+    _file_fields = {'file': 'core.Landmarks.file'}
 
-    file: Optional[FileType[Literal['core.Landmarks.file']]]
+    file_source: Union[str, Path]
     subject: Subject
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     project: Project
 
 
 class Constraints(ApiModel):
     _endpoint = 'constraints'
+    _file_fields = {'file': 'core.Constraints.file'}
 
-    file: Optional[FileType[Literal['core.Constraints.file']]]
+    file_source: Union[str, Path]
     subject: Subject
-    anatomy_type: NonEmptyString
+    anatomy_type: str = Field(min_length=1)
     optimized_particles: Optional[OptimizedParticles]
 
 
 class CachedAnalysisGroup(ApiModel):
     _endpoint = 'cached-analysis-group'
+    _file_fields = {
+        'file': 'core.CachedAnalysisGroup.file',
+        'particles': 'core.CachedAnalysisGroup.particles',
+    }
 
-    file: FileType[Literal['core.CachedAnalysisGroup.file']]
-    particles: Optional[FileType[Literal['core.CachedAnalysisGroup.particles']]]
-    name: NonEmptyString
-    group1: NonEmptyString
-    group2: NonEmptyString
+    file_source: Union[str, Path]
+    particles_source: Optional[Union[str, Path]] = None
+    name: str = Field(min_length=1)
+    group1: str = Field(min_length=1)
+    group2: str = Field(min_length=1)
     ratio: float
 
 
 class CachedAnalysisModePCA(ApiModel):
     _endpoint = 'cached-analysis-mode-pca'
+    _file_fields = {
+        'file': 'core.CachedAnalysisModePCA.file',
+        'particles': 'core.CachedAnalysisModePCA.particles',
+    }
 
     pca_value: float
     lambda_value: float
-    file: FileType[Literal['core.CachedAnalysisModePCA.file']]
-    particles: FileType[Literal['core.CachedAnalysisModePCA.particles']]
+    file_source: Union[str, Path]
+    particles_source: Optional[Union[str, Path]] = None
 
 
 class CachedAnalysisMode(ApiModel):
@@ -133,9 +152,13 @@ class CachedAnalysisMode(ApiModel):
 
 class CachedAnalysisMeanShape(ApiModel):
     _endpoint = 'cached-analysis-mean-shape'
+    _file_fields = {
+        'file': 'core.CachedAnalysisMeanShape.file',
+        'particles': 'core.CachedAnalysisMeanShape.particles',
+    }
 
-    file: FileType[Literal['core.CachedAnalysisMeanShape.file']]
-    particles: FileType[Literal['core.CachedAnalysisMeanShape.particles']]
+    file_source: Union[str, Path]
+    particles_source: Optional[Union[str, Path]] = None
 
 
 class CachedAnalysis(ApiModel):

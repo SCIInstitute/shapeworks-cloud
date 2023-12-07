@@ -64,7 +64,7 @@ class SegmentationFactory(Factory):
     class Meta:
         model = models.Segmentation
 
-    file = Faker('file', extension='nrrd')
+    file_source = Faker('file', extension='nrrd')
     anatomy_type = Faker('word')
     subject = SubFactory(SubjectFactory)
 
@@ -73,7 +73,7 @@ class MeshFactory(Factory):
     class Meta:
         model = models.Mesh
 
-    file = Faker('file', extension='ply')
+    file_source = Faker('file', extension='ply')
     anatomy_type = Faker('word')
     subject = SubFactory(SubjectFactory)
 
@@ -82,7 +82,7 @@ class ImageFactory(Factory):
     class Meta:
         model = models.Image
 
-    file = Faker('file', extension='nrrd')
+    file_source = Faker('file', extension='nrrd')
     modality = Faker('word')
     subject = SubFactory(SubjectFactory)
 
@@ -91,7 +91,7 @@ class ProjectFactory(Factory):
     class Meta:
         model = models.Project
 
-    file = './tests/test_data/project_demo.swproj'
+    file_source = './tests/test_data/project_demo.swproj'
     keywords = Faker('word')
     description = Faker('sentence')
     dataset = SubFactory(DatasetFactory)
@@ -101,9 +101,9 @@ class GroomedSegmentationFactory(Factory):
     class Meta:
         model = models.GroomedSegmentation
 
-    file = Faker('file', extension='nrrd')
-    pre_cropping = Faker('file', extension='txt', null_chance=50)
-    pre_alignment = Faker('file', extension='txt', null_chance=50)
+    file_source = Faker('file', extension='nrrd')
+    pre_cropping_source = Faker('file', extension='txt', null_chance=50)
+    pre_alignment_source = Faker('file', extension='txt', null_chance=50)
 
     segmentation = SubFactory(SegmentationFactory)
     project = SubFactory(ProjectFactory)
@@ -113,9 +113,9 @@ class GroomedMeshFactory(Factory):
     class Meta:
         model = models.GroomedMesh
 
-    file = Faker('file', extension='ply')
-    pre_cropping = Faker('file', extension='txt', null_chance=50)
-    pre_alignment = Faker('file', extension='txt', null_chance=50)
+    file_source = Faker('file', extension='ply')
+    pre_cropping_source = Faker('file', extension='txt', null_chance=50)
+    pre_alignment_source = Faker('file', extension='txt', null_chance=50)
 
     mesh = SubFactory(MeshFactory)
     project = SubFactory(ProjectFactory)
@@ -125,9 +125,9 @@ class OptimizedParticlesFactory(Factory):
     class Meta:
         model = models.OptimizedParticles
 
-    world = Faker('file', extension='txt')
-    local = Faker('file', extension='txt')
-    transform = Faker('file', extension='txt')
+    world_source = Faker('file', extension='txt')
+    local_source = Faker('file', extension='txt')
+    transform_source = Faker('file', extension='txt')
     project = SubFactory(ProjectFactory)
     subject = SubFactory(SubjectFactory)
     anatomy_type = Faker('word')

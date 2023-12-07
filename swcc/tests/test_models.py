@@ -35,7 +35,7 @@ def test_file_download_api(session):
         file = directory / 'test_file.nrrd'
         with file.open('w') as f:
             f.write('file content')
-        segmentation = factories.SegmentationFactory(file=file).create()
+        segmentation = factories.SegmentationFactory(file_source=file).create()
         segmentation = models.Segmentation.from_id(segmentation.id)
 
         assert file.name in segmentation.file.url

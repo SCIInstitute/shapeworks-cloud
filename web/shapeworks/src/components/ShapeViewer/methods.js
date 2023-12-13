@@ -19,6 +19,9 @@ import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttribute
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
+import { kdTree } from 'kd-tree-javascript';
+import { distance } from '@/helper'
+
 import {
     layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
@@ -248,7 +251,7 @@ export default {
                 const newColorArray = Array.from(
                     { length: allPoints.getNumberOfPoints() }, () => 0
                 )
-                if (allSetConstraints.value[label]) {
+                if (allSetConstraints.value && allSetConstraints.value[label] && allSetConstraints.value[label][inputDataDomain]) {
                     const currShapeConstraints = Object.values(allSetConstraints.value[label][inputDataDomain])
                     currShapeConstraints.forEach((cData) => {
                         if (cData.type === 'plane') {
@@ -269,14 +272,26 @@ export default {
                                     }
                                 }
                             }
-
                         } else if (cData.type === 'paint') {
-                            const { scalars } = cData.data.field
+                            // TODO: this takes too long with many actors
+                            const { scalars, points } = cData.data.field
+                            const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
+                            const tree = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
                             if (scalars.length === allPoints.getNumberOfPoints()) {
                                 for (let i = 0; i < scalars.length; i++) {
-                                    // scalar assignment is swapped in stored constraint data
-                                    if (scalars[i] === 0) {
-                                        newColorArray[i] = 1
+                                    const currentPoint = allPoints.getPoint(i)
+                                    const currentPointObj = {
+                                        x: currentPoint[0],
+                                        y: currentPoint[1],
+                                        z: currentPoint[2],
+                                    }
+                                    const nearests = tree.nearest(currentPointObj, 1)
+                                    if (nearests.length) {
+                                        const [nearest,] = nearests[0]
+                                        // scalar assignment is swapped in stored constraint data
+                                        if (nearest.s === 0) {
+                                            newColorArray[i] = 1
+                                        }
                                     }
                                 }
                             }
@@ -297,6 +312,8 @@ export default {
                         let widgetHandle;
                         if (cData.type === 'plane') {
                             const { origin, normal } = cData.data
+                            // TODO: plane/shape overlap appears to change when rotating
+                            // (but only in viewers without the mouse)
                             widget = vtkImplicitPlaneWidget.newInstance()
                             widget.placeWidget(bounds);
                             widget.setPlaceFactor(2);
@@ -304,7 +321,10 @@ export default {
                             widgetState.setOrigin(origin);
                             widgetState.setNormal(normal)
                             widgetHandle = widgetManager.addWidget(widget);
+
+                            // TODO: this doesn't disappear until after first interaction
                             widgetHandle.setOutlineVisible(false)
+
                             widgetHandle.getRepresentations()[0].setLabels({
                                 'subject': label,
                                 'domain': inputDataDomain
@@ -324,9 +344,9 @@ export default {
                             // TODO create paint widget
                         }
                     }
-                    updateColors()
                 }
             })
+            updateColors()
         })
     },
     addPoints(label, renderer, points, i) {

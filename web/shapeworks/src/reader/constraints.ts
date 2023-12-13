@@ -80,6 +80,7 @@ export function convertConstraintDataForDB(constraintData) {
             const p1 = origin;
             const p2 = addVectors(origin, v2)
             const p3 = addVectors(origin, v1)
+            // TODO: sometimes normals are flipped
 
             constraintJSON.planes.push({points: [p1, p2, p3]})
         } else if (cData.type === 'paint') {

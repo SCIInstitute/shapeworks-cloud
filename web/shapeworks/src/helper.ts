@@ -41,3 +41,7 @@ export function hexToRgb(hex: string) {
       parseInt(result[3], 16)
      ] : [0, 0, 0];
   }
+
+export function distance(a, b){
+    return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2) +  Math.pow(a.z - b.z, 2);
+}

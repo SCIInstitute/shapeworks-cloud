@@ -327,8 +327,8 @@ class ProjectViewSet(BaseViewSet):
 
         ids_existing_with_coords = []
         for subject_id, data in landmarks_locations.items():
+            target_subject = models.Subject.objects.get(id=subject_id)
             for anatomy_type, locations in data.items():
-                target_subject = models.Subject.objects.get(id=subject_id)
                 landmarks_object, created = models.Landmarks.objects.get_or_create(
                     project=project, subject=target_subject, anatomy_type=anatomy_type
                 )
@@ -360,6 +360,45 @@ class ProjectViewSet(BaseViewSet):
             timezone.now(),
             self.request.user.username,
             'Set Project Landmarks',
+            project.id,
+        )
+        return Response(serializers.ProjectReadSerializer(project).data)
+
+    @action(
+        detail=True,
+        url_path='constraints',
+        url_name='constraints',
+        methods=['POST'],
+    )
+    def set_constraints(self, request, **kwargs):
+        project = self.get_object()
+        form_data = request.data
+        constraints_locations = form_data.get('locations')
+
+        ids_existing_with_coords = []
+        for subject_id, data in constraints_locations.items():
+            target_subject = models.Subject.objects.get(id=subject_id)
+            for anatomy_type, locations in data.items():
+                constraints_object, created = models.Constraints.objects.get_or_create(
+                    project=project, subject=target_subject, anatomy_type=anatomy_type
+                )
+                file_name = 'constraints.json'
+                if constraints_object.file:
+                    file_name = constraints_object.file.name.split('/')[-1]
+                constraints_object.file.save(
+                    file_name,
+                    ContentFile(json.dumps(locations).encode()),
+                )
+                ids_existing_with_coords.append(constraints_object.id)
+
+        models.Constraints.objects.filter(project=project).exclude(
+            id__in=ids_existing_with_coords
+        ).delete()
+
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Set Project Constraints',
             project.id,
         )
         return Response(serializers.ProjectReadSerializer(project).data)

@@ -310,7 +310,7 @@ export default {
                                 'domain': inputDataDomain
                             })
                             widgetHandle.onEndInteractionEvent(() => {
-                                setConstraintLocation(label, cInfo, Object.assign(
+                                setConstraintLocation({ name: label }, cInfo, Object.assign(
                                     cData, {
                                     data: {
                                         origin: widgetState.getOrigin(),

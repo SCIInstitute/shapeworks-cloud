@@ -1,5 +1,5 @@
 <script>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import {
     constraintInfo,
     selectedProject,
@@ -11,6 +11,7 @@ import {
 } from '@/store';
 import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocation, showShape } from '../store/methods';
 import { saveConstraintData } from '@/api/rest';
+import { convertConstraintDataForDB } from '@/reader/constraints';
 
 export default {
     setup() {
@@ -85,18 +86,18 @@ export default {
 
         function submit() {
             const locationData = Object.fromEntries(
-                Object.entries(allSetConstraints.value).map(([subjectName, subjectRecords]) => {
+                Object.entries(allSetConstraints.value)
+                .map(([subjectName, subjectRecords]) => {
                     const subjectID = allSubjectsForDataset.value.find((s) => s.name === subjectName)?.id
                     return [subjectID, Object.fromEntries(
                         Object.entries(subjectRecords).map(([domain, domainRecords]) => {
-                            return [domain, Object.values(domainRecords)]
+                            return [domain, convertConstraintDataForDB(Object.values(domainRecords))]
                         })
                     )]
                 })
             )
             saveConstraintData(
                 selectedProject.value.id,
-                constraintInfo.value || {},
                 locationData
             ).then((response) => {
                 if (response.id === selectedProject.value.id) {
@@ -105,6 +106,8 @@ export default {
                 }
             })
         }
+
+        watch(allSetConstraints, () => changesMade.value = true, {deep: true})
 
         return {
             headers,

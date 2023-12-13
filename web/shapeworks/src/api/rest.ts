@@ -168,11 +168,9 @@ export async function saveLandmarkData(
 
 export async function saveConstraintData(
     projectId: number,
-    constraintInfo: Constraints[],
     constraintLocations: Record<number, Record<number, number[][]>>
 ) {
     return (await apiClient.post(`/projects/${projectId}/constraints/`, {
-        info: constraintInfo,
         locations: constraintLocations,
     })).data
 }

@@ -30,7 +30,7 @@ import {
     getWidgetInfo, landmarkInfo, landmarkSize, currentLandmarkPlacement,
     getLandmarkLocation, setLandmarkLocation,
     allSetLandmarks, reassignLandmarkNumSetValues,
-    constraintInfo, allSetConstraints,
+    constraintInfo, allSetConstraints, currentConstraintPlacement,
     getConstraintLocation, setConstraintLocation,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
@@ -219,7 +219,6 @@ export default {
         })
     },
     addConstraints(label, renderer, widgetManager) {
-        // TODO: accommodate newly added constraints
         renderer.getActors().forEach((actor) => {
             const ctfun = vtkColorTransferFunction.newInstance();
             ctfun.addRGBPoint(0, ...actor.getProperty().getColor()); // 0: default color has not been excluded
@@ -242,112 +241,138 @@ export default {
                 )
             })
             inputData.getPointData().addArray(colorArray)
-            const allPointColors = inputData.getPointData().getArrayByName('color')
-            // TODO: use this manipulator for the paint widget
-            // const manipulator = vtkPickerManipulator.newInstance();
-            // manipulator.getPicker().addPickList(actor);
-
-            const updateColors = () => {
-                const newColorArray = Array.from(
-                    { length: allPoints.getNumberOfPoints() }, () => 0
-                )
-                if (allSetConstraints.value && allSetConstraints.value[label] && allSetConstraints.value[label][inputDataDomain]) {
-                    const currShapeConstraints = Object.values(allSetConstraints.value[label][inputDataDomain])
-                    currShapeConstraints.forEach((cData) => {
-                        if (cData.type === 'plane') {
-                            const { normal, origin } = cData.data
-                            let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
-                            for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
-                                const point = allPoints.getPoint(i)
-                                const pointColor = newColorArray[i]
-                                if (!pointColor) {
-                                    const dotProduct = dot(normal, [
-                                        origin[0] - point[0],
-                                        origin[1] - point[1],
-                                        origin[2] - point[2],
-                                    ])
-                                    if (dotProduct <= 0) {
-                                        // negative dotProduct means point is below plane
-                                        newColorArray[i] = 1
-                                    }
-                                }
-                            }
-                        } else if (cData.type === 'paint') {
-                            // TODO: this takes too long with many actors
-                            const { scalars, points } = cData.data.field
-                            const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
-                            const tree = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
-                            if (scalars.length === allPoints.getNumberOfPoints()) {
-                                for (let i = 0; i < scalars.length; i++) {
-                                    const currentPoint = allPoints.getPoint(i)
-                                    const currentPointObj = {
-                                        x: currentPoint[0],
-                                        y: currentPoint[1],
-                                        z: currentPoint[2],
-                                    }
-                                    const nearests = tree.nearest(currentPointObj, 1)
-                                    if (nearests.length) {
-                                        const [nearest,] = nearests[0]
-                                        // scalar assignment is swapped in stored constraint data
-                                        if (nearest.s === 0) {
-                                            newColorArray[i] = 1
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    })
-                }
-
-                allPointColors.setData(newColorArray)
-                inputData.modified()
-            }
 
             constraintInfo.value.forEach((cInfo) => {
                 if (cInfo.domain === inputDataDomain) {
                     const cData = getConstraintLocation({ name: label }, cInfo)
-                    if (cData) {
-                        let widget;
-                        let widgetState;
-                        let widgetHandle;
-                        if (cData.type === 'plane') {
-                            const { origin, normal } = cData.data
-                            // TODO: plane/shape overlap appears to change when rotating
-                            // (but only in viewers without the mouse)
-                            widget = vtkImplicitPlaneWidget.newInstance()
-                            widget.placeWidget(bounds);
-                            widget.setPlaceFactor(2);
-                            widgetState = widget.getWidgetState()
-                            widgetState.setOrigin(origin);
-                            widgetState.setNormal(normal)
-                            widgetHandle = widgetManager.addWidget(widget);
+                    const isCurrentPlacement = (
+                        currentConstraintPlacement.value &&
+                        currentConstraintPlacement.value.domain === cInfo.domain &&
+                        currentConstraintPlacement.value.widgetID === cInfo.id
+                    )
 
-                            // TODO: this doesn't disappear until after first interaction
-                            widgetHandle.setOutlineVisible(false)
-
-                            widgetHandle.getRepresentations()[0].setLabels({
-                                'subject': label,
-                                'domain': inputDataDomain
-                            })
-                            widgetHandle.onEndInteractionEvent(() => {
-                                setConstraintLocation({ name: label }, cInfo, Object.assign(
-                                    cData, {
-                                    data: {
-                                        origin: widgetState.getOrigin(),
-                                        normal: widgetState.getNormal(),
-                                    }
+                    let widget;
+                    let widgetState;
+                    let widgetHandle;
+                    if (cInfo.type === 'plane' && (cData || isCurrentPlacement)) {
+                        // TODO: plane/shape overlap appears to change when rotating
+                        // (but only in viewers without the mouse)
+                        widget = vtkImplicitPlaneWidget.newInstance()
+                        widget.placeWidget(bounds)
+                        widget.setPlaceFactor(2)
+                        widgetState = widget.getWidgetState()
+                        widgetHandle = widgetManager.addWidget(widget)
+                        // TODO: this doesn't disappear until after first interaction
+                        widgetHandle.setOutlineVisible(false)
+                        widgetHandle.getRepresentations()[0].setLabels({
+                            'subject': label,
+                            'domain': inputDataDomain
+                        })
+                        // TODO: can we increase the thickness of the normal line
+                        // to make it easier to grab & manipulate?
+                        widgetHandle.onEndInteractionEvent(() => {
+                            setConstraintLocation({ name: label }, cInfo, {
+                                type: 'plane',
+                                data: {
+                                    origin: widgetState.getOrigin(),
+                                    normal: widgetState.getNormal(),
                                 }
-                                ))
-                                updateColors()
                             })
-                        } else if (cData.type === 'paint') {
-                            // TODO create paint widget
+                            this.updateConstraintColors(label, inputData)
+                        })
+
+                        let origin = cData?.data?.origin
+                        let normal = cData?.data?.normal
+                        if (!origin) {
+                            origin = [
+                                (bounds[0] + bounds[1]) / 2,
+                                (bounds[2] + bounds[3]) / 2,
+                                (bounds[4] + bounds[5]) / 2,
+                            ]
+                        }
+                        if (!normal) {
+                            normal = [0, 0, 1]
+                        }
+                        if (isCurrentPlacement) {
+                            // New placement started, initialize cData with defaults
+                            setConstraintLocation({ name: label }, cInfo, {
+                                type: 'plane',
+                                data: { origin, normal }
+                            })
+                        }
+                        widgetState.setOrigin(origin)
+                        widgetState.setNormal(normal)
+                    } else if (cInfo.type === 'paint') {
+                        if (isCurrentPlacement) {
+                            // TODO: use paint widget for current paint placement
+                            console.log('new paint', cInfo)
+                            // TODO: use this manipulator for the paint widget
+                            // const manipulator = vtkPickerManipulator.newInstance();
+                            // manipulator.getPicker().addPickList(actor);
                         }
                     }
                 }
             })
-            updateColors()
+            this.updateConstraintColors(label, inputData)
         })
+    },
+    updateConstraintColors(label, inputData) {
+        const allPoints = inputData.getPoints()
+        const allPointColors = inputData.getPointData().getArrayByName('color')
+        const newColorArray = Array.from(
+            { length: allPoints.getNumberOfPoints() }, () => 0
+        )
+        const inputDataDomain = inputData.getFieldData().getArrayByName('domain').getData()[0]
+        if (allSetConstraints.value && allSetConstraints.value[label] && allSetConstraints.value[label][inputDataDomain]) {
+            const currShapeConstraints = Object.values(allSetConstraints.value[label][inputDataDomain])
+            currShapeConstraints.forEach((cData) => {
+                if (cData?.type === 'plane') {
+                    const { normal, origin } = cData.data
+                    let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+                    for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
+                        const point = allPoints.getPoint(i)
+                        const pointColor = newColorArray[i]
+                        if (!pointColor) {
+                            const dotProduct = dot(normal, [
+                                origin[0] - point[0],
+                                origin[1] - point[1],
+                                origin[2] - point[2],
+                            ])
+                            if (dotProduct <= 0) {
+                                // negative dotProduct means point is below plane
+                                newColorArray[i] = 1
+                            }
+                        }
+                    }
+                } else if (cData?.type === 'paint') {
+                    // TODO: this takes too long with many actors
+                    const { scalars, points } = cData.data.field
+                    const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
+                    const tree = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
+                    if (scalars.length === allPoints.getNumberOfPoints()) {
+                        for (let i = 0; i < scalars.length; i++) {
+                            const currentPoint = allPoints.getPoint(i)
+                            const currentPointObj = {
+                                x: currentPoint[0],
+                                y: currentPoint[1],
+                                z: currentPoint[2],
+                            }
+                            const nearests = tree.nearest(currentPointObj, 1)
+                            if (nearests.length) {
+                                const [nearest,] = nearests[0]
+                                // scalar assignment is swapped in stored constraint data
+                                if (nearest.s === 0) {
+                                    newColorArray[i] = 1
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        }
+
+        allPointColors.setData(newColorArray)
+        inputData.modified()
     },
     addPoints(label, renderer, points, i) {
         let size = this.glyphSize

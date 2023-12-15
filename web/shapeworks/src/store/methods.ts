@@ -515,10 +515,30 @@ export function setConstraintLocation(subject, item, location) {
 
 
 export function reassignConstraintIDsByIndex() {
-    // TODO: does allSetConstraints need reassignment?
+    const reassignedIds = {}
     constraintInfo.value = constraintInfo.value.map((info, index) => {
+        if (info.id !== undefined) reassignedIds[info.id] = index
         return Object.assign(info, {id: index})
     })
+    if (allSetConstraints.value) {
+        allSetConstraints.value = Object.fromEntries(
+            Object.entries(allSetConstraints.value)
+            .map(([subjectName, subjectRecords]) => {
+                return [subjectName, Object.fromEntries(
+                    Object.entries(subjectRecords).map(([domain, domainRecords]) => {
+                        domainRecords = Object.fromEntries(
+                            Object.entries(domainRecords)
+                            .filter(([cId,]) => Object.keys(reassignedIds).includes(cId))
+                            .map(([cId, cData]) => {
+                                return [reassignedIds[cId], cData]
+                            })
+                        )
+                        return [domain, domainRecords]
+                    })
+                )]
+            })
+        )
+    }
 }
 
 export function reassignConstraintNumSetValues() {

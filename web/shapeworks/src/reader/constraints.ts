@@ -78,9 +78,8 @@ export function convertConstraintDataForDB(constraintData) {
             const v2 = crossProduct(normal, [0, 1, 0])
 
             const p1 = origin;
-            const p2 = addVectors(origin, v2)
-            const p3 = addVectors(origin, v1)
-            // TODO: sometimes normals are flipped
+            const p2 = addVectors(origin, normal[2] > 0 ? v2 : v1)
+            const p3 = addVectors(origin, normal[2] > 0 ? v1 : v2)
 
             constraintJSON.planes.push({points: [p1, p2, p3]})
         } else if (cData.type === 'paint') {

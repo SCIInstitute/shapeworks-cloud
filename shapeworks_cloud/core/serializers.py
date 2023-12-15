@@ -63,20 +63,12 @@ class CachedExampleSerializer(serializers.ModelSerializer):
 
 
 class CachedModelExamplesSerializer(serializers.ModelSerializer):
-    best = CachedExampleSerializer()
-    median = CachedExampleSerializer()
-    worst = CachedExampleSerializer()
-
     class Meta:
         model = models.CachedModelExamples
         fields = '__all__'
 
 
 class CachedModelSerializer(serializers.ModelSerializer):
-    examples = CachedModelExamplesSerializer()
-    pca_predictions = CachedPredictionSerializer(many=True)
-    ft_predictions = CachedPredictionSerializer(many=True)
-
     class Meta:
         model = models.CachedModel
         fields = '__all__'
@@ -89,8 +81,6 @@ class CachedTensorsSerializer(serializers.ModelSerializer):
 
 
 class CachedDataLoadersSerializer(serializers.ModelSerializer):
-    tensors = CachedTensorsSerializer()
-
     class Meta:
         model = models.CachedDataLoaders
         fields = '__all__'
@@ -111,10 +101,6 @@ class CachedAugmentationSerializer(serializers.ModelSerializer):
 
 
 class CachedDeepSSMSerializer(serializers.ModelSerializer):
-    augmentation = CachedAugmentationSerializer()
-    data_loaders = CachedDataLoadersSerializer()
-    model = CachedModelSerializer()
-
     class Meta:
         model = models.CachedDeepSSM
         fields = '__all__'
@@ -125,6 +111,42 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
+        fields = '__all__'
+
+
+class CachedModelReadSerializer(serializers.ModelSerializer):
+    examples = CachedModelExamplesSerializer()
+    pca_predictions = CachedPredictionSerializer(many=True)
+    ft_predictions = CachedPredictionSerializer(many=True)
+
+    class Meta:
+        model = models.CachedModel
+        fields = '__all__'
+
+
+class CachedDataLoadersReadSerializer(serializers.ModelSerializer):
+    tensors = CachedTensorsSerializer()
+
+    class Meta:
+        model = models.CachedDataLoaders
+        fields = '__all__'
+
+
+class CachedAugmentationReadSerializer(serializers.ModelSerializer):
+    pairs = CachedAugmentationPairSerializer(many=True)
+
+    class Meta:
+        model = models.CachedAugmentation
+        fields = '__all__'
+
+
+class CachedDeepSSMReadSerializer(serializers.ModelSerializer):
+    augmentation = CachedAugmentationSerializer()
+    data_loaders = CachedDataLoadersSerializer()
+    model = CachedModelSerializer()
+
+    class Meta:
+        model = models.CachedDeepSSM
         fields = '__all__'
 
 
@@ -149,6 +171,7 @@ class CachedAnalysisReadSerializer(serializers.ModelSerializer):
 class ProjectReadSerializer(serializers.ModelSerializer):
     file = S3FileSerializerField()
     last_cached_analysis = CachedAnalysisReadSerializer(allow_null=True)
+    last_cached_deep_ssm = CachedDeepSSMReadSerializer(allow_null=True)
     landmarks = LandmarksSerializer(many=True)
     constraints = ConstraintsSerializer(many=True)
 

@@ -7,6 +7,7 @@ import vtkWidgetManager from 'vtk.js/Sources/Widgets/Core/WidgetManager';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkSeedWidget from 'vtk.js/Sources/Widgets/Widgets3D/SeedWidget';
+import vtkPaintWidget from 'vtk.js/Sources/Widgets/Widgets3D/PaintWidget';
 import vtkImplicitPlaneWidget from 'vtk.js/Sources/Widgets/Widgets3D/ImplicitPlaneWidget'
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
@@ -31,7 +32,7 @@ import {
     getLandmarkLocation, setLandmarkLocation,
     allSetLandmarks, reassignLandmarkNumSetValues,
     constraintInfo, allSetConstraints, currentConstraintPlacement,
-    getConstraintLocation, setConstraintLocation,
+    getConstraintLocation, setConstraintLocation, constraintPaintRadius,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
@@ -244,7 +245,7 @@ export default {
 
             constraintInfo.value.forEach((cInfo) => {
                 if (cInfo.domain === inputDataDomain) {
-                    const cData = getConstraintLocation({ name: label }, cInfo)
+                    let cData = getConstraintLocation({ name: label }, cInfo)
                     const isCurrentPlacement = (
                         currentConstraintPlacement.value &&
                         currentConstraintPlacement.value.domain === cInfo.domain &&
@@ -290,9 +291,7 @@ export default {
                                 (bounds[4] + bounds[5]) / 2,
                             ]
                         }
-                        if (!normal) {
-                            normal = [0, 0, 1]
-                        }
+                        if (!normal) normal = [0, 0, 1]
                         if (isCurrentPlacement) {
                             // New placement started, initialize cData with defaults
                             setConstraintLocation({ name: label }, cInfo, {
@@ -302,14 +301,44 @@ export default {
                         }
                         widgetState.setOrigin(origin)
                         widgetState.setNormal(normal)
-                    } else if (cInfo.type === 'paint') {
-                        if (isCurrentPlacement) {
-                            // TODO: use paint widget for current paint placement
-                            console.log('new paint', cInfo)
-                            // TODO: use this manipulator for the paint widget
-                            // const manipulator = vtkPickerManipulator.newInstance();
-                            // manipulator.getPicker().addPickList(actor);
-                        }
+                    } else if (cInfo.type === 'paint' && isCurrentPlacement) {
+                        // TODO: cannot rotate scene after a paint has started, even after releasing focus
+                        const manipulator = vtkPickerManipulator.newInstance();
+                        manipulator.getPicker().addPickList(actor);
+                        widget = vtkPaintWidget.newInstance({ manipulator });
+                        widgetHandle = widgetManager.addWidget(widget)
+                        widgetManager.grabFocus(widget);
+                        widget.getWidgetState().setActive(true)
+                        widgetHandle.onEndInteractionEvent(() => {
+                            widget.getWidgetState().getTrailList().forEach((state) => {
+                                const currentPoint = state.getOrigin()
+                                if (currentPoint) {
+                                    if (!cData) {
+                                        cData = {
+                                            type: 'paint',
+                                            data: { field: {} }
+                                        }
+                                    }
+                                    cData.data.field.points = []
+                                    cData.data.field.scalars = []
+                                    const allPoints = inputData.getPoints()
+                                    const colorArray = inputData.getPointData().getArrayByName('color')
+                                    for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
+                                        const p = allPoints.getPoint(i)
+                                        cData.data.field.points.push(p)
+                                        const distance = Math.hypot(
+                                            p[0] - currentPoint[0],
+                                            p[1] - currentPoint[1],
+                                            p[2] - currentPoint[2]
+                                        )
+                                        const painted = colorArray.getValue(i) || distance < constraintPaintRadius.value
+                                        cData.data.field.scalars.push(painted ? 0 : 1)
+                                    }
+                                    setConstraintLocation({ name: label }, cInfo, cData)
+                                    this.updateConstraintColors(label, inputData)
+                                }
+                            })
+                        })
                     }
                 }
             })
@@ -317,6 +346,8 @@ export default {
         })
     },
     updateConstraintColors(label, inputData) {
+        // TODO: reduce number of redundant calls
+        // TODO: fix occurrences of TypeError: model._openGLRenderer is undefined
         const allPoints = inputData.getPoints()
         const allPointColors = inputData.getPointData().getArrayByName('color')
         const newColorArray = Array.from(

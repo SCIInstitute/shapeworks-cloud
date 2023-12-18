@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import {
     constraintInfo,
+    constraintPaintRadius,
     selectedProject,
     allSubjectsForDataset,
     anatomies,
@@ -28,23 +29,35 @@ export default {
 
         const dialogs = ref([]);
 
+        const constraintErrors = ref({});
+
 
         function getPlacementStatus(subject, item) {
             const placement = getConstraintLocation(subject, item)
-            if(placement) {
-                if (currentConstraintPlacement.value === getWidgetInfo(subject, item)) {
-                    if (item.type === 'plane') return `Configure plane placement on ${subject.name} ${item.domain}`
-                    if (item.type === 'paint') return `Draw anywhere on ${subject.name} ${item.domain}`
-                }
-                return placement.type + ' placed'
+            if (JSON.stringify(currentConstraintPlacement.value) === JSON.stringify(getWidgetInfo(subject, item))) {
+                return 'PLACING'
+            } else if (placement) {
+                return item.type + ' placed'
+            } else if (constraintErrors.value[item.id]) {
+                return 'INVALID'
             }
             return 'NOT SET'
         }
 
-        function beginPlacement(subject, item) {
-            currentConstraintPlacement.value = getWidgetInfo(subject, item)
+        function toggleCurrentPlacement(subject, item) {
+            if (currentConstraintPlacement.value) currentConstraintPlacement.value = undefined
+            else currentConstraintPlacement.value = getWidgetInfo(subject, item)
         }
 
+        function validateConstraint(cInfo) {
+            if (cInfo.type === 'paint' && constraintInfo.value.some((c) => {
+                return c.id !== cInfo.id && c.domain === cInfo.domain && c.type === cInfo.type
+            })) {
+                constraintErrors.value[cInfo.id] = 'Only one paint constraint can exist per domain. Edit the existing paint constraint.'
+            } else {
+                constraintErrors.value[cInfo.id] = undefined
+            }
+        }
 
         function newConstraint() {
             const newID = constraintInfo.value?.length || 0
@@ -96,6 +109,7 @@ export default {
                     )]
                 })
             )
+
             saveConstraintData(
                 selectedProject.value.id,
                 locationData
@@ -113,15 +127,18 @@ export default {
             headers,
             changesMade,
             dialogs,
+            constraintErrors,
             expandedRows,
             constraintInfo,
             anatomies,
             allSubjectsForDataset,
+            constraintPaintRadius,
             currentConstraintPlacement,
             isShapeShown,
             showShape,
             getPlacementStatus,
-            beginPlacement,
+            validateConstraint,
+            toggleCurrentPlacement,
             newConstraint,
             deleteConstraint,
             submit,
@@ -180,6 +197,8 @@ export default {
                                 v-model="item.type"
                                 :items="['plane', 'paint']"
                                 :disabled="item.num_set > 0"
+                                :error-messages="constraintErrors[item.id]"
+                                @change="(v) => validateConstraint(item)"
                                 style="width: 270px"
                             />
                         </template>
@@ -189,6 +208,7 @@ export default {
                                 v-model="item.domain"
                                 :items="anatomies.map((a) => a.replace('anatomy_', ''))"
                                 :disabled="item.num_set > 0"
+                                @change="(v) => validateConstraint(item)"
                                 style="width: 80px"
                             />
                         </template>
@@ -208,7 +228,7 @@ export default {
                                     class="d-flex py-1"
                                     style="align-items: center; justify-content: space-between; width: 100%"
                                 >
-                                    <span style="width: 170px;">{{ subject.name }}</span>
+                                    <span style="width: 150px;">{{ subject.name }}</span>
                                     <v-btn
                                         small
                                         v-if="!isShapeShown(subject.id, item.domain)"
@@ -217,20 +237,30 @@ export default {
                                         Show subject
                                     </v-btn>
                                     <v-spacer v-else />
-                                    <div
-                                        v-if="getPlacementStatus(subject, item)"
-                                        style="width: 170px; text-align: right;"
-                                    >
+                                    <div style="width: 180px; text-align: right;">
+                                        <v-text-field
+                                            v-if="getPlacementStatus(subject, item) === 'PLACING' && item.type === 'paint'"
+                                            v-model.number="constraintPaintRadius"
+                                            label="Brush Size"
+                                            type="number"
+                                            min="1"
+                                            max="15"
+                                            style="max-width: 70px; display: inline-block; margin-right: 10px"
+                                            @click.stop
+                                        />
+                                        <span v-if="getPlacementStatus(subject, item) === 'INVALID'">
+                                            INVALID
+                                        </span>
                                         <v-btn
-                                            v-if="!currentConstraintPlacement && getPlacementStatus(subject, item) === 'NOT SET' && isShapeShown(subject.id, item.domain)"
-                                            @click="beginPlacement(subject, item)"
+                                            v-else-if="isShapeShown(subject.id, item.domain)"
+                                            @click="toggleCurrentPlacement(subject, item)"
                                             small
                                         >
-                                            BEGIN PLACEMENT
+                                            <span v-if="getPlacementStatus(subject, item) === 'NOT SET'">BEGIN PLACEMENT</span>
+                                            <span v-if="getPlacementStatus(subject, item) === 'PLACING'">DONE</span>
+                                            <span v-if="getPlacementStatus(subject, item) === 'paint placed'">EDIT PAINT</span>
                                         </v-btn>
-                                        <span v-else>
-                                            {{ getPlacementStatus(subject, item) }}
-                                        </span>
+                                        <span v-else> {{ getPlacementStatus(subject, item) }}</span>
                                     </div>
                                 </div>
                             </div>

@@ -79,6 +79,8 @@ export const currentLandmarkPlacement = ref();
 
 export const constraintInfo = ref<Constraints[]>([]);
 
+export const constraintsShown = ref([]);
+
 export const allSetConstraints = ref<Record<string, object>>();
 
 export const currentConstraintPlacement = ref();

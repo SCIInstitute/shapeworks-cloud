@@ -40,6 +40,7 @@ import {
     getLandmarks,
     allSetLandmarks,
     constraintInfo,
+    constraintsShown,
     currentConstraintPlacement,
     getConstraints,
     allSetConstraints,
@@ -337,6 +338,7 @@ export default {
         watch(landmarkSize, debouncedRefreshRender)
         watch(currentLandmarkPlacement, debouncedRefreshRender)
         watch(constraintInfo, debouncedRefreshRender)
+        watch(constraintsShown, debouncedRefreshRender)
         watch(currentConstraintPlacement, debouncedRefreshRender)
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(tab, switchTab)

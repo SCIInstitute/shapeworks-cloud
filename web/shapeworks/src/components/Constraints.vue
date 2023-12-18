@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import {
     constraintInfo,
+    constraintsShown,
     constraintPaintRadius,
     selectedProject,
     allSubjectsForDataset,
@@ -17,10 +18,11 @@ import { convertConstraintDataForDB } from '@/reader/constraints';
 export default {
     setup() {
         const headers =  [
-            {text: '', value: 'id', width: '20px', sortable: false},
+            {text: '', value: 'id', width: '10px', sortable: false},
+            {text: 'Show', value: 'show', width: '10px', sortable: false},
             {text: 'Type', value: 'type', width: '270px', sortable: false},
             {text: 'Domain', value: 'domain', width: '100px'},
-            {text: '# set', value: 'num_set', width: '60px', sortable: false},
+            {text: '# set', value: 'num_set', width: '60px', sortable: false, align: 'end'},
         ];
 
         const changesMade = ref(false);
@@ -42,6 +44,17 @@ export default {
                 return 'INVALID'
             }
             return 'NOT SET'
+        }
+
+        function toggleConstraintShown(item) {
+            if (constraintsShown.value.includes(item.id)) {
+                constraintsShown.value = constraintsShown.value.filter((c) => c !== item.id)
+            } else {
+                constraintsShown.value = [
+                    ...constraintsShown.value,
+                    item.id
+                ]
+            }
         }
 
         function toggleCurrentPlacement(subject, item) {
@@ -130,6 +143,7 @@ export default {
             constraintErrors,
             expandedRows,
             constraintInfo,
+            constraintsShown,
             anatomies,
             allSubjectsForDataset,
             constraintPaintRadius,
@@ -138,6 +152,7 @@ export default {
             showShape,
             getPlacementStatus,
             validateConstraint,
+            toggleConstraintShown,
             toggleCurrentPlacement,
             newConstraint,
             deleteConstraint,
@@ -191,6 +206,12 @@ export default {
                                 </v-card>
                             </v-dialog>
                         </template>
+                         <!-- eslint-disable-next-line -->
+                         <template v-slot:item.show="{ index, item }">
+                            <v-icon @click="toggleConstraintShown(item)">
+                                {{ constraintsShown.includes(item.id) ? 'mdi-eye-outline' : 'mdi-eye-off-outline' }}
+                            </v-icon>
+                        </template>
                         <!-- eslint-disable-next-line -->
                         <template v-slot:item.type="{ index, item }">
                             <v-select
@@ -199,7 +220,7 @@ export default {
                                 :disabled="item.num_set > 0"
                                 :error-messages="constraintErrors[item.id]"
                                 @change="(v) => validateConstraint(item)"
-                                style="width: 270px"
+                                style="width: 250px"
                             />
                         </template>
                         <!-- eslint-disable-next-line -->
@@ -288,7 +309,10 @@ export default {
 .v-data-table tr {
     position: relative;
     display: block;
-    padding-left: 25px;
+    padding-left: 15px;
+}
+th {
+    padding-left: 5px !important;
 }
 .v-data-table td {
     border-bottom: none !important;

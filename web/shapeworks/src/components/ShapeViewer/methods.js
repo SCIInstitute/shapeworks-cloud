@@ -31,7 +31,7 @@ import {
     getWidgetInfo, landmarkInfo, landmarkSize, currentLandmarkPlacement,
     getLandmarkLocation, setLandmarkLocation,
     allSetLandmarks, reassignLandmarkNumSetValues,
-    constraintInfo, allSetConstraints, currentConstraintPlacement,
+    constraintInfo, constraintsShown, allSetConstraints, currentConstraintPlacement,
     getConstraintLocation, setConstraintLocation, constraintPaintRadius,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
@@ -220,6 +220,7 @@ export default {
         })
     },
     addConstraints(label, renderer, widgetManager) {
+        if (constraintsShown.value.length === 0) return
         renderer.getActors().forEach((actor) => {
             const ctfun = vtkColorTransferFunction.newInstance();
             ctfun.addRGBPoint(0, ...actor.getProperty().getColor()); // 0: default color has not been excluded
@@ -244,7 +245,7 @@ export default {
             inputData.getPointData().addArray(colorArray)
 
             constraintInfo.value.forEach((cInfo) => {
-                if (cInfo.domain === inputDataDomain) {
+                if (constraintsShown.value.includes(cInfo.id) && cInfo.domain === inputDataDomain) {
                     let cData = getConstraintLocation({ name: label }, cInfo)
                     const isCurrentPlacement = (
                         currentConstraintPlacement.value &&
@@ -346,6 +347,7 @@ export default {
         })
     },
     updateConstraintColors(label, inputData) {
+        if (constraintsShown.value.length === 0) return
         // TODO: reduce number of redundant calls
         // TODO: fix occurrences of TypeError: model._openGLRenderer is undefined
         const allPoints = inputData.getPoints()
@@ -357,43 +359,45 @@ export default {
         if (allSetConstraints.value && allSetConstraints.value[label] && allSetConstraints.value[label][inputDataDomain]) {
             const currShapeConstraints = Object.values(allSetConstraints.value[label][inputDataDomain])
             currShapeConstraints.forEach((cData) => {
-                if (cData?.type === 'plane') {
-                    const { normal, origin } = cData.data
-                    let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
-                    for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
-                        const point = allPoints.getPoint(i)
-                        const pointColor = newColorArray[i]
-                        if (!pointColor) {
-                            const dotProduct = dot(normal, [
-                                origin[0] - point[0],
-                                origin[1] - point[1],
-                                origin[2] - point[2],
-                            ])
-                            if (dotProduct <= 0) {
-                                // negative dotProduct means point is below plane
-                                newColorArray[i] = 1
+                if (constraintsShown.value.includes(cData.id)) {
+                    if (cData?.type === 'plane') {
+                        const { normal, origin } = cData.data
+                        let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+                        for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
+                            const point = allPoints.getPoint(i)
+                            const pointColor = newColorArray[i]
+                            if (!pointColor) {
+                                const dotProduct = dot(normal, [
+                                    origin[0] - point[0],
+                                    origin[1] - point[1],
+                                    origin[2] - point[2],
+                                ])
+                                if (dotProduct <= 0) {
+                                    // negative dotProduct means point is below plane
+                                    newColorArray[i] = 1
+                                }
                             }
                         }
-                    }
-                } else if (cData?.type === 'paint') {
-                    // TODO: this takes too long with many actors
-                    const { scalars, points } = cData.data.field
-                    const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
-                    const tree = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
-                    if (scalars.length === allPoints.getNumberOfPoints()) {
-                        for (let i = 0; i < scalars.length; i++) {
-                            const currentPoint = allPoints.getPoint(i)
-                            const currentPointObj = {
-                                x: currentPoint[0],
-                                y: currentPoint[1],
-                                z: currentPoint[2],
-                            }
-                            const nearests = tree.nearest(currentPointObj, 1)
-                            if (nearests.length) {
-                                const [nearest,] = nearests[0]
-                                // scalar assignment is swapped in stored constraint data
-                                if (nearest.s === 0) {
-                                    newColorArray[i] = 1
+                    } else if (cData?.type === 'paint') {
+                        // TODO: this takes too long with many actors
+                        const { scalars, points } = cData.data.field
+                        const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
+                        const tree = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
+                        if (scalars.length === allPoints.getNumberOfPoints()) {
+                            for (let i = 0; i < scalars.length; i++) {
+                                const currentPoint = allPoints.getPoint(i)
+                                const currentPointObj = {
+                                    x: currentPoint[0],
+                                    y: currentPoint[1],
+                                    z: currentPoint[2],
+                                }
+                                const nearests = tree.nearest(currentPointObj, 1)
+                                if (nearests.length) {
+                                    const [nearest,] = nearests[0]
+                                    // scalar assignment is swapped in stored constraint data
+                                    if (nearest.s === 0) {
+                                        newColorArray[i] = 1
+                                    }
                                 }
                             }
                         }

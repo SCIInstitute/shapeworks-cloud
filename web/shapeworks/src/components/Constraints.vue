@@ -91,6 +91,7 @@ export default {
             }
             reassignConstraintIDsByIndex()
             expandedRows.value = [constraint]
+            toggleConstraintShown(constraint)
             selectedProject.value.constraints = [
                 ...selectedProject.value.constraints,
                 { newAddition: true }
@@ -242,7 +243,7 @@ export default {
                             </div>
                         </template>
                         <template v-slot:expanded-item="{ item }">
-                            <div style="width: 100%">
+                            <div style="width: calc(100% - 20px)">
                                 <div
                                     v-for="subject in allSubjectsForDataset"
                                     :key="subject.id"
@@ -258,7 +259,7 @@ export default {
                                         Show subject
                                     </v-btn>
                                     <v-spacer v-else />
-                                    <div style="width: 180px; text-align: right;">
+                                    <div style="width: 160px; text-align: right;">
                                         <v-text-field
                                             v-if="getPlacementStatus(subject, item) === 'PLACING' && item.type === 'paint'"
                                             v-model.number="constraintPaintRadius"

@@ -357,9 +357,9 @@ export default {
         )
         const inputDataDomain = inputData.getFieldData().getArrayByName('domain').getData()[0]
         if (allSetConstraints.value && allSetConstraints.value[label] && allSetConstraints.value[label][inputDataDomain]) {
-            const currShapeConstraints = Object.values(allSetConstraints.value[label][inputDataDomain])
-            currShapeConstraints.forEach((cData) => {
-                if (constraintsShown.value.includes(cData.id)) {
+            const currShapeConstraints = allSetConstraints.value[label][inputDataDomain]
+            Object.entries(currShapeConstraints).forEach(([id, cData]) => {
+                if (constraintsShown.value.includes(parseInt(id))) {
                     if (cData?.type === 'plane') {
                         const { normal, origin } = cData.data
                         let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);

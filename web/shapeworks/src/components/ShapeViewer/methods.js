@@ -224,7 +224,7 @@ export default {
         renderer.getActors().forEach((actor) => {
             const ctfun = vtkColorTransferFunction.newInstance();
             ctfun.addRGBPoint(0, ...actor.getProperty().getColor()); // 0: default color has not been excluded
-            ctfun.addRGBPoint(1, 0.2, 0.2, 0.2); // 1: gray has been excluded
+            ctfun.addRGBPoint(1, 0.5, 0.5, 0.5); // 1: gray has been excluded
             ctfun.setMappingRange(0, 1)
             ctfun.updateRange()
 

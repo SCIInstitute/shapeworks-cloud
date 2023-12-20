@@ -17,7 +17,7 @@ import { getLandmarkLocation, getWidgetInfo, isShapeShown, setLandmarkLocation, 
 export default {
     setup() {
         const headers =  [
-            {text: '', value: 'color', width: '20px', sortable: false},
+            {text: '', value: 'color', width: '60px', sortable: false},
             {text: 'Name', value: 'name', width: '120px'},
             {text: 'Comment', value: 'comment', width: '150px'},
             {text: 'Domain', value: 'domain', width: '100px'},
@@ -50,10 +50,6 @@ export default {
                 placement.forEach(v => coordStrings.push(v.toFixed(2)))
                 return coordStrings.join(", ")
             }
-            // else if (shapePlacementIndex >= (currentShapePlacements?.length || 0) + 1) {
-            //     const preReq = getSameDomainLandmarks(item)[currentShapePlacements?.length || 0]
-            //     return `${preReq.name} must be set first.`
-            // }
             return 'NOT SET'
         }
 
@@ -337,35 +333,11 @@ export default {
 </template>
 
 <style>
-.file-column {
-    width: 100px!important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.v-data-table tr {
-    position: relative;
-    display: block;
-    padding-left: 25px;
-}
-.v-data-table td {
-    border-bottom: none !important;
-    padding: 0px 10px !important;
-}
-.v-data-table__expanded {
-    width: 100%
-}
-.v-row-group__header {
-    background: none !important;
-    border-top: 1px solid white !important;
-}
-.delete-icon {
-    position: absolute !important;
-    left: 5px;
-}
 .color-square {
     height: 20px !important;
     width: 20px !important;
     min-width: 15px !important;
     padding: 0 !important;
+    margin-left: 15px;
 }
 </style>

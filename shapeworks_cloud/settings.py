@@ -26,6 +26,8 @@ class ShapeworksCloudMixin(ConfigMixin):
     # This is required for the /api/v1/logout/ view to have access to the session cookie.
     CORS_ALLOW_CREDENTIALS = True
 
+    CELERY_BROKER_POOL_LIMIT = 10
+
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first

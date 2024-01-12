@@ -14,11 +14,12 @@ services:
       - dbdata:/var/lib/postgresql/data
 
   rabbitmq:
-    image: rabbitmq
+    image: rabbitmq:3-management
     logging:
       driver: none
     ports:
       - ${DOCKER_RABBITMQ_PORT-5672}:5672
+      - ${DOCKER_RABBITMQ_ADMIN_PORT-15672}:15672
 
   minio:
     image: minio/minio:latest

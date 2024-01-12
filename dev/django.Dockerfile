@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
     libpq-dev gcc libc6-dev curl unzip \
     libgl1-mesa-glx libxt6 libglib2.0-0 \
-    libqt5core5a \
+    libqt5core5a docker.io \
     && \
     rm -rf /var/lib/apt/lists/*
 

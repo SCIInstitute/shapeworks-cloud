@@ -54,6 +54,7 @@ setup(
         'drf-extensions>=0.7.0',
         'drf-yasg',
         'pandas',
+        'pyrabbit',
         'swcc',
         # Production-only
         'django-composed-configuration[prod]',

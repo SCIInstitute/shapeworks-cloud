@@ -28,6 +28,7 @@ services:
         "--app",
         "shapeworks_cloud.celery",
         "worker",
+        "-n=main",
         "--loglevel",
         "INFO",
         "--without-heartbeat"
@@ -37,6 +38,8 @@ services:
     env_file: ./dev/.env.celery.docker-compose
     volumes:
       - .:/opt/django-project
+      # Mount Docker socket to enable container management with Celery container
+      - /var/run/docker.sock:/var/run/docker.sock
     # Use host mode so that celery can use the localhost:8000 API in dev deployments
     network_mode: host
     depends_on:
@@ -44,8 +47,21 @@ services:
       - rabbitmq
       - minio
 
+  celery-beat:
+    build:
+      context: .
+      dockerfile: ./dev/django.Dockerfile
+    command: [ "celery", "--app", "shapeworks_cloud.celery", "beat" ]
+    tty: false
+    env_file: ./dev/.env.celery.docker-compose
+    volumes:
+      - .:/opt/django-project
+    network_mode: host
+    depends_on:
+      - celery
+
   yarn:
-    image: node:lts
+    image: node:17
     command: [ "/bin/bash", "-c", "yarn install && yarn serve" ]
     env_file: ./dev/yarn.env
     environment:

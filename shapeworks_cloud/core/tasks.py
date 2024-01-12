@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
+import time
 from typing import Dict, List
 
 from celery import shared_task
@@ -348,3 +349,11 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
         progress_id,
         args,
     )
+
+
+@shared_task
+def deepssm(**kwargs):
+    print(f'Mocking DeepSSM task with kwargs {kwargs}...')
+    print('Sleeping for 20 s.')
+    time.sleep(20)
+    print('DeepSSM mock complete.')

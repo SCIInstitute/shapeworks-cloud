@@ -264,14 +264,19 @@ export default {
                         widget.setPlaceFactor(2)
                         widgetState = widget.getWidgetState()
                         widgetHandle = widgetManager.addWidget(widget)
-                        // TODO: this doesn't disappear until after first interaction
-                        widgetHandle.setOutlineVisible(false)
+                        widgetHandle.setHandleSizeRatio(0.08)
+                        widgetHandle.setAxisScale(0.25)
+                        widgetHandle.setRepresentationStyle({
+                            static: {
+                                outline: {
+                                    opacity: 0
+                                }
+                            }
+                        })
                         widgetHandle.getRepresentations()[0].setLabels({
                             'subject': label,
                             'domain': inputDataDomain
                         })
-                        // TODO: can we increase the thickness of the normal line
-                        // to make it easier to grab & manipulate?
                         widgetHandle.onEndInteractionEvent(() => {
                             setConstraintLocation({ name: label }, cInfo, {
                                 type: 'plane',

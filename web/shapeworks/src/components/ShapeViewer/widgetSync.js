@@ -1,0 +1,493 @@
+import _ from 'lodash';
+
+import vtkPickerManipulator from 'vtk.js/Sources/Widgets/Manipulators/PickerManipulator';
+import vtkWidgetManager from 'vtk.js/Sources/Widgets/Core/WidgetManager';
+import vtkSeedWidget from 'vtk.js/Sources/Widgets/Widgets3D/SeedWidget';
+import vtkPaintWidget from 'vtk.js/Sources/Widgets/Widgets3D/PaintWidget';
+import vtkImplicitPlaneWidget from 'vtk.js/Sources/Widgets/Widgets3D/ImplicitPlaneWidget'
+import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
+import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
+
+import { kdTree } from 'kd-tree-javascript';
+import { distance } from '@/helper'
+import { ref, watch } from 'vue'
+
+import {
+    layersShown,
+    landmarkInfo, landmarkSize, currentLandmarkPlacement,
+    getLandmarkLocation, setLandmarkLocation,
+    allSetLandmarks, reassignLandmarkNumSetValues,
+    constraintInfo, constraintsShown, allSetConstraints, currentConstraintPlacement,
+    getConstraintLocation, setConstraintLocation, constraintPaintRadius,
+} from '@/store';
+
+const widgetManagers = ref({});  // organized by label
+const manipulators = ref({});  // organized by label, domain
+const dataKDTrees = ref({});   // organized by label, domain
+const shapeKDTrees = ref({});   // organized by label, domain
+const seedWidgets = ref({});  // organized by label, domain, id
+const planeWidgets = ref({});  // organized by label, domain, id
+const paintWidgets = ref({});  // organized by label, domain, id
+
+export default {
+    // ---------------------
+    // Initialization
+    // ---------------------
+    initializeWidgets() {
+        // called when shapes or layers shown have changed
+        Object.entries(this.vtk.renderers).forEach(([label, renderer]) => {
+            manipulators.value[label] = {}
+            renderer.getActors().forEach((actor) => {
+                const wm = vtkWidgetManager.newInstance()
+                wm.enablePicking();
+                wm.setRenderer(renderer)
+                widgetManagers.value[label] = wm
+                const domain = actor.getMapper()?.getInputData()?.getFieldData()?.getArrayByName('domain')?.getData()[0]
+                if (!manipulators.value[label][domain]) {
+                    const m = vtkPickerManipulator.newInstance()
+                    m.getPicker().addPickList(actor)
+                    manipulators.value[label][domain] = m
+                }
+                if (layersShown.value.includes('Landmarks')) {
+                    const existingWidgets = seedWidgets.value[label]
+                    if (existingWidgets) {
+                        Object.values(existingWidgets).forEach((ws) => {
+                            Object.values(ws).forEach((w) => {
+                                wm.addWidget(w).setScaleInPixels(false)
+                            })
+                        })
+                    }
+                }
+                if (layersShown.value.includes('Constraints')) {
+                    this.initializeConstraintColormap(actor)
+                    const existingWidgets = planeWidgets.value[label]
+                    if (existingWidgets) {
+                        Object.values(existingWidgets).forEach((ws) => {
+                            Object.values(ws).forEach((w) => {
+                                const widgetHandle = wm.addWidget(w)
+                                this.stylePlaneWidget(widgetHandle)
+                            })
+                        })
+                    }
+                }
+            })
+        })
+        if (layersShown.value.includes('Landmarks')) {
+            this.landmarkInfoUpdated(landmarkInfo.value)
+        }
+        if (layersShown.value.includes('Constraints')) {
+            this.constraintInfoUpdated(constraintInfo.value)
+        }
+    },
+    initializeConstraintColormap(actor) {
+        const ctfun = vtkColorTransferFunction.newInstance();
+        ctfun.addRGBPoint(1, ...actor.getProperty().getColor()); // 0: default color has not been excluded
+        ctfun.addRGBPoint(0, 0.5, 0.5, 0.5); // 1: gray has been excluded
+        ctfun.setMappingRange(0, 1)
+        ctfun.updateRange()
+
+        const mapper = actor.getMapper()
+        mapper.setLookupTable(ctfun)
+        mapper.setColorByArrayName('color')
+
+        const inputData = mapper.getInputData()
+        const allPoints = inputData.getPoints()
+        const colorArray = vtkDataArray.newInstance({
+            name: 'color',
+            values: Array.from(
+                { length: allPoints.getNumberOfPoints() }, () => 1
+            )
+        })
+        inputData.getPointData().addArray(colorArray)
+    },
+
+    // ---------------------
+    // Getters
+    // ---------------------
+    getWidgetManager(label) {
+        return widgetManagers.value[label]
+    },
+    getManipulator(label, domain) {
+        if (!manipulators.value[label]) manipulators.value[label] = {}
+        return manipulators.value[label][domain]
+    },
+    getDataKDTree(label, domain, cData) {
+        if (!dataKDTrees.value[label]) dataKDTrees.value[label] = {}
+        if (!dataKDTrees.value[label][domain]) {
+            const { scalars, points } = cData.data.field
+            const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
+            dataKDTrees.value[label][domain] = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
+        }
+        return dataKDTrees.value[label][domain]
+    },
+    getShapeKDTree(label, domain, shapeData) {
+        if (!shapeKDTrees.value[label]) shapeKDTrees.value[label] = {}
+        if (!shapeKDTrees.value[label][domain]) {
+            const pointData = Array.prototype.slice.call(shapeData.getPoints().getData())
+            const allPoints = Array.from({ length: pointData.length / 3 }, () => pointData.splice(0, 3));
+            const treePoints = allPoints.map((p) => ({ x: p[0], y: p[1], z: p[2] }))
+            shapeKDTrees.value[label][domain] = new kdTree(
+                treePoints,
+                distance,
+                ['x', 'y', 'z']
+            )
+        }
+        return shapeKDTrees.value[label][domain]
+    },
+    getSeedWidget(label, domain, lInfo) {
+        if (!seedWidgets.value[label]) seedWidgets.value[label] = {}
+        if (!seedWidgets.value[label][domain]) seedWidgets.value[label][domain] = {}
+        if (!seedWidgets.value[label][domain][lInfo.id]) {
+            this.createSeedWidget(label, domain, lInfo)
+        }
+        return seedWidgets.value[label][domain][lInfo.id]
+    },
+    getPlaneWidget(label, domain, cInfo) {
+        if (!planeWidgets.value[label]) planeWidgets.value[label] = {}
+        if (!planeWidgets.value[label][domain]) planeWidgets.value[label][domain] = {}
+        if (!planeWidgets.value[label][domain][cInfo.id]) {
+            this.createPlaneWidget(label, domain, cInfo)
+        }
+        return planeWidgets.value[label][domain][cInfo.id]
+    },
+    getPaintWidget(label, domain, cInfo, inputData) {
+        if (!paintWidgets.value[label]) paintWidgets.value[label] = {}
+        if (!paintWidgets.value[label][domain]) paintWidgets.value[label][domain] = {}
+        if (!paintWidgets.value[label][domain][cInfo.id]) {
+            this.createPaintWidget(label, domain, cInfo, inputData)
+        }
+        return paintWidgets.value[label][domain][cInfo.id]
+    },
+
+    // ---------------------
+    // Widget creation
+    // ---------------------
+    createSeedWidget(label, domain, lInfo) {
+        const renderer = this.vtk.renderers[label]
+        const manipulator = manipulators.value[label][domain]
+        if (renderer && manipulator) {
+            const widget = vtkSeedWidget.newInstance()
+            widget.setManipulator(manipulator)
+            widget.onWidgetChange(() => {
+                // When widget moved, update value in allSetLandmarks
+                const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
+                if (landmarkCoord) {
+                    widgetManagers.value[label]?.releaseFocus(widget);
+                    const previousLocation = getLandmarkLocation({ name: label }, lInfo, landmarkCoord)
+                    if (!previousLocation || previousLocation.some((v, i) => landmarkCoord[i] != v)) {
+                        setLandmarkLocation({ name: label }, lInfo, landmarkCoord)
+                        // reassign store var for listeners
+                        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+                        reassignLandmarkNumSetValues()
+                        currentLandmarkPlacement.value = undefined;
+                        widgetManagers.value[label].releaseFocus(widget)
+                    }
+                }
+            })
+            widgetManagers.value[label]?.addWidget(widget).setScaleInPixels(false)
+            seedWidgets.value[label][domain][lInfo.id] = widget
+        }
+    },
+    createPlaneWidget(label, domain, cInfo) {
+        const renderer = this.vtk.renderers[label]
+        const manipulator = manipulators.value[label][domain]
+        const widgetManager = widgetManagers.value[label]
+        if (renderer && manipulator) {
+            const pickList = manipulator.getPicker().getPickList()
+            if (pickList.length > 0) {
+                const actor = pickList[0]
+                const bounds = actor.getBounds()
+                const widget = vtkImplicitPlaneWidget.newInstance()
+                widget.placeWidget(bounds)
+                widget.setPlaceFactor(2)
+                const widgetState = widget.getWidgetState()
+                const widgetHandle = widgetManager.addWidget(widget)
+                widgetHandle.getRepresentations()[0].setLabels({
+                    'subject': label,
+                    'domain': domain
+                })
+                this.stylePlaneWidget(widgetHandle)
+                widgetHandle.onEndInteractionEvent(() => {
+                    setConstraintLocation({ name: label }, cInfo, {
+                        type: 'plane',
+                        data: {
+                            origin: widgetState.getOrigin(),
+                            normal: widgetState.getNormal(),
+                        }
+                    })
+                    this.updateConstraintColors()
+                })
+                planeWidgets.value[label][domain][cInfo.id] = widget
+            }
+        }
+    },
+    createPaintWidget(label, domain, cInfo, inputData) {
+        const widgetManager = widgetManagers.value[label]
+        const manipulator = manipulators.value[label][domain]
+        if (manipulator) {
+            const widget = vtkPaintWidget.newInstance({ manipulator });
+            const widgetHandle = widgetManager.addWidget(widget)
+            paintWidgets.value[label][domain][cInfo.id] = widget
+            widgetHandle.onEndInteractionEvent(() => {
+                widget.getWidgetState().getTrailList().forEach((state) => {
+                    const currentPoint = state.getOrigin()
+                    if (currentPoint) {
+                        const cData = {
+                            type: 'paint',
+                            data: {
+                                field: {
+                                    points: [],
+                                    scalars: [],
+                                }
+                            }
+                        }
+                        const allPoints = inputData.getPoints()
+                        const tree = this.getShapeKDTree(label, domain, inputData)
+                        const paintedPoints = tree.nearest(
+                            { x: currentPoint[0], y: currentPoint[1], z: currentPoint[2] },
+                            allPoints.getNumberOfPoints(),
+                            constraintPaintRadius.value
+                        )
+
+                        const colorArray = inputData.getPointData().getArrayByName('color')
+                        for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
+                            const point = allPoints.getPoint(i)
+                            const painted = !colorArray.getValue(i) || paintedPoints.find(
+                                ([p,]) => p.x === point[0] && p.y === point[1] && p.z === point[2]
+                            )
+                            cData.data.field.points.push(point)
+                            cData.data.field.scalars.push(painted ? 0 : 1)
+                        }
+                        setConstraintLocation({ name: label }, cInfo, cData)
+                        this.updateConstraintColors()
+                    }
+                })
+            })
+        }
+    },
+    stylePlaneWidget(widgetHandle) {
+        widgetHandle.setHandleSizeRatio(0.08)
+        widgetHandle.setAxisScale(0.25)
+        widgetHandle.setRepresentationStyle({
+            static: {
+                outline: {
+                    opacity: 0
+                }
+            }
+        })
+    },
+
+    // ---------------------
+    // Update widget states
+    // ---------------------
+    landmarkInfoUpdated(newInfo) {
+        Object.entries(manipulators.value).forEach(([label, records]) => {
+            Object.entries(records).forEach(([domain,]) => {
+                newInfo.filter((lInfo) => lInfo.domain === domain).forEach((lInfo) => {
+                    const widget = this.getSeedWidget(label, domain, lInfo)
+                    const handle = widget.getWidgetState().getMoveHandle();
+
+                    const location = getLandmarkLocation({ name: label }, lInfo)
+                    if (location && (
+                        !handle.getOrigin() ||
+                        handle.getOrigin().some((v, i) => v !== location[i])
+                    )) {
+                        handle.setOrigin(location)
+                    }
+                    if (handle.getColor3().some((v, i) => v !== lInfo.color[i])) {
+                        handle.setColor3(...lInfo.color);
+                    }
+                    if (handle.getScale1() != landmarkSize.value) {
+                        handle.setScale1(landmarkSize.value);
+                    }
+                })
+            })
+        })
+    },
+    landmarkSizeUpdated() {
+        Object.values(seedWidgets.value).forEach((subjectWidgets) => {
+            Object.values(subjectWidgets).forEach((shapeWidgets) => {
+                Object.values(shapeWidgets).forEach((widget) => {
+                    const handle = widget.getWidgetState().getMoveHandle();
+                    if (handle.getScale1() != landmarkSize.value) {
+                        handle.setScale1(landmarkSize.value);
+                    }
+                })
+            })
+        })
+        this.render()
+    },
+    currentLandmarkPlacementUpdated(newPlacement) {
+        if (newPlacement) {
+            const label = newPlacement.subjectName
+            const domain = newPlacement.domain
+            const id = newPlacement.widgetID
+            const widgetManager = this.getWidgetManager(label)
+            const manipulator = this.getManipulator(label, domain)
+            if (manipulator) {
+                const widget = this.getSeedWidget(label, domain, { id, domain })
+                const pickList = manipulator.getPicker().getPickList()
+                if (pickList.length > 0) {
+                    const actor = pickList[0]
+                    widget.placeWidget(actor.getBounds());
+                    widgetManager.grabFocus(widget)
+                }
+            }
+        }
+    },
+    constraintInfoUpdated(newInfo) {
+        Object.entries(manipulators.value).forEach(([label, records]) => {
+            Object.entries(records).forEach(([domain,]) => {
+                newInfo.filter((cInfo) => cInfo.domain === domain).forEach((cInfo) => {
+                    if (cInfo.type === 'plane') {
+                        const widget = this.getPlaneWidget(label, domain, cInfo)
+                        const widgetState = widget.getWidgetState()
+                        const cData = getConstraintLocation({ name: label }, cInfo)
+
+                        let origin = cData?.data?.origin
+                        if (origin && widgetState.getOrigin().some((v, i) => v != origin[i])) {
+                            widgetState.setOrigin(origin)
+                        }
+                        let normal = cData?.data?.normal
+                        if (normal && widgetState.getNormal().some((v, i) => v != normal[i])) {
+                            widgetState.setNormal(normal)
+                        }
+
+                        widget.setVisibility(constraintsShown.value.includes(cInfo.id))
+                    }
+                })
+            })
+        })
+        this.updateConstraintColors()
+        this.render()
+    },
+    constraintsShownUpdated() {
+        this.constraintInfoUpdated(constraintInfo.value)
+    },
+    currentConstraintPlacementUpdated(newPlacement) {
+        if (newPlacement) {
+            const label = newPlacement.subjectName
+            const domain = newPlacement.domain
+            const id = newPlacement.widgetID
+            const widgetManager = this.getWidgetManager(label)
+            const manipulator = this.getManipulator(label, domain)
+            const cInfo = constraintInfo.value.find((c) =>
+                c.id == id && c.domain == domain
+            )
+            if (manipulator) {
+                const pickList = manipulator.getPicker().getPickList()
+                if (pickList.length > 0) {
+                    const actor = pickList[0]
+                    if (cInfo?.type === 'plane') {
+                        const bounds = actor.getBounds()
+                        const origin = [
+                            (bounds[0] + bounds[1]) / 2,
+                            (bounds[2] + bounds[3]) / 2,
+                            (bounds[4] + bounds[5]) / 2,
+                        ]
+                        const normal = [0, 0, 1]
+                        setConstraintLocation(
+                            { name: label },
+                            { id, domain },
+                            { type: 'plane', data: { origin, normal } },
+                        )
+                        currentConstraintPlacement.value = undefined
+                        this.constraintInfoUpdated(constraintInfo.value)
+                    } else if (manipulator && cInfo?.type === 'paint') {
+                        const mapper = actor.getMapper()
+                        const inputData = mapper.getInputData()
+                        const widget = this.getPaintWidget(label, domain, cInfo, inputData)
+                        widget.setRadius(constraintPaintRadius.value)
+                        widgetManager.grabFocus(widget);
+                        widget.getWidgetState().setActive(true)
+                    }
+                }
+            }
+        } else {
+            Object.entries(paintWidgets.value).forEach(([label, subjectRecords]) => {
+                const widgetManager = widgetManagers.value[label]
+                Object.values(subjectRecords).forEach((shapeRecords) => {
+                    Object.values(shapeRecords).forEach((widget) => {
+                        widget.getWidgetState().setActive(false)
+                        widgetManager.releaseFocus(widget)
+                    })
+                })
+            })
+        }
+    },
+    updateConstraintColors() {
+        if (constraintsShown.value.length === 0) return
+        Object.entries(manipulators.value).forEach(([label, shapeManipulators]) => {
+            if (!allSetConstraints.value[label]) return
+            Object.entries(shapeManipulators).forEach(([domain, manipulator]) => {
+                const pickList = manipulator.getPicker().getPickList()
+                if (!pickList.length || !allSetConstraints.value[label][domain]) return
+                const actor = pickList[0]
+                const mapper = actor.getMapper()
+                const inputData = mapper.getInputData()
+                const allPoints = inputData.getPoints()
+                const allPointColors = inputData.getPointData().getArrayByName('color')
+                const newColorArray = Array.from(
+                    { length: allPoints.getNumberOfPoints() }, () => 1
+                )
+                Object.entries(allSetConstraints.value[label][domain]).forEach(
+                    ([id, cData]) => {
+                        if (constraintsShown.value.includes(parseInt(id))) {
+                            if (cData?.type === 'plane') {
+                                const { normal, origin } = cData.data
+                                let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+                                for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
+                                    const point = allPoints.getPoint(i)
+                                    const pointColor = newColorArray[i]
+                                    if (!pointColor) {
+                                        const dotProduct = dot(normal, [
+                                            origin[0] - point[0],
+                                            origin[1] - point[1],
+                                            origin[2] - point[2],
+                                        ])
+                                        if (dotProduct <= 0) {
+                                            // negative dotProduct means point is below plane
+                                            newColorArray[i] = 0
+                                        }
+                                    }
+                                }
+                            } else if (cData?.type === 'paint') {
+                                const { scalars } = cData.data.field
+                                const tree = this.getDataKDTree(label, domain, cData)
+                                if (scalars.length === allPoints.getNumberOfPoints()) {
+                                    for (let i = 0; i < scalars.length; i++) {
+                                        const currentPoint = allPoints.getPoint(i)
+                                        const currentPointObj = {
+                                            x: currentPoint[0],
+                                            y: currentPoint[1],
+                                            z: currentPoint[2],
+                                        }
+                                        const nearests = tree.nearest(currentPointObj, 1)
+                                        if (nearests.length) {
+                                            const [nearest,] = nearests[0]
+                                            newColorArray[i] = nearest.s
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+                allPointColors.setData(newColorArray)
+                inputData.modified()
+            })
+        })
+    },
+
+    // ---------------------
+    // Listeners
+    // ---------------------
+    watchWidgetStates() {
+        watch(landmarkInfo, _.debounce(this.landmarkInfoUpdated, 1000))
+        watch(landmarkSize, _.debounce(this.landmarkSizeUpdated, 1000))
+        watch(currentLandmarkPlacement, _.debounce(this.currentLandmarkPlacementUpdated, 1000))
+        watch(constraintInfo, _.debounce(this.constraintInfoUpdated, 1000))
+        watch(constraintsShown, _.debounce(this.constraintsShownUpdated, 1000))
+        watch(currentConstraintPlacement, _.debounce(this.currentConstraintPlacementUpdated, 1000))
+    },
+}

@@ -444,14 +444,16 @@ export function reassignLandmarkIDsByIndex() {
 }
 
 export function reassignLandmarkNumSetValues() {
-    landmarkInfo.value = landmarkInfo.value.map((lInfo) => {
-        lInfo.num_set = 0
-        allSubjectsForDataset.value.forEach((s) => {
-            const location = getLandmarkLocation(s, lInfo)
-            if (location) lInfo.num_set += 1
-        })
+    // only reassign if a value has changed
+    const reassign = false
+    const newInfo = landmarkInfo.value.map((lInfo) => {
+        const newNumSet = allSubjectsForDataset.value.filter((s) => !!getLandmarkLocation(s, lInfo)).length
+        if (newNumSet != lInfo.num_set) {
+            lInfo.num_set = newNumSet
+        }
         return lInfo
     })
+    if (reassign) landmarkInfo.value = newInfo
 }
 
 
@@ -543,14 +545,16 @@ export function reassignConstraintIDsByIndex() {
 }
 
 export function reassignConstraintNumSetValues() {
-    constraintInfo.value = constraintInfo.value.map((cInfo) => {
-        cInfo.num_set = 0
-        allSubjectsForDataset.value.forEach((s) => {
-            const location = getConstraintLocation(s, cInfo)
-            if (location && cInfo.num_set !== undefined) cInfo.num_set += 1
-        })
+    // only reassign if a value has changed
+    const reassign = false
+    const newInfo = constraintInfo.value.map((cInfo) => {
+        const newNumSet = allSubjectsForDataset.value.filter((s) => !!getConstraintLocation(s, cInfo)).length
+        if (newNumSet != cInfo.num_set) {
+            cInfo.num_set = newNumSet
+        }
         return cInfo
     })
+    if (reassign) constraintInfo.value = newInfo
 }
 
 export async function getConstraints() {

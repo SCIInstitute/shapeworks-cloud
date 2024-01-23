@@ -114,7 +114,7 @@ export default {
             interactor,
             openglRenderWindow,
             orientationCube,
-            renderers: [],
+            renderers: {},
             pointMappers: [],
         };
 
@@ -127,6 +127,7 @@ export default {
 
         this.updateSize();
         this.renderGrid();
+        this.watchWidgetStates();
     },
     updated() {
         this.prepareColorScale()

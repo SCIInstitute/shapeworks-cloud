@@ -2,16 +2,10 @@ import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
-import vtkPickerManipulator from 'vtk.js/Sources/Widgets/Manipulators/PickerManipulator';
-import vtkWidgetManager from 'vtk.js/Sources/Widgets/Core/WidgetManager';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
-import vtkSeedWidget from 'vtk.js/Sources/Widgets/Widgets3D/SeedWidget';
-import vtkPaintWidget from 'vtk.js/Sources/Widgets/Widgets3D/PaintWidget';
-import vtkImplicitPlaneWidget from 'vtk.js/Sources/Widgets/Widgets3D/ImplicitPlaneWidget'
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkCalculator from 'vtk.js/Sources/Filters/General/Calculator';
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera';
@@ -20,23 +14,16 @@ import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttribute
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
-import { kdTree } from 'kd-tree-javascript';
-import { distance } from '@/helper'
-
 import {
     layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    getWidgetInfo, landmarkInfo, landmarkSize, currentLandmarkPlacement,
-    getLandmarkLocation, setLandmarkLocation,
-    allSetLandmarks, reassignLandmarkNumSetValues,
-    constraintInfo, constraintsShown, allSetConstraints, currentConstraintPlacement,
-    getConstraintLocation, setConstraintLocation, constraintPaintRadius,
     cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
 import { SPHERE_RESOLUTION } from '@/store/constants';
+import widgetSync from './widgetSync';
 
 export const GOOD_BAD_COLORS = [
     [0, 255, 0],
@@ -44,6 +31,7 @@ export const GOOD_BAD_COLORS = [
 ];
 
 export default {
+    ...widgetSync,
     async resize() {
         await this.$nextTick();
         if (this.vtk.renderWindow) {
@@ -68,67 +56,22 @@ export default {
             viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
         });
     },
-    initializeCameras() {
-        this.initialCameraStates = {
-            position: {},
-            viewUp: {},
-        }
-        this.vtk.renderers.forEach((renderer, index) => {
-            const camera = renderer.getActiveCamera();
-            this.initialCameraStates.position[`renderer_${index}`] = [...camera.getReferenceByName('position')]
-            this.initialCameraStates.viewUp[`renderer_${index}`] = [...camera.getReferenceByName('viewUp')]
-        })
+    getCameraData(targetRenderer) {
+        const sourceCamera = targetRenderer.getActiveCamera()
+        const { viewUp, directionOfProjection, position, focalPoint, clippingRange } = sourceCamera.get()
+        return { viewUp, directionOfProjection, position, focalPoint, clippingRange }
     },
-    getCameraDelta(renderer) {
-        if (!renderer) return {
-            positionDelta: undefined,
-            viewUpDelta: undefined,
-        }
-        const targetCamera = renderer.getActiveCamera();
-
-        if (this.vtk.renderers.indexOf(renderer) >= 0) {
-            const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
-            this.initialCameraPosition = this.initialCameraStates.position[targetRendererID]
-            this.initialCameraViewUp = this.initialCameraStates.viewUp[targetRendererID]
-            this.newCameraPosition = targetCamera.getReferenceByName('position')
-            this.newCameraViewUp = targetCamera.getReferenceByName('viewUp')
-        }
-        const positionDelta = [...this.newCameraPosition].map(
-            (num, index) => num - this.initialCameraPosition[index]
-        )
-        const viewUpDelta = [...this.newCameraViewUp].map(
-            (num, index) => num - this.initialCameraViewUp[index]
-        )
-        return {
-            positionDelta,
-            viewUpDelta,
-        }
-    },
-    applyCameraDelta(renderer, positionDelta, viewUpDelta) {
-        const camera = renderer.getActiveCamera();
-        const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
-        if (this.initialCameraStates.position[rendererID]) {
-            camera.setPosition(
-                ...this.initialCameraStates.position[rendererID].map(
-                    (old, index) => old + positionDelta[index]
-                )
-            )
-            camera.setViewUp(
-                ...this.initialCameraStates.viewUp[rendererID].map(
-                    (old, index) => old + viewUpDelta[index]
-                )
-            )
-            camera.setClippingRange(0.1, 1000)
-        }
+    applyCameraData(targetRenderer, cameraData) {
+        const camera = targetRenderer.getActiveCamera()
+        camera.set(cameraData)
     },
     syncCameras(animation) {
-        const targetRenderer = animation.pokedRenderer;
-        const { positionDelta, viewUpDelta } = this.getCameraDelta(targetRenderer)
-
-        this.vtk.renderers.filter(
+        const targetRenderer = animation.pokedRenderer
+        const cameraData = this.getCameraData(targetRenderer)
+        Object.values(this.vtk.renderers).filter(
             (renderer) => renderer !== targetRenderer
         ).forEach((renderer) => {
-            this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
+            this.applyCameraData(renderer, cameraData)
         })
     },
     createColorFilter(domainIndex = 0, goodBad = false) {
@@ -170,251 +113,7 @@ export default {
         });
         return filter;
     },
-    addLandmarks(label, renderer, widgetManager) {
-        renderer.getActors().forEach((actor) => {
-            const manipulator = vtkPickerManipulator.newInstance();
-            manipulator.getPicker().addPickList(actor);
-            const mapper = actor.getMapper()
-            const inputData = mapper.getInputData()
-            const inputDataDomain = inputData.getFieldData().getArrayByName('domain').getData()[0]
-
-            landmarkInfo.value.forEach((lInfo) => {
-                if (lInfo.domain === inputDataDomain) {
-                    let widget = vtkSeedWidget.newInstance();
-                    widget.setManipulator(manipulator);
-                    widgetManager.addWidget(widget).setScaleInPixels(false);
-                    let handle = widget.getWidgetState().getMoveHandle();
-
-                    // Handle current landmark placement widget
-                    if (currentLandmarkPlacement.value === getWidgetInfo({ name: label }, lInfo)) {
-                        widget.placeWidget(actor.getBounds());
-                        widgetManager.grabFocus(widget);
-                        widgetManager.onModified(() => {
-                            const landmarkCoord = handle.getOrigin()
-                            if (currentLandmarkPlacement.value && landmarkCoord) {
-                                widgetManager.releaseFocus(widget)
-                                currentLandmarkPlacement.value = undefined;
-                            }
-                        })
-                    }
-
-                    // Set color, scale, and position of widget
-                    handle.setColor3(...lInfo.color);
-                    handle.setScale1(landmarkSize.value);
-                    const location = getLandmarkLocation({ name: label }, lInfo)
-                    if (location) handle.setOrigin(location);
-
-                    widget.onWidgetChange(() => {
-                        // When widget moved, update value in allSetLandmarks
-                        const landmarkCoord = handle.getOrigin()
-                        if (landmarkCoord) {
-                            widgetManager.releaseFocus(widget);
-                            setLandmarkLocation({ name: label }, lInfo, landmarkCoord)
-                            // reassign store var for listeners
-                            allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
-                            reassignLandmarkNumSetValues()
-                        }
-                    })
-                }
-            })
-        })
-    },
-    addConstraints(label, renderer, widgetManager) {
-        if (constraintsShown.value.length === 0) return
-        renderer.getActors().forEach((actor) => {
-            const ctfun = vtkColorTransferFunction.newInstance();
-            ctfun.addRGBPoint(0, ...actor.getProperty().getColor()); // 0: default color has not been excluded
-            ctfun.addRGBPoint(1, 0.5, 0.5, 0.5); // 1: gray has been excluded
-            ctfun.setMappingRange(0, 1)
-            ctfun.updateRange()
-
-            const mapper = actor.getMapper()
-            mapper.setLookupTable(ctfun)
-            mapper.setColorByArrayName('color')
-
-            const inputData = mapper.getInputData()
-            const inputDataDomain = inputData.getFieldData().getArrayByName('domain').getData()[0]
-            const bounds = inputData.getBounds()
-            const allPoints = inputData.getPoints()
-            const colorArray = vtkDataArray.newInstance({
-                name: 'color',
-                values: Array.from(
-                    { length: allPoints.getNumberOfPoints() }, () => 0
-                )
-            })
-            inputData.getPointData().addArray(colorArray)
-
-            constraintInfo.value.forEach((cInfo) => {
-                if (constraintsShown.value.includes(cInfo.id) && cInfo.domain === inputDataDomain) {
-                    let cData = getConstraintLocation({ name: label }, cInfo)
-                    const isCurrentPlacement = (
-                        currentConstraintPlacement.value &&
-                        currentConstraintPlacement.value.domain === cInfo.domain &&
-                        currentConstraintPlacement.value.widgetID === cInfo.id
-                    )
-
-                    let widget;
-                    let widgetState;
-                    let widgetHandle;
-                    if (cInfo.type === 'plane' && (cData || isCurrentPlacement)) {
-                        // TODO: plane/shape overlap appears to change when rotating
-                        // (but only in viewers without the mouse)
-                        widget = vtkImplicitPlaneWidget.newInstance()
-                        widget.placeWidget(bounds)
-                        widget.setPlaceFactor(2)
-                        widgetState = widget.getWidgetState()
-                        widgetHandle = widgetManager.addWidget(widget)
-                        widgetHandle.setHandleSizeRatio(0.08)
-                        widgetHandle.setAxisScale(0.25)
-                        widgetHandle.setRepresentationStyle({
-                            static: {
-                                outline: {
-                                    opacity: 0
-                                }
-                            }
-                        })
-                        widgetHandle.getRepresentations()[0].setLabels({
-                            'subject': label,
-                            'domain': inputDataDomain
-                        })
-                        widgetHandle.onEndInteractionEvent(() => {
-                            setConstraintLocation({ name: label }, cInfo, {
-                                type: 'plane',
-                                data: {
-                                    origin: widgetState.getOrigin(),
-                                    normal: widgetState.getNormal(),
-                                }
-                            })
-                            this.updateConstraintColors(label, inputData)
-                        })
-
-                        let origin = cData?.data?.origin
-                        let normal = cData?.data?.normal
-                        if (!origin) {
-                            origin = [
-                                (bounds[0] + bounds[1]) / 2,
-                                (bounds[2] + bounds[3]) / 2,
-                                (bounds[4] + bounds[5]) / 2,
-                            ]
-                        }
-                        if (!normal) normal = [0, 0, 1]
-                        if (isCurrentPlacement) {
-                            // New placement started, initialize cData with defaults
-                            setConstraintLocation({ name: label }, cInfo, {
-                                type: 'plane',
-                                data: { origin, normal }
-                            })
-                        }
-                        widgetState.setOrigin(origin)
-                        widgetState.setNormal(normal)
-                    } else if (cInfo.type === 'paint' && isCurrentPlacement) {
-                        // TODO: cannot rotate scene after a paint has started, even after releasing focus
-                        const manipulator = vtkPickerManipulator.newInstance();
-                        manipulator.getPicker().addPickList(actor);
-                        widget = vtkPaintWidget.newInstance({ manipulator });
-                        widgetHandle = widgetManager.addWidget(widget)
-                        widgetManager.grabFocus(widget);
-                        widget.getWidgetState().setActive(true)
-                        widgetHandle.onEndInteractionEvent(() => {
-                            widget.getWidgetState().getTrailList().forEach((state) => {
-                                const currentPoint = state.getOrigin()
-                                if (currentPoint) {
-                                    if (!cData) {
-                                        cData = {
-                                            type: 'paint',
-                                            data: { field: {} }
-                                        }
-                                    }
-                                    cData.data.field.points = []
-                                    cData.data.field.scalars = []
-                                    const allPoints = inputData.getPoints()
-                                    const colorArray = inputData.getPointData().getArrayByName('color')
-                                    for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
-                                        const p = allPoints.getPoint(i)
-                                        cData.data.field.points.push(p)
-                                        const distance = Math.hypot(
-                                            p[0] - currentPoint[0],
-                                            p[1] - currentPoint[1],
-                                            p[2] - currentPoint[2]
-                                        )
-                                        const painted = colorArray.getValue(i) || distance < constraintPaintRadius.value
-                                        cData.data.field.scalars.push(painted ? 0 : 1)
-                                    }
-                                    setConstraintLocation({ name: label }, cInfo, cData)
-                                    this.updateConstraintColors(label, inputData)
-                                }
-                            })
-                        })
-                    }
-                }
-            })
-            this.updateConstraintColors(label, inputData)
-        })
-    },
-    updateConstraintColors(label, inputData) {
-        if (constraintsShown.value.length === 0) return
-        // TODO: reduce number of redundant calls
-        // TODO: fix occurrences of TypeError: model._openGLRenderer is undefined
-        const allPoints = inputData.getPoints()
-        const allPointColors = inputData.getPointData().getArrayByName('color')
-        const newColorArray = Array.from(
-            { length: allPoints.getNumberOfPoints() }, () => 0
-        )
-        const inputDataDomain = inputData.getFieldData().getArrayByName('domain').getData()[0]
-        if (allSetConstraints.value && allSetConstraints.value[label] && allSetConstraints.value[label][inputDataDomain]) {
-            const currShapeConstraints = allSetConstraints.value[label][inputDataDomain]
-            Object.entries(currShapeConstraints).forEach(([id, cData]) => {
-                if (constraintsShown.value.includes(parseInt(id))) {
-                    if (cData?.type === 'plane') {
-                        const { normal, origin } = cData.data
-                        let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
-                        for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
-                            const point = allPoints.getPoint(i)
-                            const pointColor = newColorArray[i]
-                            if (!pointColor) {
-                                const dotProduct = dot(normal, [
-                                    origin[0] - point[0],
-                                    origin[1] - point[1],
-                                    origin[2] - point[2],
-                                ])
-                                if (dotProduct <= 0) {
-                                    // negative dotProduct means point is below plane
-                                    newColorArray[i] = 1
-                                }
-                            }
-                        }
-                    } else if (cData?.type === 'paint') {
-                        // TODO: this takes too long with many actors
-                        const { scalars, points } = cData.data.field
-                        const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
-                        const tree = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
-                        if (scalars.length === allPoints.getNumberOfPoints()) {
-                            for (let i = 0; i < scalars.length; i++) {
-                                const currentPoint = allPoints.getPoint(i)
-                                const currentPointObj = {
-                                    x: currentPoint[0],
-                                    y: currentPoint[1],
-                                    z: currentPoint[2],
-                                }
-                                const nearests = tree.nearest(currentPointObj, 1)
-                                if (nearests.length) {
-                                    const [nearest,] = nearests[0]
-                                    // scalar assignment is swapped in stored constraint data
-                                    if (nearest.s === 0) {
-                                        newColorArray[i] = 1
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-        }
-
-        allPointColors.setData(newColorArray)
-        inputData.modified()
-    },
-    addPoints(label, renderer, points, i) {
+    addPoints(renderer, points, i) {
         let size = this.glyphSize
         let source = vtkSphereSource.newInstance({
             thetaResolution: SPHERE_RESOLUTION,
@@ -435,7 +134,11 @@ export default {
         renderer.addActor(actor);
         this.vtk.pointMappers.push(mapper);
     },
-    addShapes(renderer, label, shapes) {
+    addShapes(renderer, shapes) {
+        let label;
+        Object.entries(this.vtk.renderers).forEach(([l, r]) => {
+            if (renderer == r) label = l
+        })
         shapes.forEach(
             (shapeDatas, domainIndex) => {
                 shapeDatas.forEach(
@@ -623,17 +326,11 @@ export default {
         this.labelCanvasContext.font = "16px Arial";
         this.labelCanvasContext.fillStyle = "white";
     },
-    populateRenderer(renderer, label, bounds, shapes) {
-        this.labelCanvasContext.fillText(
-            label,
-            this.labelCanvas.width * bounds[0],
-            this.labelCanvas.height * (1 - bounds[1]) - 20
-        );
-
-        this.addShapes(renderer, label, shapes.map(({ shape }) => shape));
+    populateRenderer(renderer, shapes) {
+        this.addShapes(renderer, shapes.map(({ shape }) => shape));
         shapes.map(({ points }) => points).forEach((pointSet, i) => {
             if (pointSet.getNumberOfPoints() > 0) {
-                this.addPoints(label, renderer, pointSet, i);
+                this.addPoints(renderer, pointSet, i);
             }
         })
 
@@ -643,53 +340,50 @@ export default {
     },
     renderGrid() {
         this.prepareLabelCanvas();
+        let cameraData;
 
-        let { positionDelta, viewUpDelta } = this.getCameraDelta(this.vtk.renderers[0])
-
-        for (let i = 0; i < this.vtk.renderers.length; i += 1) {
-            this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
+        const renderers = Object.values(this.vtk.renderers)
+        for (let i = 0; i < renderers.length; i += 1) {
+            if (!cameraData) cameraData = this.getCameraData(renderers[i])
+            this.vtk.renderWindow.removeRenderer(renderers[i]);
         }
         if (this.vtk.orientationCube) this.vtk.orientationCube.setEnabled(false)
-        this.vtk.renderers = [];
+        this.vtk.renderers = {};
         this.vtk.pointMappers = [];
 
         const data = Object.entries(this.data)
-        for (let i = 0; i < this.grid.length; i += 1) {
-            let newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
-            newRenderer.setViewport.apply(newRenderer, this.grid[i]);
-            this.vtk.renderers.push(newRenderer);
+        for (let i = 0; i < data.length; i += 1) {
+            const [label, shapes] = data[i];
+            const newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
+            const bounds = this.grid[i];
+
+            this.labelCanvasContext.fillText(
+                label,
+                this.labelCanvas.width * bounds[0],
+                this.labelCanvas.height * (1 - bounds[1]) - 20
+            );
+            newRenderer.setViewport.apply(newRenderer, bounds);
+            this.vtk.renderers[label] = newRenderer;
             this.vtk.renderWindow.addRenderer(newRenderer);
             if (i < data.length) {
-                this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
+                this.populateRenderer(newRenderer, shapes)
             }
         }
-        this.initializeCameras()
+        this.initializeWidgets()
 
-        this.vtk.renderers.forEach((renderer, i) => {
-            if (positionDelta && viewUpDelta) {
-                this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
-            }
+        if (cameraData) {
+            Object.values(this.vtk.renderers).forEach((renderer) => {
+                this.applyCameraData(renderer, cameraData)
+            })
+        }
 
-            if (data[i]) {
-                const widgetManager = vtkWidgetManager.newInstance()
-                widgetManager.setRenderer(renderer)
-                let label = data[i][0]
-                if (layersShown.value.includes('Landmarks')) {
-                    this.addLandmarks(label, renderer, widgetManager)
-                }
-                if (layersShown.value.includes('Constraints')) {
-                    this.addConstraints(label, renderer, widgetManager)
-                }
-            }
-        })
-        const targetRenderer = this.vtk.renderers[this.columns - 1]
+        const targetRenderer = Object.values(this.vtk.renderers)[this.columns - 1]
         this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
         if (targetRenderer) {
             this.vtk.orientationCube.setParentRenderer(targetRenderer)
             this.vtk.orientationCube.setEnabled(true);
-
-            this.render();
         }
+        this.render();
     },
     render() {
         this.vtk.renderWindow.render();

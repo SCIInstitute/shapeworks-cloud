@@ -34,14 +34,8 @@ import {
     analysisExpandedTab,
     allProjectsForDataset,
     loadProjectsForDataset,
-    landmarkInfo,
-    landmarkSize,
-    currentLandmarkPlacement,
     getLandmarks,
     allSetLandmarks,
-    constraintInfo,
-    constraintsShown,
-    currentConstraintPlacement,
     getConstraints,
     allSetConstraints,
 } from '@/store';
@@ -334,12 +328,6 @@ export default {
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
-        watch(landmarkInfo, debouncedRefreshRender)
-        watch(landmarkSize, debouncedRefreshRender)
-        watch(currentLandmarkPlacement, debouncedRefreshRender)
-        watch(constraintInfo, debouncedRefreshRender)
-        watch(constraintsShown, debouncedRefreshRender)
-        watch(currentConstraintPlacement, debouncedRefreshRender)
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(tab, switchTab)
 

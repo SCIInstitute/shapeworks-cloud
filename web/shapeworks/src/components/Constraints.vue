@@ -273,8 +273,11 @@ export default {
                                         <span v-if="getPlacementStatus(subject, item) === 'INVALID'">
                                             INVALID
                                         </span>
+                                        <span v-else-if="isShapeShown(subject.id, item.domain) && !constraintsShown.includes(item.id)">
+                                            Not visible
+                                        </span>
                                         <v-btn
-                                            v-else-if="isShapeShown(subject.id, item.domain)"
+                                            v-else-if="isShapeShown(subject.id, item.domain) && getPlacementStatus(subject, item) !== 'plane placed'"
                                             @click="toggleCurrentPlacement(subject, item)"
                                             small
                                         >

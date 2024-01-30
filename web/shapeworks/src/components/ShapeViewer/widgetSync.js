@@ -114,9 +114,9 @@ export default {
     getDataKDTree(label, domain, cData) {
         if (!dataKDTrees.value[label]) dataKDTrees.value[label] = {}
         if (!dataKDTrees.value[label][domain]) {
-            const { scalars, points } = cData.data.field
-            const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], s: scalars[i] }))
-            dataKDTrees.value[label][domain] = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 's']);
+            const { points } = cData.data.field
+            const scalarPoints = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], i }))
+            dataKDTrees.value[label][domain] = new kdTree(scalarPoints, distance, ['x', 'y', 'z', 'i']);
         }
         return dataKDTrees.value[label][domain]
     },
@@ -165,14 +165,17 @@ export default {
     createSeedWidget(label, domain, lInfo) {
         const renderer = this.vtk.renderers[label]
         const manipulator = manipulators.value[label][domain]
+        const widgetManager = widgetManagers.value[label]
         if (renderer && manipulator) {
             const widget = vtkSeedWidget.newInstance()
+            const widgetHandle = widgetManager.addWidget(widget)
             widget.setManipulator(manipulator)
-            widget.onWidgetChange(() => {
+            widgetHandle.setScaleInPixels(false)
+            widgetHandle.onEndInteractionEvent(() => {
                 // When widget moved, update value in allSetLandmarks
                 const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
                 if (landmarkCoord) {
-                    widgetManagers.value[label]?.releaseFocus(widget);
+                    widgetManager.releaseFocus(widget);
                     const previousLocation = getLandmarkLocation({ name: label }, lInfo, landmarkCoord)
                     if (!previousLocation || previousLocation.some((v, i) => landmarkCoord[i] != v)) {
                         setLandmarkLocation({ name: label }, lInfo, landmarkCoord)
@@ -180,11 +183,10 @@ export default {
                         allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
                         reassignLandmarkNumSetValues()
                         currentLandmarkPlacement.value = undefined;
-                        widgetManagers.value[label].releaseFocus(widget)
+                        widgetManager.releaseFocus(widget)
                     }
                 }
             })
-            widgetManagers.value[label]?.addWidget(widget).setScaleInPixels(false)
             seedWidgets.value[label][domain][lInfo.id] = widget
         }
     },
@@ -229,39 +231,44 @@ export default {
             const widgetHandle = widgetManager.addWidget(widget)
             paintWidgets.value[label][domain][cInfo.id] = widget
             widgetHandle.onEndInteractionEvent(() => {
+                const allPoints = inputData.getPoints()
+                const tree = this.getShapeKDTree(label, domain, inputData)
+                let cData = getConstraintLocation({ name: label }, cInfo)
+                if (!cData) {
+                    cData = {
+                        type: 'paint',
+                        data: {
+                            field: {
+                                points: allPoints.getData(),
+                                scalars: Uint8Array(allPoints.getNumberOfPoints()).fill(1),
+                            }
+                        }
+                    }
+                }
+                let paintedPoints = []
                 widget.getWidgetState().getTrailList().forEach((state) => {
                     const currentPoint = state.getOrigin()
                     if (currentPoint) {
-                        const cData = {
-                            type: 'paint',
-                            data: {
-                                field: {
-                                    points: [],
-                                    scalars: [],
-                                }
-                            }
-                        }
-                        const allPoints = inputData.getPoints()
-                        const tree = this.getShapeKDTree(label, domain, inputData)
-                        const paintedPoints = tree.nearest(
-                            { x: currentPoint[0], y: currentPoint[1], z: currentPoint[2] },
-                            allPoints.getNumberOfPoints(),
-                            constraintPaintRadius.value
-                        )
-
-                        const colorArray = inputData.getPointData().getArrayByName('color')
-                        for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
-                            const point = allPoints.getPoint(i)
-                            const painted = !colorArray.getValue(i) || paintedPoints.find(
-                                ([p,]) => p.x === point[0] && p.y === point[1] && p.z === point[2]
+                        paintedPoints = [
+                            ...paintedPoints,
+                            ...tree.nearest(
+                                { x: currentPoint[0], y: currentPoint[1], z: currentPoint[2] },
+                                allPoints.getNumberOfPoints(),
+                                constraintPaintRadius.value * 2
                             )
-                            cData.data.field.points.push(point)
-                            cData.data.field.scalars.push(painted ? 0 : 1)
-                        }
-                        setConstraintLocation({ name: label }, cInfo, cData)
-                        this.updateConstraintColors()
+                        ]
                     }
                 })
+                paintedPoints.forEach(([{ x, y, z },]) => {
+                    const pointIndex = cData.data.field.points.findIndex(
+                        (p) => p[0] === x && p[1] === y && p[2] === z
+                    )
+                    if (pointIndex >= 0 && pointIndex < cData.data.field.scalars.length) {
+                        cData.data.field.scalars[pointIndex] = 0
+                    }
+                })
+                setConstraintLocation({ name: label }, cInfo, cData)
+                this.updateConstraintColors()
             })
         }
     },
@@ -398,6 +405,7 @@ export default {
                         const inputData = mapper.getInputData()
                         const widget = this.getPaintWidget(label, domain, cInfo, inputData)
                         widget.setRadius(constraintPaintRadius.value)
+                        widget.getWidgetState().getHandle().setVisible(true)
                         widgetManager.grabFocus(widget);
                         widget.getWidgetState().setActive(true)
                     }
@@ -408,6 +416,7 @@ export default {
                 const widgetManager = widgetManagers.value[label]
                 Object.values(subjectRecords).forEach((shapeRecords) => {
                     Object.values(shapeRecords).forEach((widget) => {
+                        widget.getWidgetState().getHandle().setVisible(false)
                         widget.getWidgetState().setActive(false)
                         widgetManager.releaseFocus(widget)
                     })
@@ -416,7 +425,6 @@ export default {
         }
     },
     updateConstraintColors() {
-        if (constraintsShown.value.length === 0) return
         Object.entries(manipulators.value).forEach(([label, shapeManipulators]) => {
             if (!allSetConstraints.value[label]) return
             Object.entries(shapeManipulators).forEach(([domain, manipulator]) => {
@@ -427,8 +435,8 @@ export default {
                 const inputData = mapper.getInputData()
                 const allPoints = inputData.getPoints()
                 const allPointColors = inputData.getPointData().getArrayByName('color')
-                const newColorArray = Array.from(
-                    { length: allPoints.getNumberOfPoints() }, () => 1
+                allPointColors.setData(
+                    new Uint8Array(allPoints.getNumberOfPoints()).fill(1)
                 )
                 Object.entries(allSetConstraints.value[label][domain]).forEach(
                     ([id, cData]) => {
@@ -438,8 +446,9 @@ export default {
                                 let dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
                                 for (let i = 0; i < allPoints.getNumberOfPoints(); i++) {
                                     const point = allPoints.getPoint(i)
-                                    const pointColor = newColorArray[i]
-                                    if (!pointColor) {
+                                    const pointColor = allPointColors.getValue(i)
+                                    if (pointColor == 1) {
+                                        // has not been excluded yet, check for exclusion
                                         const dotProduct = dot(normal, [
                                             origin[0] - point[0],
                                             origin[1] - point[1],
@@ -447,7 +456,7 @@ export default {
                                         ])
                                         if (dotProduct <= 0) {
                                             // negative dotProduct means point is below plane
-                                            newColorArray[i] = 0
+                                            allPointColors.setValue(i, 0)
                                         }
                                     }
                                 }
@@ -465,7 +474,9 @@ export default {
                                         const nearests = tree.nearest(currentPointObj, 1)
                                         if (nearests.length) {
                                             const [nearest,] = nearests[0]
-                                            newColorArray[i] = nearest.s
+                                            if (nearest.i && nearest.i >= 0 && nearest.i < cData.data.field.scalars.length) {
+                                                allPointColors.setValue(i, cData.data.field.scalars[nearest.i])
+                                            }
                                         }
                                     }
                                 }
@@ -473,10 +484,11 @@ export default {
                         }
                     }
                 )
-                allPointColors.setData(newColorArray)
+                allPointColors.modified()
                 inputData.modified()
             })
         })
+        this.render()
     },
 
     // ---------------------
@@ -489,5 +501,6 @@ export default {
         watch(constraintInfo, _.debounce(this.constraintInfoUpdated, 1000))
         watch(constraintsShown, _.debounce(this.constraintsShownUpdated, 1000))
         watch(currentConstraintPlacement, _.debounce(this.currentConstraintPlacementUpdated, 1000))
+        watch(allSetConstraints, _.debounce(this.updateConstraintColors, 1000))
     },
 }

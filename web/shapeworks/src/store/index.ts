@@ -87,6 +87,8 @@ export const currentConstraintPlacement = ref();
 
 export const constraintPaintRadius = ref(3);
 
+export const constraintPaintExclusion = ref(true);
+
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 
 export const jobProgressPoll = ref();

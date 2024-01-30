@@ -14,6 +14,7 @@ import {
 import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocation, showShape } from '../store/methods';
 import { saveConstraintData } from '@/api/rest';
 import { convertConstraintDataForDB } from '@/reader/constraints';
+import { constraintPaintExclusion } from '../store/index';
 
 export default {
     setup() {
@@ -148,6 +149,7 @@ export default {
             anatomies,
             allSubjectsForDataset,
             constraintPaintRadius,
+            constraintPaintExclusion,
             currentConstraintPlacement,
             isShapeShown,
             showShape,
@@ -258,10 +260,11 @@ export default {
                                     >
                                         Show subject
                                     </v-btn>
-                                    <v-spacer v-else />
-                                    <div style="width: 160px; text-align: right;">
+                                    <div
+                                        v-else-if="getPlacementStatus(subject, item) === 'PLACING' && item.type === 'paint'"
+                                        style="width: 200px; text-align: center;"
+                                    >
                                         <v-text-field
-                                            v-if="getPlacementStatus(subject, item) === 'PLACING' && item.type === 'paint'"
                                             v-model.number="constraintPaintRadius"
                                             label="Brush Size"
                                             type="number"
@@ -270,6 +273,21 @@ export default {
                                             style="max-width: 70px; display: inline-block; margin-right: 10px"
                                             @click.stop
                                         />
+                                        <v-tooltip top>
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <div
+                                                    v-bind="attrs"
+                                                    v-on="on"
+                                                    style="max-width: 70px; display: inline-block; margin-right: 10px"
+                                                >
+                                                    <v-switch v-model="constraintPaintExclusion" label="Exclude" />
+                                                </div>
+                                            </template>
+                                            <span>Enable to paint exclusion area. Disable to erase exclusion area.</span>
+                                        </v-tooltip>
+                                    </div>
+                                    <v-spacer v-else />
+                                    <div style="width: 100px; text-align: right;">
                                         <span v-if="getPlacementStatus(subject, item) === 'INVALID'">
                                             INVALID
                                         </span>

@@ -18,7 +18,8 @@ import {
     getLandmarkLocation, setLandmarkLocation,
     allSetLandmarks, reassignLandmarkNumSetValues,
     constraintInfo, constraintsShown, allSetConstraints, currentConstraintPlacement,
-    getConstraintLocation, setConstraintLocation, constraintPaintRadius,
+    getConstraintLocation, setConstraintLocation,
+    constraintPaintRadius, constraintPaintExclusion,
 } from '@/store';
 
 const widgetManagers = ref({});  // organized by label
@@ -264,7 +265,7 @@ export default {
                         (p) => p[0] === x && p[1] === y && p[2] === z
                     )
                     if (pointIndex >= 0 && pointIndex < cData.data.field.scalars.length) {
-                        cData.data.field.scalars[pointIndex] = 0
+                        cData.data.field.scalars[pointIndex] = constraintPaintExclusion.value ? 0 : 1
                     }
                 })
                 setConstraintLocation({ name: label }, cInfo, cData)

@@ -287,7 +287,7 @@ export default {
                                         </v-tooltip>
                                     </div>
                                     <v-spacer v-else />
-                                    <div style="width: 100px; text-align: right;">
+                                    <div style="width: 140px; text-align: right;">
                                         <span v-if="getPlacementStatus(subject, item) === 'INVALID'">
                                             INVALID
                                         </span>

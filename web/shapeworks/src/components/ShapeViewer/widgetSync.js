@@ -410,7 +410,7 @@ export default {
                             widgetState.setNormal(normal)
                         }
 
-                        widget.setVisibility(constraintsShown.value.includes(cInfo.id))
+                        widget.setVisibility(origin && normal && constraintsShown.value.includes(cInfo.id))
                     }
                 })
             })

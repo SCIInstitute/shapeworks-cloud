@@ -15,6 +15,7 @@ import RenderControls from '../components/RenderControls.vue'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
+    renderLoading,
     selectedDataset,
     allSubjectsForDataset,
     selectedDataObjects,
@@ -43,6 +44,7 @@ import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
+import { loadingState } from '../store/index';
 
 
 export default {
@@ -153,6 +155,7 @@ export default {
         }
 
         async function refreshRender() {
+            renderLoading.value = true
             let newRenderData = {}
             let newRenderMetaData = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
@@ -332,6 +335,8 @@ export default {
         watch(tab, switchTab)
 
         return {
+            loadingState,
+            renderLoading,
             drawer,
             drawerWidth,
             setDrawerWidth,
@@ -445,6 +450,9 @@ export default {
                 />
             </template>
             <span v-else>Select any number of data objects</span>
+            <v-overlay absolute :value="!loadingState && renderLoading" :stop-propagation="true">
+                <v-progress-circular indeterminate />
+            </v-overlay>
         </v-card>
     </div>
 </template>

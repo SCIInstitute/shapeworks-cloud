@@ -15,7 +15,7 @@ import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Cons
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
 import {
-    layers, layersShown, orientationIndicator,
+    renderLoading, layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
@@ -339,6 +339,11 @@ export default {
         renderer.resetCamera();
     },
     renderGrid() {
+        this.vtk.interactor.disable()
+        Object.values(this.vtk.widgetManagers).forEach((wm) => {
+            wm.disablePicking()
+        })
+
         this.prepareLabelCanvas();
         let cameraData;
 
@@ -382,8 +387,17 @@ export default {
         if (targetRenderer) {
             this.vtk.orientationCube.setParentRenderer(targetRenderer)
             this.vtk.orientationCube.setEnabled(true);
+            this.vtk.interactor.enable()
         }
         this.render();
+        renderLoading.value = false;
+        setTimeout(
+            () => {
+                Object.values(this.vtk.widgetManagers).forEach((wm) => {
+                    wm.enablePicking()
+                })
+            }, 100
+        )
     },
     render() {
         this.vtk.renderWindow.render();

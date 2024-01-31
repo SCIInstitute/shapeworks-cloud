@@ -13,6 +13,8 @@ export * from './constants'
 
 export const loadingState = ref<boolean>(false)
 
+export const renderLoading = ref<boolean>(false)
+
 export const currentError = ref<string>()
 
 export const vtkInstance = ref<VTKInstance>()

@@ -22,7 +22,6 @@ import {
     constraintPaintRadius, constraintPaintExclusion,
 } from '@/store';
 
-const widgetManagers = ref({});  // organized by label
 const manipulators = ref({});  // organized by label, domain
 const dataKDTrees = ref({});   // organized by label, domain
 const shapeKDTrees = ref({});   // organized by label, domain
@@ -36,13 +35,14 @@ export default {
     // ---------------------
     initializeWidgets() {
         // called when shapes or layers shown have changed
+        this.vtk.widgetManagers = {}
         Object.entries(this.vtk.renderers).forEach(([label, renderer]) => {
             manipulators.value[label] = {}
+            const wm = vtkWidgetManager.newInstance()
+            wm.setRenderer(renderer)
+            wm.disablePicking();
+            this.vtk.widgetManagers[label] = wm
             renderer.getActors().forEach((actor) => {
-                const wm = vtkWidgetManager.newInstance()
-                wm.enablePicking();
-                wm.setRenderer(renderer)
-                widgetManagers.value[label] = wm
                 const domain = actor.getMapper()?.getInputData()?.getFieldData()?.getArrayByName('domain')?.getData()[0]
                 if (!manipulators.value[label][domain]) {
                     const m = vtkPickerManipulator.newInstance()
@@ -106,7 +106,7 @@ export default {
     // Getters
     // ---------------------
     getWidgetManager(label) {
-        return widgetManagers.value[label]
+        return this.vtk.widgetManagers[label]
     },
     getManipulator(label, domain) {
         if (!manipulators.value[label]) manipulators.value[label] = {}
@@ -165,8 +165,8 @@ export default {
     // ---------------------
     createSeedWidget(label, domain, lInfo) {
         const renderer = this.vtk.renderers[label]
-        const manipulator = manipulators.value[label][domain]
-        const widgetManager = widgetManagers.value[label]
+        const manipulator = this.getManipulator(label, domain)
+        const widgetManager = this.getWidgetManager(label)
         if (renderer && manipulator) {
             const widget = vtkSeedWidget.newInstance()
             const widgetHandle = widgetManager.addWidget(widget)
@@ -193,8 +193,8 @@ export default {
     },
     createPlaneWidget(label, domain, cInfo) {
         const renderer = this.vtk.renderers[label]
-        const manipulator = manipulators.value[label][domain]
-        const widgetManager = widgetManagers.value[label]
+        const manipulator = this.getManipulator(label, domain)
+        const widgetManager = this.getWidgetManager(label)
         if (renderer && manipulator) {
             const pickList = manipulator.getPicker().getPickList()
             if (pickList.length > 0) {
@@ -225,8 +225,8 @@ export default {
         }
     },
     createPaintWidget(label, domain, cInfo, inputData) {
-        const widgetManager = widgetManagers.value[label]
-        const manipulator = manipulators.value[label][domain]
+        const widgetManager = this.getWidgetManager(label)
+        const manipulator = this.getManipulator(label, domain)
         if (manipulator) {
             const widget = vtkPaintWidget.newInstance({ manipulator });
             const widgetHandle = widgetManager.addWidget(widget)
@@ -414,7 +414,7 @@ export default {
             }
         } else {
             Object.entries(paintWidgets.value).forEach(([label, subjectRecords]) => {
-                const widgetManager = widgetManagers.value[label]
+                const widgetManager = this.getWidgetManager(label)
                 Object.values(subjectRecords).forEach((shapeRecords) => {
                     Object.values(shapeRecords).forEach((widget) => {
                         widget.getWidgetState().getHandle().setVisible(false)

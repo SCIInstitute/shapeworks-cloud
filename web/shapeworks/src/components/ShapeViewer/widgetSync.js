@@ -466,17 +466,21 @@ export default {
                                 const tree = this.getDataKDTree(label, domain, cData)
                                 if (scalars.length === allPoints.getNumberOfPoints()) {
                                     for (let i = 0; i < scalars.length; i++) {
-                                        const currentPoint = allPoints.getPoint(i)
-                                        const currentPointObj = {
-                                            x: currentPoint[0],
-                                            y: currentPoint[1],
-                                            z: currentPoint[2],
-                                        }
-                                        const nearests = tree.nearest(currentPointObj, 1)
-                                        if (nearests.length) {
-                                            const [nearest,] = nearests[0]
-                                            if (nearest.i && nearest.i >= 0 && nearest.i < cData.data.field.scalars.length) {
-                                                allPointColors.setValue(i, cData.data.field.scalars[nearest.i])
+                                        const pointColor = allPointColors.getValue(i)
+                                        if (pointColor == 1) {
+                                            // has not been excluded yet, check for exclusion
+                                            const currentPoint = allPoints.getPoint(i)
+                                            const currentPointObj = {
+                                                x: currentPoint[0],
+                                                y: currentPoint[1],
+                                                z: currentPoint[2],
+                                            }
+                                            const nearests = tree.nearest(currentPointObj, 1)
+                                            if (nearests.length) {
+                                                const [nearest,] = nearests[0]
+                                                if (nearest.i && nearest.i >= 0 && nearest.i < cData.data.field.scalars.length) {
+                                                    allPointColors.setValue(i, cData.data.field.scalars[nearest.i])
+                                                }
                                             }
                                         }
                                     }

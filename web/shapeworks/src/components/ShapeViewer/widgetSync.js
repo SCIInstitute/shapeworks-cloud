@@ -154,9 +154,8 @@ export default {
     getPaintWidget(label, domain, cInfo, inputData) {
         if (!paintWidgets.value[label]) paintWidgets.value[label] = {}
         if (!paintWidgets.value[label][domain]) paintWidgets.value[label][domain] = {}
-        if (!paintWidgets.value[label][domain][cInfo.id]) {
-            this.createPaintWidget(label, domain, cInfo, inputData)
-        }
+        // always create new paint widget
+        this.createPaintWidget(label, domain, cInfo, inputData)
         return paintWidgets.value[label][domain][cInfo.id]
     },
 
@@ -289,11 +288,13 @@ export default {
     // Update widget states
     // ---------------------
     landmarkInfoUpdated(newInfo) {
+        const validWidgets = []
         Object.entries(manipulators.value).forEach(([label, records]) => {
             Object.entries(records).forEach(([domain,]) => {
                 newInfo.filter((lInfo) => lInfo.domain === domain).forEach((lInfo) => {
                     const widget = this.getSeedWidget(label, domain, lInfo)
                     const handle = widget.getWidgetState().getMoveHandle();
+                    validWidgets.push(widget)
 
                     const location = getLandmarkLocation({ name: label }, lInfo)
                     if (location && (
@@ -311,6 +312,17 @@ export default {
                 })
             })
         })
+        Object.entries(seedWidgets.value).forEach(
+            ([label, labelSeedWidgets]) => Object.values(labelSeedWidgets).forEach(
+                (shapeSeedWidgets) => Object.values(shapeSeedWidgets).forEach(
+                    (seedWidget) => {
+                        if (!validWidgets.includes(seedWidget)) {
+                            this.getWidgetManager(label).removeWidget(seedWidget)
+                        }
+                    }
+                )
+            )
+        )
     },
     landmarkSizeUpdated() {
         Object.values(seedWidgets.value).forEach((subjectWidgets) => {
@@ -344,6 +356,7 @@ export default {
         }
     },
     constraintInfoUpdated(newInfo) {
+        const validWidgets = []
         Object.entries(manipulators.value).forEach(([label, records]) => {
             Object.entries(records).forEach(([domain,]) => {
                 newInfo.filter((cInfo) => cInfo.domain === domain).forEach((cInfo) => {
@@ -351,6 +364,7 @@ export default {
                         const widget = this.getPlaneWidget(label, domain, cInfo)
                         const widgetState = widget.getWidgetState()
                         const cData = getConstraintLocation({ name: label }, cInfo)
+                        validWidgets.push(widget)
 
                         let origin = cData?.data?.origin
                         if (origin && widgetState.getOrigin().some((v, i) => v != origin[i])) {
@@ -366,6 +380,17 @@ export default {
                 })
             })
         })
+        Object.entries(planeWidgets.value).forEach(
+            ([label, labelPlaneWidgets]) => Object.values(labelPlaneWidgets).forEach(
+                (shapePlaneWidgets) => Object.values(shapePlaneWidgets).forEach(
+                    (planeWidget) => {
+                        if (!validWidgets.includes(planeWidget)) {
+                            this.getWidgetManager(label).removeWidget(planeWidget)
+                        }
+                    }
+                )
+            )
+        )
         this.updateConstraintColors()
         this.render()
     },

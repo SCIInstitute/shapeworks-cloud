@@ -122,6 +122,9 @@ export default {
             landmarkInfo.value = [...landmarkInfo.value]
         }
 
+        function updateLandmarks() {
+            landmarkInfo.value = [...landmarkInfo.value]
+        }
 
         function submit() {
             const locationData = Object.fromEntries(
@@ -173,6 +176,7 @@ export default {
             deleteLandmark,
             updateLandmarkColor,
             updateLandmarkInfo,
+            updateLandmarks,
             submit,
         }
     }
@@ -273,6 +277,7 @@ export default {
                                 :items="anatomies.map((a) => a.replace('anatomy_', ''))"
                                 :disabled="item.num_set > 0"
                                 style="width: 80px"
+                                @input="(v) => updateLandmarks()"
                             />
                         </template>
                         <!-- eslint-disable-next-line -->

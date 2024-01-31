@@ -54,7 +54,11 @@ export default {
                     if (existingWidgets) {
                         Object.values(existingWidgets).forEach((ws) => {
                             Object.values(ws).forEach((w) => {
-                                wm.addWidget(w).setScaleInPixels(false)
+                                const widgetHandle = wm.addWidget(w)
+                                widgetHandle.setScaleInPixels(false)
+                                widgetHandle.onEndInteractionEvent(() => {
+                                    this.seedWidgetEndInteraction(w)
+                                })
                             })
                         })
                     }
@@ -172,20 +176,7 @@ export default {
             widget.setManipulator(manipulator)
             widgetHandle.setScaleInPixels(false)
             widgetHandle.onEndInteractionEvent(() => {
-                // When widget moved, update value in allSetLandmarks
-                const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
-                if (landmarkCoord) {
-                    widgetManager.releaseFocus(widget);
-                    const previousLocation = getLandmarkLocation({ name: label }, lInfo, landmarkCoord)
-                    if (!previousLocation || previousLocation.some((v, i) => landmarkCoord[i] != v)) {
-                        setLandmarkLocation({ name: label }, lInfo, landmarkCoord)
-                        // reassign store var for listeners
-                        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
-                        reassignLandmarkNumSetValues()
-                        currentLandmarkPlacement.value = undefined;
-                        widgetManager.releaseFocus(widget)
-                    }
-                }
+                this.seedWidgetEndInteraction(widget)
             })
             seedWidgets.value[label][domain][lInfo.id] = widget
         }
@@ -231,44 +222,7 @@ export default {
             const widgetHandle = widgetManager.addWidget(widget)
             paintWidgets.value[label][domain][cInfo.id] = widget
             widgetHandle.onEndInteractionEvent(() => {
-                const allPoints = inputData.getPoints()
-                const tree = this.getShapeKDTree(label, domain, inputData)
-                let cData = getConstraintLocation({ name: label }, cInfo)
-                if (!cData) {
-                    cData = {
-                        type: 'paint',
-                        data: {
-                            field: {
-                                points: allPoints.getData(),
-                                scalars: Uint8Array(allPoints.getNumberOfPoints()).fill(1),
-                            }
-                        }
-                    }
-                }
-                let paintedPoints = []
-                widget.getWidgetState().getTrailList().forEach((state) => {
-                    const currentPoint = state.getOrigin()
-                    if (currentPoint) {
-                        paintedPoints = [
-                            ...paintedPoints,
-                            ...tree.nearest(
-                                { x: currentPoint[0], y: currentPoint[1], z: currentPoint[2] },
-                                allPoints.getNumberOfPoints(),
-                                constraintPaintRadius.value * 2
-                            )
-                        ]
-                    }
-                })
-                paintedPoints.forEach(([{ x, y, z },]) => {
-                    const pointIndex = cData.data.field.points.findIndex(
-                        (p) => p[0] === x && p[1] === y && p[2] === z
-                    )
-                    if (pointIndex >= 0 && pointIndex < cData.data.field.scalars.length) {
-                        cData.data.field.scalars[pointIndex] = constraintPaintExclusion.value ? 0 : 1
-                    }
-                })
-                setConstraintLocation({ name: label }, cInfo, cData)
-                this.updateConstraintColors()
+                this.paintWidgetEndInteraction(widget, inputData)
             })
         }
     },
@@ -281,6 +235,87 @@ export default {
                     opacity: 0
                 }
             }
+        })
+    },
+
+    // ---------------------
+    // Widget interaction events
+    // ---------------------
+
+    seedWidgetEndInteraction(widget) {
+        Object.entries(seedWidgets.value).forEach(([label, subjectWidgets]) => {
+            Object.entries(subjectWidgets).forEach(([domain, shapeWidgets]) => {
+                Object.entries(shapeWidgets).forEach(([id, w]) => {
+                    if (widget === w) {
+                        const lInfo = { domain, id }
+                        const wm = this.getWidgetManager(label)
+                        // When widget moved, update value in allSetLandmarks
+                        const landmarkCoord = widget.getWidgetState().getMoveHandle().getOrigin()
+                        if (landmarkCoord) {
+                            wm.releaseFocus(widget);
+                            const previousLocation = getLandmarkLocation({ name: label }, lInfo, landmarkCoord)
+                            if (!previousLocation || previousLocation.some((v, i) => landmarkCoord[i] != v)) {
+                                setLandmarkLocation({ name: label }, lInfo, landmarkCoord)
+                                // reassign store var for listeners
+                                allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+                                reassignLandmarkNumSetValues()
+                                currentLandmarkPlacement.value = undefined;
+                                wm.releaseFocus(widget)
+                            }
+                        }
+
+                    }
+                })
+            })
+        })
+    },
+    paintWidgetEndInteraction(widget, inputData) {
+        Object.entries(paintWidgets.value).forEach(([label, subjectWidgets]) => {
+            Object.entries(subjectWidgets).forEach(([domain, shapeWidgets]) => {
+                Object.entries(shapeWidgets).forEach(([id, w]) => {
+                    if (widget === w) {
+                        const cInfo = { domain, id }
+                        const allPoints = inputData.getPoints()
+                        const tree = this.getShapeKDTree(label, domain, inputData)
+                        let cData = getConstraintLocation({ name: label }, cInfo)
+                        if (!cData) {
+                            cData = {
+                                type: 'paint',
+                                data: {
+                                    field: {
+                                        points: allPoints.getData(),
+                                        scalars: Uint8Array(allPoints.getNumberOfPoints()).fill(1),
+                                    }
+                                }
+                            }
+                        }
+                        let paintedPoints = []
+                        widget.getWidgetState().getTrailList().forEach((state) => {
+                            const currentPoint = state.getOrigin()
+                            if (currentPoint) {
+                                paintedPoints = [
+                                    ...paintedPoints,
+                                    ...tree.nearest(
+                                        { x: currentPoint[0], y: currentPoint[1], z: currentPoint[2] },
+                                        allPoints.getNumberOfPoints(),
+                                        constraintPaintRadius.value * 2
+                                    )
+                                ]
+                            }
+                        })
+                        paintedPoints.forEach(([{ x, y, z },]) => {
+                            const pointIndex = cData.data.field.points.findIndex(
+                                (p) => p[0] === x && p[1] === y && p[2] === z
+                            )
+                            if (pointIndex >= 0 && pointIndex < cData.data.field.scalars.length) {
+                                cData.data.field.scalars[pointIndex] = constraintPaintExclusion.value ? 0 : 1
+                            }
+                        })
+                        setConstraintLocation({ name: label }, cInfo, cData)
+                        this.updateConstraintColors()
+                    }
+                })
+            })
         })
     },
 

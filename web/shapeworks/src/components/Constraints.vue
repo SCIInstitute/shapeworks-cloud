@@ -255,7 +255,7 @@ export default {
                                     <span style="width: 150px;">{{ subject.name }}</span>
                                     <v-btn
                                         small
-                                        v-if="!isShapeShown(subject.id, item.domain)"
+                                        v-if="!currentConstraintPlacement && !isShapeShown(subject.id, item.domain)"
                                         @click="showShape(subject.id, item.domain)"
                                     >
                                         Show subject

@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
     libpq-dev gcc libc6-dev curl unzip \
     libgl1-mesa-glx libxt6 libglib2.0-0 \
-    libqt5core5a docker.io \
+    libqt5core5a \
     && \
     rm -rf /var/lib/apt/lists/*
 
@@ -29,6 +29,8 @@ RUN mkdir /opt/shapeworks && \
     rm /tmp/shapeworks.tgz
 ENV PATH $PATH:/opt/shapeworks/bin
 ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/opt/shapeworks/lib
+
+RUN pip install awscli
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.
 WORKDIR /opt/django-project

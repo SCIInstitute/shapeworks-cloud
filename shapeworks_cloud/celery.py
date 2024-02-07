@@ -5,6 +5,12 @@ import configurations.importer
 
 from .manage_workers import manage_workers
 
+AWS_ENV_VARS = [
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_DEFAULT_REGION'
+]
+
 os.environ['DJANGO_SETTINGS_MODULE'] = 'shapeworks_cloud.settings'
 if not os.environ.get('DJANGO_CONFIGURATION'):
     raise ValueError('The environment variable "DJANGO_CONFIGURATION" must be set.')
@@ -17,22 +23,16 @@ app = Celery(config_source='django.conf:settings', namespace='CELERY')
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(10, manage.s(), name='manage workers')
-    sender.add_periodic_task(90, mock_task_reqs.s(), name='mock task requests')
+    # Celery beat container should have these environment variables
+    sender.add_periodic_task(20, manage.s(**{
+        k: os.environ.get(k)
+        for k in AWS_ENV_VARS
+    }), name='manage workers')
 
 
 @app.task
-def manage():
-    manage_workers()
-
-
-@app.task
-def mock_task_reqs():
-    for index in range(5):
-        id = app.send_task(
-            'shapeworks_cloud.core.tasks.deepssm', kwargs={'index': index}, queue='gpu'
-        )
-        print(f'Task requested: {id}')
+def manage(**kwargs):
+    manage_workers(**kwargs)
 
 
 # Load task modules from all registered Django app configs.

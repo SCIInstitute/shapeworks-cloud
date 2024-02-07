@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
+from ..celery import app as celery_app
 from .tasks import analyze, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
@@ -29,6 +30,16 @@ class LogoutView(APIView):
     def post(self, request):
         if request.user.is_authenticated:
             logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MockDeepSSMView(APIView):
+    def post(self, request):
+        if request.user.is_authenticated:
+            id = celery_app.send_task(
+                'shapeworks_cloud.core.tasks.deepssm', kwargs={'index': 0}, queue='gpu'
+            )
+            return Response({'success': True, 'task_id': id})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

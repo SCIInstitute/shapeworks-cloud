@@ -1,9 +1,10 @@
-import boto3
 import os
+
+import boto3
 
 
 def manage_workers(**kwargs):
-    print(f'Managing GPU workers.')
+    print('Managing GPU workers.')
     for k, v in kwargs.items():
         os.environ[k] = v
 
@@ -21,10 +22,9 @@ def manage_workers(**kwargs):
         for instance in instances:
             tags = instance.get('Tags', [])
             if any(t['Key'] == 'GPU' and t['Value'] == 'true' for t in tags):
-                gpu_workers.append({
-                    'id': instance.get('InstanceId'),
-                    'hostname': instance.get('PublicDnsName')
-                })
+                gpu_workers.append(
+                    {'id': instance.get('InstanceId'), 'hostname': instance.get('PublicDnsName')}
+                )
 
     if num_queued > 0:
         ids_to_start = [w['id'] for w in gpu_workers if not w['hostname']]
@@ -36,7 +36,6 @@ def manage_workers(**kwargs):
             print(client.start_instances(InstanceIds=ids_to_start))
         else:
             print('All available GPU workers are live. Tasks in queue must wait.')
-
 
     else:
         ids_to_stop = [w['id'] for w in gpu_workers if w['hostname']]

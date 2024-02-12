@@ -155,6 +155,7 @@ export default {
         }
 
         async function refreshRender() {
+            if (selectedDataObjects.value.length == 0) return
             renderLoading.value = true
             let newRenderData = {}
             let newRenderMetaData = {}

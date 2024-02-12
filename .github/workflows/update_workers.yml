@@ -1,0 +1,44 @@
+name: Update all EC2 workers
+on:
+  workflow_dispatch:
+  pull_request: # TODO: remove this, for testing purposes only
+  push:
+    branches:
+      - master
+jobs:
+  ansible:
+    runs-on: ubuntu-latest
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CLOUDAMQP_URL: ${{ secrets.CLOUDAMQP_URL }}
+      CLOUDAMQP_APIKEY: ${{ secrets.CLOUDAMQP_APIKEY }}
+      CLOUDAMQP_GRAY_URL: ${{ secrets.CLOUDAMQP_GRAY_URL }}
+      CLOUDAMQP_GRAY_APIKEY: ${{ secrets.CLOUDAMQP_GRAY_APIKEY }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_EMAIL_URL: ${{ secrets.DJANGO_EMAIL_URL }}
+      PAPERTRAIL_API_TOKEN: ${{ secrets.PAPERTRAIL_API_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+      - name: Install Ansible & Boto3
+        run: pip install ansible-core boto3
+      - name: Install dependency for playbook
+        run: ansible-galaxy collection install --force ansible.posix
+      - name: Install Ansible role
+        run: ansible-galaxy install --force --roles-path=./ansible/roles girder.celery
+      - name: Update workers
+        run: |
+          SECRETS_NAMES=('AWS_DEFAULT_REGION' 'AWS_ACCESS_KEY_ID' 'AWS_SECRET_ACCESS_KEY' 'CLOUDAMQP_URL' 'CLOUDAMQP_APIKEY' 'CLOUDAMQP_GRAY_URL' 'CLOUDAMQP_GRAY_APIKEY' 'DJANGO_SECRET_KEY' 'DJANGO_EMAIL_URL' 'PAPERTRAIL_API_TOKEN' 'DATABASE_URL')
+          SECRETS_JSON=`jq -n '$ARGS.positional | map({ (.): env[.] }) | add' --args "${SECRETS_NAMES[@]}"`
+          DJANGO_VARS=`jq --argjson secrets "$SECRETS_JSON" '.+=$secrets' dev/prod.celery.env.json`
+          INVENTORY=`python shapeworks_cloud/manage_workers.py start_all`
+          ansible-playbook -vvvv --inventory "$INVENTORY" --extra-vars "$DJANGO_VARS" ./ansible/playbook.yml
+      - name: Stop GPU workers
+        if: always()  # run this even if the above step fails
+        run: python shapeworks_cloud/manage_workers.py stop_gpus

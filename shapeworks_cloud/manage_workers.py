@@ -1,6 +1,47 @@
 import os
+import sys
+import time
 
 import boto3
+
+WORKER_CMD = 'celery -A shapeworks_cloud.celery worker -n $HOSTNAME -Q gpu --detach'
+
+
+def inspect_queue(queue_name):
+    from .celery import app
+
+    with app.pool.acquire(block=True) as conn:
+        queue = conn.get_manager().get_queue('/', queue_name)
+        messages = queue.get('messages_ready', -1)
+        return messages
+
+
+def get_all_workers(client):
+    workers = []
+    reservations = client.describe_instances().get('Reservations', [])
+    for reservation in reservations:
+        instances = reservation.get('Instances', [])
+        for instance in instances:
+            workers.append(
+                {
+                    'id': instance.get('InstanceId'),
+                    'hostname': instance.get('PublicDnsName'),
+                    'tags': instance.get('Tags'),
+                }
+            )
+    return workers
+
+
+def get_gpu_workers(client):
+    gpu_workers = []
+    for worker in get_all_workers(client):
+        print(worker)
+        if worker['tags'] is not None and any(
+            t['Key'] == 'GPU' and t['Value'] == 'true' for t in worker['tags']
+        ):
+            gpu_workers.append(worker)
+
+    return gpu_workers
 
 
 def manage_workers(**kwargs):
@@ -15,16 +56,7 @@ def manage_workers(**kwargs):
 
     client = boto3.client('ec2')
 
-    gpu_workers = []
-    reservations = client.describe_instances().get('Reservations', [])
-    for reservation in reservations:
-        instances = reservation.get('Instances', [])
-        for instance in instances:
-            tags = instance.get('Tags', [])
-            if any(t['Key'] == 'GPU' and t['Value'] == 'true' for t in tags):
-                gpu_workers.append(
-                    {'id': instance.get('InstanceId'), 'hostname': instance.get('PublicDnsName')}
-                )
+    gpu_workers = get_gpu_workers(client)
 
     if num_queued > 0:
         ids_to_start = [w['id'] for w in gpu_workers if not w['hostname']]
@@ -34,6 +66,16 @@ def manage_workers(**kwargs):
         if len(ids_to_start) > 0:
             print(f'Starting instances {ids_to_start}.')
             print(client.start_instances(InstanceIds=ids_to_start))
+            print('Waiting 10 seconds before sending celery command to instances.')
+            time.sleep(10)
+            print(f'Sending celery command to {ids_to_start}.')
+            print(
+                client.send_command(
+                    DocumentName='AWS-RunShellScript',
+                    Parameters={'commands': [WORKER_CMD]},
+                    InstanceIds=ids_to_start,
+                )
+            )
         else:
             print('All available GPU workers are live. Tasks in queue must wait.')
 
@@ -47,10 +89,34 @@ def manage_workers(**kwargs):
     client.close()
 
 
-def inspect_queue(queue_name):
-    from .celery import app
+def start_all():
+    client = boto3.client('ec2')
+    all_workers = get_all_workers(client)
+    all_ids = [w['id'] for w in all_workers]
+    client.start_instances(InstanceIds=all_ids)
 
-    with app.pool.acquire(block=True) as conn:
-        queue = conn.get_manager().get_queue('/', queue_name)
-        messages = queue.get('messages_ready', -1)
-        return messages
+    # Wait for startup
+    time.sleep(20)
+
+    # Refresh hostnames
+    all_workers = get_all_workers(client)
+
+    # Print hostnames to console for ansible inventory
+    print(','.join([w['hostname'] for w in all_workers]) + ',')
+
+    client.close()
+
+
+def stop_gpus():
+    client = boto3.client('ec2')
+    gpu_workers = get_gpu_workers(client)
+    all_ids = [w['id'] for w in gpu_workers]
+    client.stop_instances(InstanceIds=all_ids)
+    client.close()
+
+
+if __name__ == '__main__':
+    if sys.argv[1] == 'start_all':
+        start_all()
+    elif sys.argv[1] == 'stop_gpus':
+        stop_gpus()

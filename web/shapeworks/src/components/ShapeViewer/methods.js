@@ -56,22 +56,69 @@ export default {
             viewportCorner: vtkOrientationMarkerWidget.Corners.TOP_RIGHT,
         });
     },
-    getCameraData(targetRenderer) {
-        const sourceCamera = targetRenderer.getActiveCamera()
-        const { viewUp, directionOfProjection, position, focalPoint, clippingRange } = sourceCamera.get()
-        return { viewUp, directionOfProjection, position, focalPoint, clippingRange }
+    initializeCameras() {
+        this.initialCameraStates = {
+            position: {},
+            viewUp: {},
+        }
+        Object.values(this.vtk.renderers).forEach((renderer, index) => {
+            const camera = renderer.getActiveCamera();
+            this.initialCameraStates.position[`renderer_${index}`] = [...camera.getReferenceByName('position')]
+            this.initialCameraStates.viewUp[`renderer_${index}`] = [...camera.getReferenceByName('viewUp')]
+        })
     },
-    applyCameraData(targetRenderer, cameraData) {
-        const camera = targetRenderer.getActiveCamera()
-        camera.set(cameraData)
+    getCameraDelta(renderer) {
+        if (!renderer) return {
+            positionDelta: undefined,
+            viewUpDelta: undefined,
+        }
+        const targetCamera = renderer.getActiveCamera();
+        const rendererIndex = Object.values(this.vtk.renderers).indexOf(renderer)
+
+        if (rendererIndex >= 0) {
+            const targetRendererID = `renderer_${rendererIndex}`
+            this.initialCameraPosition = this.initialCameraStates.position[targetRendererID]
+            this.initialCameraViewUp = this.initialCameraStates.viewUp[targetRendererID]
+            this.newCameraPosition = targetCamera.getReferenceByName('position')
+            this.newCameraViewUp = targetCamera.getReferenceByName('viewUp')
+        }
+        const positionDelta = [...this.newCameraPosition].map(
+            (num, index) => num - this.initialCameraPosition[index]
+        )
+        const viewUpDelta = [...this.newCameraViewUp].map(
+            (num, index) => num - this.initialCameraViewUp[index]
+        )
+        return {
+            positionDelta,
+            viewUpDelta,
+        }
+    },
+    applyCameraDelta(renderer, positionDelta, viewUpDelta) {
+        const camera = renderer.getActiveCamera();
+        const rendererIndex = Object.values(this.vtk.renderers).indexOf(renderer)
+        const rendererID = `renderer_${rendererIndex}`
+        if (this.initialCameraStates.position[rendererID]) {
+            camera.setPosition(
+                ...this.initialCameraStates.position[rendererID].map(
+                    (old, index) => old + positionDelta[index]
+                )
+            )
+            camera.setViewUp(
+                ...this.initialCameraStates.viewUp[rendererID].map(
+                    (old, index) => old + viewUpDelta[index]
+                )
+            )
+            camera.setClippingRange(0.1, 1000)
+        }
     },
     syncCameras(animation) {
-        const targetRenderer = animation.pokedRenderer
-        const cameraData = this.getCameraData(targetRenderer)
+        const targetRenderer = animation.pokedRenderer;
+        const { positionDelta, viewUpDelta } = this.getCameraDelta(targetRenderer)
+
         Object.values(this.vtk.renderers).filter(
             (renderer) => renderer !== targetRenderer
         ).forEach((renderer) => {
-            this.applyCameraData(renderer, cameraData)
+            this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
         })
     },
     createColorFilter(domainIndex = 0, goodBad = false) {
@@ -345,11 +392,13 @@ export default {
         })
 
         this.prepareLabelCanvas();
-        let cameraData;
+        let positionDelta, viewUpDelta
 
         const renderers = Object.values(this.vtk.renderers)
         for (let i = 0; i < renderers.length; i += 1) {
-            if (!cameraData) cameraData = this.getCameraData(renderers[i])
+            if (!positionDelta || !viewUpDelta) {
+                ({ positionDelta, viewUpDelta } = this.getCameraDelta(Object.values(this.vtk.renderers)[0]))
+            }
             this.vtk.renderWindow.removeRenderer(renderers[i]);
         }
         if (this.vtk.orientationCube) this.vtk.orientationCube.setEnabled(false)
@@ -374,11 +423,12 @@ export default {
                 this.populateRenderer(newRenderer, shapes)
             }
         }
+        this.initializeCameras()
         this.initializeWidgets()
 
-        if (cameraData) {
+        if (positionDelta && viewUpDelta) {
             Object.values(this.vtk.renderers).forEach((renderer) => {
-                this.applyCameraData(renderer, cameraData)
+                this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
             })
         }
 

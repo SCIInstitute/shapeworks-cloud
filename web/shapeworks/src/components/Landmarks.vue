@@ -132,7 +132,7 @@ export default {
                     const subjectID = allSubjectsForDataset.value.find((s) => s.name === subjectName)?.id
                     return [subjectID, Object.fromEntries(
                         Object.entries(subjectRecords).map(([domain, domainRecords]) => {
-                            return [domain, Object.values(domainRecords)]
+                            return [domain, Object.values(domainRecords).filter((l) => l)]
                         })
                     )]
                 })

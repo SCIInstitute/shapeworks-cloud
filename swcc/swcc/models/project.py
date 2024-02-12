@@ -236,12 +236,12 @@ class ProjectFileIO(BaseModel, FileIO):
                 for mean_particle_path in contents['mean']['particle_files']:
                     mean_particles.append(analysis_file_location.parent / Path(mean_particle_path))
 
-            for i in range(len(mean_shapes)):
-                cams = CachedAnalysisMeanShape(
-                    file_source=mean_shapes[i],
-                    particles_source=mean_particles[i] if mean_particles else None,
-                ).create()
-                mean_shapes_cache.append(cams)
+                for i in range(len(mean_shapes)):
+                    cams = CachedAnalysisMeanShape(
+                        file_source=mean_shapes[i],
+                        particles_source=mean_particles[i] if mean_particles else None,
+                    ).create()
+                    mean_shapes_cache.append(cams)
 
             modes = []
             for mode in contents['modes']:

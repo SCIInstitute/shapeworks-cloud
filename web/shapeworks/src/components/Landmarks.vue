@@ -12,7 +12,7 @@ import {
     reassignLandmarkNumSetValues,
 } from '@/store';
 import { saveLandmarkData } from '@/api/rest'
-import { getLandmarkLocation, getWidgetInfo, isShapeShown, setLandmarkLocation, showShape } from '../store/methods';
+import { getLandmarkLocation, getWidgetInfo, isShapeShown, setLandmarkLocation, toggleSubjectShown } from '../store/methods';
 
 export default {
     setup() {
@@ -168,7 +168,7 @@ export default {
             allSubjectsForDataset,
             currentLandmarkPlacement,
             isShapeShown,
-            showShape,
+            toggleSubjectShown,
             getColorObject,
             getPlacementStatus,
             beginPlacement,
@@ -299,12 +299,10 @@ export default {
                                     <span style="width: 170px;">{{ subject.name }}</span>
                                     <v-btn
                                         small
-                                        v-if="!isShapeShown(subject.id, item.domain)"
-                                        @click="showShape(subject.id, item.domain)"
+                                        @click="toggleSubjectShown(subject.id, item.domain)"
                                     >
-                                        Show subject
+                                        {{ isShapeShown(subject.id, item.domain) ? 'Hide' : 'Show' }} subject
                                     </v-btn>
-                                    <v-spacer v-else />
                                     <div
                                         v-if="getPlacementStatus(subject, item)"
                                         style="width: 170px; text-align: right;"

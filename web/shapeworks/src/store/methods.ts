@@ -399,15 +399,21 @@ export function isShapeShown(subjectID, domain) {
     ))
 }
 
-export function showShape(subjectID, domain) {
+export function toggleSubjectShown(subjectID, domain) {
     const shape = allDataObjectsInDataset.value.find((d) => (
         d.subject === subjectID && d.anatomy_type.replace('anatomy_', '') === domain
     ))
     if (shape) {
-        selectedDataObjects.value = [
-            ...selectedDataObjects.value,
-            shape
-        ]
+        if (selectedDataObjects.value.includes(shape)) {
+            selectedDataObjects.value = selectedDataObjects.value.filter(
+                (s) => s !== shape
+            )
+        } else {
+            selectedDataObjects.value = [
+                ...selectedDataObjects.value,
+                shape
+            ]
+        }
     }
 }
 

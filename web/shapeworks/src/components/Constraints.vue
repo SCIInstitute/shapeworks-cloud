@@ -11,7 +11,7 @@ import {
     currentConstraintPlacement,
     reassignConstraintIDsByIndex,
 } from '@/store';
-import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocation, showShape } from '../store/methods';
+import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocation, toggleSubjectShown } from '../store/methods';
 import { saveConstraintData } from '@/api/rest';
 import { convertConstraintDataForDB } from '@/reader/constraints';
 import { constraintPaintExclusion } from '../store/index';
@@ -152,7 +152,7 @@ export default {
             constraintPaintExclusion,
             currentConstraintPlacement,
             isShapeShown,
-            showShape,
+            toggleSubjectShown,
             getPlacementStatus,
             validateConstraint,
             toggleConstraintShown,
@@ -255,10 +255,10 @@ export default {
                                     <span style="width: 150px;">{{ subject.name }}</span>
                                     <v-btn
                                         small
-                                        v-if="!currentConstraintPlacement && !isShapeShown(subject.id, item.domain)"
-                                        @click="showShape(subject.id, item.domain)"
+                                        v-if="!currentConstraintPlacement"
+                                        @click="toggleSubjectShown(subject.id, item.domain)"
                                     >
-                                        Show subject
+                                        {{ isShapeShown(subject.id, item.domain) ? 'Hide' : 'Show' }} subject
                                     </v-btn>
                                     <div
                                         v-else-if="getPlacementStatus(subject, item) === 'PLACING' && item.type === 'paint'"

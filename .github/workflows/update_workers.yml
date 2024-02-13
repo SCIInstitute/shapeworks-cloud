@@ -12,6 +12,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
       CLOUDAMQP_URL: ${{ secrets.CLOUDAMQP_URL }}
       CLOUDAMQP_APIKEY: ${{ secrets.CLOUDAMQP_APIKEY }}
       CLOUDAMQP_GRAY_URL: ${{ secrets.CLOUDAMQP_GRAY_URL }}
@@ -32,6 +33,11 @@ jobs:
         run: ansible-galaxy collection install --force ansible.posix
       - name: Install Ansible role
         run: ansible-galaxy install --force --roles-path=./ansible/roles girder.celery
+      - name: Write SSH key file
+        run: |
+          mkdir -p $HOME/.ssh
+          echo "$AWS_SSH_PRIVATE_KEY" > $HOME/.ssh/shapeworks-ec2-b
+          chmod 600 $HOME/.ssh/shapeworks-ec2-b
       - name: Update workers
         run: |
           SECRETS_NAMES=('AWS_DEFAULT_REGION' 'AWS_ACCESS_KEY_ID' 'AWS_SECRET_ACCESS_KEY' 'CLOUDAMQP_URL' 'CLOUDAMQP_APIKEY' 'CLOUDAMQP_GRAY_URL' 'CLOUDAMQP_GRAY_APIKEY' 'DJANGO_SECRET_KEY' 'DJANGO_EMAIL_URL' 'PAPERTRAIL_API_TOKEN' 'DATABASE_URL')

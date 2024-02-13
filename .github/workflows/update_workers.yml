@@ -48,7 +48,7 @@ jobs:
           SECRETS_JSON=`jq -n '$ARGS.positional | map({ (.): env[.] }) | add' --args "${SECRETS_NAMES[@]}"`
           DJANGO_VARS=`jq --argjson secrets "$SECRETS_JSON" '.+=$secrets' dev/prod.celery.env.json`
           INVENTORY=`python shapeworks_cloud/manage_workers.py start_all`
-          ansible-playbook -vvvv --inventory "$INVENTORY" --extra-vars "$DJANGO_VARS" ./ansible/playbook.yml
+          ansible-playbook -v --inventory "$INVENTORY" --extra-vars "$DJANGO_VARS" ./ansible/playbook.yml
       - name: Stop GPU workers
         if: always()  # run this even if the above step fails
         run: python shapeworks_cloud/manage_workers.py stop_gpus

@@ -21,6 +21,10 @@ jobs:
       DJANGO_EMAIL_URL: ${{ secrets.DJANGO_EMAIL_URL }}
       PAPERTRAIL_API_TOKEN: ${{ secrets.PAPERTRAIL_API_TOKEN }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # This is not recommended for persistent hosts,
+      # but our GPU workers have ephemeral hostnames.
+      # https://stackoverflow.com/a/32338480
+      ANSIBLE_HOST_KEY_CHECKING: False
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python

@@ -4,8 +4,6 @@ import time
 
 import boto3
 
-WORKER_CMD = 'celery -A shapeworks_cloud.celery worker -n $HOSTNAME -Q gpu --detach'
-
 
 def inspect_queue(queue_name):
     from .celery import app
@@ -54,7 +52,8 @@ def get_gpu_workers(client):
 def manage_workers(**kwargs):
     print('Managing GPU workers.')
     for k, v in kwargs.items():
-        os.environ[k] = v
+        if v is not None:
+            os.environ[k] = v
 
     num_queued = inspect_queue('gpu')
     if num_queued < 0:
@@ -62,7 +61,6 @@ def manage_workers(**kwargs):
     print(f'{num_queued} tasks in queue.')
 
     client = boto3.client('ec2')
-
     gpu_workers = get_gpu_workers(client)
 
     if num_queued > 0:
@@ -73,16 +71,6 @@ def manage_workers(**kwargs):
         if len(ids_to_start) > 0:
             print(f'Starting instances {ids_to_start}.')
             print(client.start_instances(InstanceIds=ids_to_start))
-            print('Waiting 10 seconds before sending celery command to instances.')
-            time.sleep(10)
-            print(f'Sending celery command to {ids_to_start}.')
-            print(
-                client.send_command(
-                    DocumentName='AWS-RunShellScript',
-                    Parameters={'commands': [WORKER_CMD]},
-                    InstanceIds=ids_to_start,
-                )
-            )
         else:
             print('All available GPU workers are live. Tasks in queue must wait.')
 

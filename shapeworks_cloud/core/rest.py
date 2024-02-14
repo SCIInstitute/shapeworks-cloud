@@ -39,7 +39,7 @@ class MockDeepSSMView(APIView):
             id = celery_app.send_task(
                 'shapeworks_cloud.core.tasks.deepssm', kwargs={'index': 0}, queue='gpu'
             )
-            return Response({'success': True, 'task_id': id})
+            return Response({'success': True, 'task_id': str(id)})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

@@ -46,9 +46,9 @@ jobs:
         run: |
           SECRETS_NAMES=('AWS_DEFAULT_REGION' 'AWS_ACCESS_KEY_ID' 'AWS_SECRET_ACCESS_KEY' 'CLOUDAMQP_URL' 'CLOUDAMQP_APIKEY' 'CLOUDAMQP_GRAY_URL' 'CLOUDAMQP_GRAY_APIKEY' 'DJANGO_SECRET_KEY' 'DJANGO_EMAIL_URL' 'PAPERTRAIL_API_TOKEN' 'DATABASE_URL')
           SECRETS_JSON=`jq -n '$ARGS.positional | map({ (.): env[.] }) | add' --args "${SECRETS_NAMES[@]}"`
-          DJANGO_VARS_JSON=`jq --argjson secrets "$SECRETS_JSON" '{django_vars: (.+=$secrets)}' dev/prod.celery.env.json`
+          jq --argjson secrets "$SECRETS_JSON" '{django_vars: (.+=$secrets)}' dev/prod.celery.env.json > extra_vars.json
           INVENTORY=`python shapeworks_cloud/manage_workers.py start_all`
-          ansible-playbook -v --inventory "$INVENTORY" --extra-vars "$DJANGO_VARS" ./ansible/playbook.yml
+          ansible-playbook -v --inventory "$INVENTORY" --extra-vars "@extra_vars.json" ./ansible/playbook.yml
       - name: Stop GPU workers
         if: always()  # run this even if the above step fails
         run: python shapeworks_cloud/manage_workers.py stop_gpus

@@ -22,13 +22,20 @@ def get_all_workers(client):
     for reservation in reservations:
         instances = reservation.get('Instances', [])
         for instance in instances:
-            workers.append(
-                {
-                    'id': instance.get('InstanceId'),
-                    'hostname': instance.get('PublicDnsName'),
-                    'tags': instance.get('Tags'),
-                }
-            )
+            name = None
+            tags = instance.get('Tags', [])
+            for tag in tags:
+                if tag.get('Key') == 'Name':
+                    name = tag.get('Value')
+            if name is not None:
+                workers.append(
+                    {
+                        'id': instance.get('InstanceId'),
+                        'name': name,
+                        'hostname': instance.get('PublicDnsName'),
+                        'tags': tags,
+                    }
+                )
     return workers
 
 
@@ -96,7 +103,7 @@ def start_all():
     client.start_instances(InstanceIds=all_ids)
 
     # Wait for startup
-    time.sleep(20)
+    time.sleep(60)
 
     # Refresh hostnames
     all_workers = get_all_workers(client)

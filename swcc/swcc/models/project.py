@@ -407,7 +407,7 @@ class Project(ApiModel):
                 path_split = path.split('/')
                 file_item.download(
                     Path(folder, *path_split[:-1]),
-                    file_name=path_split[-1]
+                    file_name=path_split[-1],
                 )
                 print_progress_bar(index + 1, len(files))
         session.close()

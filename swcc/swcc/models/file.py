@@ -76,7 +76,7 @@ class File:
             path.mkdir(parents=True, exist_ok=True)
 
         if file_name:
-            path = path / file_name
+            path = path / Path(file_name)
         else:
             path = path / self.url.path.split('/')[-1]
         r = requests.get(self.url, stream=True)

@@ -13,6 +13,7 @@ import {
 } from '@/store';
 import { saveLandmarkData } from '@/api/rest'
 import { getLandmarkLocation, getWidgetInfo, isShapeShown, setLandmarkLocation, toggleSubjectShown } from '../store/methods';
+import { rgbToHex } from '@/helper';
 
 export default {
     setup() {
@@ -137,9 +138,18 @@ export default {
                     )]
                 })
             )
+            const infoData = landmarkInfo.value.map((lInfo => {
+                return {
+                    "domain": lInfo.domain,
+                    "name": lInfo.name,
+                    "visible": "true",
+                    "color": rgbToHex(lInfo.color),
+                    "comment": lInfo.comment
+                }
+            }))
             saveLandmarkData(
                 selectedProject.value.id,
-                landmarkInfo.value || {},
+                infoData,
                 locationData
             ).then((response) => {
                 if (response.id === selectedProject.value.id) {

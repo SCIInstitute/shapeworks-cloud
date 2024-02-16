@@ -39,7 +39,15 @@ export function hexToRgb(hex: string) {
       parseInt(result[1], 16),
       parseInt(result[2], 16),
       parseInt(result[3], 16)
-     ] : [0, 0, 0];
+    ] : [0, 0, 0];
+}
+
+export function rgbToHex(rgb) {
+    const components = rgb.map((c) => {
+        const hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+    })
+    return "#" + components.join("");
   }
 
 export function distance(a, b){

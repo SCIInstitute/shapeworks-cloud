@@ -404,7 +404,11 @@ class Project(ApiModel):
             print_progress_bar(0, len(files))
             for index, (path, url) in enumerate(files.items()):
                 file_item: File = File(url)
-                file_item.download(Path(folder, *path.split('/')[:-1]))
+                path_split = path.split('/')
+                file_item.download(
+                    Path(folder, *path_split[:-1]),
+                    file_name=path_split[-1]
+                )
                 print_progress_bar(index + 1, len(files))
         session.close()
         print()

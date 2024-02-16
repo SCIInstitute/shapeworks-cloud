@@ -15,13 +15,15 @@ import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocati
 import { saveConstraintData } from '@/api/rest';
 import { convertConstraintDataForDB } from '@/reader/constraints';
 import { constraintPaintExclusion } from '../store/index';
+import { groupBy } from '@/helper';
 
 export default {
     setup() {
         const headers =  [
             {text: '', value: 'id', width: '10px', sortable: false},
             {text: 'Show', value: 'show', width: '10px', sortable: false},
-            {text: 'Type', value: 'type', width: '270px', sortable: false},
+            {text: 'Name', value: 'name', width: '150px'},
+            {text: 'Type', value: 'type', width: '120px'},
             {text: 'Domain', value: 'domain', width: '100px'},
             {text: '# set', value: 'num_set', width: '60px', sortable: false, align: 'end'},
         ];
@@ -114,17 +116,25 @@ export default {
 
         function submit() {
             const locationData = Object.fromEntries(
-                Object.entries(allSetConstraints.value)
-                .map(([subjectName, subjectRecords]) => {
-                    const subjectID = allSubjectsForDataset.value.find((s) => s.name === subjectName)?.id
-                    return [subjectID, Object.fromEntries(
-                        Object.entries(subjectRecords).map(([domain, domainRecords]) => {
-                            return [domain, convertConstraintDataForDB(Object.values(domainRecords))]
+                allSubjectsForDataset.value.map((subject) => {
+                    return [subject.id, Object.fromEntries(
+                        Object.entries(groupBy(constraintInfo.value, 'domain'))
+                        .map(([domain, shapeInfos]) => {
+                            let shapeLocations = []
+                            if (allSetConstraints.value[subject.name] && allSetConstraints.value[subject.name][domain]) {
+                                shapeLocations = Object.values(
+                                    allSetConstraints.value[subject.name][domain]
+                                )
+                            }
+                            const shapeRecords = convertConstraintDataForDB(
+                                shapeLocations,
+                                shapeInfos,
+                            )
+                            return [domain, shapeRecords]
                         })
                     )]
                 })
             )
-
             saveConstraintData(
                 selectedProject.value.id,
                 locationData
@@ -216,6 +226,14 @@ export default {
                             </v-icon>
                         </template>
                         <!-- eslint-disable-next-line -->
+                        <template v-slot:item.name="{ index, item }">
+                            <v-text-field
+                                v-model="item.name"
+                                style="width: 130px"
+                                @input="changesMade = true"
+                            />
+                        </template>
+                        <!-- eslint-disable-next-line -->
                         <template v-slot:item.type="{ index, item }">
                             <v-select
                                 v-model="item.type"
@@ -223,7 +241,7 @@ export default {
                                 :disabled="item.num_set > 0"
                                 :error-messages="constraintErrors[item.id]"
                                 @change="(v) => validateConstraint(item)"
-                                style="width: 250px"
+                                style="width: 100px"
                             />
                         </template>
                         <!-- eslint-disable-next-line -->

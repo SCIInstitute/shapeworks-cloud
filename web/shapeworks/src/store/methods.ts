@@ -579,17 +579,19 @@ export async function getConstraints() {
                     const existingConstraintsOfType = constraintInfo.value.filter((cData) => cData.type === constraintType && cData.domain === domain)
                     for(let i=0; i<newConstraintsOfType.length; i++) {
                         let cInfo;
+                        const cData = newConstraintsOfType[i]
                         if (i >= existingConstraintsOfType.length) {
                             cInfo = {
                                 id: constraintInfo.value.length,
                                 type: constraintType,
+                                name: cData.name,
                                 domain
                             }
                             constraintInfo.value.push(cInfo)
                         } else {
                             cInfo = existingConstraintsOfType[i]
                         }
-                        if(cInfo) setConstraintLocation(subject, cInfo, newConstraintsOfType[i])
+                        if(cInfo) setConstraintLocation(subject, cInfo, cData)
                     }
                 })
             }

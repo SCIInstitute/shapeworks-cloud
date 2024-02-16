@@ -36,13 +36,13 @@ function normalizeVector(v) {
 }
 
 export default async function (url: string | undefined) {
-    const constraintList: {type: string, data: any}[] = []
+    const constraintList: {type: string, data: any, name: string}[] = []
     if (url) {
         const resp = await fetch(url);
         const json = await resp.json()
-        json.planes?.forEach(({points}) => {
+        json.planes?.forEach(({points, name}) => {
             // must contain 3 points
-            if (points.length === 3) {
+            if (points && points.length === 3) {
                 const [p1, p2, p3] = points
                 const v1 = subtractVectors(p1, p3)
                 const v2 = subtractVectors(p1, p2)
@@ -51,14 +51,16 @@ export default async function (url: string | undefined) {
                 const origin = p1
                 constraintList.push({
                     type: 'plane',
-                    data : { origin, normal }
+                    data : { origin, normal },
+                    name
                 })
             }
         })
         if (json.free_form_constraints) {
             constraintList.push({
                 type: 'paint',
-                data: json.free_form_constraints
+                data: json.free_form_constraints,
+                name: json.free_form_constraints.name,
             })
         }
     }
@@ -67,10 +69,18 @@ export default async function (url: string | undefined) {
 
 
 
-export function convertConstraintDataForDB(constraintData) {
+export function convertConstraintDataForDB(shapeLocations, shapeInfos) {
     const constraintJSON: Record<string, any> = {}
-    constraintData.forEach((cData) => {
-        if (cData.type === 'plane') {
+    shapeInfos.forEach((cInfo) => {
+        const indexForShape = shapeInfos
+            .filter((info) => info.type === cInfo.type && info.domain === cInfo.domain)
+            .findIndex((info) => info.id === cInfo.id)
+        const locations = shapeLocations.filter((cData) => cData.type === cInfo.type)
+
+        // location not set, skip this iteration
+        if (locations.length <= indexForShape) return
+        const cData = locations[indexForShape]
+        if (cInfo.type === 'plane') {
             if (!constraintJSON.planes) constraintJSON.planes = []
             const { origin, normal } = cData.data
 
@@ -81,10 +91,19 @@ export function convertConstraintDataForDB(constraintData) {
             const p2 = addVectors(origin, normal[2] > 0 ? v2 : v1)
             const p3 = addVectors(origin, normal[2] > 0 ? v1 : v2)
 
-            constraintJSON.planes.push({points: [p1, p2, p3]})
-        } else if (cData.type === 'paint') {
-            constraintJSON.free_form_constraints = cData.data
+            const planeData: Record<string, any> = {points: [p1, p2, p3]}
+            if (cInfo.name) {
+                planeData.name = cInfo.name
+            }
+            constraintJSON.planes.push(planeData)
+        } else if (cInfo.type === 'paint') {
+            const paintData: Record<string, any> = cData.data
+            if (cInfo.name) {
+                paintData.name = cInfo.name
+            }
+            constraintJSON.free_form_constraints = paintData
         }
     })
+
     return constraintJSON
 }

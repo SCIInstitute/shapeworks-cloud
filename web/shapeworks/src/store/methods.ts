@@ -519,6 +519,7 @@ export function setConstraintLocation(subject, item, location) {
     if (!allSetConstraints.value[subject.name]) allSetConstraints.value[subject.name] = {}
     if (!allSetConstraints.value[subject.name][item.domain]) allSetConstraints.value[subject.name][item.domain] = {}
     allSetConstraints.value[subject.name][item.domain][item.id] = location
+    allSetConstraints.value = Object.assign({}, allSetConstraints.value)
     reassignConstraintNumSetValues()
 }
 

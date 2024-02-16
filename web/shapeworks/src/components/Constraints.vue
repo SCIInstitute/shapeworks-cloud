@@ -36,6 +36,7 @@ export default {
 
         const constraintErrors = ref({});
 
+        const saveWarning = ref();
 
         function getPlacementStatus(subject, item) {
             const placement = getConstraintLocation(subject, item)
@@ -135,6 +136,17 @@ export default {
                     )]
                 })
             )
+            const noneSetConstraints = constraintInfo.value.filter((cInfo) => cInfo.num_set === 0)
+            if (noneSetConstraints.length > 0) {
+                const plural = noneSetConstraints.length > 1
+                const constraintLabels = noneSetConstraints.map((cInfo) => cInfo.name || cInfo.id)
+                saveWarning.value = (
+                    `Constraint${plural ? 's': ''}
+                    ${constraintLabels.join(", ")}
+                    ${plural ? 'do' : 'does' }
+                    not have any placements and will not be saved.`
+                )
+            }
             saveConstraintData(
                 selectedProject.value.id,
                 locationData
@@ -146,13 +158,17 @@ export default {
             })
         }
 
-        watch(allSetConstraints, () => changesMade.value = true, {deep: true})
+        watch(allSetConstraints, () => {
+            changesMade.value = true
+            saveWarning.value = undefined
+        }, {deep: true})
 
         return {
             headers,
             changesMade,
             dialogs,
             constraintErrors,
+            saveWarning,
             expandedRows,
             constraintInfo,
             constraintsShown,
@@ -336,6 +352,12 @@ export default {
                         </v-btn>
                         <span v-else>Constraints Saved.</span>
                     </div>
+                    <span
+                        v-if="!changesMade && saveWarning"
+                        style="color: orange"
+                    >
+                        {{ saveWarning }}
+                    </span>
                 </v-expansion-panel-content>
             </v-expansion-panel>
 </template>

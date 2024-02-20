@@ -284,7 +284,7 @@ export default {
                                 data: {
                                     field: {
                                         points: allPoints.getData(),
-                                        scalars: Uint8Array(allPoints.getNumberOfPoints()).fill(1),
+                                        scalars: new Uint8Array(allPoints.getNumberOfPoints()).fill(1),
                                     }
                                 }
                             }

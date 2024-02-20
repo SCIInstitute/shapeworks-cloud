@@ -279,12 +279,14 @@ export default {
                         const tree = this.getShapeKDTree(label, domain, inputData)
                         let cData = getConstraintLocation({ name: label }, cInfo)
                         if (!cData) {
+                            const numPoints = allPoints.getNumberOfPoints()
+                            const points = Array.from({ length: numPoints }).map((v, i) => allPoints.getPoint(i))
                             cData = {
                                 type: 'paint',
                                 data: {
                                     field: {
-                                        points: allPoints.getData(),
-                                        scalars: new Uint8Array(allPoints.getNumberOfPoints()).fill(1),
+                                        points,
+                                        scalars: new Uint8Array(numPoints).fill(1),
                                     }
                                 }
                             }

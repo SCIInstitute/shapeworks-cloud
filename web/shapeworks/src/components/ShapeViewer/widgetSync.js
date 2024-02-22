@@ -260,7 +260,6 @@ export default {
                                 allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
                                 reassignLandmarkNumSetValues()
                                 currentLandmarkPlacement.value = undefined;
-                                wm.releaseFocus(widget)
                             }
                         }
 
@@ -477,13 +476,15 @@ export default {
         } else {
             Object.entries(paintWidgets.value).forEach(([label, subjectRecords]) => {
                 const widgetManager = this.getWidgetManager(label)
-                Object.values(subjectRecords).forEach((shapeRecords) => {
-                    Object.values(shapeRecords).forEach((widget) => {
-                        widget.getWidgetState().getHandle().setVisible(false)
-                        widget.getWidgetState().setActive(false)
-                        widgetManager.releaseFocus(widget)
+                if (widgetManager) {
+                    Object.values(subjectRecords).forEach((shapeRecords) => {
+                        Object.values(shapeRecords).forEach((widget) => {
+                            widget.getWidgetState().getHandle().setVisible(false)
+                            widget.getWidgetState().setActive(false)
+                            widgetManager.releaseFocus(widget)
+                        })
                     })
-                })
+                }
             })
         }
     },

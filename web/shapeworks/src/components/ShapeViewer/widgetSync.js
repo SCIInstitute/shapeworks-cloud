@@ -285,7 +285,7 @@ export default {
                                 data: {
                                     field: {
                                         points,
-                                        scalars: new Uint8Array(numPoints).fill(1),
+                                        scalars: Array.from({ length: numPoints }).fill(1),
                                     }
                                 }
                             }

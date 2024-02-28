@@ -348,16 +348,22 @@ export default {
                 })
             })
         })
-        Object.entries(seedWidgets.value).forEach(
-            ([label, labelSeedWidgets]) => Object.values(labelSeedWidgets).forEach(
-                (shapeSeedWidgets) => Object.values(shapeSeedWidgets).forEach(
-                    (seedWidget) => {
-                        if (!validWidgets.includes(seedWidget)) {
-                            this.getWidgetManager(label).removeWidget(seedWidget)
-                        }
-                    }
-                )
-            )
+        seedWidgets.value = Object.fromEntries(
+            Object.entries(seedWidgets.value).map(([label, labelRecords]) => {
+                return [label, Object.fromEntries(
+                    Object.entries(labelRecords).map(([domain, shapeRecords]) => {
+                        return [domain, Object.fromEntries(
+                            Object.entries(shapeRecords).map(([id, seedWidget]) => {
+                                if (!validWidgets.includes(seedWidget)) {
+                                    this.getWidgetManager(label).removeWidget(seedWidget)
+                                    return [id, undefined]
+                                }
+                                return [id, seedWidget]
+                            })
+                        )]
+                    })
+                )]
+            })
         )
     },
     landmarkSizeUpdated() {
@@ -416,16 +422,22 @@ export default {
                 })
             })
         })
-        Object.entries(planeWidgets.value).forEach(
-            ([label, labelPlaneWidgets]) => Object.values(labelPlaneWidgets).forEach(
-                (shapePlaneWidgets) => Object.values(shapePlaneWidgets).forEach(
-                    (planeWidget) => {
-                        if (!validWidgets.includes(planeWidget)) {
-                            this.getWidgetManager(label).removeWidget(planeWidget)
-                        }
-                    }
-                )
-            )
+        planeWidgets.value = Object.fromEntries(
+            Object.entries(planeWidgets.value).map(([label, labelRecords]) => {
+                return [label, Object.fromEntries(
+                    Object.entries(labelRecords).map(([domain, shapeRecords]) => {
+                        return [domain, Object.fromEntries(
+                            Object.entries(shapeRecords).map(([id, planeWidget]) => {
+                                if (!validWidgets.includes(planeWidget)) {
+                                    this.getWidgetManager(label).removeWidget(planeWidget)
+                                    return [id, undefined]
+                                }
+                                return [id, planeWidget]
+                            })
+                        )]
+                    })
+                )]
+            })
         )
         this.updateConstraintColors()
         this.render()

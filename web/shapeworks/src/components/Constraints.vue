@@ -104,6 +104,7 @@ export default {
         }
 
         function deleteConstraint(item) {
+            toggleConstraintShown(item)
             allSubjectsForDataset.value.forEach((subject) => {
                 setConstraintLocation(subject, item, undefined)
             })

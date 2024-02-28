@@ -155,7 +155,30 @@ export default {
         }
 
         async function refreshRender() {
-            if (selectedDataObjects.value.length == 0) return
+            // Get landmarks and constraints the first time each layer is enabled,
+            // regardless of whether there are objects to render
+            let landmarksPromise;
+            if(
+                layersShown.value.includes("Landmarks") &&
+                !allSetLandmarks.value
+            ) {
+                landmarksPromise = getLandmarks()
+            }
+
+            let constraintsPromise;
+            if(
+                layersShown.value.includes("Constraints") &&
+                !allSetConstraints.value
+            ) {
+                constraintsPromise = getConstraints()
+            }
+
+            if (selectedDataObjects.value.length == 0) {
+                return Promise.all([
+                    landmarksPromise,
+                    constraintsPromise,
+                ])
+            }
             renderLoading.value = true
             let newRenderData = {}
             let newRenderMetaData = {}
@@ -269,22 +292,6 @@ export default {
                                     let particleURL;
                                     if(layersShown.value.includes("Particles")){
                                         particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
-                                    }
-
-                                    let landmarksPromise;
-                                    if(
-                                        layersShown.value.includes("Landmarks") &&
-                                        !allSetLandmarks.value
-                                    ) {
-                                        landmarksPromise = getLandmarks()
-                                    }
-
-                                    let constraintsPromise;
-                                    if(
-                                        layersShown.value.includes("Constraints") &&
-                                        !allSetConstraints.value
-                                    ) {
-                                        constraintsPromise = getConstraints()
                                     }
 
                                     return Promise.all([

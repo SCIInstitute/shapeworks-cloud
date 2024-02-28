@@ -71,6 +71,9 @@ export default {
                             Object.values(ws).forEach((w) => {
                                 const widgetHandle = wm.addWidget(w)
                                 this.stylePlaneWidget(widgetHandle)
+                                widgetHandle.onEndInteractionEvent(() => {
+                                    this.planeWidgetEndInteraction(w)
+                                })
                             })
                         })
                     }
@@ -193,7 +196,6 @@ export default {
                 const widget = vtkImplicitPlaneWidget.newInstance()
                 widget.placeWidget(bounds)
                 widget.setPlaceFactor(2)
-                const widgetState = widget.getWidgetState()
                 const widgetHandle = widgetManager.addWidget(widget)
                 widgetHandle.getRepresentations()[0].setLabels({
                     'subject': label,
@@ -201,14 +203,7 @@ export default {
                 })
                 this.stylePlaneWidget(widgetHandle)
                 widgetHandle.onEndInteractionEvent(() => {
-                    setConstraintLocation({ name: label }, cInfo, {
-                        type: 'plane',
-                        data: {
-                            origin: widgetState.getOrigin(),
-                            normal: widgetState.getNormal(),
-                        }
-                    })
-                    this.updateConstraintColors()
+                    this.planeWidgetEndInteraction(widget)
                 })
                 planeWidgets.value[label][domain][cInfo.id] = widget
             }
@@ -263,6 +258,27 @@ export default {
                             }
                         }
 
+                    }
+                })
+            })
+        })
+    },
+    planeWidgetEndInteraction(widget) {
+        Object.entries(planeWidgets.value).forEach(([label, subjectWidgets]) => {
+            Object.entries(subjectWidgets).forEach(([domain, shapeWidgets]) => {
+                Object.entries(shapeWidgets).forEach(([id, w]) => {
+                    if (widget === w) {
+                        const cInfo = { domain, id }
+                        // When widget moved, update value in allSetConstraints
+                        const widgetState = widget.getWidgetState()
+                        setConstraintLocation({ name: label }, cInfo, {
+                            type: 'plane',
+                            data: {
+                                origin: widgetState.getOrigin(),
+                                normal: widgetState.getNormal(),
+                            }
+                        })
+                        this.updateConstraintColors()
                     }
                 })
             })

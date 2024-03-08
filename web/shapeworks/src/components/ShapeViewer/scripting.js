@@ -130,6 +130,7 @@ export default {
         this.updateSize();
         this.renderGrid();
         this.watchWidgetStates();
+        this.watchImageStates();
     },
     updated() {
         this.prepareColorScale()

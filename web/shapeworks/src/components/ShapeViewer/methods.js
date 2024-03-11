@@ -29,6 +29,20 @@ export const GOOD_BAD_COLORS = [
     [0, 255, 0],
     [255, 0, 0],
 ];
+const COLORS = [
+    [166, 206, 227],
+    [31, 120, 180],
+    [178, 223, 138],
+    [51, 160, 44],
+    [251, 154, 153],
+    [227, 26, 28],
+    [253, 191, 111],
+    [255, 127, 0],
+    [202, 178, 214],
+    [106, 61, 154],
+    [255, 255, 153],
+    [177, 89, 40],
+];
 
 export default {
     ...widgetSync,
@@ -142,7 +156,7 @@ export default {
 
                 const n = coords.length / 3;
                 for (let i = 0; i < n; i += 1) {
-                    let c;
+                    let c = COLORS[i % COLORS.length];
 
                     if (goodBad && analysisFilesShown.value?.length) {
                         if (goodBadAngles.value[domainIndex][i] < goodBadMaxAngle.value) {
@@ -151,9 +165,11 @@ export default {
                             c = GOOD_BAD_COLORS[1] // red
                         }
                     }
-                    color[3 * i] = c[0];
-                    color[3 * i + 1] = c[1];
-                    color[3 * i + 2] = c[2];
+                    if (c) {
+                        color[3 * i] = c[0];
+                        color[3 * i + 1] = c[1];
+                        color[3 * i + 2] = c[2];
+                    }
                 }
                 input.forEach((x) => x.modified());
             },

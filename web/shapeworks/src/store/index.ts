@@ -73,6 +73,8 @@ export const cachedParticleComparisonColors = ref<{[key: string]: number[]}>({})
 
 export const landmarkInfo = ref<LandmarkInfo[]>([]);
 
+export const landmarksLoading = ref(true);
+
 export const landmarkSize = ref(2);
 
 export const allSetLandmarks = ref<Record<string, object>>();
@@ -80,6 +82,8 @@ export const allSetLandmarks = ref<Record<string, object>>();
 export const currentLandmarkPlacement = ref();
 
 export const constraintInfo = ref<Constraints[]>([]);
+
+export const constraintsLoading = ref(true);
 
 export const constraintsShown = ref([]);
 

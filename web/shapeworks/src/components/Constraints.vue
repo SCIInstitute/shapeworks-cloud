@@ -2,8 +2,10 @@
 import { ref, watch } from 'vue';
 import {
     constraintInfo,
+    constraintsLoading,
     constraintsShown,
     constraintPaintRadius,
+    constraintPaintExclusion,
     selectedProject,
     allSubjectsForDataset,
     anatomies,
@@ -14,7 +16,6 @@ import {
 import { getConstraintLocation, getWidgetInfo, isShapeShown, setConstraintLocation, toggleSubjectShown } from '../store/methods';
 import { saveConstraintData } from '@/api/rest';
 import { convertConstraintDataForDB } from '@/reader/constraints';
-import { constraintPaintExclusion } from '../store/index';
 import { groupBy } from '@/helper';
 
 export default {
@@ -168,6 +169,7 @@ export default {
             headers,
             changesMade,
             dialogs,
+            constraintsLoading,
             constraintErrors,
             saveWarning,
             expandedRows,
@@ -198,7 +200,10 @@ export default {
                     Constraints
                     <v-spacer/>
                 </v-expansion-panel-header>
-                <v-expansion-panel-content>
+                <v-expansion-panel-content v-if="constraintsLoading">
+                    <v-progress-linear indeterminate/>
+                </v-expansion-panel-content>
+                <v-expansion-panel-content v-else>
                     <v-data-table
                         :headers="headers"
                         :items="constraintInfo"

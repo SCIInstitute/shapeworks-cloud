@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import {
     landmarkInfo,
+    landmarksLoading,
     selectedProject,
     allSubjectsForDataset,
     anatomies,
@@ -170,6 +171,7 @@ export default {
             headers,
             changesMade,
             dialogs,
+            landmarksLoading,
             expandedRows,
             colorStrings,
             landmarkSize,
@@ -208,7 +210,10 @@ export default {
                         @click.stop
                     />
                 </v-expansion-panel-header>
-                <v-expansion-panel-content>
+                <v-expansion-panel-content v-if="landmarksLoading">
+                    <v-progress-linear indeterminate/>
+                </v-expansion-panel-content>
+                <v-expansion-panel-content v-else>
                     <v-data-table
                         :headers="headers"
                         :items="landmarkInfo"

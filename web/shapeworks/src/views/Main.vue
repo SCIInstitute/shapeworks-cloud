@@ -39,6 +39,8 @@ import {
     allSetLandmarks,
     getConstraints,
     allSetConstraints,
+    landmarksLoading,
+    constraintsLoading,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -162,7 +164,9 @@ export default {
                 layersShown.value.includes("Landmarks") &&
                 !allSetLandmarks.value
             ) {
-                landmarksPromise = getLandmarks()
+                landmarksPromise = getLandmarks().then(() => {
+                    landmarksLoading.value = false
+                })
             }
 
             let constraintsPromise;
@@ -170,7 +174,9 @@ export default {
                 layersShown.value.includes("Constraints") &&
                 !allSetConstraints.value
             ) {
-                constraintsPromise = getConstraints()
+                constraintsPromise = getConstraints().then(() => {
+                    constraintsLoading.value = false
+                })
             }
 
             if (selectedDataObjects.value.length == 0) {

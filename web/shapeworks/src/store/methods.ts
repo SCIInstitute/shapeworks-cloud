@@ -443,10 +443,30 @@ export function setLandmarkLocation(subject, item, location) {
 
 
 export function reassignLandmarkIDsByIndex() {
-    // TODO: does allSetLandmarks need reassignment?
+    const reassignedIds = {}
     landmarkInfo.value = landmarkInfo.value.map((info, index) => {
+        if (info.id !== undefined) reassignedIds[info.id] = index
         return Object.assign(info, {id: index})
     })
+    if (allSetLandmarks.value) {
+        allSetLandmarks.value = Object.fromEntries(
+            Object.entries(allSetLandmarks.value)
+            .map(([subjectName, subjectRecords]) => {
+                return [subjectName, Object.fromEntries(
+                    Object.entries(subjectRecords).map(([domain, domainRecords]) => {
+                        domainRecords = Object.fromEntries(
+                            Object.entries(domainRecords)
+                            .filter(([lId,]) => Object.keys(reassignedIds).includes(lId))
+                            .map(([lId, lData]) => {
+                                return [reassignedIds[lId], lData]
+                            })
+                        )
+                        return [domain, domainRecords]
+                    })
+                )]
+            })
+        )
+    }
 }
 
 export function reassignLandmarkNumSetValues() {

@@ -63,7 +63,7 @@ jobs:
       - name: Run migrations
         run: docker-compose run --rm django ./manage.py migrate
       - name: Create super user
-        run: docker-compose run -e DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD --rm django ./manage.py createsuperuser --noinput --email=$DJANGO_SUPERUSER_EMAIL
+        run: docker-compose run -e DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD --rm django ./manage.py createsuperuser --noinput --email=$DJANGO_SUPERUSER_EMAIL --username=$DJANGO_SUPERUSER_EMAIL
       - name: Start server
         run: docker-compose up -d
 

@@ -381,6 +381,7 @@ export default {
                 )]
             })
         )
+        this.render()
     },
     landmarkSizeUpdated() {
         Object.values(seedWidgets.value).forEach((subjectWidgets) => {

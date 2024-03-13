@@ -3,15 +3,19 @@ import sys
 import time
 
 import boto3
-
+import pyrabbit
 
 def inspect_queue(queue_name):
     from .celery import app
 
+    num_messages = -1
     with app.pool.acquire(block=True) as conn:
-        queue = conn.get_manager().get_queue('/', queue_name)
-        messages = queue.get('messages_ready', -1)
-        return messages
+        try:
+            queue = conn.get_manager().get_queue('/', queue_name)
+            num_messages = queue.get('messages_ready', num_messages)
+        except pyrabbit.http.HTTPError:
+            conn.get_manager().create_queue('/', queue_name)
+    return num_messages
 
 
 def get_all_workers(client):

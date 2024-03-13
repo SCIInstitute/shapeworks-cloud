@@ -28,6 +28,7 @@ services:
         "--app",
         "shapeworks_cloud.celery",
         "worker",
+        "-n=main",
         "--loglevel",
         "INFO",
         "--without-heartbeat"
@@ -44,8 +45,21 @@ services:
       - rabbitmq
       - minio
 
+  celery-beat:
+    build:
+      context: .
+      dockerfile: ./dev/django.Dockerfile
+    command: [ "celery", "--app", "shapeworks_cloud.celery", "beat" ]
+    tty: false
+    env_file: ./dev/.env.celery.docker-compose
+    volumes:
+      - .:/opt/django-project
+    network_mode: host
+    depends_on:
+      - celery
+
   yarn:
-    image: node:lts
+    image: node:17
     command: [ "/bin/bash", "-c", "yarn install && yarn serve" ]
     env_file: ./dev/yarn.env
     environment:

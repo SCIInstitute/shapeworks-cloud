@@ -1,0 +1,53 @@
+name: Update all EC2 workers
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+jobs:
+  ansible:
+    runs-on: ubuntu-latest
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+      CLOUDAMQP_URL: ${{ secrets.CLOUDAMQP_URL }}
+      CLOUDAMQP_APIKEY: ${{ secrets.CLOUDAMQP_APIKEY }}
+      CLOUDAMQP_GRAY_URL: ${{ secrets.CLOUDAMQP_GRAY_URL }}
+      CLOUDAMQP_GRAY_APIKEY: ${{ secrets.CLOUDAMQP_GRAY_APIKEY }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_EMAIL_URL: ${{ secrets.DJANGO_EMAIL_URL }}
+      PAPERTRAIL_API_TOKEN: ${{ secrets.PAPERTRAIL_API_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # This is not recommended for persistent hosts,
+      # but our GPU workers have ephemeral hostnames.
+      # https://stackoverflow.com/a/32338480
+      ANSIBLE_HOST_KEY_CHECKING: False
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+      - name: Install Ansible & Boto3
+        run: pip install ansible-core boto3
+      - name: Install dependency for playbook
+        run: ansible-galaxy collection install --force ansible.posix
+      - name: Install Ansible role
+        run: ansible-galaxy install --force --roles-path=./ansible/roles girder.celery
+      - name: Write SSH key file # The content of the SSH private key was generated in the AWS Console and saved to GH Secrets
+        run: |
+          mkdir -p $HOME/.ssh
+          echo "$AWS_SSH_PRIVATE_KEY" > $HOME/.ssh/shapeworks-ec2-b
+          chmod 600 $HOME/.ssh/shapeworks-ec2-b
+      - name: Update workers
+        run: |
+          SECRETS_NAMES=('AWS_DEFAULT_REGION' 'AWS_ACCESS_KEY_ID' 'AWS_SECRET_ACCESS_KEY' 'CLOUDAMQP_URL' 'CLOUDAMQP_APIKEY' 'CLOUDAMQP_GRAY_URL' 'CLOUDAMQP_GRAY_APIKEY' 'DJANGO_SECRET_KEY' 'DJANGO_EMAIL_URL' 'PAPERTRAIL_API_TOKEN' 'DATABASE_URL')
+          SECRETS_JSON=`jq -n '$ARGS.positional | map({ (.): env[.] }) | add' --args "${SECRETS_NAMES[@]}"`
+          jq --argjson secrets "$SECRETS_JSON" '{django_vars: (.+=$secrets)}' dev/prod.celery.env.json > extra_vars.json
+          INVENTORY=`python shapeworks_cloud/manage_workers.py start_all`
+          ansible-playbook -v --inventory "$INVENTORY" --extra-vars "@extra_vars.json" ./ansible/playbook.yml
+      - name: Stop GPU workers
+        if: always()  # run this even if the above step fails
+        run: python shapeworks_cloud/manage_workers.py stop_gpus

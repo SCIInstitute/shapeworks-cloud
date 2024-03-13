@@ -5,6 +5,11 @@
   remote_user: ubuntu
   vars:
     ansible_python_interpreter: auto
+    # This SSH file is written during a Github action (see .github/workflows/update_workers.yml).
+    # This file contains a private key saved to Github secrets.
+    # The content of the private key secret was obtained from the AWS Console (Create key pair).
+    # Important: the key pair must be enabled on all workers in the AWS Console.
+    ansible_ssh_private_key_file: ~/.ssh/shapeworks-ec2-b
   roles:
     - role: girder.celery
       vars:
@@ -12,6 +17,9 @@
         celery_repository_url: https://github.com/girder/shapeworks-cloud.git
         celery_environment: "{{ django_vars }}"
   tasks:
+    - name: Save environment variables
+      ansible.builtin.shell: |
+        echo "{{ django_vars }}" >> /home/ubuntu/celery_project/.env
     - name: Install swcc
       pip:
         name: /home/ubuntu/celery_project/swcc
@@ -59,15 +67,9 @@
         state: directory
       become: true
       become_user: root
-    - name: Setup authorized keys for developers
-      ansible.posix.authorized_key:
-        user: "{{ ansible_user }}"
-        state: present
-        key: "{{ item }}"
-      with_items:
-        - "{{ lookup('file', 'shapeworks-worker.pub') }}"
-        - "{{ lookup('file', 'anne.pub') }}"
-        - "{{ lookup('file', 'shapeworks.pub') }}"
+    - name: Copy startup script
+      ansible.builtin.shell: |
+        cp /home/ubuntu/celery_project/dev/prod.celery.start.sh /var/lib/cloud/scripts/per-boot/celery.start.sh
     - name: Restart celery service to pick up any changes
       systemd:
         state: restarted

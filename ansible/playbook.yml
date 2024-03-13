@@ -70,6 +70,8 @@
     - name: Copy startup script
       ansible.builtin.shell: |
         cp /home/ubuntu/celery_project/dev/prod.celery.start.sh /var/lib/cloud/scripts/per-boot/celery.start.sh
+      become: true
+      become_user: root
     - name: Restart celery service to pick up any changes
       systemd:
         state: restarted

@@ -3,10 +3,11 @@ import sys
 import time
 
 import boto3
-import pyrabbit
 
 
 def inspect_queue(queue_name):
+    import pyrabbit
+
     from .celery import app
 
     # this function requires pyrabbit and the rabbitmq management port

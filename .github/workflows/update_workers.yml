@@ -36,7 +36,7 @@ jobs:
         run: ansible-galaxy collection install --force ansible.posix
       - name: Install Ansible role
         run: ansible-galaxy install --force --roles-path=./ansible/roles girder.celery
-      - name: Write SSH key file
+      - name: Write SSH key file # The content of the SSH private key was generated in the AWS Console and saved to GH Secrets
         run: |
           mkdir -p $HOME/.ssh
           echo "$AWS_SSH_PRIVATE_KEY" > $HOME/.ssh/shapeworks-ec2-b

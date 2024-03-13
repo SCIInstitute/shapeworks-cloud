@@ -8,6 +8,7 @@ import pyrabbit
 def inspect_queue(queue_name):
     from .celery import app
 
+    # this function requires pyrabbit and the rabbitmq management port
     num_messages = -1
     with app.pool.acquire(block=True) as conn:
         try:
@@ -41,10 +42,12 @@ def get_all_workers(client):
     return workers
 
 
+# Filtering for GPU-enabled workers
+# This implementation assumes GPU-enabled instances have
+# A tag with the key "GPU" and the value "true"
 def get_gpu_workers(client):
     gpu_workers = []
     for worker in get_all_workers(client):
-        print(worker)
         if worker['tags'] is not None and any(
             t['Key'] == 'GPU' and t['Value'] == 'true' for t in worker['tags']
         ):

@@ -14,7 +14,8 @@ services:
       - dbdata:/var/lib/postgresql/data
 
   rabbitmq:
-    image: rabbitmq:3-management
+    # Management features are required to monitor the GPU task queue
+    image: rabbitmq:management
     logging:
       driver: none
     ports:

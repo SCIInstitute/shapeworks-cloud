@@ -19,7 +19,7 @@
   tasks:
     - name: Save environment variables
       ansible.builtin.shell: |
-        echo "{{ django_vars }}" >> /home/ubuntu/celery_project/.env
+        echo "{{ django_vars }}" > /home/ubuntu/celery_project/.env
     - name: Install swcc
       pip:
         name: /home/ubuntu/celery_project/swcc

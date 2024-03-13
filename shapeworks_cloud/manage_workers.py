@@ -5,6 +5,7 @@ import time
 import boto3
 import pyrabbit
 
+
 def inspect_queue(queue_name):
     from .celery import app
 

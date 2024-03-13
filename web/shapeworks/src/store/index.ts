@@ -105,7 +105,7 @@ export const analysisAnimate = ref<boolean>(false);
 
 export const imageViewMode = ref<boolean>(false);
 
-export const imageViewAxis = ref<string>();
+export const imageViewAxis = ref<string>('Z');
 
 export const imageViewSlices = ref({x: 0, y: 0, z: 0});
 

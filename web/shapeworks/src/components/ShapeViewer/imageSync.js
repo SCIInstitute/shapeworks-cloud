@@ -16,6 +16,53 @@ import {
 const slices = ref([])
 
 export default {
+    updateSlice(slice) {
+        const { sliceActor, imageMapper, renderer } = slice;
+
+        let cameraPosition, cameraDirection, cameraViewUp;
+        const camera = renderer.getActiveCamera();
+        const center = sliceActor.getCenter();
+        const distance = camera.getDistance();
+
+        if (['X', 'L'].includes(imageViewAxis.value)) {
+            imageMapper.setSlicingMode('I');
+            imageMapper.setISlice(imageViewSlices.value.x);
+            cameraPosition = [
+                center[0] + distance,
+                center[1],
+                center[2],
+            ]
+            cameraDirection = [-1, 0, 0]
+            cameraViewUp = [0, 1, 0]
+        } else if (['Y', 'P'].includes(imageViewAxis.value)) {
+            imageMapper.setSlicingMode('J');
+            imageMapper.setJSlice(imageViewSlices.value.y);
+            cameraPosition = [
+                center[0],
+                center[1] + distance,
+                center[2],
+            ]
+            cameraDirection = [0, -1, 0]
+            cameraViewUp = [0, 0, -1]
+        } else if (['Z', 'S'].includes(imageViewAxis.value)) {
+            imageMapper.setSlicingMode('K');
+            imageMapper.setKSlice(imageViewSlices.value.z);
+            cameraPosition = [
+                center[0],
+                center[1],
+                center[2] + distance,
+            ]
+            cameraDirection = [0, 0, -1]
+            cameraViewUp = [0, 1, 0]
+        }
+
+        if (cameraPosition && cameraDirection && cameraViewUp) {
+            camera.setPosition(...cameraPosition)
+            camera.setDirectionOfProjection(...cameraDirection)
+            camera.setViewUp(...cameraViewUp)
+        }
+        renderer.resetCamera()
+    },
     addImage(imageData, renderer) {
         imageViewMode.value = true
         const sliceActor = vtkImageSlice.newInstance();
@@ -27,11 +74,6 @@ export default {
 
         sliceActor.getProperty().setColorWindow(imageViewWindow.value)
         sliceActor.getProperty().setColorLevel(imageViewLevel.value)
-
-        // Set default axis value to trigger other changes
-        if (!imageViewAxis.value) {
-            imageViewAxis.value = 'Z'
-        }
 
         const dataRange = imageData.getPointData().getScalars().getRange();
         imageViewLevelRange.value = dataRange
@@ -46,11 +88,13 @@ export default {
             z: [extent[4], extent[5]],
         }
 
-        slices.value.push({
+        const slice = {
             sliceActor,
             imageMapper,
             renderer,
-        })
+        }
+        slices.value.push(slice)
+        this.updateSlice(slice)
     },
     imageViewModeUpdated() {
         // resize render window when visibility of image render options changes
@@ -58,50 +102,8 @@ export default {
         this.render();
     },
     imageViewAxisUpdated() {
-        slices.value.forEach(({ sliceActor, imageMapper, renderer }) => {
-            let cameraPosition, cameraDirection, cameraViewUp;
-            const camera = renderer.getActiveCamera();
-            const center = sliceActor.getCenter();
-            const distance = camera.getDistance();
-
-            if (['X', 'L'].includes(imageViewAxis.value)) {
-                imageMapper.setSlicingMode('I');
-                imageMapper.setISlice(imageViewSlices.value.x);
-                cameraPosition = [
-                    center[0] + distance,
-                    center[1],
-                    center[2],
-                ]
-                cameraDirection = [-1, 0, 0]
-                cameraViewUp = [0, 1, 0]
-            } else if (['Y', 'P'].includes(imageViewAxis.value)) {
-                imageMapper.setSlicingMode('J');
-                imageMapper.setJSlice(imageViewSlices.value.y);
-                cameraPosition = [
-                    center[0],
-                    center[1] + distance,
-                    center[2],
-                ]
-                cameraDirection = [0, -1, 0]
-                cameraViewUp = [0, 0, -1]
-            } else if (['Z', 'S'].includes(imageViewAxis.value)) {
-                imageMapper.setSlicingMode('K');
-                imageMapper.setKSlice(imageViewSlices.value.z);
-                cameraPosition = [
-                    center[0],
-                    center[1],
-                    center[2] + distance,
-                ]
-                cameraDirection = [0, 0, -1]
-                cameraViewUp = [0, 1, 0]
-            }
-
-            if (cameraPosition && cameraDirection && cameraViewUp) {
-                camera.setPosition(...cameraPosition)
-                camera.setDirectionOfProjection(...cameraDirection)
-                camera.setViewUp(...cameraViewUp)
-            }
-            renderer.resetCamera()
+        slices.value.forEach((slice) => {
+            this.updateSlice(slice)
         })
         this.render()
     },

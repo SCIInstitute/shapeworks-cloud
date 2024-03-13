@@ -124,8 +124,8 @@ export default {
                     (old, index) => old + viewUpDelta[index]
                 )
             )
-            camera.setClippingRange(0.1, 1000)
         }
+        renderer.resetCameraClippingRange()
     },
     syncCameras(animation) {
         const targetRenderer = animation.pokedRenderer;

@@ -68,8 +68,10 @@
       become: true
       become_user: root
     - name: Copy startup script
+      # ensure startup script is run as user ubuntu (default is root with cloud-init)
       ansible.builtin.shell: |
-        cp /home/ubuntu/celery_project/dev/prod.celery.start.sh /var/lib/cloud/scripts/per-boot/celery.start.sh
+        echo "sudo -i -u ubuntu /home/ubuntu/celery_project/dev/prod.celery.start.sh" > /var/lib/cloud/scripts/per-boot/celery.start.sh
+        chmod 777 /var/lib/cloud/scripts/per-boot/celery.start.sh
       become: true
       become_user: root
     - name: Restart celery service to pick up any changes

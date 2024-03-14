@@ -72,6 +72,7 @@
       ansible.builtin.shell: |
         echo "sudo -i -u ubuntu /home/ubuntu/celery_project/dev/prod.celery.start.sh" > /var/lib/cloud/scripts/per-boot/celery.start.sh
         chmod 777 /var/lib/cloud/scripts/per-boot/celery.start.sh
+        chmod 777 /home/ubuntu/celery_project/dev/prod.celery.start.sh
       become: true
       become_user: root
     - name: Restart celery service to pick up any changes

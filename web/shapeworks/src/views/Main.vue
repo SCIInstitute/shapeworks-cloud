@@ -339,7 +339,7 @@ export default {
             renderMetaData.value = newRenderMetaData
         }
 
-        const debouncedRefreshRender = _.debounce(refreshRender, 1000)
+        const debouncedRefreshRender = _.debounce(refreshRender, 300)
 
         watch(drawer, prepareDrawer)
         watch(selectedDataObjects, debouncedRefreshRender)

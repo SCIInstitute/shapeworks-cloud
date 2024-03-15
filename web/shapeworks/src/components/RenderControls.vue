@@ -17,6 +17,7 @@ import {
     showGoodBadParticlesMode,
     goodBadMaxAngle,
     imageViewMode,
+    imageViewIntersectMode,
     imageViewAxis,
     imageViewSlices,
     imageViewSliceRanges,
@@ -170,6 +171,11 @@ export default {
             return props.currentTab === 'analyze' && analysisFilesShown.value?.length;
         })
 
+        const imageIntersectAllowed = computed(() => {
+            // TODO: Add other applicable layers here
+            return layersShown.value.includes('Groomed')
+        })
+
         const imageViewSlice = computed(() => {
             if (!imageViewAxis.value) {
                 return undefined
@@ -206,6 +212,10 @@ export default {
             }
         }
 
+        watch(imageIntersectAllowed, (value) => {
+            if (!value) imageViewIntersectMode.value = false
+        })
+
         return {
             particleSize,
             layersShown,
@@ -213,6 +223,8 @@ export default {
             axisSystem,
             axisSystemOptions,
             imageViewMode,
+            imageViewIntersectMode,
+            imageIntersectAllowed,
             imageViewAxis,
             imageViewSlice,
             imageViewSliceRange,
@@ -297,6 +309,11 @@ export default {
             </v-btn>
         </div>
         <div class="render-control-row" v-if="imageViewMode && axisSystem">
+            <v-checkbox
+                v-if="imageIntersectAllowed"
+                v-model="imageViewIntersectMode"
+                label="Intersect"
+            />
             <v-select
                 v-model="imageViewAxis"
                 :items="axisSystem.axes"
@@ -304,6 +321,7 @@ export default {
                 style="width: 25%"
             />
             <v-slider
+                v-if="imageViewSliceRange"
                 :value="imageViewSlice"
                 :min="imageViewSliceRange[0]"
                 :max="imageViewSliceRange[1]"

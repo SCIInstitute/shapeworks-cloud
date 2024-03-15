@@ -16,6 +16,7 @@ import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constant
 
 import {
     renderLoading, layers, layersShown, orientationIndicator,
+    imageViewMode, imageViewIntersectMode,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
@@ -249,6 +250,7 @@ export default {
                                 this.showDifferenceFromMean(mapper, renderer, label, domainIndex)
                             }
                             const actor = vtkActor.newInstance();
+                            actor.setVisibility(!imageViewIntersectMode.value)
                             actor.getProperty().setColor(...type.rgb);
                             actor.getProperty().setOpacity(opacity);
                             actor.setMapper(mapper);
@@ -412,6 +414,8 @@ export default {
         Object.values(this.vtk.widgetManagers).forEach((wm) => {
             wm.disablePicking()
         })
+
+        if (imageViewMode.value) this.resetImageSlices()
 
         this.prepareLabelCanvas();
         let positionDelta, viewUpDelta

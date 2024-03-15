@@ -249,9 +249,9 @@ export default {
 
         const dataRange = imageData.getPointData().getScalars().getRange();
         imageViewLevelRange.value = dataRange
-        imageViewLevel.value = (dataRange[1] - dataRange[0]) / 3 + dataRange[0]
+        imageViewLevel.value = (dataRange[1] - dataRange[0]) / 2 + dataRange[0]
         imageViewWindowRange.value = dataRange
-        imageViewWindow.value = (dataRange[1] - dataRange[0]) / 2 + dataRange[0]
+        imageViewWindow.value = dataRange[1]
 
         const extent = imageData.getExtent();
         imageViewSliceRanges.value = {

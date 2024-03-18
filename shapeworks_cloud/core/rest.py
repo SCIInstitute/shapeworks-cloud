@@ -1,10 +1,12 @@
 import base64
+import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory, gettempdir
 from typing import Dict, Type
 
 from django.contrib.auth import logout
+from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -312,6 +314,105 @@ class ProjectViewSet(BaseViewSet):
     def download(self, request, **kwargs):
         project = self.get_object()
         return Response(serializers.ProjectDownloadSerializer(project).data)
+
+    @action(
+        detail=True,
+        url_path='landmarks',
+        url_name='landmarks',
+        methods=['POST'],
+    )
+    def set_landmarks(self, request, **kwargs):
+        project = self.get_object()
+        form_data = request.data
+        landmarks_info = form_data.get('info')
+        landmarks_locations = form_data.get('locations')
+
+        project.landmarks_info = landmarks_info
+        project_file_contents = json.loads(project.file.read())
+        project_file_contents['landmarks'] = landmarks_info
+        project.file.save(
+            project.file.name.split('/')[-1],
+            ContentFile(json.dumps(project_file_contents).encode()),
+        )
+        project.save()
+
+        ids_existing_with_coords = []
+        for subject_id, data in landmarks_locations.items():
+            target_subject = models.Subject.objects.get(id=subject_id)
+            for anatomy_type, locations in data.items():
+                landmarks_object, created = models.Landmarks.objects.get_or_create(
+                    project=project, subject=target_subject, anatomy_type=anatomy_type
+                )
+                file_content = ''
+                if (
+                    locations is not None
+                    and len(locations) > 0
+                    and locations[0] is not None
+                    and len(locations[0]) == 3
+                ):
+                    file_content = '\n'.join(
+                        ' '.join(str(n) for n in (loc.values() if isinstance(loc, dict) else loc))
+                        for loc in locations
+                    )
+                file_name = 'landmarks.csv'
+                if landmarks_object.file:
+                    file_name = landmarks_object.file.name.split('/')[-1]
+                landmarks_object.file.save(
+                    file_name,
+                    ContentFile(file_content.encode()),
+                )
+                ids_existing_with_coords.append(landmarks_object.id)
+
+        models.Landmarks.objects.filter(project=project).exclude(
+            id__in=ids_existing_with_coords
+        ).delete()
+
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Set Project Landmarks',
+            project.id,
+        )
+        return Response(serializers.ProjectReadSerializer(project).data)
+
+    @action(
+        detail=True,
+        url_path='constraints',
+        url_name='constraints',
+        methods=['POST'],
+    )
+    def set_constraints(self, request, **kwargs):
+        project = self.get_object()
+        form_data = request.data
+        constraints_locations = form_data.get('locations')
+
+        ids_existing_with_coords = []
+        for subject_id, data in constraints_locations.items():
+            target_subject = models.Subject.objects.get(id=subject_id)
+            for anatomy_type, locations in data.items():
+                constraints_object, created = models.Constraints.objects.get_or_create(
+                    project=project, subject=target_subject, anatomy_type=anatomy_type
+                )
+                file_name = 'constraints.json'
+                if constraints_object.file:
+                    file_name = constraints_object.file.name.split('/')[-1]
+                constraints_object.file.save(
+                    file_name,
+                    ContentFile(json.dumps(locations).encode()),
+                )
+                ids_existing_with_coords.append(constraints_object.id)
+
+        models.Constraints.objects.filter(project=project).exclude(
+            id__in=ids_existing_with_coords
+        ).delete()
+
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Set Project Constraints',
+            project.id,
+        )
+        return Response(serializers.ProjectReadSerializer(project).data)
 
     @action(
         detail=True,

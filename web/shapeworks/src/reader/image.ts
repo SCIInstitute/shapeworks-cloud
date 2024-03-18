@@ -3,6 +3,7 @@ import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import vtkPLYReader from 'vtk.js/Sources/IO/Geometry/PLYReader';
 import vtkSTLReader from 'vtk.js/Sources/IO/Geometry/STLReader';
 import vtkPolyDataReader from 'vtk.js/Sources/IO/Legacy/PolyDataReader';
+import vtkStringArray from 'vtk.js/Sources/Common/Core/StringArray'
 import readImageArrayBuffer from 'itk/readImageArrayBuffer';
 import ITKHelper from 'vtk.js/Sources/Common/DataModel/ITKHelper';
 import axios from 'axios';
@@ -14,7 +15,7 @@ const { convertItkToVtkImage } = ITKHelper;
 
 
 export default async function (
-    url: string | undefined, filename='', type="Original",
+    url: string | undefined, filename='', type="Original", metadata={},
 ): Promise<vtkImageData | vtkPolyData> {
     let shape: vtkImageData | vtkPolyData = vtkPolyData.newInstance()
     if(!url) return shape
@@ -48,6 +49,20 @@ export default async function (
         console.log('Unknown file type for', filename)
         shape = vtkPolyData.newInstance()
     }
+
+    // Add metadata to field data
+    const fieldData = shape.getFieldData()
+    Object.entries(metadata).forEach(([key, value]) => {
+        // @ts-ignore
+        const str: string = value.toString()
+        const arr = vtkStringArray.newInstance({
+            name: key,
+            size: 1,
+        })
+        arr.setData([str], 1)
+        // @ts-ignore
+        fieldData.addArray(arr)
+    })
 
     vtkShapesByType.value[type].push(shape)
     return shape

@@ -44,7 +44,15 @@ export const layers = ref<Record<string, any>[]>([
         color: undefined,
         rgb: undefined,
         available: () => {
-            return selectedProject.value?.landmarks && selectedProject.value.landmarks.length > 0
+            return selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > 0
+        }
+    },
+    {
+        name: 'Constraints',
+        color: undefined,
+        rgb: undefined,
+        available: () => {
+            return selectedProject.value?.constraints && selectedProject.value.constraints.length > 0
         }
     }
 ])

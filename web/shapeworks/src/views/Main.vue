@@ -15,6 +15,7 @@ import RenderControls from '../components/RenderControls.vue'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
+    renderLoading,
     selectedDataset,
     allSubjectsForDataset,
     selectedDataObjects,
@@ -30,26 +31,32 @@ import {
     meanAnalysisParticlesFiles,
     currentAnalysisParticlesFiles,
     switchTab,
-    landmarkColorList,
     jobAlreadyDone,
     analysisExpandedTab,
     allProjectsForDataset,
     loadProjectsForDataset,
+    getLandmarks,
+    allSetLandmarks,
+    getConstraints,
+    allSetConstraints,
+    landmarksLoading,
+    constraintsLoading,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
+import { loadingState } from '../store/index';
 
 
 export default {
     components: {
         ShapeViewer,
         DataList,
+        InfoTab,
         RenderControls,
         TabForm,
         AnalysisTab,
-        InfoTab,
     },
     props: {
         dataset: {
@@ -150,6 +157,35 @@ export default {
         }
 
         async function refreshRender() {
+            // Get landmarks and constraints the first time each layer is enabled,
+            // regardless of whether there are objects to render
+            let landmarksPromise;
+            if(
+                layersShown.value.includes("Landmarks") &&
+                !allSetLandmarks.value
+            ) {
+                landmarksPromise = getLandmarks().then(() => {
+                    landmarksLoading.value = false
+                })
+            }
+
+            let constraintsPromise;
+            if(
+                layersShown.value.includes("Constraints") &&
+                !allSetConstraints.value
+            ) {
+                constraintsPromise = getConstraints().then(() => {
+                    constraintsLoading.value = false
+                })
+            }
+
+            if (selectedDataObjects.value.length == 0) {
+                return Promise.all([
+                    landmarksPromise,
+                    constraintsPromise,
+                ])
+            }
+            renderLoading.value = true
             let newRenderData = {}
             let newRenderMetaData = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
@@ -215,6 +251,8 @@ export default {
                                         imageReader(
                                             dataObject.file,
                                             shortFileName(dataObject.file),
+                                            "Original",
+                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
                                         )
                                       )
                                     }
@@ -227,6 +265,7 @@ export default {
                                             shapeURL,
                                             shortFileName(shapeURL),
                                             "Groomed",
+                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
                                         )
                                       )
                                     }
@@ -249,7 +288,8 @@ export default {
                                                 imageReader(
                                                     shapeURL,
                                                     shortFileName(shapeURL),
-                                                    "Reconstructed"
+                                                    "Reconstructed",
+                                                    { domain: targetReconstruction.anatomy_type.replace('anatomy_', '') }
                                                 )
                                             )
                                         }
@@ -260,23 +300,20 @@ export default {
                                         particleURL = particlesForOriginalDataObjects.value[dataObject.type][dataObject.id]?.local
                                     }
 
-                                    let landmarksURL;
-                                    if(layersShown.value.includes("Landmarks")) {
-                                        landmarksURL = selectedProject.value?.landmarks?.find(
-                                            (l) => l.subject.toString() === subjectId
-                                        )?.file
-                                    }
-
                                     return Promise.all([
                                         Promise.all(shapePromises),
                                         pointsReader(particleURL),
-                                        pointsReader(landmarksURL)
+                                        landmarksPromise,
+                                        constraintsPromise,
                                     ])
                                 }
                             )))
-                            .map(([imageData, particleData, landmarkData]) => (
-                                {shape: imageData, points: particleData, landmarks: landmarkData}
-                            ))
+                            .map(([imageData, particleData, landmarkData, constraintData]) => ({
+                                shape: imageData,
+                                points: particleData,
+                                landmarks: landmarkData,
+                                constraints: constraintData
+                            }))
                             return [
                                 subjectName, shapeDatas
                             ]
@@ -308,11 +345,12 @@ export default {
         watch(selectedDataObjects, debouncedRefreshRender)
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
-        watch(landmarkColorList, debouncedRefreshRender)
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(tab, switchTab)
 
         return {
+            loadingState,
+            renderLoading,
             drawer,
             drawerWidth,
             setDrawerWidth,
@@ -426,6 +464,9 @@ export default {
                 />
             </template>
             <span v-else>Select any number of data objects</span>
+            <v-overlay absolute :value="!loadingState && renderLoading" :stop-propagation="true">
+                <v-progress-circular indeterminate />
+            </v-overlay>
         </v-card>
     </div>
 </template>

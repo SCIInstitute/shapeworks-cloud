@@ -1,7 +1,7 @@
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
-import vtkCubeSource from 'vtk.js/Sources/Filters/Sources/CubeSource';
 import vtkImageMarchingCubes from 'vtk.js/Sources/Filters/General/ImageMarchingCubes';
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource'
@@ -14,22 +14,38 @@ import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttribute
 import { ColorMode, ScalarMode } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 
-import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
 import {
-    layers, layersShown, orientationIndicator,
+    renderLoading, layers, layersShown, orientationIndicator,
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
-    showDifferenceFromMeanMode, cachedParticleComparisonVectors, landmarkColorList, cacheComparison, calculateComparisons,
+    showDifferenceFromMeanMode, cachedParticleComparisonVectors,
+    cacheComparison, calculateComparisons,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
-import { COLORS, SPHERE_RESOLUTION } from '@/store/constants';
+import { SPHERE_RESOLUTION } from '@/store/constants';
+import widgetSync from './widgetSync';
 
 export const GOOD_BAD_COLORS = [
     [0, 255, 0],
     [255, 0, 0],
 ];
+const COLORS = [
+    [166, 206, 227],
+    [31, 120, 180],
+    [178, 223, 138],
+    [51, 160, 44],
+    [251, 154, 153],
+    [227, 26, 28],
+    [253, 191, 111],
+    [255, 127, 0],
+    [202, 178, 214],
+    [106, 61, 154],
+    [255, 255, 153],
+    [177, 89, 40],
+];
 
 export default {
+    ...widgetSync,
     async resize() {
         await this.$nextTick();
         if (this.vtk.renderWindow) {
@@ -59,7 +75,7 @@ export default {
             position: {},
             viewUp: {},
         }
-        this.vtk.renderers.forEach((renderer, index) => {
+        Object.values(this.vtk.renderers).forEach((renderer, index) => {
             const camera = renderer.getActiveCamera();
             this.initialCameraStates.position[`renderer_${index}`] = [...camera.getReferenceByName('position')]
             this.initialCameraStates.viewUp[`renderer_${index}`] = [...camera.getReferenceByName('viewUp')]
@@ -71,9 +87,10 @@ export default {
             viewUpDelta: undefined,
         }
         const targetCamera = renderer.getActiveCamera();
+        const rendererIndex = Object.values(this.vtk.renderers).indexOf(renderer)
 
-        if (this.vtk.renderers.indexOf(renderer) >= 0) {
-            const targetRendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
+        if (rendererIndex >= 0) {
+            const targetRendererID = `renderer_${rendererIndex}`
             this.initialCameraPosition = this.initialCameraStates.position[targetRendererID]
             this.initialCameraViewUp = this.initialCameraStates.viewUp[targetRendererID]
             this.newCameraPosition = targetCamera.getReferenceByName('position')
@@ -92,7 +109,8 @@ export default {
     },
     applyCameraDelta(renderer, positionDelta, viewUpDelta) {
         const camera = renderer.getActiveCamera();
-        const rendererID = `renderer_${this.vtk.renderers.indexOf(renderer)}`
+        const rendererIndex = Object.values(this.vtk.renderers).indexOf(renderer)
+        const rendererID = `renderer_${rendererIndex}`
         if (this.initialCameraStates.position[rendererID]) {
             camera.setPosition(
                 ...this.initialCameraStates.position[rendererID].map(
@@ -111,13 +129,13 @@ export default {
         const targetRenderer = animation.pokedRenderer;
         const { positionDelta, viewUpDelta } = this.getCameraDelta(targetRenderer)
 
-        this.vtk.renderers.filter(
+        Object.values(this.vtk.renderers).filter(
             (renderer) => renderer !== targetRenderer
         ).forEach((renderer) => {
             this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
         })
     },
-    createColorFilter(domainIndex = 0, landmarks = false, goodBad = false) {
+    createColorFilter(domainIndex = 0, goodBad = false) {
         const filter = vtkCalculator.newInstance()
         filter.setFormula({
             getArrays() {
@@ -139,13 +157,6 @@ export default {
                 const n = coords.length / 3;
                 for (let i = 0; i < n; i += 1) {
                     let c = COLORS[i % COLORS.length];
-                    if (landmarks) {
-                        if (landmarkColorList.value[i]) {
-                            c = landmarkColorList.value[i]
-                        } else {
-                            c = [0, 0, 0]
-                        }
-                    }
 
                     if (goodBad && analysisFilesShown.value?.length) {
                         if (goodBadAngles.value[domainIndex][i] < goodBadMaxAngle.value) {
@@ -154,33 +165,29 @@ export default {
                             c = GOOD_BAD_COLORS[1] // red
                         }
                     }
-                    color[3 * i] = c[0];
-                    color[3 * i + 1] = c[1];
-                    color[3 * i + 2] = c[2];
+                    if (c) {
+                        color[3 * i] = c[0];
+                        color[3 * i + 1] = c[1];
+                        color[3 * i + 2] = c[2];
+                    }
                 }
                 input.forEach((x) => x.modified());
             },
         });
         return filter;
     },
-    addPoints(renderer, points, i, landmarks = false) {
+    addPoints(renderer, points, i) {
         let size = this.glyphSize
         let source = vtkSphereSource.newInstance({
             thetaResolution: SPHERE_RESOLUTION,
             phiResolution: SPHERE_RESOLUTION,
         });
-        if (landmarks) {
-            size *= 2
-            source = vtkCubeSource.newInstance(
-                { xLength: 1, yLength: 1, zLength: 1 }
-            )
-        }
         const mapper = vtkGlyph3DMapper.newInstance({
             scaleMode: vtkGlyph3DMapper.SCALE_BY_CONSTANT,
             scaleFactor: size,
         });
         const actor = vtkActor.newInstance();
-        const filter = this.createColorFilter(i, landmarks, showGoodBadParticlesMode.value);
+        const filter = this.createColorFilter(i, showGoodBadParticlesMode.value);
 
         filter.setInputData(points, 0);
         mapper.setInputConnection(filter.getOutputPort(), 0);
@@ -190,7 +197,11 @@ export default {
         renderer.addActor(actor);
         this.vtk.pointMappers.push(mapper);
     },
-    addShapes(renderer, label, shapes) {
+    addShapes(renderer, shapes) {
+        let label;
+        Object.entries(this.vtk.renderers).forEach(([l, r]) => {
+            if (renderer == r) label = l
+        })
         shapes.forEach(
             (shapeDatas, domainIndex) => {
                 shapeDatas.forEach(
@@ -378,22 +389,11 @@ export default {
         this.labelCanvasContext.font = "16px Arial";
         this.labelCanvasContext.fillStyle = "white";
     },
-    populateRenderer(renderer, label, bounds, shapes) {
-        this.labelCanvasContext.fillText(
-            label,
-            this.labelCanvas.width * bounds[0],
-            this.labelCanvas.height * (1 - bounds[1]) - 20
-        );
-
-        this.addShapes(renderer, label, shapes.map(({ shape }) => shape));
+    populateRenderer(renderer, shapes) {
+        this.addShapes(renderer, shapes.map(({ shape }) => shape));
         shapes.map(({ points }) => points).forEach((pointSet, i) => {
             if (pointSet.getNumberOfPoints() > 0) {
                 this.addPoints(renderer, pointSet, i);
-            }
-        })
-        shapes.map(({ landmarks }) => landmarks).forEach((landmarkSet, i) => {
-            if (landmarkSet && landmarkSet.getNumberOfPoints() > 0) {
-                this.addPoints(renderer, landmarkSet, i, true);
             }
         })
 
@@ -402,42 +402,68 @@ export default {
         renderer.resetCamera();
     },
     renderGrid() {
+        this.vtk.interactor.disable()
+        Object.values(this.vtk.widgetManagers).forEach((wm) => {
+            wm.disablePicking()
+        })
+
         this.prepareLabelCanvas();
+        let positionDelta, viewUpDelta
 
-        let { positionDelta, viewUpDelta } = this.getCameraDelta(this.vtk.renderers[0])
-
-        for (let i = 0; i < this.vtk.renderers.length; i += 1) {
-            this.vtk.renderWindow.removeRenderer(this.vtk.renderers[i]);
+        const renderers = Object.values(this.vtk.renderers)
+        for (let i = 0; i < renderers.length; i += 1) {
+            if (!positionDelta || !viewUpDelta) {
+                ({ positionDelta, viewUpDelta } = this.getCameraDelta(Object.values(this.vtk.renderers)[0]))
+            }
+            this.vtk.renderWindow.removeRenderer(renderers[i]);
         }
         if (this.vtk.orientationCube) this.vtk.orientationCube.setEnabled(false)
-        this.vtk.renderers = [];
+        this.vtk.renderers = {};
         this.vtk.pointMappers = [];
 
         const data = Object.entries(this.data)
-        for (let i = 0; i < this.grid.length; i += 1) {
-            let newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
-            if (i < data.length) {
-                this.populateRenderer(newRenderer, data[i][0], this.grid[i], data[i][1])
-            }
-            newRenderer.setViewport.apply(newRenderer, this.grid[i]);
-            this.vtk.renderers.push(newRenderer);
+        for (let i = 0; i < data.length; i += 1) {
+            const [label, shapes] = data[i];
+            const newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
+            const bounds = this.grid[i];
+
+            this.labelCanvasContext.fillText(
+                label,
+                this.labelCanvas.width * bounds[0],
+                this.labelCanvas.height * (1 - bounds[1]) - 20
+            );
+            newRenderer.setViewport.apply(newRenderer, bounds);
+            this.vtk.renderers[label] = newRenderer;
             this.vtk.renderWindow.addRenderer(newRenderer);
+            if (i < data.length) {
+                this.populateRenderer(newRenderer, shapes)
+            }
         }
         this.initializeCameras()
+        this.initializeWidgets()
 
-        this.vtk.renderers.forEach((renderer) => {
-            if (positionDelta && viewUpDelta) {
+        if (positionDelta && viewUpDelta) {
+            Object.values(this.vtk.renderers).forEach((renderer) => {
                 this.applyCameraDelta(renderer, positionDelta, viewUpDelta)
-            }
-        })
-        const targetRenderer = this.vtk.renderers[this.columns - 1]
+            })
+        }
+
+        const targetRenderer = Object.values(this.vtk.renderers)[this.columns - 1]
         this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
         if (targetRenderer) {
             this.vtk.orientationCube.setParentRenderer(targetRenderer)
             this.vtk.orientationCube.setEnabled(true);
-
-            this.render();
+            this.vtk.interactor.enable()
         }
+        this.render();
+        renderLoading.value = false;
+        setTimeout(
+            () => {
+                Object.values(this.vtk.widgetManagers).forEach((wm) => {
+                    wm.enablePicking()
+                })
+            }, 100
+        )
     },
     render() {
         this.vtk.renderWindow.render();

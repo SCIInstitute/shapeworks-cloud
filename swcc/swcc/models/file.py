@@ -59,7 +59,7 @@ class File:
 
         return self.field_value
 
-    def download(self, path: Union[str, Path]) -> Path:
+    def download(self, path: Union[str, Path], file_name=None) -> Path:
         from .utils import raise_for_status
 
         if self.url is None:
@@ -75,7 +75,10 @@ class File:
         if not path.is_dir():
             path.mkdir(parents=True, exist_ok=True)
 
-        path = path / self.url.path.split('/')[-1]
+        if file_name:
+            path = path / Path(file_name)
+        else:
+            path = path / self.url.path.split('/')[-1]
         r = requests.get(self.url, stream=True)
         raise_for_status(r)
 

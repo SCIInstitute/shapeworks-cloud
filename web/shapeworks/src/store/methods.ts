@@ -1,4 +1,4 @@
-import { AnalysisParams, CacheComparison, LandmarkInfo, Project, Task } from "@/types";
+import { AnalysisParams, CacheComparison, Project, Task, Constraints } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -17,7 +17,6 @@ import {
      cachedParticleComparisonVectors,
      allDatasets,
      goodBadAngles,
-     landmarkColorList,
      landmarkInfo,
      analysisExpandedTab,
      selectedDataObjects,
@@ -29,10 +28,16 @@ import {
      showDifferenceFromMeanMode,
      showGoodBadParticlesMode,
      analysisAnimate,
+     allSetLandmarks,
+     allSubjectsForDataset,
+     anatomies,
+     constraintInfo,
+     allSetConstraints,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
 import generateMapper from "@/reader/mapper";
+import constraintsReader from "@/reader/constraints";
 import {
     abortTask,
     analyzeProject,
@@ -52,8 +57,7 @@ import router from "@/router";
 export const resetState = () => {
     selectedDataObjects.value = [];
     layersShown.value = ['Original'];
-    landmarkInfo.value = undefined;
-    landmarkColorList.value = [];
+    landmarkInfo.value = [];
     currentTasks.value = {};
     jobProgressPoll.value = undefined;
     particleSize.value = 2;
@@ -69,8 +73,6 @@ export const resetState = () => {
     cachedMarchingCubes.value = {};
     cachedParticleComparisonVectors.value = {};
     cachedParticleComparisonColors.value = {};
-    landmarkInfo.value = undefined;
-    landmarkColorList.value = [];
     analysisExpandedTab.value = 0;
     analysisAnimate.value = false;
 }
@@ -98,7 +100,6 @@ export async function getAllDatasets() {
 export const loadProjectForDataset = async (projectId: number) => {
     refreshProject(projectId).then((proj) => {
         selectedProject.value = proj
-        getLandmarks()
     });
 }
 
@@ -119,7 +120,6 @@ export const selectProject = (projectId: number | undefined) => {
         selectedProject.value = allProjectsForDataset.value.find(
             (project: Project) => project.id == projectId,
         )
-        getLandmarks();
     }
 }
 
@@ -392,47 +392,232 @@ export async function cacheAllComparisons(comparisons: CacheComparison[][]) {
     }
 }
 
-export function updateLandmarkColorList() {
-    landmarkColorList.value = landmarkInfo.value.map(
-        (info: LandmarkInfo) => info.color
-    )
+
+export function isShapeShown(subjectID, domain) {
+    return selectedDataObjects.value.some((d) => (
+        d.subject === subjectID && d.anatomy_type.replace('anatomy_', '') === domain
+    ))
 }
 
-export async function getLandmarks() {
-    if (selectedProject.value?.landmarks){
-        const subjectParticles = await Promise.all(
-            selectedProject.value.landmarks.map(
-                async (subjectLandmarks) => {
-                    const locations = await pointsReader(subjectLandmarks.file)
-                    return locations.getPoints().getNumberOfPoints()
-                }
+export function toggleSubjectShown(subjectID, domain) {
+    const shape = allDataObjectsInDataset.value.find((d) => (
+        d.subject === subjectID && d.anatomy_type.replace('anatomy_', '') === domain
+    ))
+    if (shape) {
+        if (selectedDataObjects.value.includes(shape)) {
+            selectedDataObjects.value = selectedDataObjects.value.filter(
+                (s) => s !== shape
             )
-        )
-        if (subjectParticles.length > 0){
-            const numRows = Math.max(...subjectParticles)
-            landmarkInfo.value = [...Array(numRows).keys()].map((index) => {
-                let currentInfo = {
-                    id: index,
-                    color: COLORS[index % COLORS.length],
-                    name: `L${index}`,
-                    num_set: subjectParticles.filter(
-                        (numLocations) => numLocations > index
-                    ).length,
-                    comment: undefined,
-
-                }
-                if (selectedProject.value?.landmarks_info && selectedProject.value.landmarks_info.length > index) {
-                    currentInfo = Object.assign(
-                        currentInfo,
-                        selectedProject.value?.landmarks_info[index]
-                    )
-                }
-                if (currentInfo.color.toString().includes("#")) {
-                    currentInfo.color = hexToRgb(currentInfo.color.toString())
-                }
-                return currentInfo
-            })
-            updateLandmarkColorList()
+        } else {
+            selectedDataObjects.value = [
+                ...selectedDataObjects.value,
+                shape
+            ]
         }
+    }
+}
+
+export function getWidgetInfo(subject, item) {
+    return {
+        subjectName: subject.name,
+        domain: item.domain,
+        widgetID: item.id,
+    }
+}
+
+export function getLandmarkLocation(subject, item) {
+    if (
+        allSetLandmarks.value &&
+        allSetLandmarks.value[subject.name]
+        && allSetLandmarks.value[subject.name][item.domain]
+    )
+    return allSetLandmarks.value[subject.name][item.domain][item.id]
+}
+
+export function setLandmarkLocation(subject, item, location) {
+    if (!allSetLandmarks.value) allSetLandmarks.value = {}
+    if (!allSetLandmarks.value[subject.name]) allSetLandmarks.value[subject.name] = {}
+    if (!allSetLandmarks.value[subject.name][item.domain]) allSetLandmarks.value[subject.name][item.domain] = {}
+    allSetLandmarks.value[subject.name][item.domain][item.id] = location
+}
+
+
+export function reassignLandmarkIDsByIndex() {
+    const reassignedIds = {}
+    landmarkInfo.value = landmarkInfo.value.map((info, index) => {
+        if (info.id !== undefined) reassignedIds[info.id] = index
+        return Object.assign(info, {id: index})
+    })
+    if (allSetLandmarks.value) {
+        allSetLandmarks.value = Object.fromEntries(
+            Object.entries(allSetLandmarks.value)
+            .map(([subjectName, subjectRecords]) => {
+                return [subjectName, Object.fromEntries(
+                    Object.entries(subjectRecords).map(([domain, domainRecords]) => {
+                        domainRecords = Object.fromEntries(
+                            Object.entries(domainRecords)
+                            .filter(([lId,]) => Object.keys(reassignedIds).includes(lId))
+                            .map(([lId, lData]) => {
+                                return [reassignedIds[lId], lData]
+                            })
+                        )
+                        return [domain, domainRecords]
+                    })
+                )]
+            })
+        )
+    }
+}
+
+export function reassignLandmarkNumSetValues() {
+    // only reassign if a value has changed
+    const reassign = false
+    const newInfo = landmarkInfo.value.map((lInfo) => {
+        const newNumSet = allSubjectsForDataset.value.filter((s) => !!getLandmarkLocation(s, lInfo)).length
+        if (newNumSet != lInfo.num_set) {
+            lInfo.num_set = newNumSet
+        }
+        return lInfo
+    })
+    if (reassign) landmarkInfo.value = newInfo
+}
+
+
+export async function getLandmarks() {
+    allSetLandmarks.value = {}
+    if(selectedProject.value?.landmarks) {
+        landmarkInfo.value = selectedProject.value.landmarks_info.map((lInfo, index) => {
+            if (!lInfo.id) {
+                lInfo.id = index
+            }
+            if (!lInfo.name) {
+                lInfo.name = `L${index}`
+            }
+            if (!lInfo.color) {
+                lInfo.color = COLORS[index % COLORS.length]
+            }
+            if (lInfo.color.toString().includes('#')) {
+                lInfo.color = hexToRgb(lInfo.color.toString())
+            }
+            lInfo.num_set = 0
+            return lInfo
+        })
+
+        for (let i = 0; i < selectedProject.value.landmarks.length; i++) {
+            const landmarksObject = selectedProject.value.landmarks[i]
+            const subject = allSubjectsForDataset.value.find((s) => s.id === landmarksObject.subject)
+            const pointData = await pointsReader(landmarksObject.file)
+            const locationData = pointData.getPoints().getData()
+            const locations: number[][] = []
+            for (let p = 0; p < locationData.length; p+=3) {
+                const location = locationData.slice(p, p+3) as number[]
+                locations.push(location)
+            }
+            const lInfos = landmarkInfo.value.filter((lInfo) => lInfo.domain === landmarksObject.anatomy_type.replace('anatomy_', ''))
+            locations.forEach((location, index) => {
+                const lInfo = lInfos[index]
+                setLandmarkLocation(subject, lInfo, location)
+            })
+        }
+        // reassign store var for listeners
+        allSetLandmarks.value = Object.assign({}, allSetLandmarks.value)
+        reassignLandmarkNumSetValues();
+    }
+}
+
+export function getConstraintLocation(subject, item) {
+    if (
+        allSetConstraints.value &&
+        allSetConstraints.value[subject.name]
+        && allSetConstraints.value[subject.name][item.domain]
+    )
+    return allSetConstraints.value[subject.name][item.domain][item.id]
+}
+
+export function setConstraintLocation(subject, item, location) {
+    if (!allSetConstraints.value) allSetConstraints.value = {}
+    if (!allSetConstraints.value[subject.name]) allSetConstraints.value[subject.name] = {}
+    if (!allSetConstraints.value[subject.name][item.domain]) allSetConstraints.value[subject.name][item.domain] = {}
+    allSetConstraints.value[subject.name][item.domain][item.id] = location
+    allSetConstraints.value = Object.assign({}, allSetConstraints.value)
+    reassignConstraintNumSetValues()
+}
+
+
+export function reassignConstraintIDsByIndex() {
+    const reassignedIds = {}
+    constraintInfo.value = constraintInfo.value.map((info, index) => {
+        if (info.id !== undefined) reassignedIds[info.id] = index
+        return Object.assign(info, {id: index})
+    })
+    if (allSetConstraints.value) {
+        allSetConstraints.value = Object.fromEntries(
+            Object.entries(allSetConstraints.value)
+            .map(([subjectName, subjectRecords]) => {
+                return [subjectName, Object.fromEntries(
+                    Object.entries(subjectRecords).map(([domain, domainRecords]) => {
+                        domainRecords = Object.fromEntries(
+                            Object.entries(domainRecords)
+                            .filter(([cId,]) => Object.keys(reassignedIds).includes(cId))
+                            .map(([cId, cData]) => {
+                                return [reassignedIds[cId], cData]
+                            })
+                        )
+                        return [domain, domainRecords]
+                    })
+                )]
+            })
+        )
+    }
+}
+
+export function reassignConstraintNumSetValues() {
+    // only reassign if a value has changed
+    const reassign = false
+    const newInfo = constraintInfo.value.map((cInfo) => {
+        const newNumSet = allSubjectsForDataset.value.filter((s) => !!getConstraintLocation(s, cInfo)).length
+        if (newNumSet != cInfo.num_set) {
+            cInfo.num_set = newNumSet
+        }
+        return cInfo
+    })
+    if (reassign) constraintInfo.value = newInfo
+}
+
+export async function getConstraints() {
+    allSetConstraints.value = {}
+    constraintInfo.value = []
+    if(selectedProject.value?.constraints) {
+        for (let i = 0; i < selectedProject.value.constraints.length; i++) {
+            const constraintsObject = selectedProject.value.constraints[i]
+            const subject = allSubjectsForDataset.value.find((s) => s.id === constraintsObject.subject)
+            const domain = constraintsObject.anatomy_type?.replace('anatomy_', '') || '0'
+            if (subject) {
+                const constraintsData = await constraintsReader(constraintsObject.file);
+                ['plane', 'paint'].forEach((constraintType) => {
+                    const newConstraintsOfType = constraintsData.filter((cData) => cData.type === constraintType)
+                    const existingConstraintsOfType = constraintInfo.value.filter((cData) => cData.type === constraintType && cData.domain === domain)
+                    for(let i=0; i<newConstraintsOfType.length; i++) {
+                        let cInfo;
+                        const cData = newConstraintsOfType[i]
+                        if (i >= existingConstraintsOfType.length) {
+                            cInfo = {
+                                id: constraintInfo.value.length,
+                                type: constraintType,
+                                name: cData.name,
+                                domain
+                            }
+                            constraintInfo.value.push(cInfo)
+                        } else {
+                            cInfo = existingConstraintsOfType[i]
+                        }
+                        if(cInfo) setConstraintLocation(subject, cInfo, cData)
+                    }
+                })
+            }
+        }
+        // reassign store var for listeners
+        allSetConstraints.value = Object.assign({}, allSetConstraints.value)
+        reassignConstraintNumSetValues();
     }
 }

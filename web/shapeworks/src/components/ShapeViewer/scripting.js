@@ -99,6 +99,7 @@ export default {
         interactor.initialize();
         interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
         interactor.onAnimation(this.syncCameras)
+        interactor.disable()
 
         const orientationCube = this.newOrientationCube(interactor)
 
@@ -114,8 +115,9 @@ export default {
             interactor,
             openglRenderWindow,
             orientationCube,
-            renderers: [],
+            renderers: {},
             pointMappers: [],
+            widgetManagers: {},
         };
 
         vtkInstance.value = this.vtk
@@ -127,6 +129,7 @@ export default {
 
         this.updateSize();
         this.renderGrid();
+        this.watchWidgetStates();
     },
     updated() {
         this.prepareColorScale()

@@ -8,6 +8,7 @@ import {
     selectedDataset,
     allSubjectsForDataset,
     allDataObjectsInDataset,
+    anatomies,
     selectedDataObjects,
     loadingState,
     loadReconstructedSamplesForProject,
@@ -30,7 +31,7 @@ export default {
         }
     },
     setup(props) {
-        const anatomies = ref<string[]>([]);
+
         const selectedAnatomies = ref<string[]>([]);
         const selectedSubjects = ref<number[]>([])
         const headers =  [
@@ -85,6 +86,17 @@ export default {
             )
         }
 
+        function selectedObjectsUpdated() {
+            const uniqueAnatomies = [...new Set(selectedDataObjects.value.map(item => item.anatomy_type))]
+            const uniqueSubjects = [...new Set(selectedDataObjects.value.map(item => item.subject))]
+            if (JSON.stringify(uniqueAnatomies) !== JSON.stringify(selectedAnatomies.value)) {
+                selectedAnatomies.value = uniqueAnatomies
+            }
+            if (JSON.stringify(uniqueSubjects) !== JSON.stringify(selectedSubjects.value)) {
+                selectedSubjects.value = uniqueSubjects
+            }
+        }
+
         onMounted(async () => {
             if(!selectedDataset.value) {
                 await fetchData(props.dataset)
@@ -95,6 +107,7 @@ export default {
 
         watch(selectedAnatomies, updateSelectedObjects)
         watch(selectedSubjects, updateSelectedObjects)
+        watch(selectedDataObjects, selectedObjectsUpdated)
 
         return {
             anatomies,

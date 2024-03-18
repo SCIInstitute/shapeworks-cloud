@@ -131,7 +131,6 @@ class ProjectFileIO(BaseModel, FileIO):
                 groomed_shape: Union[GroomedMesh, GroomedSegmentation, None] = None
                 world_particles_path = None
                 local_particles_path = None
-                particles = None
                 constraints_path = None
                 transform = None
 
@@ -183,7 +182,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         transform = Path(temp_dir) / 'transform'
                         with transform.open('w') as f:
                             f.write(value)
-                    elif key == 'landmarks':
+                    elif key == 'landmarks_file':
                         Landmarks(
                             file_source=relative_path(value),
                             subject=subject,
@@ -201,7 +200,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         groomed_mesh = groomed_shape
                     elif type(groomed_shape) == GroomedSegmentation:
                         groomed_segmentation = groomed_shape
-                    particles = OptimizedParticles(
+                    OptimizedParticles(
                         world_source=world_particles_path,
                         local_source=local_particles_path,
                         transform_source=transform,
@@ -212,12 +211,15 @@ class ProjectFileIO(BaseModel, FileIO):
                         anatomy_type=anatomy_id,
                     ).create()
                 if constraints_path:
-                    Constraints(
-                        file_source=constraints_path,
-                        subject=subject,
-                        optimized_particles=particles,
-                        anatomy_type=anatomy_id,
-                    ).create()
+                    with open(constraints_path) as f:
+                        constraints_contents = json.load(f)
+                    if constraints_contents:
+                        Constraints(
+                            file_source=constraints_path,
+                            subject=subject,
+                            project=self.project,
+                            anatomy_type=anatomy_id,
+                        ).create()
 
     def load_analysis_from_json(self, file_path):
         project_root = Path(str(self.project.file.path)).parent
@@ -234,12 +236,12 @@ class ProjectFileIO(BaseModel, FileIO):
                 for mean_particle_path in contents['mean']['particle_files']:
                     mean_particles.append(analysis_file_location.parent / Path(mean_particle_path))
 
-            for i in range(len(mean_shapes)):
-                cams = CachedAnalysisMeanShape(
-                    file_source=mean_shapes[i],
-                    particles_source=mean_particles[i] if mean_particles else None,
-                ).create()
-                mean_shapes_cache.append(cams)
+                for i in range(len(mean_shapes)):
+                    cams = CachedAnalysisMeanShape(
+                        file_source=mean_shapes[i],
+                        particles_source=mean_particles[i] if mean_particles else None,
+                    ).create()
+                    mean_shapes_cache.append(cams)
 
             modes = []
             for mode in contents['modes']:
@@ -402,7 +404,11 @@ class Project(ApiModel):
             print_progress_bar(0, len(files))
             for index, (path, url) in enumerate(files.items()):
                 file_item: File = File(url)
-                file_item.download(Path(folder, *path.split('/')[:-1]))
+                path_split = path.split('/')
+                file_item.download(
+                    Path(folder, *path_split[:-1]),
+                    file_name=path_split[-1],
+                )
                 print_progress_bar(index + 1, len(files))
         session.close()
         print()

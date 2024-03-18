@@ -3,7 +3,7 @@ import {
     DataObject, Dataset, Subject,
     Particles, GroomedShape, Project,
     ReconstructedSample, VTKInstance,
-    Analysis, Task
+    Analysis, Task, LandmarkInfo, Constraints
 } from '@/types'
 import { ref } from 'vue'
 
@@ -12,6 +12,8 @@ export * from './methods'
 export * from './constants'
 
 export const loadingState = ref<boolean>(false)
+
+export const renderLoading = ref<boolean>(false)
 
 export const currentError = ref<string>()
 
@@ -30,6 +32,8 @@ export const editingProject = ref<undefined | Project>();
 export const allSubjectsForDataset = ref<Subject[]>([])
 
 export const allDataObjectsInDataset = ref<DataObject[]>([])
+
+export const anatomies = ref<string[]>([]);
 
 export const selectedDataObjects = ref<DataObject[]>([])
 
@@ -67,9 +71,29 @@ export const cachedParticleComparisonVectors = ref<{[key: string]: number[][]}>(
 
 export const cachedParticleComparisonColors = ref<{[key: string]: number[]}>({})
 
-export const landmarkInfo = ref();
+export const landmarkInfo = ref<LandmarkInfo[]>([]);
 
-export const landmarkColorList = ref<number[][]>([])
+export const landmarksLoading = ref(true);
+
+export const landmarkSize = ref(2);
+
+export const allSetLandmarks = ref<Record<string, object>>();
+
+export const currentLandmarkPlacement = ref();
+
+export const constraintInfo = ref<Constraints[]>([]);
+
+export const constraintsLoading = ref(true);
+
+export const constraintsShown = ref([]);
+
+export const allSetConstraints = ref<Record<string, object>>();
+
+export const currentConstraintPlacement = ref();
+
+export const constraintPaintRadius = ref(3);
+
+export const constraintPaintExclusion = ref(true);
 
 export const currentTasks = ref<Record<number, Record<string, Task| undefined>>>({})
 

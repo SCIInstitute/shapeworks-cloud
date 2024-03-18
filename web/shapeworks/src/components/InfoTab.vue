@@ -1,80 +1,42 @@
-<script>
-import { landmarkInfo, selectedDataset, selectedProject } from '@/store';
+<script lang="ts">
+import { onMounted, ref, watch } from 'vue'
+import Landmarks from '@/components/Landmarks.vue';
+import Constraints from '@/components/Constraints.vue';
+import { layers, layersShown } from '@/store';
 
 
 export default {
+    components: {
+        Landmarks,
+        Constraints
+    },
     setup() {
-        const headers =  [
-            {text: 'ID', value: 'id', width: '15px'},
-            {text: '', value: 'color', width: '15px'},
-            {text: 'Name', value: 'name', width: '100px'},
-            {text: '# set', value: 'num_set', width: '70px'},
-            // {text: 'Place', value: 'placement_status'},
-            {text: 'Comment', value: 'comment'},
-        ];
+        const openPanel = ref(0)
 
-        function getColorString(rgb){
-            return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
+        function updateLayersShown() {
+            layersShown.value = layers.value.filter((l) => {
+                if (l.name === 'Landmarks') {
+                    return openPanel.value === 0
+                } else if (l.name === 'Constraints') {
+                    return openPanel.value === 1
+                }
+                return layersShown.value.includes(l.name)
+            }).map((l) => l.name)
         }
 
+        watch(openPanel, updateLayersShown)
+        onMounted(updateLayersShown)
+
         return {
-            selectedDataset,
-            selectedProject,
-            headers,
-            landmarkInfo,
-            getColorString,
+            openPanel,
         }
     }
 }
 </script>
 
 <template>
-    <div class="pa-3">
-        <div class="pa-3">
-            View other project information
-        </div>
-        <v-expansion-panels :value="0">
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Landmarks
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <v-data-table
-                        :headers="headers"
-                        :items="landmarkInfo"
-                        item-key="uid"
-                        disable-pagination
-                        hide-default-footer
-                        dense
-                        width="100%"
-                    >
-                        <!-- eslint-disable-next-line -->
-                        <template v-slot:item.color="{ item }">
-                            <div class='color-square'
-                            :style="{backgroundColor: getColorString(item.color)}" />
-                        </template>
-                    </v-data-table>
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-        </v-expansion-panels>
-    </div>
+  <v-expansion-panels v-model="openPanel">
+    <landmarks />
+    <constraints />
+  </v-expansion-panels>
 </template>
-
-<style>
-.file-column {
-    width: 100px!important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.v-data-table td {
-    border-bottom: none !important;
-}
-.v-row-group__header {
-    background: none !important;
-    border-top: 1px solid white !important;
-}
-.color-square {
-    height: 15px;
-    width: 15px;
-}
-</style>

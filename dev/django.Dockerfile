@@ -30,5 +30,7 @@ RUN mkdir /opt/shapeworks && \
 ENV PATH $PATH:/opt/shapeworks/bin
 ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/opt/shapeworks/lib
 
+RUN pip install awscli
+
 # Use a directory name which will never be an import name, as isort considers this as first-party.
 WORKDIR /opt/django-project

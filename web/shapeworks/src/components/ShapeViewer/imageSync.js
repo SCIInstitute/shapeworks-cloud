@@ -76,38 +76,37 @@ export default {
                 const [visible] = arraysOut.map((d) => d.getData());
 
                 const imageBounds = cropFilter.getInputData().getBounds()
-                const sliceBounds = imageMapper.getBoundsForSlice()
                 let currentAxis;
                 let axisBounds;
-                let axisSliceBounds;
-                switch (imageMapper.getSlicingMode) {
+                switch (imageMapper.getSlicingMode()) {
                     case 0:
                         currentAxis = 'x';
                         axisBounds = imageBounds.slice(0, 2);
-                        axisSliceBounds = sliceBounds.slice(0, 2);
                         break;
                     case 1:
                         currentAxis = 'y'
                         axisBounds = imageBounds.slice(2, 4)
-                        axisSliceBounds = sliceBounds.slice(2, 4)
                         break;
                     default:
                         currentAxis = 'z'
                         axisBounds = imageBounds.slice(4, 6)
-                        axisSliceBounds = sliceBounds.slice(4, 6)
                         break;
                 }
                 const sliceRange = imageViewSliceRanges.value[currentAxis]
+                const currentSlice = imageViewSlices.value[currentAxis]
                 const numSlices = sliceRange[1] - sliceRange[0]
                 const sliceThickness = (axisBounds[1] - axisBounds[0]) / numSlices
+                const slicePosition = (
+                    (currentSlice - sliceRange[0]) / (sliceRange[1] - sliceRange[0])
+                    * (axisBounds[1] - axisBounds[0]) + axisBounds[0]
+                )
 
-                axisSliceBounds[1] += sliceThickness
                 for (var i = 0; i < visible.length; i++) {
                     const location = coords.slice(i * 3, i * 3 + 3)
                     const axisCoord = location[imageMapper.getSlicingMode()]
                     if (
-                        axisCoord >= axisSliceBounds[0] &&
-                        axisCoord < axisSliceBounds[1]
+                        axisCoord >= slicePosition &&
+                        axisCoord < (slicePosition + sliceThickness)
                     ) {
                         visible[i] = 1
                     }
@@ -256,9 +255,9 @@ export default {
             ({ mapper }) => mapper.getClassName() === 'vtkGlyph3DMapper'
         )
         if (particles) {
-            particles.actor.setVisibility(false);
+            particles.actor.setVisibility(!imageViewIntersectMode.value);
             particleFilter.setInputData(particles.mapper.getInputData())
-            filteredParticleActor.setVisibility(true)
+            filteredParticleActor.setVisibility(imageViewIntersectMode.value)
             renderer.addActor(filteredParticleActor)
         } else {
             filteredParticleActor.setVisibility(false)
@@ -287,7 +286,6 @@ export default {
     addImage(imageData, renderer) {
         let slice = slices.value.find((s) => s.renderer == renderer)
         if (!slice) slice = this.createSlice(renderer)
-        this.updateSlice(slice)
 
         imageViewMode.value = true
 
@@ -319,7 +317,7 @@ export default {
         imageViewCroppedSliceRanges.value = imageViewSliceRanges.value
 
         if (imageViewIntersectMode.value || imageViewIntersectCropMode.value) this.imageViewIntersectModeUpdated()
-        renderer.resetCamera()
+        this.updateSlice(slice)
     },
     imageViewModeUpdated() {
         // resize render window when visibility of image render options changes

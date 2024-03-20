@@ -18,9 +18,11 @@ import {
     goodBadMaxAngle,
     imageViewMode,
     imageViewIntersectMode,
+    imageViewIntersectCropMode,
     imageViewAxis,
     imageViewSlices,
     imageViewSliceRanges,
+    imageViewCroppedSliceRanges,
     imageViewWindow,
     imageViewWindowRange,
     imageViewLevel,
@@ -192,11 +194,11 @@ export default {
             if (!imageViewAxis.value) {
                 return undefined
             } else if (['X', 'L'].includes(imageViewAxis.value)) {
-                return imageViewSliceRanges.value.x
+                return imageViewIntersectCropMode.value ? imageViewCroppedSliceRanges.value.x : imageViewSliceRanges.value.x
             } else if (['Y', 'P'].includes(imageViewAxis.value)) {
-                return imageViewSliceRanges.value.y
+                return imageViewIntersectCropMode.value ? imageViewCroppedSliceRanges.value.y : imageViewSliceRanges.value.y
             } else if (['Z', 'S'].includes(imageViewAxis.value)) {
-                return imageViewSliceRanges.value.z
+                return imageViewIntersectCropMode.value ? imageViewCroppedSliceRanges.value.z : imageViewSliceRanges.value.z
             }
         })
 
@@ -213,7 +215,10 @@ export default {
         }
 
         watch(imageIntersectAllowed, (value) => {
-            if (!value) imageViewIntersectMode.value = false
+            if (!value) {
+                imageViewIntersectMode.value = false
+                imageViewIntersectCropMode.value = false
+            }
         })
 
         return {
@@ -224,6 +229,7 @@ export default {
             axisSystemOptions,
             imageViewMode,
             imageViewIntersectMode,
+            imageViewIntersectCropMode,
             imageIntersectAllowed,
             imageViewAxis,
             imageViewSlice,
@@ -309,16 +315,27 @@ export default {
             </v-btn>
         </div>
         <div class="render-control-row" v-if="imageViewMode && axisSystem">
-            <v-checkbox
-                v-if="imageIntersectAllowed"
-                v-model="imageViewIntersectMode"
-                label="Intersect"
-            />
+            <div  v-if="imageIntersectAllowed">
+                <v-checkbox
+                    v-model="imageViewIntersectMode"
+                    label="Intersect"
+                    :dense="true"
+                    :hide-details="true"
+                    class="mt-0 pt-0"
+                />
+                <v-checkbox
+                    v-model="imageViewIntersectCropMode"
+                    label="Crop"
+                    :dense="true"
+                    :hide-details="true"
+                />
+            </div>
             <v-select
                 v-model="imageViewAxis"
                 :items="axisSystem.axes"
                 label="Axis"
                 style="width: 25%"
+                :hide-details="true"
             />
             <v-slider
                 v-if="imageViewSliceRange"
@@ -329,6 +346,7 @@ export default {
                 label="Slice"
                 style="width: 25%"
                 @input="changeImageViewSlice"
+                :hide-details="true"
             />
             <v-slider
                 v-model="imageViewWindow"
@@ -337,6 +355,7 @@ export default {
                 :thumb-label="true"
                 label="Window"
                 style="width: 25%"
+                :hide-details="true"
             />
             <v-slider
                 v-model="imageViewLevel"
@@ -345,6 +364,7 @@ export default {
                 :thumb-label="true"
                 label="Level"
                 style="width: 25%"
+                :hide-details="true"
             />
         </div>
     </div>
@@ -356,7 +376,7 @@ export default {
     width: 100%;
     height: 70px;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     column-gap: 20px;
 }
 .render-control-row > * {

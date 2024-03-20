@@ -1,5 +1,6 @@
 import vtkImageMapper from 'vtk.js/Sources/Rendering/Core/ImageMapper';
 import vtkImageSlice from 'vtk.js/Sources/Rendering/Core/ImageSlice';
+import vtkImageCropFilter from 'vtk.js/Sources/Filters/General/ImageCropFilter';
 import vtkCutter from 'vtk.js/Sources/Filters/Core/Cutter';
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 import vtkPlane from 'vtk.js/Sources/Common/DataModel/Plane';
@@ -16,9 +17,11 @@ import { ref, watch } from 'vue'
 import {
     imageViewMode,
     imageViewIntersectMode,
+    imageViewIntersectCropMode,
     imageViewAxis,
     imageViewSlices,
     imageViewSliceRanges,
+    imageViewCroppedSliceRanges,
     imageViewWindow,
     imageViewWindowRange,
     imageViewLevel,
@@ -35,6 +38,7 @@ export default {
         const cutter = vtkCutter.newInstance();
         const cutMapper = vtkMapper.newInstance();
         const cutActor = vtkActor.newInstance();
+        const cropFilter = vtkImageCropFilter.newInstance();
         const particleFilter = vtkCalculator.newInstance();
         const filteredParticleSphere = vtkSphereSource.newInstance();
         const filteredParticleActor = vtkActor.newInstance();
@@ -54,7 +58,6 @@ export default {
         cutProperty.setLineWidth(5);
         cutActor.setVisibility(false);
 
-
         particleFilter.setFormula({
             getArrays: () => ({
                 input: [{
@@ -72,7 +75,7 @@ export default {
                 const [coords] = arraysIn.map((d) => d.getData());
                 const [visible] = arraysOut.map((d) => d.getData());
 
-                const imageBounds = imageMapper.getBounds()
+                const imageBounds = cropFilter.getInputData().getBounds()
                 const sliceBounds = imageMapper.getBoundsForSlice()
                 let currentAxis;
                 let axisBounds;
@@ -128,6 +131,7 @@ export default {
             cutter,
             cutMapper,
             cutActor,
+            cropFilter,
             particleFilter,
             filteredParticleMapper,
             filteredParticleActor,
@@ -188,16 +192,59 @@ export default {
     },
     updateIntersection(slice) {
         // TODO: account for multidomain cases
-        const { renderer, cutter, cutActor, filteredParticleActor, particleFilter } = slice
+        const {
+            renderer, cutter, cutActor,
+            filteredParticleActor, particleFilter, cropFilter,
+        } = slice
 
         const intersectionShape = renderer.getActors().find((actor) => actor.getClassName() != "vtkImageSlice")
         if (intersectionShape) {
+            if (imageViewIntersectCropMode.value) {
+                // Compare bounds to find crop proportions, apply proportion to image slices
+                const fullBounds = cropFilter.getInputData().getBounds()
+                const fullSlices = [
+                    ...imageViewSliceRanges.value.x,
+                    ...imageViewSliceRanges.value.y,
+                    ...imageViewSliceRanges.value.z,
+                ]
+                const padding = 0.01 // pad crop by 1%
+                const cropToBounds = intersectionShape.getBounds()
+                const cropToProportions = cropToBounds.map((v, i) => {
+                    const minIndex = Math.floor((i) / 2) * 2
+                    const maxIndex = minIndex + 1
+                    const padValue = i % 2 === 0 ? 0 - padding : padding
+                    return (v - fullBounds[minIndex]) / (fullBounds[maxIndex] - fullBounds[minIndex]) + padValue
+                })
+                const cropToSlices = cropToProportions.map((v, i) => {
+                    const minIndex = Math.floor((i) / 2) * 2
+                    const maxIndex = minIndex + 1
+                    return v * (fullSlices[maxIndex] - fullSlices[minIndex]) + fullSlices[minIndex]
+                })
+                imageViewCroppedSliceRanges.value = {
+                    x: cropToSlices.slice(0, 2),
+                    y: cropToSlices.slice(2, 4),
+                    z: cropToSlices.slice(4, 6),
+                }
+                // clamp current slices to cropped ranges
+                imageViewSlices.value = Object.fromEntries(
+                    Object.entries(imageViewSlices.value).map(([axis, slice]) => {
+                        const [min, max] = imageViewCroppedSliceRanges.value[axis]
+                        if (slice < min) return [axis, min]
+                        if (slice > max) return [axis, max]
+                        return [axis, slice]
+                    })
+                )
+                cropFilter.setCroppingPlanes(cropToSlices)
+            } else {
+                cropFilter.reset()
+            }
             cutter.setInputData(intersectionShape.getMapper().getInputData())
             cutActor.setVisibility(imageViewIntersectMode.value)
+            cutActor.setPosition(1, 1, 1) // ensure cutActor is always in front of sliceActor
             intersectionShape.setVisibility(!imageViewIntersectMode.value)
             renderer.addActor(cutActor);
+            renderer.resetCamera()
         }
-
 
         // If particles shown, filter by slice bounds
         const particles = renderer.getActors().map(
@@ -243,7 +290,17 @@ export default {
         this.updateSlice(slice)
 
         imageViewMode.value = true
-        slice.imageMapper.setInputData(imageData);
+
+        // Note: for crop filter, imageData undergoes a shallowCopy
+        // There is a possible bug that prevents shallowCopy of StringArrays
+        // https://github.com/Kitware/vtk-js/issues/3036
+        // We added the "domain" string array to this data,
+        // so we need to remove it before passing to crop filter.
+        imageData.getFieldData().removeAllArrays()
+
+        slice.cropFilter.setInputData(imageData)
+        slice.cropFilter.reset()
+        slice.imageMapper.setInputConnection(slice.cropFilter.getOutputPort())
         slice.sliceActor.getProperty().setColorWindow(imageViewWindow.value)
         slice.sliceActor.getProperty().setColorLevel(imageViewLevel.value)
 
@@ -259,8 +316,10 @@ export default {
             y: [extent[2], extent[3]],
             z: [extent[4], extent[5]],
         }
+        imageViewCroppedSliceRanges.value = imageViewSliceRanges.value
 
-        if (imageViewIntersectMode.value) this.imageViewIntersectModeUpdated()
+        if (imageViewIntersectMode.value || imageViewIntersectCropMode.value) this.imageViewIntersectModeUpdated()
+        renderer.resetCamera()
     },
     imageViewModeUpdated() {
         // resize render window when visibility of image render options changes
@@ -319,6 +378,7 @@ export default {
         watch(imageViewWindow, this.imageViewWindowUpdated)
         watch(imageViewLevel, this.imageViewLevelUpdated)
         watch(imageViewIntersectMode, this.imageViewIntersectModeUpdated)
+        watch(imageViewIntersectCropMode, this.imageViewIntersectModeUpdated)
     },
     resetImageSlices() {
         slices.value = []

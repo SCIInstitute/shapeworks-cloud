@@ -21,7 +21,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
 from ..celery import app as celery_app
-from .tasks import analyze, groom, optimize, deepssm
+from .tasks import analyze, deepssm, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
 if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
@@ -48,13 +48,12 @@ class MockDeepSSMView(APIView):
             deepssm.apply_async(args=[non_gpu_progress.id])
 
             # send response with ids
-            return Response({
-                'success': True,
-                'progress_ids': {
-                    'gpu': gpu_progress.id,
-                    'default': non_gpu_progress.id
+            return Response(
+                {
+                    'success': True,
+                    'progress_ids': {'gpu': gpu_progress.id, 'default': non_gpu_progress.id},
                 }
-            })
+            )
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 

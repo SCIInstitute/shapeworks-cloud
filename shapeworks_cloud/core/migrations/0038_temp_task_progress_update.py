@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0037_landmarks_constraints'),
     ]
@@ -24,6 +23,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='taskprogress',
             name='project',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='core.project'),
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.CASCADE, to='core.project'
+            ),
         ),
     ]

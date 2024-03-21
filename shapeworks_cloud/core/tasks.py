@@ -353,17 +353,14 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
 
 @shared_task
 def deepssm(progress_id):
-    import torch
-
     message = 'DeepSSM task not implemented; testing GPU availability.'
-    gpu_available = torch.cuda.is_available()
-    message += f' GPU available = {gpu_available}.'
+    try:
+        from ngpuinfo import NGPUInfo
 
-    if gpu_available:
-        device_count = torch.cuda.device_count()
-        for device_index in range(device_count):
-            device_name = torch.cuda.get_device_name(device_index)
-            message += f' Found device {device_name}.'
+        gpus = NGPUInfo.list_gpus
+        message += f' GPU available. Found {[gpu.name for gpu in gpus]}.'
+    except Exception:
+        message += ' GPU not available.'
 
     progress = models.TaskProgress.objects.get(id=progress_id)
     progress.update_percentage(100)

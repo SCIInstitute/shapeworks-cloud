@@ -55,7 +55,7 @@ setup(
         'drf-yasg',
         'pandas',
         'pyrabbit',
-        'torch',  # for testing gpu availabilty; remove when deepssm implemented
+        'ngpuinfo',
         'swcc',
         # Production-only
         'django-composed-configuration[prod]',

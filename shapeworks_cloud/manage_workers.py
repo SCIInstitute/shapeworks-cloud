@@ -17,7 +17,8 @@ def inspect_queue(queue_name):
             queue = conn.get_manager().get_queue('/', queue_name)
             num_messages = queue.get('messages_ready', num_messages)
         except pyrabbit.http.HTTPError:
-            conn.get_manager().create_queue('/', queue_name)
+            # queue doesn't exist yet, wait for a spawned task to create it
+            pass
     return num_messages
 
 

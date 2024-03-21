@@ -291,8 +291,9 @@ class ReconstructedSample(TimeStampedModel, models.Model):
 
 class TaskProgress(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    error = models.CharField(max_length=255)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
+    error = models.CharField(max_length=255, blank=True)
+    message = models.CharField(max_length=255, blank=True)
     percent_complete = models.IntegerField(default=0)
     abort = models.BooleanField(default=False)
 
@@ -302,4 +303,8 @@ class TaskProgress(TimeStampedModel, models.Model):
 
     def update_error(self, error):
         self.error = error[:255]
+        self.save()
+
+    def update_message(self, message):
+        self.message = message[:255]
         self.save()

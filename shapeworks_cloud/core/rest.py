@@ -20,8 +20,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from ..celery import app as celery_app
-from .tasks import analyze, groom, optimize
+from .tasks import analyze, deepssm, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
 if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
@@ -38,11 +37,23 @@ class LogoutView(APIView):
 class MockDeepSSMView(APIView):
     def post(self, request):
         if request.user.is_authenticated:
-            id = celery_app.send_task(
-                'shapeworks_cloud.core.tasks.deepssm', kwargs={'index': 0}, queue='gpu'
+            # clear existing TaskProgress objects
+            models.TaskProgress.objects.filter(name='deepssm').delete()
+
+            # spawn tasks (one gpu and one non-gpu)
+            gpu_progress = models.TaskProgress.objects.create(name='deepssm')
+            deepssm.apply_async(args=[gpu_progress.id], queue='gpu')
+            non_gpu_progress = models.TaskProgress.objects.create(name='deepssm')
+            deepssm.apply_async(args=[non_gpu_progress.id])
+
+            # send response with ids
+            return Response(
+                {
+                    'success': True,
+                    'progress_ids': {'gpu': gpu_progress.id, 'default': non_gpu_progress.id},
+                }
             )
-            return Response({'success': True, 'task_id': str(id)})
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 def log_write_access(*args):

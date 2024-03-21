@@ -352,8 +352,23 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
 
 
 @shared_task
-def deepssm(**kwargs):
-    print(f'Mocking DeepSSM task with kwargs {kwargs}...')
-    print('Sleeping for 20 s.')
+def deepssm(progress_id):
+    import torch
+
+    message = 'DeepSSM task not implemented; testing GPU availability.'
+    gpu_available = torch.cuda.is_available()
+    message += f' GPU available = {gpu_available}.'
+
+    if gpu_available:
+        device_count = torch.cuda.device_count()
+        for device_index in range(device_count):
+            device_name = torch.cuda.get_device_name(device_index)
+            message += f' Found device {device_name}.'
+
+    progress = models.TaskProgress.objects.get(id=progress_id)
+    progress.update_percentage(100)
+    progress.update_message(message)
+
+    # Sleep for 20 seconds before completing task;
+    # time to check instance state before stopping
     time.sleep(20)
-    print('DeepSSM mock complete.')

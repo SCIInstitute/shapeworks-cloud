@@ -289,13 +289,6 @@ export default {
 
         imageViewMode.value = true
 
-        // Note: for crop filter, imageData undergoes a shallowCopy
-        // There is a possible bug that prevents shallowCopy of StringArrays
-        // https://github.com/Kitware/vtk-js/issues/3036
-        // We added the "domain" string array to this data,
-        // so we need to remove it before passing to crop filter.
-        imageData.getFieldData().removeAllArrays()
-
         slice.cropFilter.setInputData(imageData)
         slice.cropFilter.reset()
         slice.imageMapper.setInputConnection(slice.cropFilter.getOutputPort())

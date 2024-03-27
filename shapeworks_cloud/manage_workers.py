@@ -21,8 +21,10 @@ def inspect_queue(queue_name):
                 # Override manager hostname and vhost in production;
                 # CloudAMQP management not served through dedicated port and must use https
                 # and vhost is assigned name of user (instead of using default '/')
-               manager.http.base_url = manager.http.base_url.replace(":15672", "").replace("http", "https")
-               vhost = manager.user
+                manager.http.base_url = manager.http.base_url.replace(":15672", "").replace(
+                    "http", "https"
+                )
+                vhost = manager.user
             queue = manager.get_queue(vhost, queue_name)
             num_messages = queue.get('messages_ready', num_messages)
         except pyrabbit.http.HTTPError:

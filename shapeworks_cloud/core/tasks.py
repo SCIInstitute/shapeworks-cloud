@@ -357,7 +357,7 @@ def deepssm(progress_id):
     try:
         from ngpuinfo import NGPUInfo
 
-        gpus = NGPUInfo.list_gpus
+        gpus = NGPUInfo.list_gpus()
         message += f' GPU available. Found {[gpu.name for gpu in gpus]}.'
     except Exception:
         message += ' GPU not available.'

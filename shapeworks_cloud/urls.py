@@ -90,7 +90,6 @@ urlpatterns = [
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
     path('api/v1/logout/', rest.LogoutView.as_view()),
-    path('api/mock-deepssm/', rest.MockDeepSSMView.as_view()),
     path('api/v1/s3-upload/', include('s3_file_field.urls', namespace='s3ff')),
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),

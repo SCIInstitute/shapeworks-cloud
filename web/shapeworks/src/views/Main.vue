@@ -59,7 +59,6 @@ export default {
         RenderControls,
         TabForm,
         AnalysisTab,
-        InfoTab,
         DeepSSMTab,
     },
     props: {

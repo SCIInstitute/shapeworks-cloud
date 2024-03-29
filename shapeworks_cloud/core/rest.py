@@ -35,29 +35,6 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class MockDeepSSMView(APIView):
-    def post(self, request):
-        pass
-        # if request.user.is_authenticated:
-            # clear existing TaskProgress objects
-        #     models.TaskProgress.objects.filter(name='deepssm').delete()
-
-        #     # spawn tasks (one gpu and one non-gpu)
-        #     gpu_progress = models.TaskProgress.objects.create(name='deepssm')
-        #     # deepssm.apply_async(args=[gpu_progress.id], queue='gpu')
-        #     non_gpu_progress = models.TaskProgress.objects.create(name='deepssm')
-        #     deepssm.apply_async(args=[non_gpu_progress.id])
-
-        #     # send response with ids
-        #     return Response(
-        #         {
-        #             'success': True,
-        #             'progress_ids': {'gpu': gpu_progress.id, 'default': non_gpu_progress.id},
-        #         }
-        #     )
-        # return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-
 def log_write_access(*args):
     with open(DB_WRITE_ACCESS_LOG_FILE, 'a') as log_file:
         log_file.write('\t'.join(str(a) for a in args))
@@ -554,7 +531,15 @@ class ProjectViewSet(BaseViewSet):
             project.id,
         )
 
-        deepssm_run.delay(request.user.id, project.id, deepssm_progress.id, form_data)
+        deepssm_run.apply_async(
+            args=[request.user.id, project.id, deepssm_progress.id, form_data], queue='gpu'
+        )
+        # deepssm_run.delay(
+        #     request.user.id,
+        #     project.id,
+        #     deepssm_progress.id,
+        #     form_data,
+        # )
         return Response(
             data={
                 'deepssm_task': serializers.TaskProgressSerializer(deepssm_progress).data,

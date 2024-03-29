@@ -352,8 +352,20 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
 
 
 @shared_task
-def deepssm(**kwargs):
-    print(f'Mocking DeepSSM task with kwargs {kwargs}...')
-    print('Sleeping for 20 s.')
+def deepssm(progress_id):
+    message = 'DeepSSM task not implemented; testing GPU availability.'
+    try:
+        from ngpuinfo import NGPUInfo
+
+        gpus = NGPUInfo.list_gpus()
+        message += f' GPU available. Found {[gpu.name for gpu in gpus]}.'
+    except Exception:
+        message += ' GPU not available.'
+
+    progress = models.TaskProgress.objects.get(id=progress_id)
+    progress.update_percentage(100)
+    progress.update_message(message)
+
+    # Sleep for 20 seconds before completing task;
+    # time to check instance state before stopping
     time.sleep(20)
-    print('DeepSSM mock complete.')

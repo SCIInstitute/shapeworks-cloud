@@ -14,10 +14,22 @@ def inspect_queue(queue_name):
     num_messages = -1
     with app.pool.acquire(block=True) as conn:
         try:
-            queue = conn.get_manager().get_queue('/', queue_name)
+            manager = conn.get_manager()
+            vhost = '/'
+            configuration = os.environ.get('DJANGO_CONFIGURATION')
+            if configuration == 'HerokuProductionConfiguration':
+                # Override manager hostname and vhost in production;
+                # CloudAMQP management not served through dedicated port and must use https
+                # and vhost is assigned name of user (instead of using default '/')
+                manager.http.base_url = manager.http.base_url.replace(':15672', '').replace(
+                    'http', 'https'
+                )
+                vhost = manager.user
+            queue = manager.get_queue(vhost, queue_name)
             num_messages = queue.get('messages_ready', num_messages)
         except pyrabbit.http.HTTPError:
-            conn.get_manager().create_queue('/', queue_name)
+            # queue doesn't exist yet, wait for a spawned task to create it
+            pass
     return num_messages
 
 

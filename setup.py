@@ -55,6 +55,7 @@ setup(
         'drf-yasg',
         'pandas',
         'pyrabbit',
+        'ngpuinfo',
         'swcc',
         # Production-only
         'django-composed-configuration[prod]',

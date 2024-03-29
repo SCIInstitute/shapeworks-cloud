@@ -28,6 +28,8 @@ class ShapeworksCloudMixin(ConfigMixin):
 
     CELERY_BROKER_POOL_LIMIT = 10
 
+    DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first

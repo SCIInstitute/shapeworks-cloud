@@ -32,7 +32,7 @@ jobs:
           verbose: true
 
       - name: Run tox
-        run: tox
+        run: conda run --no-capture-output -n shapeworks tox
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000

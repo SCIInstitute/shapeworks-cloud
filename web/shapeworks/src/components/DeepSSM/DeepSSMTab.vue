@@ -1,7 +1,7 @@
 <script lang="ts">
 /* eslint-disable no-unused-vars */
-import { currentTasks, selectedProject, spawnJob, spawnJobProgressPoll } from '@/store';
-import { Ref, computed, ref } from 'vue';
+import { currentTasks, selectedProject, spawnJob, spawnJobProgressPoll, abort } from '@/store';
+import { Ref, computed, ref, watch } from 'vue';
 
 
 export default {
@@ -28,6 +28,7 @@ export default {
         )
 
         const openTab = ref<number>(0);
+        const showAbortConfirmation = ref(false);
 
         const prepData = {
             testingSplit: ref<number>(20),
@@ -80,14 +81,16 @@ export default {
                 ...trainFormData,
             }
 
-            console.log(formData);
             const taskId = await spawnJob("deepssm", formData);
             currentTasks.value[selectedProject.value.id] = taskId;
-
 
             spawnJobProgressPoll();
             return taskId;
         }
+
+        watch(showAbortConfirmation, (value) => {
+            console.log("showAbortConfirmation", value)
+        });
 
         return {
             openTab,
@@ -98,6 +101,8 @@ export default {
             LossFunction,
             submitDeepSSMJob,
             taskData,
+            abort,
+            showAbortConfirmation,
         }
     },
 }
@@ -105,10 +110,56 @@ export default {
 
 <template>
     <div v-if="taskData" class="messages-box pa-3">
-        Running deepssm process...
+        Running DeepSSM process...
         <div v-if="taskData.error">{{ taskData.error }}</div>
         <v-progress-linear v-else :value="taskData.percent_complete"/>
+        <div class="d-flex pa-3" style="width:100%; justify-content:space-around">
+            <v-btn
+                color="red"
+                @click="() => showAbortConfirmation = true"
+            >
+                Abort
+            </v-btn>
+        </div>
         <br />
+        <v-dialog
+            v-model="showAbortConfirmation"
+            width="500"
+        >
+            <v-card>
+                <v-card-title>
+                Confirmation
+                </v-card-title>
+
+                <v-card-text>
+                    Are you sure you want to abort this task? This will cancel any related tasks in this project.
+                </v-card-text>
+
+                <v-divider></v-divider>
+
+                <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                    text
+                    @click="() => {showAbortConfirmation = false}"
+                >
+                    Cancel
+                </v-btn>
+                <v-btn
+                    color="red"
+                    text
+                    @click="() => {
+                        showAbortConfirmation = false;
+                        if (taskData) {
+                            abort(taskData)
+                        }
+                    }"
+                >
+                    Abort
+                </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
     <div class="pa-3" v-else>
         DeepSSM Controls

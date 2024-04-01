@@ -53,6 +53,7 @@ import {
     getDeepSSMResultForProject,
     getDeepSSMAugPairsForProject,
     getDeepSSMTestImagesForProject,
+    getDeepSSMTrainingPairsForProject,
     getDeepSSMTrainingImagesForProject,
 } from '@/api/rest';
 import { layers, COLORS } from "./constants";
@@ -165,6 +166,9 @@ export const loadDeepSSMDataForProject = async (id: number) => {
                 selectedProject.value.id
             ),
             await getDeepSSMAugPairsForProject(
+                selectedProject.value.id
+            ),
+            await getDeepSSMTrainingPairsForProject(
                 selectedProject.value.id
             ),
             await getDeepSSMTrainingImagesForProject(

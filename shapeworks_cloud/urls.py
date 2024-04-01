@@ -61,6 +61,12 @@ router.register(
 )
 
 router.register(
+    'deepssm-training-pair',
+    rest.DeepSSMTrainingPairViewSet,
+    basename='deepssm_training_pair',
+)
+
+router.register(
     'deepssm-training-image',
     rest.DeepSSMTrainingImageViewSet,
     basename='deepssm_training_image',

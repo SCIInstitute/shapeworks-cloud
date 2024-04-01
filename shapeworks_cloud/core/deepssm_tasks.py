@@ -308,10 +308,18 @@ def run_deepssm_command(
 
             run_training(form_data, sw_project, download_dir, aug_dims, progress)
 
+            training_examples = os.listdir(download_dir + '/deepssm/model/examples/')
+            # fragment files left from the deepssm training process (?)
+            if 'train_' in training_examples:
+                training_examples.remove('train_')
+            if 'validation_' in training_examples:
+                training_examples.remove('validation_')
+
             result_data['training'] = {
                 'train_log': download_dir + '/deepssm/model/train_log.csv',
                 'training_plot': download_dir + '/deepssm/model/training_plot.png',
                 'training_plot_ft': download_dir + '/deepssm/model/training_plot_ft.png',
+                'train_examples': training_examples,
                 'train_images': os.listdir(download_dir + '/deepssm/train_images/'),
                 'val_and_test_images': os.listdir(download_dir + '/deepssm/val_and_test_images/'),
             }
@@ -342,6 +350,7 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
         # delete any previous results.
         models.DeepSSMResult.objects.filter(project=project).delete()
         models.DeepSSMAugPair.objects.filter(project=project).delete()
+        models.DeepSSMTrainingPair.objects.filter(project=project).delete()
         models.DeepSSMTrainingImage.objects.filter(project=project).delete()
         models.DeepSSMTestingData.objects.filter(project=project).delete()
 
@@ -412,7 +421,6 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
         world_predictions = result_data['testing']['world_predictions']
         local_predictions = result_data['testing']['local_predictions']
 
-        print(world_predictions, local_predictions)
         # create test pairs
         for predictions in [world_predictions, local_predictions]:
             for _i in range(0, len(predictions)):
@@ -488,6 +496,55 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                         'rb',
                     ),
                 )
+
+        examples = result_data['training']['train_examples']
+
+        # get all values of examples that have "training" or "validation" in the name
+        training_examples = [example for example in examples if 'train' in example]
+        validation_examples = [example for example in examples if 'validation' in example]
+
+        for example_group in [training_examples, validation_examples]:
+            # get all values in the example_group which have "worst", then "median", then "best"
+            worst = [example for example in example_group if 'worst' in example]
+            median = [example for example in example_group if 'median' in example]
+            best = [example for example in example_group if 'best' in example]
+
+            for group_type in [worst, median, best]:
+                # get each file type from group list (should only be 1 of each)
+                particles_file = next(filter(lambda x: 'particles' in x, group_type))
+                scalars_file = next(filter(lambda x: 'scalars' in x, group_type))
+                index_file = next(filter(lambda x: 'index' in x, group_type))
+
+                training_pair = models.DeepSSMTrainingPair.objects.create(
+                    project=project,
+                    validation=True if example_group == validation_examples else False,
+                    example_type=(
+                        'best' if group_type == best
+                        else 'median' if group_type == median
+                        else 'worst'
+                    ),
+                )
+
+                training_pair.particles.save(
+                    particles_file,
+                    open(
+                        download_dir + '/deepssm/model/examples/' + particles_file,
+                        'rb',
+                    ),
+                )
+
+                training_pair.scalar.save(
+                    scalars_file,
+                    open(
+                        download_dir + '/deepssm/model/examples/' + scalars_file,
+                        'rb',
+                    ),
+                )
+
+                # read index file and save the contents to the index field
+                with open(download_dir + '/deepssm/model/examples/' + index_file, 'r') as file:
+                    training_pair.index = file.read()
+                    training_pair.save()
 
     run_deepssm_command(
         user_id,

@@ -150,6 +150,14 @@ class DeepSSMTestingDataFilter(FilterSet):
         fields = ['project']
 
 
+class DeepSSMTrainingPairFilter(FilterSet):
+    project = ModelChoiceFilter(queryset=models.Project.objects.all())
+
+    class Meta:
+        models = models.DeepSSMTrainingPair
+        fields = ['project']
+
+
 class DeepSSMTrainingImageFilter(FilterSet):
     project = ModelChoiceFilter(queryset=models.Project.objects.all())
 

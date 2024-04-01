@@ -218,6 +218,17 @@ class DeepSSMTestingData(models.Model):
     particles = S3FileField()
 
 
+class DeepSSMTrainingPair(models.Model):
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='deepssm_training_pair'
+    )
+    particles = S3FileField()  # .particles
+    scalar = S3FileField()  # .scalar
+    index = models.CharField(max_length=255)  # subject
+    example_type = models.CharField(max_length=255)  # best, median, worst
+    validation = models.BooleanField(default=False)
+
+
 class DeepSSMTrainingImage(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name='deepssm_training_images'

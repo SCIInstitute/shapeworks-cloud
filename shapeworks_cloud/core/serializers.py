@@ -70,6 +70,19 @@ class DeepSSMTestingDataSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class DeepSSMTrainingPairSerializer(serializers.ModelSerializer):
+    project = ProjectSerializer()
+    example_type = serializers.CharField(max_length=255)
+    validation = serializers.BooleanField()
+    particles = S3FileSerializerField()
+    scalar = S3FileSerializerField()
+    index = serializers.CharField(max_length=255)
+
+    class Meta:
+        model = models.DeepSSMTrainingPair
+        fields = '__all__'
+
+
 class DeepSSMTrainingImageSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     image = S3FileSerializerField()
@@ -113,6 +126,19 @@ class DeepSSMTestingDataReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.DeepSSMTestingData
+        fields = '__all__'
+
+
+class DeepSSMTrainingPairReadSerializer(serializers.ModelSerializer):
+    project = ProjectSerializer()
+    example_type = serializers.CharField(max_length=255)
+    validation = serializers.BooleanField()
+    particles = S3FileSerializerField()
+    scalar = S3FileSerializerField()
+    index = serializers.CharField(max_length=255)
+
+    class Meta:
+        model = models.DeepSSMTrainingPair
         fields = '__all__'
 
 

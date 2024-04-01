@@ -131,6 +131,14 @@ export async function getDeepSSMAugPairsForProject(
     })).data.results
 }
 
+export async function getDeepSSMTrainingPairsForProject(
+    projectId: number|undefined
+){
+    return (await apiClient.get(`/deepssm-training-pair/`, {
+        params: {project: projectId}
+    })).data.results
+}
+
 export async function getDeepSSMTrainingImagesForProject(
     projectId: number|undefined
 ){

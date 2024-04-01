@@ -519,9 +519,9 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                     project=project,
                     validation=True if example_group == validation_examples else False,
                     example_type=(
-                        'best' if group_type == best
-                        else 'median' if group_type == median
-                        else 'worst'
+                        'best'
+                        if group_type == best
+                        else 'median' if group_type == median else 'worst'
                     ),
                 )
 

@@ -208,7 +208,6 @@ export default {
                                 v-model="augmentationData.aug_sampler_type"
                                 label="Sampler Type"
                             />
-                            <!-- needs sub-panel for data -->
                         </v-expansion-panel-content>
                     </v-expansion-panel>
                     <v-expansion-panel>

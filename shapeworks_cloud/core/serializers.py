@@ -107,6 +107,7 @@ class DeepSSMAugPairSerializer(serializers.ModelSerializer):
 class DeepSSMResultSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     aug_visualization = S3FileSerializerField()
+    aug_total_data = S3FileSerializerField()
     training_visualization = S3FileSerializerField()
     training_visualization_ft = S3FileSerializerField()
     training_data_table = S3FileSerializerField()
@@ -166,6 +167,7 @@ class DeepSSMAugPairReadSerializer(serializers.ModelSerializer):
 class DeepSSMResultReadSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     aug_visualization = S3FileSerializerField()
+    aug_total_data = S3FileSerializerField()
     training_visualization = S3FileSerializerField()
     training_visualization_ft = S3FileSerializerField()
     training_data_table = S3FileSerializerField()

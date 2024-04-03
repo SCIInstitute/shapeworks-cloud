@@ -88,10 +88,6 @@ export default {
             return taskId;
         }
 
-        watch(showAbortConfirmation, (value) => {
-            console.log("showAbortConfirmation", value)
-        });
-
         return {
             openTab,
             prepData,

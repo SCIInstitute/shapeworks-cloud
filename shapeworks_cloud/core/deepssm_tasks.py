@@ -371,6 +371,11 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
             open(result_data['augmentation']['violin_plot'], 'rb'),
         )
 
+        deepssm_result.aug_total_data.save(
+            'TotalData.csv',
+            open(result_data['augmentation']['total_data_csv'], 'rb'),
+        )
+
         # create aug pairs
         for i in range(0, len(result_data['augmentation']['generated_images'])):
             aug_pair = models.DeepSSMAugPair.objects.create(

@@ -233,6 +233,7 @@ class DeepSSMResult(ApiModel):
 
     _file_fields = {
         'aug_visualization': 'core.DeepSSMResult.aug_visualization',
+        'aug_total_data': 'core.DeepSSMResult.aug_total_data',
         'training_visualization': 'core.DeepSSMResult.training_visualization',
         'training_visualization_ft': 'core.DeepSSMResult.training_visualization_ft',
         'training_data_table': 'core.DeepSSMResult.training_data_table',
@@ -241,6 +242,7 @@ class DeepSSMResult(ApiModel):
 
     project: Project
     aug_visualization: Union[str, Path]
+    aug_total_data: Union[str, Path]
     training_visualization: Union[str, Path]
     training_visualization_ft: Union[str, Path]
     training_data_table: Union[str, Path]

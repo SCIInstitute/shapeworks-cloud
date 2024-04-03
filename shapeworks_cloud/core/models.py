@@ -148,12 +148,10 @@ class Project(TimeStampedModel, models.Model):
         )
 
     def get_download_paths(self):
-        print('get_download_paths')
         ret = {}
         with self.file.open() as f:
             data = json.load(f)['data']
 
-        print(data)
         for subject_info in data:
             subject = Subject.objects.filter(
                 dataset=self.dataset, name=subject_info['name']
@@ -247,6 +245,7 @@ class DeepSSMAugPair(models.Model):
 class DeepSSMResult(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='deepssm_results')
     aug_visualization = S3FileField()  # .png
+    aug_total_data = S3FileField()  # .csv
     training_visualization = S3FileField()  # .png
     training_visualization_ft = S3FileField()  # .png
     training_data_table = S3FileField()  # .csv

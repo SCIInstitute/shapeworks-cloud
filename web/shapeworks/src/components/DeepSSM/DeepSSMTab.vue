@@ -1,7 +1,15 @@
 <script lang="ts">
 /* eslint-disable no-unused-vars */
-import { currentTasks, selectedProject, spawnJob, spawnJobProgressPoll, abort } from '@/store';
-import { Ref, computed, ref, watch } from 'vue';
+import { loadDeepSSMDataForProject } from '@/store';
+import {
+    currentTasks,
+    selectedProject,
+    spawnJob,
+    spawnJobProgressPoll,
+    abort,
+    deepSSMResult
+} from '@/store';
+import { Ref, computed, onMounted, ref, watch } from 'vue';
 
 
 export default {
@@ -85,6 +93,14 @@ export default {
             return taskId;
         }
 
+        const tabs = ref();
+
+        onMounted(async () => {
+            if (!deepSSMResult.value && selectedProject.value) {
+                await loadDeepSSMDataForProject();
+            }
+        })
+
         return {
             openTab,
             prepData,
@@ -96,6 +112,8 @@ export default {
             taskData,
             abort,
             showAbortConfirmation,
+            tabs,
+            deepSSMResult,
         }
     },
 }
@@ -155,89 +173,118 @@ export default {
         </v-dialog>
     </div>
     <div class="pa-3" v-else>
-        DeepSSM Controls
-        <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-                <v-icon
-                    v-bind="attrs"
-                    v-on="on"
-                >
-                mdi-information
-                </v-icon>
-            </template>
-            <span>
-               <v-subheader></v-subheader>
-            </span>
-        </v-tooltip>
-        <v-expansion-panels v-model="openTab">
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Prep
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <v-text-field v-model="prepData.testing_split" type="number" label="Test Split" suffix="%" />
-                    <v-text-field v-model="prepData.validation_split" type="number" label="Validation Split" suffix="%" />
-                    <v-text-field v-model="prepData.percent_variability" type="number" label="Percent Variablity Preserved" min="0" max="100" suffix="%" />
-                    <div class="image-spacing">
-                        <v-label class="spacing-label">Image Spacing</v-label>
-                        <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.x" type="number" label="X" />
-                        <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.y" type="number" label="Y" />
-                        <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.z" type="number" label="Z" />
-                    </div>
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Augmentation
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <v-text-field v-model="augmentationData.aug_num_samples.value" type="number" label="Number of Samples" min="1" />
+        <v-tabs v-model="tabs">
+            <v-tab>Controls</v-tab>
+            <v-tab v-if="deepSSMResult">Data</v-tab>
+        </v-tabs>
+        <v-tabs-items v-model="tabs">
+            <v-tab-item>
+                <v-expansion-panels v-model="openTab">
+                    <v-expansion-panel>
+                        <v-expansion-panel-header>
+                            Prep
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <v-text-field v-model="prepData.testing_split" type="number" label="Test Split" suffix="%" />
+                            <v-text-field v-model="prepData.validation_split" type="number" label="Validation Split" suffix="%" />
+                            <v-text-field v-model="prepData.percent_variability" type="number" label="Percent Variablity Preserved" min="0" max="100" suffix="%" />
+                            <div class="image-spacing">
+                                <v-label class="spacing-label">Image Spacing</v-label>
+                                <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.x" type="number" label="X" />
+                                <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.y" type="number" label="Y" />
+                                <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.z" type="number" label="Z" />
+                            </div>
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                    <v-expansion-panel>
+                        <v-expansion-panel-header>
+                            Augmentation
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <v-text-field v-model="augmentationData.aug_num_samples.value" type="number" label="Number of Samples" min="1" />
 
-                    <v-select 
-                        :items="Object.values(Sampler)"
-                        v-model="augmentationData.aug_sampler_type"
-                        label="Sampler Type"
-                    />
-                    <!-- needs sub-panel for data -->
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Training
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <v-select 
-                        :items="Object.values(LossFunction)"
-                        v-model="trainingData.train_loss_function"
-                        label="Loss Function"
-                    />
-                    <v-text-field v-model="trainingData.train_epochs.value" type="number" label="Epochs" min="0" />
-                    <v-text-field v-model="trainingData.train_learning_rate.value" type="number" label="Learning Rate" min="0" />
-                    <v-text-field v-model="trainingData.train_batch_size.value" type="number" label="Batch Size" min="1" />
+                            <v-select 
+                                :items="Object.values(Sampler)"
+                                v-model="augmentationData.aug_sampler_type"
+                                label="Sampler Type"
+                            />
+                            <!-- needs sub-panel for data -->
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                    <v-expansion-panel>
+                        <v-expansion-panel-header>
+                            Training
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <v-select 
+                                :items="Object.values(LossFunction)"
+                                v-model="trainingData.train_loss_function"
+                                label="Loss Function"
+                            />
+                            <v-text-field v-model="trainingData.train_epochs.value" type="number" label="Epochs" min="0" />
+                            <v-text-field v-model="trainingData.train_learning_rate.value" type="number" label="Learning Rate" min="0" />
+                            <v-text-field v-model="trainingData.train_batch_size.value" type="number" label="Batch Size" min="1" />
 
-                    <v-checkbox v-model="trainingData.train_decay_learning_rate" label="Decay Learning Rate"></v-checkbox>
+                            <v-checkbox v-model="trainingData.train_decay_learning_rate" label="Decay Learning Rate"></v-checkbox>
 
-                    <v-checkbox v-model="trainingData.train_fine_tuning" label="Fine Tuning"></v-checkbox>
+                            <v-checkbox v-model="trainingData.train_fine_tuning" label="Fine Tuning"></v-checkbox>
 
-                    <v-text-field v-model="trainingData.train_fine_tuning_epochs.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Epochs" min="1" />
-                    <v-text-field v-model="trainingData.train_fine_tuning_learning_rate.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Learning Rate" min="0" />
-
-                    <!-- TODO: needs sub-panel for training output -->
-                    <!-- needs data table with "Original Data" and "Generated Data" options -->
-                    <!-- also needs violin plot to compare original and generated data -->
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Testing
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <!-- Data table for name and average distance -->
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-        </v-expansion-panels>
-        <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
-        <!-- <div class="loading-dialog"><v-dialog v-model="currentlyCaching" width="10%">Calculating...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div> -->
+                            <v-text-field v-model="trainingData.train_fine_tuning_epochs.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Epochs" min="1" />
+                            <v-text-field v-model="trainingData.train_fine_tuning_learning_rate.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Learning Rate" min="0" />
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                    <v-expansion-panel>
+                        <v-expansion-panel-header>
+                            Testing
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <!-- Data table for name and average distance -->
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                </v-expansion-panels>
+                <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
+            </v-tab-item>
+            <v-tab-item v-if="deepSSMResult">
+                <v-expansion-panels>
+                    <v-expansion-panel>
+                        <v-expansion-panel-header>
+                            Augmentation
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <!-- table -->
+                            total
+                            <!-- violin plot -->
+                            <v-img :src="deepSSMResult.result?.aug_visualization" alt="Augmented Data Violin Plot" />
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                    <v-expansion-panel>
+                        <v-expansion-panel-header>
+                            Training
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <!-- training data -->
+                            <!-- table -->
+                            <!-- epoch plots -->
+                            Training Plot
+                            <v-img :src="deepSSMResult.result?.training_visualization" alt="Training Plot" />
+                            <div v-if="deepSSMResult.result?.training_visualization_ft">
+                                Fine Tuning Plot
+                                <v-img :src="deepSSMResult.result?.training_visualization_ft" alt="Fine Tuning Plot" />
+                            </div>
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                    <v-expansion-panel>
+                        <v-expansion-panel-header>
+                            Testing
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <!-- testing data -->
+                            <!-- distance table -->
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                </v-expansion-panels>
+            </v-tab-item>
+        </v-tabs-items>
     </div>
 </template>
 

@@ -124,3 +124,5 @@ export const imageViewWindowRange = ref<number[]>([0, 1]);
 export const imageViewLevel = ref<number>(0);
 
 export const imageViewLevelRange = ref<number[]>([0, 1]);
+
+export const deepSSMResult = ref<Record<string, any>>();

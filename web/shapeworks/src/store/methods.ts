@@ -33,6 +33,7 @@ import {
      anatomies,
      constraintInfo,
      allSetConstraints,
+     deepSSMResult,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -159,7 +160,7 @@ export const loadReconstructedSamplesForProject = async (type: string, id: numbe
     }
 }
 
-export const loadDeepSSMDataForProject = async (id: number) => {
+export const loadDeepSSMDataForProject = async () => {
     if (selectedProject.value) {
         const results = await Promise.all([
             await getDeepSSMResultForProject(
@@ -179,12 +180,13 @@ export const loadDeepSSMDataForProject = async (id: number) => {
             )]
         )
 
-        return {
-            result: results[0],
+        deepSSMResult.value = {
+            result: results[0][0],
             aug_pairs: results[1],
             training_images: results[2],
             test_images: results[3]
         }
+        console.log(deepSSMResult.value)
     }
 }
 
@@ -297,22 +299,25 @@ export async function fetchJobResults(taskName: string) {
             }
             break;
         case 'deepssm':
-            layerName = 'Groomed' // TODO: Implement shapeviewer changes for deepssm tabs
             loadFunction = loadDeepSSMDataForProject
             break;
     }
     if (layerName && loadFunction) {
-        await Promise.all(allDataObjectsInDataset.value.map(
-            (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
-        ))
-        cachedMarchingCubes.value = Object.fromEntries(
-            Object.entries(cachedMarchingCubes.value).filter(
-                ([cachedLabel]) => !cachedLabel.includes(layerName)
+        if (layerName) {
+            await Promise.all(allDataObjectsInDataset.value.map(
+                (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
+            ))
+            cachedMarchingCubes.value = Object.fromEntries(
+                Object.entries(cachedMarchingCubes.value).filter(
+                    ([cachedLabel]) => !cachedLabel.includes(layerName)
+                )
             )
-        )
-        const layer = layers.value.find((l) => l.name === layerName)
-        if (layer?.available() && !layersShown.value.includes(layerName)) {
-            layersShown.value = [...layersShown.value, layerName]
+            const layer = layers.value.find((l) => l.name === layerName)
+            if (layer?.available() && !layersShown.value.includes(layerName)) {
+                layersShown.value = [...layersShown.value, layerName]
+            }
+        } else {
+            loadFunction()
         }
     }
 }

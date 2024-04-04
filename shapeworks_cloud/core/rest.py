@@ -534,12 +534,7 @@ class ProjectViewSet(BaseViewSet):
         deepssm_run.apply_async(
             args=[request.user.id, project.id, deepssm_progress.id, form_data], queue='gpu'
         )
-        # deepssm_run.delay(
-        #     request.user.id,
-        #     project.id,
-        #     deepssm_progress.id,
-        #     form_data,
-        # )
+
         return Response(
             data={
                 'deepssm_task': serializers.TaskProgressSerializer(deepssm_progress).data,

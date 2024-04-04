@@ -43,8 +43,6 @@ services:
         "shapeworks_cloud.celery",
         "worker",
         "-n=main",
-        "-P",
-        "threads",
         "--loglevel",
         "INFO",
         "--without-heartbeat"
@@ -56,7 +54,6 @@ services:
       - .:/opt/django-project
     # Use host mode so that celery can use the localhost:8000 API in dev deployments
     network_mode: host
-    shm_size: 8gb
     depends_on:
       - postgres
       - rabbitmq
@@ -98,19 +95,6 @@ services:
       - postgres
       - rabbitmq
       - minio
-
-  # celery-beat:
-  #   build:
-  #     context: .
-  #     dockerfile: ./dev/django.Dockerfile
-  #   command: [ "celery", "--app", "shapeworks_cloud.celery", "beat" ]
-  #   tty: false
-  #   env_file: ./dev/.env.celery.docker-compose
-  #   volumes:
-  #     - .:/opt/django-project
-  #   network_mode: host
-  #   depends_on:
-  #     - celery
 
   yarn:
     image: node:17

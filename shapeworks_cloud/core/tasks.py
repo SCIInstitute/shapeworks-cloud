@@ -94,8 +94,6 @@ def run_shapeworks_command(
             swcc_project = SWCCProject.from_id(project.id)
             swcc_project.download(download_dir)
 
-            print("copied swcc project")
-
             pre_command_function()
             progress.update_percentage(10)
 
@@ -123,7 +121,6 @@ def run_shapeworks_command(
             if len(args) > 0:
                 full_command.extend(args)
 
-            print("running shapeworks command")
             with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
                 if process.stderr and process.stdout:
                     for line in iter(process.stdout.readline, b''):
@@ -138,12 +135,10 @@ def run_shapeworks_command(
                             else:
                                 progress.update_percentage(parse_progress(line.decode()) + 10)
                     for line in iter(process.stderr.readline, b''):
-                        print(line.decode())
                         progress.update_error(line.decode())
                         return
                 process.wait()
 
-            print("Shapeworks command finished")
             result_filename = 'analysis.json' if command == 'analyze' else project_filename
             with open(Path(download_dir, result_filename), 'r') as f:
                 result_data = json.load(f)
@@ -157,7 +152,6 @@ def groom(user_id, project_id, form_data, progress_id):
         # delete any previous results
         models.GroomedSegmentation.objects.filter(project=project_id).delete()
         models.GroomedMesh.objects.filter(project=project_id).delete()
-        print("deleted groomed data")
 
     def post_command_function(project, download_dir, result_data, project_filename):
         # save project file changes to database
@@ -166,14 +160,11 @@ def groom(user_id, project_id, form_data, progress_id):
             open(Path(download_dir, project_filename), 'rb'),
         )
 
-        print("post command groom")
-
         # make new objects in database
         project_segmentations = models.Segmentation.objects.filter(
             subject__dataset__id=project.dataset.id
         )
         project_meshes = models.Mesh.objects.filter(subject__dataset__id=project.dataset.id)
-        print("fetched meshes and segmentations")
         for entry in result_data['data']:
             row: Dict[str, Dict] = {}
             for key in entry.keys():
@@ -187,11 +178,9 @@ def groom(user_id, project_id, form_data, progress_id):
 
             for anatomy_data in row.values():
                 if 'groomed' not in anatomy_data:
-                    print("no groomed")
                     continue
                 source_filename = anatomy_data['shape'].split('/')[-1]
                 result_file = Path(download_dir, anatomy_data['groomed'])
-                print(result_file)
                 try:
                     target_object = project_segmentations.get(
                         file__endswith=source_filename,
@@ -208,7 +197,6 @@ def groom(user_id, project_id, form_data, progress_id):
                         project=project,
                         mesh=target_object,
                     )
-                print("saving result_file")
                 result_object.file.save(
                     anatomy_data['groomed'],
                     open(result_file, 'rb'),

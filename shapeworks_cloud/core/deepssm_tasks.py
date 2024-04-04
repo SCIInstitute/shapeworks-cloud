@@ -18,48 +18,23 @@ from swcc.models import Project as SWCCProject
 from .tasks import edit_swproj_section
 
 
-def interpret_deepssm_form_data(data: Dict) -> Dict:
-    # Prep
-    data['validation_split'] = data['validationSplit']
-    data['testing_split'] = data['testingSplit']
-    data['image_spacing'] = data['imageSpacing']
-    data['percent_variability'] = data['percentVariability']
-
-    # Augmentation
-    data['aug_num_samples'] = data['numSamples']
-    data['aug_sampler_type'] = data['samplerType']
-
-    # Training
-    data['train_loss_function'] = data['lossFunction']
-    data['train_epochs'] = data['epochs']
-    data['train_learning_rate'] = data['learningRate']
-    data['train_batch_size'] = data['batchSize']
-    data['train_decay_learning_rate'] = data['decayLearningRate']
-    data['train_fine_tuning'] = data['fineTuning']
-    data['train_fine_tuning_epochs'] = data['ftEpochs']
-    data['train_fine_tuning_learning_rate'] = data['ftLearningRate']
-
-    return data
-
-
 def run_prep(params, project, project_file, progress):
     # //////////////////////////////////////////////
     # /// STEP 1: Create Split
     # //////////////////////////////////////////////
     val_split = float(params['validation_split'])
     test_split = float(params['testing_split'])
-    # val_split = project.get_parameters('validation_split')
-    # test_split = project.get_parameters('testing_split')
+
     train_split = 100.0 - val_split - test_split
     DeepSSMUtils.create_split(project, train_split, val_split, test_split)
 
     # /////////////////////////////////////////////////////////////////
     # /// STEP 2: Groom Training Shapes
     # /////////////////////////////////////////////////////////////////
-    params = project.get_parameters('groom')
-    params.set('alignment_method', 'Iterative Closest Point')
-    params.set('alignment_enabled', 'true')
-    project.set_parameters('groom', params)
+    project_params = project.get_parameters('groom')
+    project_params.set('alignment_method', 'Iterative Closest Point')
+    project_params.set('alignment_enabled', 'true')
+    project.set_parameters('groom', project_params)
 
     DeepSSMUtils.groom_training_shapes(project)
     project.save(project_file)
@@ -69,10 +44,10 @@ def run_prep(params, project, project_file, progress):
     # /////////////////////////////////////////////////////////////////
 
     # set num_particles to 16 and iterations_per_split to 1
-    params = project.get_parameters('optimize')
-    params.set('number_of_particles', '16')
-    params.set('iterations_per_split', '1')
-    project.set_parameters('optimize', params)
+    project_params = project.get_parameters('optimize')
+    project_params.set('number_of_particles', '16')
+    project_params.set('iterations_per_split', '1')
+    project.set_parameters('optimize', project_params)
 
     DeepSSMUtils.optimize_training_particles(project)
     project.save(project_file)
@@ -100,14 +75,14 @@ def run_prep(params, project, project_file, progress):
     # /////////////////////////////////////////////////////////////////
     DeepSSMUtils.prep_project_for_val_particles(project)
 
-    params = project.get_parameters('optimize')
-    params.set('multiscale', '0')
-    params.set('procrustes', '0')
-    params.set('procrustes_interval', '0')
-    params.set('procrustes_scaling', '0')
-    params.set('narrow_band', '1e10')
+    project_params = project.get_parameters('optimize')
+    project_params.set('multiscale', '0')
+    project_params.set('procrustes', '0')
+    project_params.set('procrustes_interval', '0')
+    project_params.set('procrustes_scaling', '0')
+    project_params.set('narrow_band', '1e10')
 
-    project.set_parameters('optimize', params)
+    project.set_parameters('optimize', project_params)
 
     DeepSSMUtils.groom_validation_shapes(project)
     project.save(project_file)
@@ -267,7 +242,6 @@ def run_deepssm_command(
 
             if form_data:
                 # write the form data to the project file
-                form_data = interpret_deepssm_form_data(form_data)
                 edit_swproj_section(
                     Path(download_dir, project_filename),
                     'deepssm',
@@ -276,17 +250,11 @@ def run_deepssm_command(
 
             result_data = {}
 
-            # data_dir = download_dir + 'data/'
-
             # Use shapeworks python project class
             sw_project = sw.Project()
 
-            # sw_project.set_subjects(swcc_project.subjects)
-
             sw_project_file = str(Path(download_dir, project_filename))
 
-            # Save project spreadsheet
-            # spreadsheet_file = data_dir + 'deepssm_project.swproj'
             sw_project.load(sw_project_file)
 
             os.chdir(sw_project.get_project_path())
@@ -309,7 +277,7 @@ def run_deepssm_command(
             run_training(form_data, sw_project, download_dir, aug_dims, progress)
 
             training_examples = os.listdir(download_dir + '/deepssm/model/examples/')
-            # fragment files left from the deepssm training process (?)
+
             if 'train_' in training_examples:
                 training_examples.remove('train_')
             if 'validation_' in training_examples:

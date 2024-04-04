@@ -411,7 +411,7 @@ export default {
                         <v-tab-item value="data">
                             <data-list :dataset="dataset" autoSelectOne/>
                         </v-tab-item>
-                        <v-tab v-if="selectedProject && selectedProject.landmarks.length > 0" href="#info">Info</v-tab>
+                        <v-tab href="#info">Info</v-tab>
                         <v-tab-item value="info">
                             <info-tab />
                         </v-tab-item>

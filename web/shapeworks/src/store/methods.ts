@@ -186,7 +186,6 @@ export const loadDeepSSMDataForProject = async () => {
             training_images: results[2],
             test_images: results[3]
         }
-        console.log(deepSSMResult.value)
     }
 }
 

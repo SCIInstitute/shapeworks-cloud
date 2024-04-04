@@ -7,9 +7,13 @@ import {
     spawnJob,
     spawnJobProgressPoll,
     abort,
-    deepSSMResult
+    deepSSMDataTab,
+    deepSSMResult,
+    deepSSMAugShowOrgData,
+    deepSSMAugShowGenData,
 } from '@/store';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
+import { parseCSVFromURL } from '@/helper';
 
 
 export default {
@@ -34,7 +38,6 @@ export default {
 
         const openExpansionPanel = ref<number>(0);
         const controlsTabs = ref();
-        const dataTabs = ref();
         const showAbortConfirmation = ref(false);
 
         const prepData = {
@@ -60,6 +63,25 @@ export default {
             train_fine_tuning: ref<boolean>(true),
             train_fine_tuning_epochs: ref<number>(100),
             train_fine_tuning_learning_rate: ref<number>(0.001),
+        }
+
+        // headers are assigned from the parseCSV function's output
+        const dataTables = {
+            aug_table: ref<any>(undefined),
+            aug_headers: ref<any>(undefined),
+            training_table: ref<any>(undefined),
+            training_headers: ref<any>([
+                {text: "Training Stage", value: '0'},
+                {text: "Epoch", value: '1'},
+                {text: "LR", value: '2'},
+                {text: "Train_Err", value: '3'},
+                {text: "Train_Rel_Err", value: '4'},
+                {text: "Val_Err", value: '5'},
+                {text: "Val_Rel_Err", value: '6'},
+                {text: "Sec", value: '7'},
+            ]),
+            testing_table: ref<any>(undefined),
+            testing_headers: ref<any>([{text: "Name", value: '0'}, {text: "Distance", value: '1'}]),
         }
 
         /**
@@ -95,16 +117,40 @@ export default {
             return taskId;
         }
 
+        async function getCSVDataFromURL(url: string) {
+            return await parseCSVFromURL(url);
+        }
+
         onMounted(async () => {
             if (!deepSSMResult.value && selectedProject.value) {
                 await loadDeepSSMDataForProject();
+            }
+            if (deepSSMResult.value) {
+                try {
+                    Promise.all([
+                        await getCSVDataFromURL(deepSSMResult.value.result.aug_total_data),
+                        await getCSVDataFromURL(deepSSMResult.value.result.training_data_table),
+                        await getCSVDataFromURL(deepSSMResult.value.result.testing_distances),
+                    ]).then((res) => {
+                        dataTables.aug_table.value = res[0];
+                        dataTables.training_table.value = res[1];
+                        dataTables.testing_table.value = res[2];
+
+                        // Augmentation data table doesn't have headers, only a numbered list
+                        dataTables.aug_headers.value = dataTables.aug_table.value.map((_: string, index: number) => {
+                            return {text: index+1, value: `${index}`, align:'start'}
+                        });
+                    });
+                }
+                catch (e) {
+                    console.error(e);
+                }
             }
         })
 
         return {
             openExpansionPanel,
             controlsTabs,
-            dataTabs,
             prepData,
             augmentationData,
             trainingData,
@@ -114,7 +160,11 @@ export default {
             taskData,
             abort,
             showAbortConfirmation,
+            deepSSMDataTab,
             deepSSMResult,
+            deepSSMAugShowOrgData,
+            deepSSMAugShowGenData,
+            dataTables,
         }
     },
 }
@@ -242,18 +292,26 @@ export default {
             <v-expansion-panel v-if="deepSSMResult">
                 <v-expansion-panel-header>Data</v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <v-tabs v-model="dataTabs">
-                        <v-tab>Prep</v-tab>
+                    <v-tabs v-model="deepSSMDataTab">
                         <v-tab>Augmentation</v-tab>
                         <v-tab>Training</v-tab>
                         <v-tab>Testing</v-tab>
                     </v-tabs>
-                    <v-tabs-items v-model="dataTabs">
+                    <v-tabs-items v-model="deepSSMDataTab">
                         <v-tab-item>
                             <div>
+                                <div class="aug-data-checkboxes">
+                                    <v-checkbox v-model="deepSSMAugShowOrgData" label="Original Data"></v-checkbox>
+                                    <v-checkbox v-model="deepSSMAugShowGenData" label="Generated Data"></v-checkbox>
+                                </div>
                                 <!-- table -->
-                                total
+                                <!-- TODO: CLEAN STYLING -->
+                                <v-data-table
+                                    :items="dataTables.aug_table.value"
+                                    :headers="dataTables.aug_headers.value"
+                                ></v-data-table>
                                 <!-- violin plot -->
+                                <h4>Violin Plot</h4>
                                 <v-img :src="deepSSMResult.result?.aug_visualization" alt="Augmented Data Violin Plot" />
                             </div>
                         </v-tab-item>
@@ -261,6 +319,11 @@ export default {
                             <div>
                                 <!-- training data -->
                                 <!-- table -->
+                                <!-- TODO: CLEAN STYLING -->
+                                <v-data-table
+                                    :items="dataTables.training_table.value"
+                                    :headers="dataTables.training_headers.value"
+                                ></v-data-table>
                                 <!-- epoch plots -->
                                 Training Plot
                                 <v-img :src="deepSSMResult.result?.training_visualization" alt="Training Plot" />
@@ -274,6 +337,11 @@ export default {
                             <div>
                                 <!-- testing data -->
                                 <!-- distance table -->
+                                <!-- TODO: CLEAN STYLING -->
+                                <v-data-table
+                                    :items="dataTables.testing_table.value"
+                                    :headers="dataTables.testing_headers.value"
+                                ></v-data-table>
                             </div>
                         </v-tab-item>
                     </v-tabs-items>
@@ -305,7 +373,7 @@ input[type=number] {
     margin: 0 10px;
 }
 
-.image-spacing {
+.image-spacing, .aug-data-checkboxes {
     display: flex;
     flex-direction: row;
     justify-content: space-between;

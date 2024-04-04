@@ -279,14 +279,6 @@ export default {
                         </v-tab-item>
                     </v-tabs-items>
                     <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
-                        </v-expansion-panel-content>
-                    </v-expansion-panel>
-                    <v-expansion-panel>
-                        <v-expansion-panel-header>
-                            Testing
-                        </v-expansion-panel-header>
-                        <v-expansion-panel-content>
-                            <!-- Data table for name and average distance -->
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel v-if="deepSSMResult">

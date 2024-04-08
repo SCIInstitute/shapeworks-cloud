@@ -237,8 +237,8 @@ export default {
             </v-card>
         </v-dialog>
     </div>
-    <div class="pa-3" width="100%" v-else>
-        <v-expansion-panels width="100%" v-model="openExpansionPanel">
+    <div class="pa-3" v-else>
+        <v-expansion-panels v-model="openExpansionPanel">
             <v-expansion-panel>
                 <v-expansion-panel-header>Controls</v-expansion-panel-header>
                 <v-expansion-panel-content>
@@ -295,7 +295,7 @@ export default {
                     <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
                 </v-expansion-panel-content>
             </v-expansion-panel>
-            <v-expansion-panel width="100%" v-if="deepSSMResult">
+            <v-expansion-panel v-if="deepSSMResult">
                 <v-expansion-panel-header>Data</v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-tabs v-model="deepSSMDataTab">
@@ -304,7 +304,7 @@ export default {
                         <v-tab>Testing</v-tab>
                     </v-tabs>
                     <v-tabs-items v-model="deepSSMDataTab">
-                        <v-tab-item width="100%">
+                        <v-tab-item>
                             <div>
                                 <div class="aug-data-checkboxes">
                                     <v-checkbox v-model="deepSSMAugShowOrgData" label="Original Data"></v-checkbox>

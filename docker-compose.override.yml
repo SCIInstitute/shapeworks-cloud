@@ -5,11 +5,6 @@ services:
       context: .
       dockerfile: ./dev/django.Dockerfile
     command: [
-      "conda",
-      "run",
-      "--no-capture-output",
-      "-n",
-      "shapeworks",
       "./manage.py", 
       "runserver", 
       "0.0.0.0:8000"
@@ -33,11 +28,6 @@ services:
       dockerfile: ./dev/django.Dockerfile
     command:
       [
-        "conda",
-        "run",
-        "--no-capture-output",
-        "-n",
-        "shapeworks",
         "celery",
         "--app",
         "shapeworks_cloud.celery",
@@ -65,11 +55,6 @@ services:
       dockerfile: ./dev/django.Dockerfile
     command:
       [
-        "conda",
-        "run",
-        "--no-capture-output",
-        "-n",
-        "shapeworks",
         "celery",
         "--app",
         "shapeworks_cloud.celery",

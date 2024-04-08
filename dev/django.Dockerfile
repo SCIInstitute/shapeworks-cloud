@@ -22,8 +22,7 @@ RUN curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
     && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
     && conda update -n base -c defaults conda \
     && conda install pip \
-    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
-    && echo "conda activate base" >> ~/.bashrc
+    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
 
 # Only copy the setup.py, it will still force all install_requires to be installed,
 # but find_packages() will find nothing (which is fine). When Docker Compose mounts the real source
@@ -43,6 +42,7 @@ COPY ./swcc/setup.py /opt/django-project/swcc/setup.py
 SHELL ["conda", "run", "/bin/bash", "-c"]
 RUN cd /opt/shapeworks ; ls ; source install_shapeworks.sh ; conda clean -t -y
 SHELL ["conda", "run", "-n", "shapeworks", "bin/bash", "-c"]
+RUN echo "conda activate shapeworks" >> ~/.bashrc
 
 RUN pip install -U pip && \
     pip install --editable /opt/django-project[dev] && \
@@ -55,3 +55,4 @@ RUN pip install awscli
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.
 WORKDIR /opt/django-project
+ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "shapeworks"]

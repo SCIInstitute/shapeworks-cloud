@@ -15,57 +15,117 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='DeepSSMTrainingPair',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('particles', s3_file_field.fields.S3FileField()),
                 ('scalar', s3_file_field.fields.S3FileField()),
                 ('vtk', s3_file_field.fields.S3FileField()),
                 ('index', models.CharField(max_length=255)),
                 ('example_type', models.CharField(max_length=255)),
                 ('validation', models.BooleanField(default=False)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deepssm_training_pair', to='core.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='deepssm_training_pair',
+                        to='core.project',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='DeepSSMTrainingImage',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('image', s3_file_field.fields.S3FileField()),
                 ('validation', models.BooleanField(default=False)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deepssm_training_images', to='core.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='deepssm_training_images',
+                        to='core.project',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='DeepSSMTestingData',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('image_type', models.CharField(max_length=255)),
                 ('image_id', models.IntegerField()),
                 ('mesh', s3_file_field.fields.S3FileField()),
                 ('particles', s3_file_field.fields.S3FileField()),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deepssm_testing_data', to='core.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='deepssm_testing_data',
+                        to='core.project',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='DeepSSMResult',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('aug_visualization', s3_file_field.fields.S3FileField()),
                 ('aug_total_data', s3_file_field.fields.S3FileField()),
                 ('training_visualization', s3_file_field.fields.S3FileField()),
                 ('training_visualization_ft', s3_file_field.fields.S3FileField()),
                 ('training_data_table', s3_file_field.fields.S3FileField()),
                 ('testing_distances', s3_file_field.fields.S3FileField()),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deepssm_results', to='core.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='deepssm_results',
+                        to='core.project',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='DeepSSMAugPair',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('sample_num', models.IntegerField()),
                 ('mesh', s3_file_field.fields.S3FileField()),
                 ('particles', s3_file_field.fields.S3FileField()),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deepssm_aug_pair', to='core.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='deepssm_aug_pair',
+                        to='core.project',
+                    ),
+                ),
             ],
         ),
     ]

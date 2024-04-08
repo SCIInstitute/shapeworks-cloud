@@ -20,7 +20,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from .deepssm_tasks import deepssm_run
 from .tasks import analyze, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
@@ -518,6 +517,10 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def deepssm_run(self, request, **kwargs):
+        # lazy import; requires conda shapeworks env activation
+        from .deepssm_tasks import deepssm_run
+
+
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}

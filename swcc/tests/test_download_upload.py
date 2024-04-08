@@ -62,7 +62,7 @@ def public_server_download(download_dir):
         for project in project_subset:
             if project is not None:
                 project.download(download_dir)
-        return project_subset
+        return [p for p in project_subset if p is not None]
 
 
 def test_download_upload_cycle(session):

@@ -222,6 +222,7 @@ class DeepSSMTrainingPair(models.Model):
     )
     particles = S3FileField()  # .particles
     scalar = S3FileField()  # .scalar
+    vtk = S3FileField()  # .vtk
     index = models.CharField(max_length=255)  # subject
     example_type = models.CharField(max_length=255)  # best, median, worst
     validation = models.BooleanField(default=False)

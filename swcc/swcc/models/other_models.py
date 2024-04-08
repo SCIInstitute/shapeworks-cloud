@@ -192,11 +192,13 @@ class DeepSSMTrainingPair(ApiModel):
     _file_fields = {
         'particles': 'core.DeepSSMTrainingPair.particles',
         'scalar': 'core.DeepSSMTrainingPair.scalar',
+        'vtk': 'core.DeepSSMTrainingPair.vtk',
     }
 
     project: Project
     particles_source: Union[str, Path]
     scalar_source: Union[str, Path]
+    vtk_source: Union[str, Path]
     validation: bool
     example_type: str
     index: str

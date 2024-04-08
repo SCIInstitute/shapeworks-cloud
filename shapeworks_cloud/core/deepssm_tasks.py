@@ -172,7 +172,7 @@ def run_training(params, project, download_dir, aug_dims, progress):
     )
     progress.update_percentage(40)
 
-    DeepSSMUtils.trainDeepSSM(config_file)
+    DeepSSMUtils.trainDeepSSM(project, config_file)
     progress.update_percentage(50)
 
 
@@ -486,6 +486,7 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                 # get each file type from group list (should only be 1 of each)
                 particles_file = next(filter(lambda x: 'particles' in x, group_type))
                 scalars_file = next(filter(lambda x: 'scalars' in x, group_type))
+                vtk_file = next(filter(lambda x: 'vtk' in x, group_type))
                 index_file = next(filter(lambda x: 'index' in x, group_type))
 
                 training_pair = models.DeepSSMTrainingPair.objects.create(
@@ -510,6 +511,14 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                     scalars_file,
                     open(
                         download_dir + '/deepssm/model/examples/' + scalars_file,
+                        'rb',
+                    ),
+                )
+
+                training_pair.vtk.save(
+                    vtk_file,
+                    open(
+                        download_dir + '/deepssm/model/examples/' + vtk_file,
                         'rb',
                     ),
                 )

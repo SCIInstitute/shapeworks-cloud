@@ -76,6 +76,7 @@ class DeepSSMTrainingPairSerializer(serializers.ModelSerializer):
     validation = serializers.BooleanField()
     particles = S3FileSerializerField()
     scalar = S3FileSerializerField()
+    vtk = S3FileSerializerField()
     index = serializers.CharField(max_length=255)
 
     class Meta:
@@ -136,6 +137,7 @@ class DeepSSMTrainingPairReadSerializer(serializers.ModelSerializer):
     validation = serializers.BooleanField()
     particles = S3FileSerializerField()
     scalar = S3FileSerializerField()
+    vtk = S3FileSerializerField()
     index = serializers.CharField(max_length=255)
 
     class Meta:

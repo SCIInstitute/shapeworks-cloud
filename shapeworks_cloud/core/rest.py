@@ -612,7 +612,7 @@ class DeepSSMTrainingPairViewSet(BaseViewSet):
     queryset = models.DeepSSMTrainingPair.objects.all()
     filterset_class = filters.DeepSSMTrainingPairFilter
 
-    def get_serializer_class(self) -> BaseSerializer:
+    def get_serializer_class(self):
         if self.request.method == 'GET':
             return serializers.DeepSSMTrainingPairReadSerializer
         else:
@@ -623,7 +623,7 @@ class DeepSSMTrainingImageViewSet(BaseViewSet):
     queryset = models.DeepSSMTrainingImage.objects.all()
     filterset_class = filters.DeepSSMTrainingImageFilter
 
-    def get_serializer_class(self) -> BaseSerializer:
+    def get_serializer_class(self):
         if self.request.method == 'GET':
             return serializers.DeepSSMTrainingImageReadSerializer
         else:

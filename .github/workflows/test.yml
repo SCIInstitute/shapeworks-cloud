@@ -21,7 +21,7 @@ jobs:
         run: docker-compose -f "docker-compose.yml" build
       - name: Install Git & Tox
         run: |
-          docker-compose run --rm django apt-get install git
+          docker-compose run --rm django apt-get install git-all
           docker-compose run --rm django pip install --upgrade pip
           docker-compose run --rm django pip install tox
       - name: Start services

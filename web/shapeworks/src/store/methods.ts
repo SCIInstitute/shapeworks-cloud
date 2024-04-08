@@ -183,8 +183,9 @@ export const loadDeepSSMDataForProject = async () => {
         deepSSMResult.value = {
             result: results[0][0],
             aug_pairs: results[1],
-            training_images: results[2],
-            test_images: results[3]
+            training_pairs: results[2],
+            training_images: results[3],
+            test_images: results[4]
         }
     }
 }

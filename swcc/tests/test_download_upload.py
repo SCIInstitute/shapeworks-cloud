@@ -26,8 +26,10 @@ def project_as_dict_repr(project):
     del project_repr['dataset']['id']
     del project_repr['dataset']['creator']
     del project_repr['last_cached_analysis']
-    del project_repr['last_cached_deep_ssm']
     del project_repr['landmarks_info']
+
+    if 'last_cached_deep_ssm' in project_repr:
+        del project_repr['last_cached_deep_ssm']
     return project_repr
 
 

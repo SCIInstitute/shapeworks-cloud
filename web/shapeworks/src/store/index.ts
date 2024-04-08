@@ -131,4 +131,4 @@ export const deepSSMDataTab = ref<number>(0);
 
 export const deepSSMAugShowOrgData = ref<boolean>(true);
 
-export const deepSSMAugShowGenData = ref<boolean>(false);
+export const deepSSMAugShowGenData = ref<boolean>(true);

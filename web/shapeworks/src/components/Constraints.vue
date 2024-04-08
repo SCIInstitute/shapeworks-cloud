@@ -208,6 +208,7 @@ export default {
                         :headers="headers"
                         :items="constraintInfo"
                         :expanded="expandedRows"
+                        class="contraints-table"
                         item-key="id"
                         disable-pagination
                         hide-default-footer
@@ -374,22 +375,22 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.v-data-table tr {
+.contraints-table .v-data-table tr {
     position: relative;
     display: block;
     padding-left: 15px;
 }
-th {
+.contraints-table th {
     padding-left: 5px !important;
 }
-.v-data-table td {
+.contraints-table .v-data-table td {
     border-bottom: none !important;
     padding: 0px 10px !important;
 }
-.v-data-table__expanded {
+.contraints-table .v-data-table__expanded {
     width: 100%
 }
-.v-row-group__header {
+.contraints-table .v-row-group__header {
     background: none !important;
     border-top: 1px solid white !important;
 }

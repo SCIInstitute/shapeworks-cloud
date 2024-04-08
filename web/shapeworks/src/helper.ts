@@ -94,11 +94,12 @@ export async function parseCSVFromURL(url: string) {
         const splitstring = text.split('\n').slice(0, -1);
 
         const data: {[x: string]: any} = [];
-        for (let i = 0; i < splitstring.length; i++) {
+        for (let i = 1; i < splitstring.length; i++) {
             const d = {};
             const row = splitstring[i].split(',');
             for (let j = 0; j < row.length; j++) {
-                d[j] = row[j];
+                // parseFloat if row[j] is a number, otherwise keep it as a string
+                d[j] = isNaN(parseFloat(row[j])) ? row[j] : parseFloat(row[j]);
             }
             data.push(d);
         }

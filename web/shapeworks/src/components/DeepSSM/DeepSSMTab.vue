@@ -237,8 +237,8 @@ export default {
             </v-card>
         </v-dialog>
     </div>
-    <div class="pa-3" v-else>
-        <v-expansion-panels v-model="openExpansionPanel">
+    <div class="pa-3" width="100%" v-else>
+        <v-expansion-panels width="100%" v-model="openExpansionPanel">
             <v-expansion-panel>
                 <v-expansion-panel-header>Controls</v-expansion-panel-header>
                 <v-expansion-panel-content>
@@ -295,7 +295,7 @@ export default {
                     <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
                 </v-expansion-panel-content>
             </v-expansion-panel>
-            <v-expansion-panel v-if="deepSSMResult">
+            <v-expansion-panel width="100%" v-if="deepSSMResult">
                 <v-expansion-panel-header>Data</v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-tabs v-model="deepSSMDataTab">
@@ -304,19 +304,16 @@ export default {
                         <v-tab>Testing</v-tab>
                     </v-tabs>
                     <v-tabs-items v-model="deepSSMDataTab">
-                        <v-tab-item>
+                        <v-tab-item width="100%">
                             <div>
                                 <div class="aug-data-checkboxes">
                                     <v-checkbox v-model="deepSSMAugShowOrgData" label="Original Data"></v-checkbox>
                                     <v-checkbox v-model="deepSSMAugShowGenData" label="Generated Data"></v-checkbox>
                                 </div>
-                                <!-- table -->
-                                <!-- TODO: CLEAN STYLING -->
                                 <v-data-table
                                     :items="dataTables.aug_table.value"
                                     :headers="dataTables.aug_headers.value"
-                                    calculate-widths
-                                ></v-data-table>
+                                />
                                 <!-- violin plot -->
                                 <h4>Violin Plot</h4>
                                 <v-img :src="deepSSMResult.result?.aug_visualization" alt="Augmented Data Violin Plot" />
@@ -324,13 +321,10 @@ export default {
                         </v-tab-item>
                         <v-tab-item>
                             <div>
-                                <!-- training data -->
-                                <!-- table -->
-                                <!-- TODO: CLEAN STYLING -->
                                 <v-data-table
                                     :items="dataTables.training_table.value"
                                     :headers="dataTables.training_headers.value"
-                                ></v-data-table>
+                                />
                                 <!-- epoch plots -->
                                 Training Plot
                                 <v-img :src="deepSSMResult.result?.training_visualization" alt="Training Plot" />
@@ -342,13 +336,10 @@ export default {
                         </v-tab-item>
                         <v-tab-item>
                             <div>
-                                <!-- testing data -->
-                                <!-- distance table -->
-                                <!-- TODO: CLEAN STYLING -->
                                 <v-data-table
                                     :items="dataTables.testing_table.value"
                                     :headers="dataTables.testing_headers.value"
-                                ></v-data-table>
+                                />
                             </div>
                         </v-tab-item>
                     </v-tabs-items>

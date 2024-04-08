@@ -132,13 +132,27 @@ export default {
                         await getCSVDataFromURL(deepSSMResult.value.result.training_data_table),
                         await getCSVDataFromURL(deepSSMResult.value.result.testing_distances),
                     ]).then((res) => {
-                        dataTables.aug_table.value = res[0];
+                        // get only the filename rather than the full path
+                        const aug_values = res[0].map((row: any) => {
+                            const newRow = {};
+                            Object.keys(row).forEach((key: string) => {
+                                const value = row[key];
+                                if (typeof value === 'string') {
+                                    newRow[key] = value.split('/').pop();
+                                } else {
+                                    newRow[key] = value;
+                                }
+                            });
+                            return newRow;
+                        });
+
+                        dataTables.aug_table.value = aug_values;
                         dataTables.training_table.value = res[1];
                         dataTables.testing_table.value = res[2];
 
                         // Augmentation data table doesn't have headers, only a numbered list
-                        dataTables.aug_headers.value = dataTables.aug_table.value.map((_: string, index: number) => {
-                            return {text: index+1, value: `${index}`, align:'start'}
+                        dataTables.aug_headers.value = Object.keys(dataTables.aug_table.value[0]).map((_: string, index: number) => {
+                            return {text: `${index+1}`, value: `${index}`}
                         });
                     });
                 }
@@ -301,6 +315,7 @@ export default {
                                 <v-data-table
                                     :items="dataTables.aug_table.value"
                                     :headers="dataTables.aug_headers.value"
+                                    calculate-widths
                                 ></v-data-table>
                                 <!-- violin plot -->
                                 <h4>Violin Plot</h4>

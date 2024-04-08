@@ -20,7 +20,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from .deepssm_tasks import deepssm_run
 from .tasks import analyze, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
@@ -518,6 +517,9 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def deepssm_run(self, request, **kwargs):
+        # lazy import; requires conda shapeworks env activation
+        from .deepssm_tasks import deepssm_run
+
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
@@ -612,7 +614,7 @@ class DeepSSMTrainingPairViewSet(BaseViewSet):
     queryset = models.DeepSSMTrainingPair.objects.all()
     filterset_class = filters.DeepSSMTrainingPairFilter
 
-    def get_serializer_class(self) -> BaseSerializer:
+    def get_serializer_class(self):
         if self.request.method == 'GET':
             return serializers.DeepSSMTrainingPairReadSerializer
         else:
@@ -623,7 +625,7 @@ class DeepSSMTrainingImageViewSet(BaseViewSet):
     queryset = models.DeepSSMTrainingImage.objects.all()
     filterset_class = filters.DeepSSMTrainingImageFilter
 
-    def get_serializer_class(self) -> BaseSerializer:
+    def get_serializer_class(self):
         if self.request.method == 'GET':
             return serializers.DeepSSMTrainingImageReadSerializer
         else:

@@ -8,7 +8,7 @@ import _ from 'lodash';
 import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
-import { DataObject, ShapeData } from '@/types';
+import { AugmentationPair, DataObject, ShapeData } from '@/types';
 import ShapeViewer from '../components/ShapeViewer/viewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
@@ -42,6 +42,9 @@ import {
     landmarksLoading,
     constraintsLoading,
     imageViewMode,
+deepSSMDataTab,
+deepSSMResult,
+deepSSMAugDataShown,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -236,6 +239,75 @@ export default {
                         }
                     })
                 )
+            } 
+            else if (tab.value === "deepssm" && deepSSMResult.value) {
+                // defaults to subjects selected
+                let labelledGroups: Record<string, any> = groupedSelections;  // mapping of label to array of shapes
+                switch(deepSSMDataTab.value) {
+                    case 0:  // augmentation
+                        // populate labelledGroups from aug_pairs
+                        // if generated data is shown. Else pass groupedSelections
+                        if (deepSSMAugDataShown.value === 'Generated') {
+                            labelledGroups = groupBy(deepSSMResult.value.aug_pairs, 'sample_num')
+                            console.log("Labelled Groups: ", labelledGroups)
+                        }
+                        break;
+                    case 1:  // training
+                        // populate from training_pairs
+                        // also images?
+                        break;
+                    case 2:  // testing
+                        // populate from test_images
+                        // also images?
+                        break;
+                    default:
+                        break;
+                }
+                newRenderData = Object.fromEntries(
+                    await Promise.all(Object.entries(labelledGroups).map(
+                        async ([subjectId, dataObjects]) => {
+                            let label = subjectId;
+                            if(allSubjectsForDataset.value){
+                                const subject = allSubjectsForDataset.value.find(
+                                    (subject) => subject.id.toString() === subjectId
+                                )
+                                if (subject) label = subject.name
+                            }
+                            const shapeDatas = (await Promise.all(dataObjects.map(
+                                (dataObject: DataObject | AugmentationPair) => {
+                                    console.log("Data Object", dataObject)
+                                    let shapeURL;
+                                    let particleURL;
+                                    // if dataObject is an AugmentationPair
+                                    if ((dataObject as AugmentationPair).mesh) {
+                                        const d = dataObject as AugmentationPair
+                                        shapeURL = d.mesh
+                                        particleURL = d.particles
+                                    } else {
+                                        shapeURL = (dataObject as DataObject).file
+                                    }
+                                    console.log("URLS", shapeURL, particleURL)
+
+                                    const shapePromises = [
+                                        imageReader(shapeURL, '.nrrd'),
+                                    ]
+                                    
+                                    return Promise.all([
+                                        Promise.all(shapePromises),
+                                        pointsReader(particleURL),
+                                    ])
+                                }
+                            )))
+                            .map((e: any) => ({
+                                shape: e[0],
+                                points: e[1],
+                            }))
+                            return [
+                                label, shapeDatas
+                            ]
+                        }
+                    )
+                ))
             } else {
                 newRenderData = Object.fromEntries(
                     await Promise.all(Object.entries(groupedSelections).map(
@@ -350,6 +422,8 @@ export default {
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
+        watch(deepSSMDataTab, debouncedRefreshRender)
+        watch(deepSSMAugDataShown, debouncedRefreshRender)
         watch(tab, switchTab)
 
         return {
@@ -449,7 +523,7 @@ export default {
                         </v-tab-item>
                         <v-tab href="#deepssm">DeepSSM</v-tab>
                         <v-tab-item value="deepssm">
-                            <DeepSSMTab />
+                            <DeepSSMTab @change="refreshRender" />
                         </v-tab-item>
                     </v-tabs>
                 </v-list-item>

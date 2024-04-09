@@ -127,8 +127,6 @@ export const imageViewLevelRange = ref<number[]>([0, 1]);
 
 export const deepSSMResult = ref<Record<string, any>>();
 
-export const deepSSMDataTab = ref<number>(0);
+export const deepSSMDataTab = ref<number>(-1);
 
-export const deepSSMAugShowOrgData = ref<boolean>(true);
-
-export const deepSSMAugShowGenData = ref<boolean>(true);
+export const deepSSMAugDataShown = ref<'Original' | 'Generated'>('Generated');

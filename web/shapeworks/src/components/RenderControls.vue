@@ -27,6 +27,7 @@ import {
     imageViewWindowRange,
     imageViewLevel,
     imageViewLevelRange,
+deepSSMResult,
 } from '@/store';
 
 
@@ -170,7 +171,12 @@ export default {
         }
 
         const showAnalysisOptions = computed(() => {
-            return props.currentTab === 'analyze' && analysisFilesShown.value?.length;
+            if (props.currentTab === 'deepssm' && deepSSMResult.value) {
+                return true;
+            } else if (props.currentTab === 'analyze' && analysisFilesShown.value?.length) {
+                return true;
+            }
+            return false;
         })
 
         const imageIntersectAllowed = computed(() => {
@@ -246,6 +252,7 @@ export default {
             thumbnailTarget,
             showDifferenceFromMeanMode,
             showAnalysisOptions,
+            currentTab: props.currentTab,
         }
     }
 }
@@ -279,7 +286,6 @@ export default {
             </v-select>
             <v-text-field
                 v-model.number="particleSize"
-                v-if="!showAnalysisOptions && layersShown.includes('Particles')"
                 label="Particle Size"
                 type="number"
                 style="width: 80px"
@@ -296,7 +302,7 @@ export default {
                 style="width: 150px"
             />
             <v-switch
-                v-if="showAnalysisOptions"
+                v-if="showAnalysisOptions && currentTab === 'analyze'"
                 v-model="showDifferenceFromMeanMode"
                 label="Show difference from mean"
             />

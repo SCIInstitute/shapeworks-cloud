@@ -44,6 +44,7 @@ def run_prep(params, project, project_file, progress):
 
     # set num_particles to 16 and iterations_per_split to 1
     project_params = project.get_parameters('optimize')
+    # TODO: GROOM AND OPTIMIZATION PARAMETERS NEED TO BE RETRIEVABLE. FORM DATA?
     project_params.set('number_of_particles', '16')
     project_params.set('iterations_per_split', '1')
     project.set_parameters('optimize', project_params)

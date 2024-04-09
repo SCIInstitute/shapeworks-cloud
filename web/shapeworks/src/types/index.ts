@@ -214,3 +214,10 @@ export interface CacheComparison {
     file: string,
     particles: string
 }
+
+export interface AugmentationPair {
+    sample_num: number,
+    project: number,
+    mesh: string,
+    particles: string,
+}

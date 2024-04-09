@@ -9,8 +9,7 @@ import {
     abort,
     deepSSMDataTab,
     deepSSMResult,
-    deepSSMAugShowOrgData,
-    deepSSMAugShowGenData,
+    deepSSMAugDataShown,
 } from '@/store';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
 import { parseCSVFromURL } from '@/helper';
@@ -162,6 +161,12 @@ export default {
             }
         })
 
+        watch(openExpansionPanel, () => {
+            if (openExpansionPanel.value === 1 && deepSSMDataTab.value === -1) {
+                deepSSMDataTab.value = 0;
+            }
+        });
+
         return {
             openExpansionPanel,
             controlsTabs,
@@ -176,8 +181,7 @@ export default {
             showAbortConfirmation,
             deepSSMDataTab,
             deepSSMResult,
-            deepSSMAugShowOrgData,
-            deepSSMAugShowGenData,
+            deepSSMAugDataShown,
             dataTables,
         }
     },
@@ -307,8 +311,10 @@ export default {
                         <v-tab-item>
                             <div>
                                 <div class="aug-data-checkboxes">
-                                    <v-checkbox v-model="deepSSMAugShowOrgData" label="Original Data"></v-checkbox>
-                                    <v-checkbox v-model="deepSSMAugShowGenData" label="Generated Data"></v-checkbox>
+                                    <v-radio-group v-model="deepSSMAugDataShown">
+                                        <v-radio value="Original" label="Original Data"></v-radio>
+                                        <v-radio value="Generated" label="Generated Data"></v-radio>
+                                    </v-radio-group>
                                 </div>
                                 <v-data-table
                                     :items="dataTables.aug_table.value"

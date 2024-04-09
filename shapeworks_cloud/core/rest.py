@@ -19,6 +19,9 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
+# CI failure here. TODO: address fix
+from .deepssm_tasks import deepssm_run
+
 from . import filters, models, serializers
 from .tasks import analyze, groom, optimize
 
@@ -517,9 +520,6 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def deepssm_run(self, request, **kwargs):
-        # lazy import; requires conda shapeworks env activation
-        from .deepssm_tasks import deepssm_run
-
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}

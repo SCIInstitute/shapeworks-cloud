@@ -87,6 +87,7 @@ class DeepSSMTrainingPairSerializer(serializers.ModelSerializer):
 class DeepSSMTrainingImageSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     image = S3FileSerializerField()
+    index = serializers.CharField(max_length=255)
     validation = serializers.BooleanField()
 
     class Meta:
@@ -148,6 +149,7 @@ class DeepSSMTrainingPairReadSerializer(serializers.ModelSerializer):
 class DeepSSMTrainingImageReadSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     image = S3FileSerializerField()
+    index = serializers.CharField(max_length=255)
     validation = serializers.BooleanField()
 
     class Meta:

@@ -223,7 +223,7 @@ class DeepSSMTrainingPair(models.Model):
     particles = S3FileField()  # .particles
     scalar = S3FileField()  # .scalar
     vtk = S3FileField()  # .vtk
-    index = models.CharField(max_length=255)  # subject
+    index = models.CharField(max_length=255)  # index
     example_type = models.CharField(max_length=255)  # best, median, worst
     validation = models.BooleanField(default=False)
 
@@ -233,6 +233,7 @@ class DeepSSMTrainingImage(models.Model):
         Project, on_delete=models.CASCADE, related_name='deepssm_training_images'
     )
     image = S3FileField()
+    index = models.CharField(max_length=255)  # index
     validation = models.BooleanField(default=False)
 
 

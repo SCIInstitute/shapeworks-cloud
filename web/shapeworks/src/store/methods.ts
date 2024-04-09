@@ -184,8 +184,8 @@ export const loadDeepSSMDataForProject = async () => {
             result: results[0][0],
             aug_pairs: results[1],
             training_pairs: results[2],
-            training_images: results[3],
-            test_images: results[4]
+            images: results[3],
+            test_pairs: results[4]
         }
     }
 }

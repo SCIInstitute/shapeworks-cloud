@@ -19,10 +19,10 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
+from . import filters, models, serializers
+
 # CI failure here. TODO: address fix
 from .deepssm_tasks import deepssm_run
-
-from . import filters, models, serializers
 from .tasks import analyze, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')

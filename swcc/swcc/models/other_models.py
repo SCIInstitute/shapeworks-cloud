@@ -213,6 +213,7 @@ class DeepSSMTrainingImage(ApiModel):
 
     project: Project
     image_source: Union[str, Path]
+    index: str
     validation: bool
 
 

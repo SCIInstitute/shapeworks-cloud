@@ -49,6 +49,12 @@ import {
     getReconstructedSamplesForProject,
     getTaskProgress,
     groomProject, optimizeProject, refreshProject,
+    deepssmRunProject,
+    getDeepSSMResultForProject,
+    getDeepSSMAugPairsForProject,
+    getDeepSSMTestImagesForProject,
+    getDeepSSMTrainingPairsForProject,
+    getDeepSSMTrainingImagesForProject,
 } from '@/api/rest';
 import { layers, COLORS } from "./constants";
 import { getDistance, hexToRgb } from "@/helper";
@@ -153,6 +159,35 @@ export const loadReconstructedSamplesForProject = async (type: string, id: numbe
     }
 }
 
+export const loadDeepSSMDataForProject = async (id: number) => {
+    if (selectedProject.value) {
+        const results = await Promise.all([
+            await getDeepSSMResultForProject(
+                selectedProject.value.id
+            ),
+            await getDeepSSMAugPairsForProject(
+                selectedProject.value.id
+            ),
+            await getDeepSSMTrainingPairsForProject(
+                selectedProject.value.id
+            ),
+            await getDeepSSMTrainingImagesForProject(
+                selectedProject.value.id
+            ),
+            await getDeepSSMTestImagesForProject(
+                selectedProject.value.id
+            )]
+        )
+
+        return {
+            result: results[0],
+            aug_pairs: results[1],
+            training_images: results[2],
+            test_images: results[3]
+        }
+    }
+}
+
 export function jobAlreadyDone(action: string): Boolean {
     let layer;
     switch (action) {
@@ -191,6 +226,8 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
                 (l) => l !== 'Reconstructed'
             )
             return (await analyzeProject(projectId, payload as AnalysisParams))?.data
+        case 'deepssm':
+            return (await deepssmRunProject(projectId, payload))?.data
         default:
             break;
     }
@@ -258,6 +295,10 @@ export async function fetchJobResults(taskName: string) {
                     goodBadAngles.value = analysis.value.good_bad_angles
                 }
             }
+            break;
+        case 'deepssm':
+            layerName = 'Groomed' // TODO: Implement shapeviewer changes for deepssm tabs
+            loadFunction = loadDeepSSMDataForProject
             break;
     }
     if (layerName && loadFunction) {

@@ -115,6 +115,46 @@ export async function getReconstructedSamplesForProject(
     })).data.results
 }
 
+export async function getDeepSSMResultForProject(
+    projectId: number|undefined
+){
+    return (await apiClient.get(`/deepssm-result/`, {
+        params: {project: projectId}
+    })).data.results
+}
+
+export async function getDeepSSMAugPairsForProject(
+    projectId: number|undefined
+){
+    return (await apiClient.get(`/deepssm-aug-pair/`, {
+        params: {project: projectId}
+    })).data.results
+}
+
+export async function getDeepSSMTrainingPairsForProject(
+    projectId: number|undefined
+){
+    return (await apiClient.get(`/deepssm-training-pair/`, {
+        params: {project: projectId}
+    })).data.results
+}
+
+export async function getDeepSSMTrainingImagesForProject(
+    projectId: number|undefined
+){
+    return (await apiClient.get(`/deepssm-training-image/`, {
+        params: {project: projectId}
+    })).data.results
+}
+
+export async function getDeepSSMTestImagesForProject(
+    projectId: number|undefined
+){
+    return (await apiClient.get(`/deepssm-testing-data/`, {
+        params: {project: projectId}
+    })).data.results
+}
+
 export async function createProject(formData: Record<string, any>){
     return (await apiClient.post(`/projects/`, formData))
 }
@@ -141,6 +181,10 @@ export async function optimizeProject(projectId: number, formData: Record<string
 
 export async function analyzeProject(projectId: number, params: AnalysisParams){
     return (await apiClient.post(`/projects/${projectId}/analyze/`, params))
+}
+
+export async function deepssmRunProject(projectId: number, formData: Record<string, any>) {
+    return (await apiClient.post(`/projects/${projectId}/deepssm-run/`, formData))
 }
 
 export async function getTaskProgress(taskId: number){

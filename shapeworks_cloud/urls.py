@@ -51,6 +51,38 @@ router.register(
 )
 router.register('task-progress', rest.TaskProgressViewSet, basename='task_progress')
 
+# ----------------
+# DeepSSM
+# ----------------
+router.register(
+    'deepssm-testing-data',
+    rest.DeepSSMTestingDataViewSet,
+    basename='deepssm_testing_data',
+)
+
+router.register(
+    'deepssm-training-pair',
+    rest.DeepSSMTrainingPairViewSet,
+    basename='deepssm_training_pair',
+)
+
+router.register(
+    'deepssm-training-image',
+    rest.DeepSSMTrainingImageViewSet,
+    basename='deepssm_training_image',
+)
+
+router.register(
+    'deepssm-aug-pair',
+    rest.DeepSSMAugPairViewSet,
+    basename='deepssm_aug_pair',
+)
+
+router.register(
+    'deepssm-result',
+    rest.DeepSSMResultViewSet,
+    basename='deepssm_result',
+)
 
 # OpenAPI generation
 schema_view = get_schema_view(
@@ -64,7 +96,6 @@ urlpatterns = [
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
     path('api/v1/logout/', rest.LogoutView.as_view()),
-    path('api/mock-deepssm/', rest.MockDeepSSMView.as_view()),
     path('api/v1/s3-upload/', include('s3_file_field.urls', namespace='s3ff')),
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),

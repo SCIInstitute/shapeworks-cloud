@@ -25,12 +25,14 @@ class Dataset(TimeStampedModel, models.Model):
         def truncate_filename(filename):
             return filename.split('/')[-1]
 
-        for shape_group in [
+        group_list = [
             Segmentation.objects.filter(subject__dataset=self),
             Mesh.objects.filter(subject__dataset=self),
             Image.objects.filter(subject__dataset=self),
             Contour.objects.filter(subject__dataset=self),
-        ]:
+        ]
+
+        for shape_group in group_list:
             for shape in shape_group:
                 ret.append(
                     {
@@ -150,7 +152,7 @@ class Project(TimeStampedModel, models.Model):
                     'mesh': [(m.anatomy_type, m.file) for m in subject.meshes.all()],
                     'segmentation': [(s.anatomy_type, s.file) for s in subject.segmentations.all()],
                     'contour': [(c.anatomy_type, c.file) for c in subject.contours.all()],
-                    'image': [(i.anatomy_type, i.file) for i in subject.images.all()],
+                    'image': [(i.modality, i.file) for i in subject.images.all()],
                     'constraints': [(c.anatomy_type, c.file) for c in subject.constraints.all()],
                     'landmarks': [
                         (lm.anatomy_type, lm.file)
@@ -192,6 +194,53 @@ class Project(TimeStampedModel, models.Model):
                         value = value.replace('../', '')
                         ret[value] = target_file
         return ret
+
+
+class DeepSSMTestingData(models.Model):
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='deepssm_testing_data'
+    )
+    image_type = models.CharField(max_length=255)
+    image_id = models.IntegerField()
+    mesh = S3FileField()
+    particles = S3FileField()
+
+
+class DeepSSMTrainingPair(models.Model):
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='deepssm_training_pair'
+    )
+    particles = S3FileField()  # .particles
+    scalar = S3FileField()  # .scalar
+    vtk = S3FileField()  # .vtk
+    index = models.CharField(max_length=255)  # subject
+    example_type = models.CharField(max_length=255)  # best, median, worst
+    validation = models.BooleanField(default=False)
+
+
+class DeepSSMTrainingImage(models.Model):
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='deepssm_training_images'
+    )
+    image = S3FileField()
+    validation = models.BooleanField(default=False)
+
+
+class DeepSSMAugPair(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='deepssm_aug_pair')
+    sample_num = models.IntegerField()
+    mesh = S3FileField()
+    particles = S3FileField()
+
+
+class DeepSSMResult(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='deepssm_results')
+    aug_visualization = S3FileField()  # .png
+    aug_total_data = S3FileField()  # .csv
+    training_visualization = S3FileField()  # .png
+    training_visualization_ft = S3FileField()  # .png
+    training_data_table = S3FileField()  # .csv
+    testing_distances = S3FileField()  # .csv
 
 
 class GroomedSegmentation(TimeStampedModel, models.Model):

@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-from .tasks import analyze, deepssm, groom, optimize
+from .tasks import analyze, groom, optimize
 
 DB_WRITE_ACCESS_LOG_FILE = Path(gettempdir(), 'logging', 'db_write_access.log')
 if not os.path.exists(DB_WRITE_ACCESS_LOG_FILE.parent):
@@ -32,28 +32,6 @@ class LogoutView(APIView):
         if request.user.is_authenticated:
             logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class MockDeepSSMView(APIView):
-    def post(self, request):
-        if request.user.is_authenticated:
-            # clear existing TaskProgress objects
-            models.TaskProgress.objects.filter(name='deepssm').delete()
-
-            # spawn tasks (one gpu and one non-gpu)
-            gpu_progress = models.TaskProgress.objects.create(name='deepssm')
-            deepssm.apply_async(args=[gpu_progress.id], queue='gpu')
-            non_gpu_progress = models.TaskProgress.objects.create(name='deepssm')
-            deepssm.apply_async(args=[non_gpu_progress.id])
-
-            # send response with ids
-            return Response(
-                {
-                    'success': True,
-                    'progress_ids': {'gpu': gpu_progress.id, 'default': non_gpu_progress.id},
-                }
-            )
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 def log_write_access(*args):
@@ -531,7 +509,40 @@ class ProjectViewSet(BaseViewSet):
             },
             status=status.HTTP_200_OK,
         )
-        pass
+
+    @action(
+        detail=True,
+        url_path='deepssm-run',
+        url_name='deepssm-run',
+        methods=['POST'],
+    )
+    def deepssm_run(self, request, **kwargs):
+        # lazy import; requires conda shapeworks env activation
+        from .deepssm_tasks import deepssm_run
+
+        project = self.get_object()
+        form_data = request.data
+        form_data = {k: str(v) for k, v in form_data.items()}
+
+        deepssm_progress = models.TaskProgress.objects.create(name='deepssm', project=project)
+
+        log_write_access(
+            timezone.now(),
+            self.request.user.username,
+            'Analyze Project',
+            project.id,
+        )
+
+        deepssm_run.apply_async(
+            args=[request.user.id, project.id, deepssm_progress.id, form_data], queue='gpu'
+        )
+
+        return Response(
+            data={
+                'deepssm_task': serializers.TaskProgressSerializer(deepssm_progress).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class GroomedSegmentationViewSet(BaseViewSet):
@@ -586,6 +597,61 @@ class CachedAnalysisGroupViewSet(BaseViewSet):
 class CachedAnalysisMeanShapeViewSet(BaseViewSet):
     queryset = models.CachedAnalysisMeanShape.objects.all()
     serializer_class = serializers.CachedAnalysisMeanShapeSerializer
+
+
+class DeepSSMTestingDataViewSet(BaseViewSet):
+    queryset = models.DeepSSMTestingData.objects.all()
+    filterset_class = filters.DeepSSMTestingDataFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.DeepSSMTestingDataReadSerializer
+        else:
+            return serializers.DeepSSMTestingDataSerializer
+
+
+class DeepSSMTrainingPairViewSet(BaseViewSet):
+    queryset = models.DeepSSMTrainingPair.objects.all()
+    filterset_class = filters.DeepSSMTrainingPairFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.DeepSSMTrainingPairReadSerializer
+        else:
+            return serializers.DeepSSMTrainingPairSerializer
+
+
+class DeepSSMTrainingImageViewSet(BaseViewSet):
+    queryset = models.DeepSSMTrainingImage.objects.all()
+    filterset_class = filters.DeepSSMTrainingImageFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.DeepSSMTrainingImageReadSerializer
+        else:
+            return serializers.DeepSSMTrainingImageSerializer
+
+
+class DeepSSMAugPairViewSet(BaseViewSet):
+    queryset = models.DeepSSMAugPair.objects.all()
+    filterset_class = filters.DeepSSMAugPairFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.DeepSSMAugPairReadSerializer
+        else:
+            return serializers.DeepSSMAugPairSerializer
+
+
+class DeepSSMResultViewSet(BaseViewSet):
+    queryset = models.DeepSSMResult.objects.all()
+    filterset_class = filters.DeepSSMResultFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.DeepSSMResultReadSerializer
+        else:
+            return serializers.DeepSSMResultSerializer
 
 
 class ReconstructedSampleViewSet(

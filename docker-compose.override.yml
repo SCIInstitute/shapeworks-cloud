@@ -4,7 +4,11 @@ services:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: [ "./manage.py", "runserver", "0.0.0.0:8000" ]
+    command: [
+      "./manage.py", 
+      "runserver", 
+      "0.0.0.0:8000"
+    ]
     # Log printing via Rich is enhanced by a TTY
     tty: true
     env_file: ./dev/.env.docker-compose
@@ -45,22 +49,45 @@ services:
       - rabbitmq
       - minio
 
-  celery-beat:
+  celery-gpu:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: [ "celery", "--app", "shapeworks_cloud.celery", "beat" ]
+    command:
+      [
+        "celery",
+        "--app",
+        "shapeworks_cloud.celery",
+        "worker",
+        "-Q",
+        "gpu",
+        "-n=gpu",
+        "-P",
+        "threads",
+        "--loglevel",
+        "INFO",
+        "--without-heartbeat"
+      ]
+    # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
     env_file: ./dev/.env.celery.docker-compose
     volumes:
       - .:/opt/django-project
+    # Use host mode so that celery can use the localhost:8000 API in dev deployments
     network_mode: host
+    shm_size: 8gb
     depends_on:
-      - celery
+      - postgres
+      - rabbitmq
+      - minio
 
   yarn:
     image: node:17
-    command: [ "/bin/bash", "-c", "yarn install && yarn serve" ]
+    command: [ 
+      "/bin/bash",
+      "-c",
+      "yarn install && yarn serve"
+    ]
     env_file: ./dev/yarn.env
     environment:
       - NODE_OPTIONS=--openssl-legacy-provider

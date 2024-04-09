@@ -3,7 +3,6 @@ from pathlib import Path
 import re
 from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
-import time
 from typing import Dict, List
 
 from celery import shared_task
@@ -349,23 +348,3 @@ def analyze(user_id, project_id, progress_id, args: List[str]):
         progress_id,
         args,
     )
-
-
-@shared_task
-def deepssm(progress_id):
-    message = 'DeepSSM task not implemented; testing GPU availability.'
-    try:
-        from ngpuinfo import NGPUInfo
-
-        gpus = NGPUInfo.list_gpus()
-        message += f' GPU available. Found {[gpu.name for gpu in gpus]}.'
-    except Exception:
-        message += ' GPU not available.'
-
-    progress = models.TaskProgress.objects.get(id=progress_id)
-    progress.update_percentage(100)
-    progress.update_message(message)
-
-    # Sleep for 20 seconds before completing task;
-    # time to check instance state before stopping
-    time.sleep(20)

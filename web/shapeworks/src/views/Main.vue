@@ -8,7 +8,7 @@ import _ from 'lodash';
 import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
-import { AugmentationPair, DataObject, ShapeData } from '@/types';
+import { AugmentationPair, DataObject, DeepSSMImage, ShapeData, TrainingPair } from '@/types';
 import ShapeViewer from '../components/ShapeViewer/viewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
@@ -42,9 +42,9 @@ import {
     landmarksLoading,
     constraintsLoading,
     imageViewMode,
-deepSSMDataTab,
-deepSSMResult,
-deepSSMAugDataShown,
+    deepSSMDataTab,
+    deepSSMResult,
+    deepSSMAugDataShown,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -242,31 +242,49 @@ export default {
             } 
             else if (tab.value === "deepssm" && deepSSMResult.value) {
                 // defaults to subjects selected
-                let labelledGroups: Record<string, any> = groupedSelections;  // mapping of label to array of shapes
+                let labelledGroups: Record<string, any> = groupedSelections;
+                const totalImages: Record<string, any> = groupBy(deepSSMResult.value.images, 'index');
+                // add aug_pairs generated image to totalImages, but prepend "Generated_sample_" to the key
+                const augImages = groupBy(deepSSMResult.value.aug_pairs, 'sample_num')
+                Object.entries(augImages).forEach(([key, value]) => {
+                    totalImages["Generated_sample_" + key] = value
+                })
+
                 switch(deepSSMDataTab.value) {
                     case 0:  // augmentation
                         // populate labelledGroups from aug_pairs
                         // if generated data is shown. Else pass groupedSelections
                         if (deepSSMAugDataShown.value === 'Generated') {
                             labelledGroups = groupBy(deepSSMResult.value.aug_pairs, 'sample_num')
-                            console.log("Labelled Groups: ", labelledGroups)
                         }
                         break;
                     case 1:  // training
                         // populate from training_pairs
                         // also images?
+                        labelledGroups = groupBy(deepSSMResult.value.training_pairs, 'index')
                         break;
                     case 2:  // testing
-                        // populate from test_images
+                        // populate from test_pairs
                         // also images?
+                        labelledGroups = groupBy(deepSSMResult.value.test_pairs, 'image_id')
                         break;
                     default:
                         break;
                 }
+
+                /*
+                    TODO: considerations, how to best approach "best, median, worst" rendering?
+                        for training and testing, there must be an image rendered. Is it better to assign this in the model so that the
+                        rendering logic here is simpler? Is this even the right place for that?
+                */
                 newRenderData = Object.fromEntries(
                     await Promise.all(Object.entries(labelledGroups).map(
                         async ([subjectId, dataObjects]) => {
                             let label = subjectId;
+                            // prepend "Generated_Sample_" to label is dataObjects is AugmentationPair
+                            if((dataObjects[0] as AugmentationPair).mesh) {
+                                label = "Generated_Sample_" + subjectId
+                            }
                             if(allSubjectsForDataset.value){
                                 const subject = allSubjectsForDataset.value.find(
                                     (subject) => subject.id.toString() === subjectId
@@ -274,23 +292,43 @@ export default {
                                 if (subject) label = subject.name
                             }
                             const shapeDatas = (await Promise.all(dataObjects.map(
-                                (dataObject: DataObject | AugmentationPair) => {
-                                    console.log("Data Object", dataObject)
+                                (dataObject: DataObject | AugmentationPair | DeepSSMImage | TrainingPair) => {
+                                    const shapePromises: Promise<any>[] = [];
                                     let shapeURL;
+                                    let imageURL;
                                     let particleURL;
                                     // if dataObject is an AugmentationPair
                                     if ((dataObject as AugmentationPair).mesh) {
                                         const d = dataObject as AugmentationPair
                                         shapeURL = d.mesh
                                         particleURL = d.particles
-                                    } else {
-                                        shapeURL = (dataObject as DataObject).file
+                                        shapePromises.push(
+                                            imageReader(shapeURL, `${label}.nrrd`)
+                                        )
                                     }
-                                    console.log("URLS", shapeURL, particleURL)
-
-                                    const shapePromises = [
-                                        imageReader(shapeURL, '.nrrd'),
-                                    ]
+                                    else if ((dataObject as TrainingPair).vtk) {
+                                        const d = dataObject as TrainingPair
+                                        shapeURL = d.vtk
+                                        particleURL = d.particles
+                                        // use the index field in d to get the corresponding image from totalImages. This is not an INDEX, but rather the key
+                                        let image = totalImages[Object.keys(totalImages).filter(([key]) => (key === d.index))[0]];
+                                        if (image) {
+                                            image = image[0]
+                                            imageURL = (image as DeepSSMImage).image ? (image as DeepSSMImage).image : (image as AugmentationPair).mesh
+                                            shapePromises.push(
+                                                imageReader(imageURL, `${label}.nrrd`)
+                                            )
+                                        }
+                                        shapePromises.push(
+                                            imageReader(shapeURL, `${label}.vtk`)
+                                        )
+                                    }
+                                    else {
+                                        shapeURL = (dataObject as DataObject).file
+                                        shapePromises.push(
+                                            imageReader(shapeURL, `${label}.nrrd`)
+                                        )
+                                    }
                                     
                                     return Promise.all([
                                         Promise.all(shapePromises),

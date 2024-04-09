@@ -458,10 +458,11 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
         for images in [train_images, val_and_test_images]:
             for image in images:
                 image_type = 'train' if images == train_images else 'val_and_test'
+
                 train_image = models.DeepSSMTrainingImage.objects.create(
                     project=project,
                     validation=True if image_type == 'val_and_test' else False,
-                    index=image.split('/')[1].split('.')[0],
+                    index=image.split('.')[0],
                 )
                 train_image.image.save(
                     image,

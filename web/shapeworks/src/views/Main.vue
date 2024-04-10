@@ -301,9 +301,13 @@ export default {
                                     if ((dataObject as AugmentationPair).mesh) {
                                         const d = dataObject as AugmentationPair
                                         shapeURL = d.mesh
+                                        imageURL = d.image
                                         particleURL = d.particles
                                         shapePromises.push(
-                                            imageReader(shapeURL, `${label}.nrrd`)
+                                            imageReader(imageURL, `${label}.nrrd`)
+                                        )
+                                        shapePromises.push(
+                                            imageReader(shapeURL, `${label}.vtk`)
                                         )
                                     }
                                     else if ((dataObject as TrainingPair).vtk) {

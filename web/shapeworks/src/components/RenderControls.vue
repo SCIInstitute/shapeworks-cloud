@@ -28,6 +28,7 @@ import {
     imageViewLevel,
     imageViewLevelRange,
 deepSSMResult,
+deepSSMDataTab,
 } from '@/store';
 
 
@@ -181,7 +182,7 @@ export default {
 
         const imageIntersectAllowed = computed(() => {
             // TODO: Add other applicable layers here
-            return layersShown.value.includes('Groomed')
+            return layersShown.value.includes('Groomed') || deepSSMDataTab.value > -1;
         })
 
         const imageViewSlice = computed(() => {

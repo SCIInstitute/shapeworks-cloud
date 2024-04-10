@@ -76,7 +76,7 @@ class DeepSSMTrainingPairSerializer(serializers.ModelSerializer):
     validation = serializers.BooleanField()
     particles = S3FileSerializerField()
     scalar = S3FileSerializerField()
-    vtk = S3FileSerializerField()
+    mesh = S3FileSerializerField()
     index = serializers.CharField(max_length=255)
 
     class Meta:
@@ -99,6 +99,7 @@ class DeepSSMAugPairSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     sample_num = serializers.IntegerField()
     mesh = S3FileSerializerField()
+    image = S3FileSerializerField()
     particles = S3FileSerializerField()
 
     class Meta:
@@ -138,7 +139,7 @@ class DeepSSMTrainingPairReadSerializer(serializers.ModelSerializer):
     validation = serializers.BooleanField()
     particles = S3FileSerializerField()
     scalar = S3FileSerializerField()
-    vtk = S3FileSerializerField()
+    mesh = S3FileSerializerField()
     index = serializers.CharField(max_length=255)
 
     class Meta:
@@ -160,6 +161,7 @@ class DeepSSMTrainingImageReadSerializer(serializers.ModelSerializer):
 class DeepSSMAugPairReadSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     mesh = S3FileSerializerField()
+    image = S3FileSerializerField()
     particles = S3FileSerializerField()
     sample_num = serializers.IntegerField()
 

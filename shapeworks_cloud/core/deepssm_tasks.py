@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -262,7 +261,7 @@ def run_deepssm_command(
             optimize_params = sw_project.get_parameters('optimize')
             # for each parameter in the form data, set the parameter in the project
             for key, value in form_data.items():
-                groom_params.set(key, value)
+                optimize_params.set(key, value)
 
             sw_project.set_parameters('optimize', optimize_params)
 
@@ -275,6 +274,9 @@ def run_deepssm_command(
             result_data['augmentation'] = {
                 'total_data_csv': download_dir + '/deepssm/augmentation/TotalData.csv',
                 'violin_plot': download_dir + '/deepssm/augmentation/violin.png',
+                'generated_meshes': os.listdir(
+                    download_dir + '/deepssm/augmentation/Generated-Meshes/'
+                ),
                 'generated_images': os.listdir(
                     download_dir + '/deepssm/augmentation/Generated-Images/'
                 ),
@@ -362,6 +364,15 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                 ),
             )
             aug_pair.mesh.save(
+                result_data['augmentation']['generated_meshes'][i],
+                open(
+                    download_dir
+                    + '/deepssm/augmentation/Generated-Meshes/'
+                    + result_data['augmentation']['generated_meshes'][i],
+                    'rb',
+                ),
+            )
+            aug_pair.image.save(
                 result_data['augmentation']['generated_images'][i],
                 open(
                     download_dir
@@ -526,7 +537,7 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                     ),
                 )
 
-                training_pair.vtk.save(
+                training_pair.mesh.save(
                     vtk_file,
                     open(
                         download_dir + '/deepssm/model/examples/' + vtk_file,

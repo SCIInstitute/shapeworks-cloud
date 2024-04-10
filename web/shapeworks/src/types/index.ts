@@ -219,6 +219,7 @@ export interface AugmentationPair {
     sample_num: number,
     project: number,
     mesh: string,
+    image: string,
     particles: string,
 }
 

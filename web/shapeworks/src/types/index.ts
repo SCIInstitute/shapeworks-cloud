@@ -221,3 +221,20 @@ export interface AugmentationPair {
     mesh: string,
     particles: string,
 }
+
+export interface TrainingPair {
+    project: number,
+    particles: string,
+    scalar: string,
+    vtk: string,
+    index: string,
+    example_type: string,
+    validation: boolean,
+}
+
+export interface DeepSSMImage {
+    project: number,
+    index: string,
+    image: string,
+    validation: boolean,
+}

@@ -1,6 +1,6 @@
 <script lang="ts">
 /* eslint-disable no-unused-vars */
-import { loadDeepSSMDataForProject } from '@/store';
+import { allDataObjectsInDataset, loadDeepSSMDataForProject } from '@/store';
 import {
     currentTasks,
     selectedProject,
@@ -13,9 +13,14 @@ import {
 } from '@/store';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
 import { parseCSVFromURL } from '@/helper';
+import Ajv from 'ajv';
+import VJsf from '@koumoul/vjsf'
 
 
 export default {
+    components: {
+        VJsf,
+    },
     setup() {
         enum Sampler {
             Gaussian = "Gaussian",
@@ -35,9 +40,20 @@ export default {
             }
         )
 
+        const ajv = new Ajv();
+
         const openExpansionPanel = ref<number>(0);
         const controlsTabs = ref();
         const showAbortConfirmation = ref(false);
+
+        const formData = ref({
+            'groom': {},
+            'optimize': {},
+        });
+        const formSchema = ref({
+            'groom_segmentation': {},
+            'optimize': {},
+        });
 
         const prepData = {
             testing_split: ref<number>(20),
@@ -97,19 +113,34 @@ export default {
             )
         }
 
+        function consolidateFormData(data: any, name: string) {
+            // consolidate `section_1`, `section_2`, `section_3` into "groom" or "optimize"
+            return Object.entries(data).reduce((acc, [key, value]) => {
+                acc[name] = {...data[name], value};
+                return acc;
+            }, {} as any)
+        }
+
         async function submitDeepSSMJob() {
             if (!selectedProject.value) return;
 
             const prepFormData = getFormData(prepData);
             const augFormData = getFormData(augmentationData);
             const trainFormData = getFormData(trainingData);
-            const formData = {
+
+            const groomFormData = consolidateFormData(formData.value.groom, 'groom');
+            const optimizeFormData = consolidateFormData(formData.value.optimize, 'optimize');
+            const aggregatedFormData = {
                 ...prepFormData,
                 ...augFormData,
                 ...trainFormData,
+                ...groomFormData.groom.value,
+                ...optimizeFormData.optimize.value,
             }
 
-            const taskId = await spawnJob("deepssm", formData);
+            console.log(aggregatedFormData);
+
+            const taskId = await spawnJob("deepssm", aggregatedFormData);
             currentTasks.value[selectedProject.value.id] = taskId;
 
             spawnJobProgressPoll();
@@ -161,6 +192,40 @@ export default {
             }
         })
 
+
+        async function fetchFormSchema(formName: string) {
+            if(formName === 'groom'){
+                formName += '_segmentation';
+            }
+
+            formSchema.value[formName] = await (await fetch( `forms/${formName}.json`)).json()
+        }
+        fetchFormSchema('groom')
+        fetchFormSchema('optimize')
+
+        function evaluateExpression (expression: string) {
+            if(expression){
+                // The shemas are trusted source code
+                const expressionFunc = eval(expression)
+                return expressionFunc(formData.value)
+            }
+            return true;
+        }
+
+        const schemaOptions = {
+            rootDisplay: "expansion-panels",
+            autoFocus: true,
+            ajv,
+            sliderProps: {
+                thumbLabel: true
+            },
+            tooltipProps: {
+                openOnHover: true,
+                top: true
+            }
+        }
+
+
         watch(openExpansionPanel, () => {
             if (openExpansionPanel.value === 1 && deepSSMDataTab.value === -1) {
                 deepSSMDataTab.value = 0;
@@ -183,6 +248,10 @@ export default {
             deepSSMResult,
             deepSSMAugDataShown,
             dataTables,
+            formData,
+            schemaOptions,
+            formSchema,
+            evaluateExpression,
         }
     },
 }
@@ -247,11 +316,59 @@ export default {
                 <v-expansion-panel-header>Controls</v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-tabs v-model="controlsTabs">
+                        <v-tab>Groom</v-tab>
+                        <v-tab>Optimize</v-tab>
                         <v-tab>Prep</v-tab>
                         <v-tab>Augmentation</v-tab>
                         <v-tab>Training</v-tab>
                     </v-tabs>
                     <v-tabs-items v-model="controlsTabs">
+                        <v-tab-item>
+                            <v-jsf
+                                v-if="formSchema"
+                                v-model="formData.groom"
+                                :schema="formSchema.groom_segmentation"
+                                :options="schemaOptions"
+                            >
+                                <template slot="custom-conditional" slot-scope="context">
+                                    <v-jsf
+                                        v-if="evaluateExpression(context.schema['x-display-if'])"
+                                        v-model="formData.groom[context.fullKey.split('.')[0]][context.fullKey.split('.')[1]]"
+                                        v-bind="context"
+                                    >
+                                        <template slot="custom-readonly" slot-scope="context">
+                                            <div style="display: flex; width: 100%; justify-content: space-between;">
+                                                <p>{{ context.label }}</p>
+                                                <p>{{ context.value }}{{ context.schema['x-display-append'] }}</p>
+                                            </div>
+                                        </template>
+                                    </v-jsf>
+                                </template>
+                            </v-jsf>
+                        </v-tab-item>
+                        <v-tab-item>
+                            <v-jsf
+                                v-if="formSchema"
+                                v-model="formData.optimize"
+                                :schema="formSchema.optimize"
+                                :options="schemaOptions"
+                            >
+                                <template slot="custom-conditional" slot-scope="context">
+                                    <v-jsf
+                                        v-if="evaluateExpression(context.schema['x-display-if'])"
+                                        v-model="formData.optimize[context.fullKey.split('.')[0]][context.fullKey.split('.')[1]]"
+                                        v-bind="context"
+                                    >
+                                        <template slot="custom-readonly" slot-scope="context">
+                                            <div style="display: flex; width: 100%; justify-content: space-between;">
+                                                <p>{{ context.label }}</p>
+                                                <p>{{ context.value }}{{ context.schema['x-display-append'] }}</p>
+                                            </div>
+                                        </template>
+                                    </v-jsf>
+                                </template>
+                            </v-jsf>
+                        </v-tab-item>
                         <v-tab-item>
                             <div>
                                 <v-text-field v-model="prepData.testing_split" type="number" label="Test Split" suffix="%" />

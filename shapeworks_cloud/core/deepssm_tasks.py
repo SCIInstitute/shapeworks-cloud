@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -31,6 +32,7 @@ def run_prep(params, project, project_file, progress):
     # /// STEP 2: Groom Training Shapes
     # /////////////////////////////////////////////////////////////////
     project_params = project.get_parameters('groom')
+    # alignment should always be set to ICP
     project_params.set('alignment_method', 'Iterative Closest Point')
     project_params.set('alignment_enabled', 'true')
     project.set_parameters('groom', project_params)
@@ -41,14 +43,6 @@ def run_prep(params, project, project_file, progress):
     # /////////////////////////////////////////////////////////////////
     # /// STEP 3: Optimize Training Particles
     # /////////////////////////////////////////////////////////////////
-
-    # set num_particles to 16 and iterations_per_split to 1
-    project_params = project.get_parameters('optimize')
-    # TODO: GROOM AND OPTIMIZATION PARAMETERS NEED TO BE RETRIEVABLE. FORM DATA?
-    project_params.set('number_of_particles', '16')
-    project_params.set('iterations_per_split', '1')
-    project.set_parameters('optimize', project_params)
-
     DeepSSMUtils.optimize_training_particles(project)
     project.save(project_file)
     progress.update_percentage(12)
@@ -256,6 +250,21 @@ def run_deepssm_command(
             sw_project_file = str(Path(download_dir, project_filename))
 
             sw_project.load(sw_project_file)
+
+            groom_params = sw_project.get_parameters('groom')
+
+            # for each parameter in the form data, set the parameter in the project
+            for key, value in form_data.items():
+                groom_params.set(key, value)
+
+            sw_project.set_parameters('groom', groom_params)
+
+            optimize_params = sw_project.get_parameters('optimize')
+            # for each parameter in the form data, set the parameter in the project
+            for key, value in form_data.items():
+                groom_params.set(key, value)
+
+            sw_project.set_parameters('optimize', optimize_params)
 
             os.chdir(sw_project.get_project_path())
             run_prep(form_data, sw_project, sw_project_file, progress)

@@ -124,7 +124,7 @@ class DeepSSMResultSerializer(serializers.ModelSerializer):
 class DeepSSMTestingDataReadSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
     image_type = serializers.CharField(max_length=255)
-    image_id = serializers.IntegerField()
+    image_id = serializers.CharField(max_length=255)
     mesh = S3FileSerializerField()
     particles = S3FileSerializerField()
 

@@ -181,7 +181,7 @@ class DeepSSMTestingData(ApiModel):
 
     project: Project
     image_type: str
-    image_id: int
+    image_id: str
     mesh_source: Union[str, Path]
     particles_source: Union[str, Path]
 

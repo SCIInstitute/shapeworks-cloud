@@ -211,7 +211,7 @@ class DeepSSMTestingData(models.Model):
         Project, on_delete=models.CASCADE, related_name='deepssm_testing_data'
     )
     image_type = models.CharField(max_length=255)
-    image_id = models.IntegerField()
+    image_id = models.CharField(max_length=255)
     mesh = S3FileField()
     particles = S3FileField()
 

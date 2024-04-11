@@ -1,5 +1,5 @@
 <script lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
@@ -10,7 +10,7 @@ import defaults from 'json-schema-defaults';
 import {
     spawnJob, jobAlreadyDone,
     allDataObjectsInDataset, currentTasks,
-    spawnJobProgressPoll, selectedProject, abort
+    spawnJobProgressPoll, selectedProject, abort, groomFormData, optimizationFormData,
 } from '@/store';
 import { DataObject } from '../types/index';
 
@@ -119,11 +119,30 @@ export default {
             }
         )
 
+        watch(formData, () => {
+            let payload; 
+            Object.keys(formData.value).forEach((key) => {
+                if (key.includes("section") || key.includes("analysis")) {
+                    const value = formData.value[key]
+                    payload = {
+                        ...payload,
+                        ...value,
+                    }
+                } else {
+                    payload[key] = formData.value[key]
+                }
+            })
+            if (props.form === 'optimize') {
+                optimizationFormData.value = payload
+            } else if (props.form === 'groom') {
+                groomFormData.value = payload
+            }
+        }, {deep:true})
 
         return {
             props,
-            formData,
             schemaOptions,
+            formData,
             formSchema,
             formValid,
             refreshing,
@@ -144,7 +163,7 @@ export default {
 
 <template>
     <div>
-        <div v-if="props.prerequisite()">
+        <div>
             <v-form v-model="formValid" class="pa-3">
                 <div v-if="taskData">
                     <div class="messages-box pa-3" v-if="messages.length">
@@ -164,7 +183,7 @@ export default {
                 </div>
                 <div style="display: flex; width: 100%; justify-content: space-between;">
                     <v-btn @click="resetForm">Restore defaults</v-btn>
-                    <v-btn color="primary" @click="submitForm">
+                    <v-btn color="primary" @click="submitForm" v-if="props.prerequisite()">
                         {{ alreadyDone ? 're': '' }}{{ props.form }}
                     </v-btn>
                 </div>
@@ -193,7 +212,7 @@ export default {
                 <br />
                 <div style="display: flex; width: 100%; justify-content: space-between;">
                     <v-btn @click="resetForm">Restore defaults</v-btn>
-                    <v-btn color="primary" @click="submitForm">
+                    <v-btn color="primary" @click="submitForm" v-if="props.prerequisite()">
                         {{ alreadyDone ? 're': '' }}{{ props.form }}
                     </v-btn>
                 </div>
@@ -266,9 +285,6 @@ export default {
                     </v-card>
                 </v-dialog>
             </v-form>
-        </div>
-        <div v-else-if="props.prerequisite_unfulfilled" class="pa-5">
-            {{ props.prerequisite_unfulfilled }}
         </div>
     </div>
 </template>

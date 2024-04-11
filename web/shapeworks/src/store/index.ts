@@ -130,3 +130,7 @@ export const deepSSMResult = ref<Record<string, any>>();
 export const deepSSMDataTab = ref<number>(-1);
 
 export const deepSSMAugDataShown = ref<'Original' | 'Generated'>('Generated');
+
+export const groomFormData = ref({});
+
+export const optimizationFormData = ref({});

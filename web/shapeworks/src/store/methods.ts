@@ -34,6 +34,7 @@ import {
      constraintInfo,
      allSetConstraints,
      deepSSMResult,
+     deepSSMDataTab,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -179,7 +180,7 @@ export const loadDeepSSMDataForProject = async () => {
                 selectedProject.value.id
             )]
         )
-
+                
         deepSSMResult.value = {
             result: results[0][0],
             aug_pairs: results[1],
@@ -207,9 +208,6 @@ export function jobAlreadyDone(action: string): Boolean {
 }
 
 export async function spawnJob(action: string, payload: Record<string, any>): Promise<any> {
-    if (Object.keys(payload).every((key) => key.includes("section") || key.includes("analysis"))) {
-        payload = Object.assign({}, ...Object.values(payload))
-    }
     const projectId = selectedProject.value?.id;
     if (!projectId) return undefined
     switch (action) {
@@ -336,6 +334,9 @@ export async function switchTab(tabName: string) {
         return;
     }
     const refreshedProject = await refreshProject(selectedProject.value.id)
+    if (tabName !== 'deepssm') {
+        deepSSMDataTab.value = -1;
+    }
     switch (tabName) {
         // add any other tab-switching updates here
         case 'analyze':

@@ -94,8 +94,7 @@ def run_augmentation(params, project, download_dir, progress):
     # /// STEP 7: Augment Data
     # /////////////////////////////////////////////////////////////////
     num_samples = int(params['aug_num_samples'])
-    percent_variability = float(params['percent_variability']) / 100.0
-    # aug_sampler_type to lowecase
+    percent_variability = float(params['percent_variability'])
     aug_sampler_type = params['aug_sampler_type'].lower()
 
     num_dims = 0  # set to 0 to allow for percent variability to be used
@@ -305,6 +304,8 @@ def run_deepssm_command(
 
             run_testing(form_data, sw_project, download_dir, progress)
 
+            subjects = sw_project.get_subjects()
+
             result_data['testing'] = {
                 'world_predictions': os.listdir(
                     download_dir + '/deepssm/model/test_predictions/world_predictions/'
@@ -313,6 +314,7 @@ def run_deepssm_command(
                     download_dir + '/deepssm/model/test_predictions/local_predictions/'
                 ),
                 'test_distances': download_dir + '/deepssm/test_distances.csv',
+                'test_split_subjects': subjects,
             }
 
             os.chdir('../../')
@@ -423,10 +425,16 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                     file1 = predictions.pop()
                     filename = file1.split('.')[0]
 
+                    # filename here represents the SUBJECT INDEX OF THE TEST SPLIT
+                    subject_name = (
+                        result_data['testing']['test_split_subjects'][int(filename)]
+                        .get_display_name()
+                    )
+
                     test_pair = models.DeepSSMTestingData.objects.create(
                         project=project,
                         image_type='world' if predictions == world_predictions else 'local',
-                        image_id=filename,
+                        image_id=subject_name,
                     )
 
                     predictions_path = (

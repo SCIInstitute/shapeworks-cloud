@@ -61,7 +61,8 @@ export const vtkShapesByType = ref<Record<string, any[]>>({
     "Original": [],
     "Groomed": [],
     "Reconstructed": [],
-    "Particles": []
+    "Particles": [],
+    "DeepSSM": [],
 })
 
 export const SPHERE_RESOLUTION = 32;

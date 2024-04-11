@@ -227,10 +227,18 @@ export interface TrainingPair {
     project: number,
     particles: string,
     scalar: string,
-    vtk: string,
+    mesh: string,
     index: string,
     example_type: string,
     validation: boolean,
+}
+
+export interface TestingData {
+    project: number,
+    particles: string,
+    mesh: string,
+    image_type: string,
+    image_id: string,
 }
 
 export interface DeepSSMImage {

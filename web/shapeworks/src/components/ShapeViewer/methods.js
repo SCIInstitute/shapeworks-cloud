@@ -19,7 +19,7 @@ import {
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    cacheComparison, calculateComparisons,
+    cacheComparison, calculateComparisons, deepSSMDataTab,
     showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
 } from '@/store';
 import { SPHERE_RESOLUTION } from '@/store/constants';
@@ -248,8 +248,14 @@ export default {
                             if (showDifferenceFromMeanMode.value) {
                                 this.showDifferenceFromMean(mapper, renderer, label, domainIndex)
                             }
+                            else if ([1, 2].includes(deepSSMDataTab.value)) {
+                                mapper.setLookupTable(this.lookupTable)
+                                mapper.setColorByArrayName('deepssm_error')
+                                this.prepareColorScale()
+                                // this.render()
+                            }
                             const actor = vtkActor.newInstance();
-                            actor.getProperty().setColor(...type.rgb);
+                            if (type) actor.getProperty().setColor(...type.rgb);
                             actor.getProperty().setOpacity(opacity);
                             actor.setMapper(mapper);
                             renderer.addActor(actor);
@@ -355,34 +361,34 @@ export default {
         mapper.setLookupTable(this.lookupTable)
         mapper.setColorByArrayName('color')
 
-        this.prepareColorScale()
+        if (showDifferenceFromMeanMode.value) {
+            this.prepareColorScale()
+        }
 
         this.render()
     },
     prepareColorScale() {
-        if (showDifferenceFromMeanMode.value) {
-            const canvas = this.$refs.colors
-            const labelDiv = this.$refs.colorLabels;
-            if (canvas && labelDiv) {
-                const { width, height } = canvas
-                const context = canvas.getContext('2d', { willReadFrequently: true });
-                const pixelsArea = context.getImageData(0, 0, width, height);
-                const colorsData = this.lookupTable.getUint8Table(
-                    0, 1, height * width, true
-                )
+        const canvas = this.$refs.colors
+        const labelDiv = this.$refs.colorLabels;
+        if (canvas && labelDiv) {
+            const { width, height } = canvas
+            const context = canvas.getContext('2d', { willReadFrequently: true });
+            const pixelsArea = context.getImageData(0, 0, width, height);
+            const colorsData = this.lookupTable.getUint8Table(
+                0, 1, height * width, true
+            )
 
-                pixelsArea.data.set(colorsData)
-                context.putImageData(pixelsArea, 0, 0)
-            }
+            pixelsArea.data.set(colorsData)
+            context.putImageData(pixelsArea, 0, 0)
+        }
 
-            const labels = [0, 0.25, 0.5, 0.75, 1];
-            if (!labelDiv.children.length) {
-                labels.forEach((l) => {
-                    const child = document.createElement('span');
-                    child.innerHTML = (l - 0.5) * 10;
-                    labelDiv.appendChild(child);
-                })
-            }
+        const labels = [0, 0.25, 0.5, 0.75, 1];
+        if (!labelDiv.children.length) {
+            labels.forEach((l) => {
+                const child = document.createElement('span');
+                child.innerHTML = (l - 0.5) * 10;
+                labelDiv.appendChild(child);
+            })
         }
     },
     prepareLabelCanvas() {

@@ -143,7 +143,7 @@ export async function getDeepSSMTrainingImagesForProject(
     projectId: number|undefined
 ){
     return (await apiClient.get(`/deepssm-training-image/`, {
-        params: {project: projectId}
+        params: {project: projectId, page_size: 100}
     })).data.results
 }
 

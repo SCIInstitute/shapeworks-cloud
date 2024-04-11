@@ -45,7 +45,8 @@ import {
     deepSSMDataTab,
     deepSSMResult,
     deepSSMAugDataShown,
-allDataObjectsInDataset,
+    allDataObjectsInDataset,
+uniformScale,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -197,7 +198,6 @@ export default {
             let newRenderData = {}
             let newRenderMetaData = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
-
             if (
                 analysisFilesShown.value?.length &&
                 currentAnalysisParticlesFiles.value?.length &&
@@ -247,14 +247,15 @@ export default {
                 const trainingImages: DeepSSMImage[] = deepSSMResult.value.images
                 const augImages: AugmentationPair[] = deepSSMResult.value.aug_pairs
 
-                const allSubjects = allSubjectsForDataset.value
-
                 switch(deepSSMDataTab.value) {
                     case 0:  // augmentation
                         // populate labelledGroups from aug_pairs
                         // if generated data is shown. Else pass groupedSelections
                         if (deepSSMAugDataShown.value === 'Generated') {
                             labelledGroups = groupBy(deepSSMResult.value.aug_pairs, 'sample_num')
+                        }
+                        else {
+                            labelledGroups = groupedSelections;
                         }
                         break;
                     case 1:  // training
@@ -328,7 +329,6 @@ export default {
                                     let shapeURL;
                                     let imageURL;
                                     let particleURL;
-                                    let scalarURL;
                                     // Augmentation
                                     if ('sample_num' in dataObject) {
                                         const d = dataObject as AugmentationPair
@@ -347,7 +347,6 @@ export default {
                                         const d = dataObject as TrainingPair
                                         shapeURL = d.mesh
                                         particleURL = d.particles
-                                        scalarURL = d.scalar
 
                                         if (d.index.startsWith('Generated_sample_')) {
                                             const sample_num = parseInt(d.index.split('_')[2])
@@ -391,9 +390,15 @@ export default {
                                     }
                                     else {
                                         shapeURL = (dataObject as DataObject).file
-                                        shapePromises.push(
-                                            imageReader(shapeURL, `${label}.nrrd`)
-                                        )
+                                        if ("anatomy_type" in dataObject) {
+                                            shapePromises.push(
+                                                imageReader(shapeURL, `${label}.vtk`, 'Original')
+                                            )
+                                        } else {
+                                            shapePromises.push(
+                                                imageReader(shapeURL, `${label}.nrrd`, 'Original')
+                                            )
+                                        }
                                     }
                                     
                                     return Promise.all([
@@ -432,7 +437,7 @@ export default {
                                             dataObject.file,
                                             shortFileName(dataObject.file),
                                             "Original",
-                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
+                                            dataObject.anatomy_type && { domain: dataObject.anatomy_type.replace('anatomy_', '') }
                                         )
                                       )
                                     }
@@ -528,6 +533,7 @@ export default {
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
         watch(deepSSMDataTab, debouncedRefreshRender)
         watch(deepSSMAugDataShown, debouncedRefreshRender)
+        watch(uniformScale, debouncedRefreshRender)
         watch(tab, switchTab)
 
         return {

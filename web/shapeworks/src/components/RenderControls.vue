@@ -27,8 +27,9 @@ import {
     imageViewWindowRange,
     imageViewLevel,
     imageViewLevelRange,
-deepSSMResult,
-deepSSMDataTab,
+    deepSSMResult,
+    deepSSMDataTab,
+    uniformScale,
 } from '@/store';
 
 
@@ -180,6 +181,10 @@ export default {
             return false;
         })
 
+        const showUniformScaleOption = computed(() => {
+            return deepSSMDataTab.value >= 1; // deepssm data tab training or testing
+        })
+
         const imageIntersectAllowed = computed(() => {
             // TODO: Add other applicable layers here
             return layersShown.value.includes('Groomed') || deepSSMDataTab.value > -1;
@@ -253,6 +258,8 @@ export default {
             thumbnailTarget,
             showDifferenceFromMeanMode,
             showAnalysisOptions,
+            showUniformScaleOption,
+            uniformScale,
             currentTab: props.currentTab,
         }
     }
@@ -306,6 +313,11 @@ export default {
                 v-if="showAnalysisOptions && currentTab === 'analyze'"
                 v-model="showDifferenceFromMeanMode"
                 label="Show difference from mean"
+            />
+            <v-switch
+                v-if="showUniformScaleOption"
+                v-model="uniformScale"
+                label="Uniform Scale"
             />
             <v-btn
                 class="my-5"

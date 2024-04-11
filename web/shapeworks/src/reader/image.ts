@@ -11,7 +11,7 @@ import axios from 'axios';
 import shapeReader from './shape'
 
 
-import { vtkShapesByType } from '@/store';
+import { vtkShapesByType, deepSSMErrorGlobalRange } from '@/store';
 
 const { convertItkToVtkImage } = ITKHelper;
 
@@ -38,9 +38,18 @@ async function readDeepSSMScalars(url: string | undefined) {
             }
         }
     })
-    // normalize values
-    const max = Math.max(...values);
-    values = values.map((v) => v / max)
+    console.log(values)
+    const dataRange = [
+        Math.min(...values),
+        Math.max(...values),
+    ]
+    console.log('range', dataRange)
+    console.log('global 1', deepSSMErrorGlobalRange.value)
+    deepSSMErrorGlobalRange.value = [
+        Math.min(deepSSMErrorGlobalRange.value[0], dataRange[0]),
+        Math.max(deepSSMErrorGlobalRange.value[1], dataRange[1]),
+    ]
+    console.log(deepSSMErrorGlobalRange.value)
 
     const arr = vtkDataArray.newInstance({
         name: 'deepssm_error',
@@ -76,7 +85,6 @@ export default async function (
     } else if (filename.toLowerCase().endsWith('vtk')) {
         const reader = vtkPolyDataReader.newInstance();
         await reader.setUrl(url)
-        console.log('image reader from vtk', reader, reader.getOutputData())
         shape = reader.getOutputData();
     } else if (filename.toLowerCase().endsWith('stl')) {
         const reader = vtkSTLReader.newInstance();

@@ -7,7 +7,7 @@ import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransfe
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 
 import methods from './methods';
-import { vtkInstance, showDifferenceFromMeanMode } from '@/store';
+import { vtkInstance, showDifferenceFromMeanMode, deepSSMDataTab } from '@/store';
 
 
 export default {
@@ -66,6 +66,12 @@ export default {
         showDifferenceFromMeanMode() {
             return showDifferenceFromMeanMode.value
         },
+        deepSSMDataTab() {
+            return deepSSMDataTab.value
+        },
+        showColorScale() {
+            return showDifferenceFromMeanMode.value || deepSSMDataTab.value
+        }
     },
     watch: {
         data() {
@@ -134,7 +140,9 @@ export default {
         this.watchImageStates();
     },
     updated() {
-        this.prepareColorScale()
+        if (this.showColorScale) {
+            this.prepareColorScale()
+        }
     },
     methods,
 };

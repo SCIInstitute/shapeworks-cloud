@@ -5,9 +5,12 @@
     class="render-area"
   >
     <canvas class="labels-canvas" ref="labels"/>
-    <canvas class="color-scale-canvas" ref="colors" v-if="showDifferenceFromMeanMode"/>
-    <div class ="color-scale-title-text" v-if="showDifferenceFromMeanMode">Distance from particle on mean shape</div>
-    <div class="color-scale-labels-canvas" ref="colorLabels" v-if="showDifferenceFromMeanMode"/>
+    <canvas class="color-scale-canvas" ref="colors" v-if="showColorScale"/>
+    <div class ="color-scale-title-text" v-if="showColorScale">
+      <span v-if="showDifferenceFromMeanMode">Distance from particle on mean shape</span>
+      <span v-if="[1, 2].includes(deepSSMDataTab)">DeepSSM Error</span>
+    </div>
+    <div class="color-scale-labels-canvas" ref="colorLabels" v-if="showColorScale"/>
   </div>
 </template>
 

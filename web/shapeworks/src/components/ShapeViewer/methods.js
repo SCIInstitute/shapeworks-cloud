@@ -19,8 +19,8 @@ import {
     cachedMarchingCubes, cachedParticleComparisonColors, vtkShapesByType,
     analysisFilesShown, currentAnalysisParticlesFiles, meanAnalysisParticlesFiles,
     showDifferenceFromMeanMode, cachedParticleComparisonVectors,
-    cacheComparison, calculateComparisons, deepSSMDataTab,
-    showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles,
+    cacheComparison, calculateComparisons, deepSSMDataTab, uniformScale,
+    showGoodBadParticlesMode, goodBadMaxAngle, goodBadAngles, deepSSMErrorGlobalRange,
 } from '@/store';
 import { SPHERE_RESOLUTION } from '@/store/constants';
 import widgetSync from './widgetSync';
@@ -248,11 +248,25 @@ export default {
                             if (showDifferenceFromMeanMode.value) {
                                 this.showDifferenceFromMean(mapper, renderer, label, domainIndex)
                             }
-                            else if ([1, 2].includes(deepSSMDataTab.value)) {
+                            if ([1, 2].includes(deepSSMDataTab.value)) {
+                                const data = shapeData.getPointData().getArrayByName('deepssm_error').getData()
+                                let normalizeRange;
+                                console.log('uniform scale?', uniformScale.value)
+                                if (uniformScale.value) {
+                                    normalizeRange = deepSSMErrorGlobalRange.value
+                                } else {
+                                    normalizeRange = [Math.min(...data), Math.max(...data)]
+                                }
+                                console.log('normalize range', normalizeRange)
+                                const normalizedData = data.map((v) => v / (normalizeRange[1] - normalizeRange[0]))
+                                console.log('normalized data', normalizedData)
+                                const normalizedArray = vtkDataArray.newInstance({
+                                    name: 'deepssm_error_normalized',
+                                    values: normalizedData,
+                                })
+                                shapeData.getPointData().addArray(normalizedArray)
+                                mapper.setColorByArrayName('deepssm_error_normalized')
                                 mapper.setLookupTable(this.lookupTable)
-                                mapper.setColorByArrayName('deepssm_error')
-                                this.prepareColorScale()
-                                // this.render()
                             }
                             const actor = vtkActor.newInstance();
                             if (type) actor.getProperty().setColor(...type.rgb);
@@ -362,6 +376,8 @@ export default {
         mapper.setColorByArrayName('color')
 
         if (showDifferenceFromMeanMode.value) {
+            this.lookupTable.setMappingRange(0, 1)
+            this.lookupTable.updateRange();
             this.prepareColorScale()
         }
 
@@ -370,26 +386,33 @@ export default {
     prepareColorScale() {
         const canvas = this.$refs.colors
         const labelDiv = this.$refs.colorLabels;
+        let dataRange = this.lookupTable.getMappingRange()
+
+        if (uniformScale.value) {
+            dataRange = deepSSMErrorGlobalRange.value
+        }
+
         if (canvas && labelDiv) {
             const { width, height } = canvas
             const context = canvas.getContext('2d', { willReadFrequently: true });
             const pixelsArea = context.getImageData(0, 0, width, height);
             const colorsData = this.lookupTable.getUint8Table(
-                0, 1, height * width, true
+                ...dataRange, 
+                height * width, 
+                true
             )
 
             pixelsArea.data.set(colorsData)
             context.putImageData(pixelsArea, 0, 0)
         }
 
-        const labels = [0, 0.25, 0.5, 0.75, 1];
-        if (!labelDiv.children.length) {
-            labels.forEach((l) => {
-                const child = document.createElement('span');
-                child.innerHTML = (l - 0.5) * 10;
-                labelDiv.appendChild(child);
-            })
-        }
+        const labels = [1, 0.75, 0.5, 0.25, 0];
+        labelDiv.innerHTML = ''
+        labels.forEach((l) => {
+            const child = document.createElement('span');
+            child.innerHTML = l * (dataRange[1] - dataRange[0]) + dataRange[0];
+            labelDiv.appendChild(child);
+        })
     },
     prepareLabelCanvas() {
         const { clientWidth, clientHeight } = this.$refs.vtk;
@@ -464,6 +487,10 @@ export default {
         // layers shown may have changed intersections
         // this should be done after all layers are added
         if (imageViewIntersectMode.value) this.resetIntersections()
+
+        else if ([1, 2].includes(deepSSMDataTab.value)) {
+            this.prepareColorScale()
+        }
 
         const targetRenderer = Object.values(this.vtk.renderers)[this.columns - 1]
         this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)

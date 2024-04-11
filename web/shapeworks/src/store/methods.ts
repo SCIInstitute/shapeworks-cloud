@@ -30,11 +30,11 @@ import {
      analysisAnimate,
      allSetLandmarks,
      allSubjectsForDataset,
-     anatomies,
      constraintInfo,
      allSetConstraints,
      deepSSMResult,
      deepSSMDataTab,
+     deepSSMLoadingData,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -163,6 +163,7 @@ export const loadReconstructedSamplesForProject = async (type: string, id: numbe
 
 export const loadDeepSSMDataForProject = async () => {
     if (selectedProject.value) {
+        deepSSMLoadingData.value = true;
         const results = await Promise.all([
             await getDeepSSMResultForProject(
                 selectedProject.value.id
@@ -188,6 +189,7 @@ export const loadDeepSSMDataForProject = async () => {
             images: results[3],
             test_pairs: results[4]
         }
+        deepSSMLoadingData.value = false;
     }
 }
 
@@ -333,10 +335,8 @@ export async function switchTab(tabName: string) {
     if (!selectedProject.value) {
         return;
     }
+    deepSSMDataTab.value = -1;
     const refreshedProject = await refreshProject(selectedProject.value.id)
-    if (tabName !== 'deepssm') {
-        deepSSMDataTab.value = -1;
-    }
     switch (tabName) {
         // add any other tab-switching updates here
         case 'analyze':

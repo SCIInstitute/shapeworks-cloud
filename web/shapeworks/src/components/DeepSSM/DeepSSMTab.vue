@@ -11,7 +11,9 @@ import {
     deepSSMAugDataShown,
     groomFormData,
     optimizationFormData,
-    loadDeepSSMDataForProject
+    loadDeepSSMDataForProject,
+    deepSSMLoadingData,
+    deepSSMErrorGlobalRange,
 } from '@/store';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
 import { parseCSVFromURL } from '@/helper';
@@ -171,6 +173,10 @@ export default {
             }
         });
 
+        watch(deepSSMDataTab, () => {
+            deepSSMErrorGlobalRange.value = [0, 1];
+        });
+
         return {
             openExpansionPanel,
             controlsTabs,
@@ -186,6 +192,7 @@ export default {
             deepSSMDataTab,
             deepSSMResult,
             deepSSMAugDataShown,
+            deepSSMLoadingData,
             dataTables,
         }
     },
@@ -246,6 +253,7 @@ export default {
         </v-dialog>
     </div>
     <div class="pa-3" v-else>
+        <div class="loading-dialog"><v-dialog v-model="deepSSMLoadingData" width="10%">Fetching results...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
         <v-expansion-panels v-model="openExpansionPanel">
             <v-expansion-panel>
                 <v-expansion-panel-header>Controls</v-expansion-panel-header>

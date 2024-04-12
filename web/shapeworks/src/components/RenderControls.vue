@@ -186,7 +186,6 @@ export default {
         })
 
         const imageIntersectAllowed = computed(() => {
-            // TODO: Add other applicable layers here
             return layersShown.value.includes('Groomed') || deepSSMDataTab.value > -1;
         })
 

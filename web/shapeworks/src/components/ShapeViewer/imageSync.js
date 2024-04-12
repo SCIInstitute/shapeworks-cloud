@@ -190,7 +190,6 @@ export default {
         renderer.resetCamera()
     },
     updateIntersection(slice) {
-        // TODO: account for multidomain cases
         const {
             renderer, cutter, cutActor,
             filteredParticleActor, particleFilter, cropFilter,

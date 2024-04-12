@@ -17,6 +17,12 @@
         celery_repository_url: https://github.com/girder/shapeworks-cloud.git
         celery_environment: "{{ django_vars }}"
   tasks:
+    - name: Stop celery service to prevent manage_workers task from stopping instances
+      systemd:
+        state: stopped
+        name: celery
+      become: true
+      become_user: root
     - name: Save environment variables
       ansible.builtin.shell: |
         echo "{{ django_vars }}" > /home/ubuntu/celery_project/.env

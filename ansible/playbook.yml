@@ -56,18 +56,24 @@
         cp -nr /opt/shapeworks/lib/* /usr/local/lib/.
       become: true
       become_user: root
-    - name: Create ShapeWorks Conda Env
+    - name: Install Conda
       ansible.builtin.shell: |
-        apt-get update
-        apt-get install --no-install-recommends --yes libpq-dev gcc libc6-dev curl libgl1-mesa-glx libxt6 libglib2.0-0 libqt5core5a libxrender1
-        export $PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        export PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/Miniconda3-latest-Linux-x86_64.sh
-        bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda
+        ./tmp/Miniconda3-latest-Linux-x86_64.sh -p /opt/conda
         ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+      become: true
+      become_user: root
+    - name: Update Conda
+      ansible.builtin.shell: |
         conda update -n base -c defaults conda
         conda install pip
         echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
         conda run /bin/bash -c
+      become: true
+      become_user: root
+    - name: Create ShapeWorks Conda Env
+      ansible.builtin.shell: |
         cd /opt/shapeworks
         source install_shapeworks.sh
         conda clean -t -y

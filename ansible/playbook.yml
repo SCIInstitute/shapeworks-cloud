@@ -56,6 +56,23 @@
         cp -nr /opt/shapeworks/lib/* /usr/local/lib/.
       become: true
       become_user: root
+    - name: Create ShapeWorks Conda Env
+      ansible.builtin.shell: |
+        apt-get update
+        apt-get install --no-install-recommends --yes libpq-dev gcc libc6-dev curl libgl1-mesa-glx libxt6 libglib2.0-0 libqt5core5a libxrender1
+        curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/Miniconda3-latest-Linux-x86_64.sh
+        bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda
+        ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+        conda update -n base -c defaults conda
+        conda install pip
+        echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
+        conda run /bin/bash -c
+        cd /opt/shapeworks
+        source install_shapeworks.sh
+        conda clean -t -y
+        conda run -n shapeworks bin/bash -c
+      become: true
+      become_user: root
     # This is required because composed_configurations attempts to create the staticfiles directory in the python installation directory while being imported.
     # The python installation on the EC2 worker belongs to root, but the Celery worker runs as celery, so it does not have permission to create the directory.
     # The (dumb) solution is to create the directory with the correct permissions in advance.

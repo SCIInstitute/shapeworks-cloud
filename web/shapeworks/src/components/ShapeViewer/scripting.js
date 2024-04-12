@@ -57,12 +57,6 @@ export default {
             }
             return grid;
         },
-        labelCanvas() {
-            return this.$refs.labels;
-        },
-        labelCanvasContext() {
-            return this.labelCanvas.getContext("2d");
-        },
         showDifferenceFromMeanMode() {
             return showDifferenceFromMeanMode.value
         },

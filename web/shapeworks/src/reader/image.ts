@@ -26,7 +26,7 @@ async function readDeepSSMScalars(url: string | undefined) {
     const data = reader.getOutputData();
 
     const content = (await axios.get(url)).data;
-    let values: number[] = []
+    const values: number[] = []
     content.split('\r\n\r').forEach((section) => {
         if (section.includes('deepssm_error')) {
             const [header, data] = section.split('deepssm_error')
@@ -38,18 +38,14 @@ async function readDeepSSMScalars(url: string | undefined) {
             }
         }
     })
-    console.log(values)
     const dataRange = [
         Math.min(...values),
         Math.max(...values),
     ]
-    console.log('range', dataRange)
-    console.log('global 1', deepSSMErrorGlobalRange.value)
     deepSSMErrorGlobalRange.value = [
         Math.min(deepSSMErrorGlobalRange.value[0], dataRange[0]),
         Math.max(deepSSMErrorGlobalRange.value[1], dataRange[1]),
     ]
-    console.log(deepSSMErrorGlobalRange.value)
 
     const arr = vtkDataArray.newInstance({
         name: 'deepssm_error',

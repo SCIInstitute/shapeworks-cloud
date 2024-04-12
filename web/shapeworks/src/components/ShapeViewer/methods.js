@@ -251,15 +251,12 @@ export default {
                             if ([1, 2].includes(deepSSMDataTab.value)) {
                                 const data = shapeData.getPointData().getArrayByName('deepssm_error').getData()
                                 let normalizeRange;
-                                console.log('uniform scale?', uniformScale.value)
                                 if (uniformScale.value) {
                                     normalizeRange = deepSSMErrorGlobalRange.value
                                 } else {
                                     normalizeRange = [Math.min(...data), Math.max(...data)]
                                 }
-                                console.log('normalize range', normalizeRange)
                                 const normalizedData = data.map((v) => v / (normalizeRange[1] - normalizeRange[0]))
-                                console.log('normalized data', normalizedData)
                                 const normalizedArray = vtkDataArray.newInstance({
                                     name: 'deepssm_error_normalized',
                                     values: normalizedData,
@@ -378,51 +375,107 @@ export default {
         if (showDifferenceFromMeanMode.value) {
             this.lookupTable.setMappingRange(0, 1)
             this.lookupTable.updateRange();
-            this.prepareColorScale()
+            this.prepareColorScales()
         }
 
         this.render()
     },
-    prepareColorScale() {
-        const canvas = this.$refs.colors
-        const labelDiv = this.$refs.colorLabels;
-        let dataRange = this.lookupTable.getMappingRange()
+    prepareColorScales() {
+        const canvasDiv = this.$refs.colors
+        const titleDiv = this.$refs.colorsTitle
+        const labelsDiv = this.$refs.colorsLabels
+        canvasDiv.innerHTML = ""
+        titleDiv.innerHTML = ""
+        labelsDiv.innerHTML = ""
+        if (showDifferenceFromMeanMode.value || uniformScale.value) {
+            const canvas = document.createElement('canvas')
+            canvas.style.right = "10px"
+            canvas.style.height = "100%"
+            canvas.style.width = "20px"
+            canvasDiv.appendChild(canvas)
 
-        if (uniformScale.value) {
-            dataRange = deepSSMErrorGlobalRange.value
+            const labels = document.createElement('div')
+            labels.style.right = "35px"
+            labels.style.height = "100%"
+            labelsDiv.appendChild(labels)
+
+            let range = [-5, 5]
+            if (showDifferenceFromMeanMode.value) {
+                titleDiv.innerHTML = "Distance from particle on mean shape"
+            } else if (uniformScale.value) {
+                titleDiv.innerHTML = "DeepSSMError"
+                range = deepSSMErrorGlobalRange.value
+            }
+            this.prepareColorScale(canvas, labels, range)
+        } else {
+            const { width, height } = this.$refs.vtk.getBoundingClientRect()
+            Object.entries(this.data).forEach(([label, data], i) => {
+                const [x1, y1, x2, y2] = this.grid[i]
+                const canvas = document.createElement('canvas')
+                canvas.style.top = `calc(${(1 - y2) * 100}%)`
+                canvas.style.right = `calc(${(1 - x2) * 100}% + 10px)`
+                canvas.style.height = `${(y2 - y1) * 96}%`
+                canvas.style.width = "10px"
+                canvasDiv.appendChild(canvas)
+
+                const labels = document.createElement('div')
+                labels.style.top = `calc(${(1 - y2) * 100}%)`
+                labels.style.right = `calc(${(1 - x2) * 100}% + 35px)`
+                labels.style.height = `${(y2 - y1) * 96}%`
+                labelsDiv.appendChild(labels)
+
+                let range = [-5, 5]
+                data[0].shape.forEach((shape) => {
+                    if (shape.getClassName() === 'vtkPolyData') {
+                        const arr = shape.getPointData().getArrayByName('deepssm_error').getData()
+                        if (arr) range = [Math.min(...arr), Math.max(...arr)]
+                    }
+                })
+                this.prepareColorScale(canvas, labels, range)
+            })
         }
-
-        if (canvas && labelDiv) {
+    },
+    prepareColorScale(canvas, labels, range) {
+        if (canvas && labels) {
+            canvas.style.position = "absolute"
+            canvas.style.zIndex = "1"
             const { width, height } = canvas
             const context = canvas.getContext('2d', { willReadFrequently: true });
             const pixelsArea = context.getImageData(0, 0, width, height);
             const colorsData = this.lookupTable.getUint8Table(
-                ...dataRange, 
+                ...this.lookupTable.getMappingRange(), 
                 height * width, 
                 true
             )
-
             pixelsArea.data.set(colorsData)
             context.putImageData(pixelsArea, 0, 0)
+            
+            const labelProportions = [1, 0.75, 0.5, 0.25, 0];
+            labels.innerHTML = ''
+            labels.style.position = "absolute"
+            labels.style.display = "flex"
+            labels.style.flexDirection = "column"
+            labels.style.justifyContent = "space-between"
+            labels.style.alignItems = "flex-end"
+            labels.style.textAlign = "right"
+            labelProportions.forEach((p) => {
+                const child = document.createElement('span');
+                child.innerHTML = Math.round(p * (range[1] - range[0]) + range[0]);
+                labels.appendChild(child);
+            })
         }
-
-        const labels = [1, 0.75, 0.5, 0.25, 0];
-        labelDiv.innerHTML = ''
-        labels.forEach((l) => {
-            const child = document.createElement('span');
-            child.innerHTML = l * (dataRange[1] - dataRange[0]) + dataRange[0];
-            labelDiv.appendChild(child);
-        })
     },
     prepareLabelCanvas() {
+        const labelCanvas = this.$refs.labels
+        const labelCanvasContext = labelCanvas.getContext('2d')
         const { clientWidth, clientHeight } = this.$refs.vtk;
         // increase the resolution of the canvas so text isn't blurry
-        this.labelCanvas.width = clientWidth;
-        this.labelCanvas.height = clientHeight;
+        labelCanvas.width = clientWidth;
+        labelCanvas.height = clientHeight;
 
-        this.labelCanvasContext.clearRect(0, 0, this.labelCanvas.width, this.labelCanvas.height)
-        this.labelCanvasContext.font = "16px Arial";
-        this.labelCanvasContext.fillStyle = "white";
+        labelCanvasContext.clearRect(0, 0, labelCanvas.width, labelCanvas.height)
+        labelCanvasContext.font = "16px Arial";
+        labelCanvasContext.fillStyle = "white";
     },
     populateRenderer(renderer, shapes) {
         this.addShapes(renderer, shapes.map(({ shape }) => shape));
@@ -463,10 +516,12 @@ export default {
             const newRenderer = vtkRenderer.newInstance({ background: [0.115, 0.115, 0.115] });
             const bounds = this.grid[i];
 
-            this.labelCanvasContext.fillText(
+            const labelCanvas = this.$refs.labels
+            const labelCanvasContext = labelCanvas.getContext('2d')
+            labelCanvasContext.fillText(
                 label,
-                this.labelCanvas.width * bounds[0],
-                this.labelCanvas.height * (1 - bounds[1]) - 20
+                labelCanvas.width * bounds[0],
+                labelCanvas.height * (1 - bounds[1]) - 20
             );
             newRenderer.setViewport.apply(newRenderer, bounds);
             this.vtk.renderers[label] = newRenderer;
@@ -489,16 +544,18 @@ export default {
         if (imageViewIntersectMode.value) this.resetIntersections()
 
         else if ([1, 2].includes(deepSSMDataTab.value)) {
-            this.prepareColorScale()
+            this.prepareColorScales()
         }
 
-        const targetRenderer = Object.values(this.vtk.renderers)[this.columns - 1]
-        this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
-        if (targetRenderer) {
-            this.vtk.orientationCube.setParentRenderer(targetRenderer)
-            this.vtk.orientationCube.setEnabled(true);
-            this.vtk.interactor.enable()
+        if (!this.showColorScale) {
+            const targetRenderer = Object.values(this.vtk.renderers)[this.columns - 1]
+            this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
+            if (targetRenderer) {
+                this.vtk.orientationCube.setParentRenderer(targetRenderer)
+                this.vtk.orientationCube.setEnabled(true);
+            }
         }
+        this.vtk.interactor.enable()
         this.render();
         renderLoading.value = false;
         setTimeout(

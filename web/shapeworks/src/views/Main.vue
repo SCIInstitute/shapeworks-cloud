@@ -442,17 +442,19 @@ export default {
                                       )
                                     }
                                     if(layersShown.value.includes("Groomed")){
-                                        const shapeURL = groomedShapesForOriginalDataObjects.value[
-                                            dataObject.type
-                                        ][dataObject.id].file
-                                        shapePromises.push(
-                                          imageReader(
-                                            shapeURL,
-                                            shortFileName(shapeURL),
-                                            "Groomed",
-                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
-                                        )
-                                      )
+                                        if (groomedShapesForOriginalDataObjects.value[dataObject.type]) {
+                                            const shapeURL = groomedShapesForOriginalDataObjects.value[
+                                                dataObject.type
+                                            ][dataObject.id].file
+                                            shapePromises.push(
+                                                imageReader(
+                                                    shapeURL,
+                                                    shortFileName(shapeURL),
+                                                    "Groomed",
+                                                    { domain: dataObject.anatomy_type.replace('anatomy_', '') }
+                                                )
+                                            )
+                                        }
                                     }
                                     if(layersShown.value.includes("Reconstructed")){
                                         const targetReconstruction = reconstructionsForOriginalDataObjects.value.find(

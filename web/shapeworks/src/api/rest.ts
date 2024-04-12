@@ -1,6 +1,6 @@
 import { AnalysisParams, DataObject, Dataset, LandmarkInfo, Constraints, Project, Subject } from "@/types";
 import { apiClient } from "./auth";
-import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
+import { deepSSMDataTab, loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
 
 export async function getDatasets(search: string | undefined): Promise<Dataset[]>{
@@ -101,10 +101,12 @@ export async function getOptimizedParticlesForDataObject(
 export async function getGroomedShapeForDataObject(
     type: string, id: number, projectId: number|undefined
 ) {
-    const plural = `${type}${type == 'mesh' ?'es' :'s'}`
-    return (await apiClient.get(`/groomed-${plural}`, {
-        params: {[type]: id, project: projectId}
-    })).data.results
+    if (type !== 'image') {
+        const plural = `${type}${type == 'mesh' ?'es' :'s'}`
+        return (await apiClient.get(`/groomed-${plural}`, {
+            params: {[type]: id, project: projectId}
+        })).data.results
+    }
 }
 
 export async function getReconstructedSamplesForProject(

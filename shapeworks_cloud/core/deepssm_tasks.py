@@ -426,10 +426,9 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                     filename = file1.split('.')[0]
 
                     # filename here represents the SUBJECT INDEX OF THE TEST SPLIT
-                    subject_name = (
-                        result_data['testing']['test_split_subjects'][int(filename)]
-                        .get_display_name()
-                    )
+                    subject_name = result_data['testing']['test_split_subjects'][
+                        int(filename)
+                    ].get_display_name()
 
                     test_pair = models.DeepSSMTestingData.objects.create(
                         project=project,

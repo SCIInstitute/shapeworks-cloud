@@ -20,7 +20,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from . import filters, models, serializers
-
 from .deepssm_tasks import deepssm_run
 from .tasks import analyze, groom, optimize
 

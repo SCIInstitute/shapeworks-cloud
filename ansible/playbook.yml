@@ -60,6 +60,7 @@
       ansible.builtin.shell: |
         apt-get update
         apt-get install --no-install-recommends --yes libpq-dev gcc libc6-dev curl libgl1-mesa-glx libxt6 libglib2.0-0 libqt5core5a libxrender1
+        export $PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/Miniconda3-latest-Linux-x86_64.sh
         bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda
         ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh

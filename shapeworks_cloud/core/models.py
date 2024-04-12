@@ -19,28 +19,18 @@ class Dataset(TimeStampedModel, models.Model):
     contributors = models.TextField(blank=True, default='')
     publications = models.TextField(blank=True, default='')
 
-    def get_contents(self, type='all'):
+    def get_contents(self):
         ret = []
 
         def truncate_filename(filename):
             return filename.split('/')[-1]
 
-        if type == 'all':
-            group_list = [
-                Segmentation.objects.filter(subject__dataset=self),
-                Mesh.objects.filter(subject__dataset=self),
-                Image.objects.filter(subject__dataset=self),
-                Contour.objects.filter(subject__dataset=self),
-            ]
-        elif type == 'shape':
-            group_list = [
-                Segmentation.objects.filter(subject__dataset=self),
-                Mesh.objects.filter(subject__dataset=self),
-            ]
-        elif type == 'image':
-            group_list = [Image.objects.filter(subject__dataset=self)]
-        elif type == 'contour':
-            group_list = [Contour.objects.filter(subject__dataset=self)]
+        group_list = [
+            Segmentation.objects.filter(subject__dataset=self),
+            Mesh.objects.filter(subject__dataset=self),
+            Image.objects.filter(subject__dataset=self),
+            Contour.objects.filter(subject__dataset=self),
+        ]
 
         for shape_group in group_list:
             for shape in shape_group:

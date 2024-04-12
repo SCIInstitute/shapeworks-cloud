@@ -2,13 +2,10 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import DataAugmentationUtils
-import DeepSSMUtils
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-import shapeworks as sw
 
 from shapeworks_cloud.core import models
 from swcc.api import swcc_session
@@ -18,6 +15,9 @@ from .tasks import edit_swproj_section
 
 
 def run_prep(params, project, project_file, progress):
+    import DeepSSMUtils
+    import shapeworks as sw
+
     # //////////////////////////////////////////////
     # /// STEP 1: Create Split
     # //////////////////////////////////////////////
@@ -31,6 +31,7 @@ def run_prep(params, project, project_file, progress):
     # /// STEP 2: Groom Training Shapes
     # /////////////////////////////////////////////////////////////////
     project_params = project.get_parameters('groom')
+    # alignment should always be set to ICP
     project_params.set('alignment_method', 'Iterative Closest Point')
     project_params.set('alignment_enabled', 'true')
     project.set_parameters('groom', project_params)
@@ -41,13 +42,6 @@ def run_prep(params, project, project_file, progress):
     # /////////////////////////////////////////////////////////////////
     # /// STEP 3: Optimize Training Particles
     # /////////////////////////////////////////////////////////////////
-
-    # set num_particles to 16 and iterations_per_split to 1
-    project_params = project.get_parameters('optimize')
-    project_params.set('number_of_particles', '16')
-    project_params.set('iterations_per_split', '1')
-    project.set_parameters('optimize', project_params)
-
     DeepSSMUtils.optimize_training_particles(project)
     project.save(project_file)
     progress.update_percentage(12)
@@ -96,12 +90,14 @@ def run_prep(params, project, project_file, progress):
 
 
 def run_augmentation(params, project, download_dir, progress):
+    import DataAugmentationUtils
+    import DeepSSMUtils
+
     # /////////////////////////////////////////////////////////////////
     # /// STEP 7: Augment Data
     # /////////////////////////////////////////////////////////////////
     num_samples = int(params['aug_num_samples'])
-    percent_variability = float(params['percent_variability']) / 100.0
-    # aug_sampler_type to lowecase
+    percent_variability = float(params['percent_variability'])
     aug_sampler_type = params['aug_sampler_type'].lower()
 
     num_dims = 0  # set to 0 to allow for percent variability to be used
@@ -127,6 +123,8 @@ def run_augmentation(params, project, download_dir, progress):
 
 
 def run_training(params, project, download_dir, aug_dims, progress):
+    import DeepSSMUtils
+
     batch_size = int(params['train_batch_size'])
 
     # /////////////////////////////////////////////////////////////////
@@ -176,6 +174,8 @@ def run_training(params, project, download_dir, aug_dims, progress):
 
 
 def run_testing(params, project, download_dir, progress):
+    import DeepSSMUtils
+
     test_indices = DeepSSMUtils.get_split_indices(project, 'test')
 
     # /////////////////////////////////////////////////////////////////
@@ -219,6 +219,8 @@ def run_deepssm_command(
     post_command_function,
     progress_id,
 ):
+    import shapeworks as sw
+
     user = User.objects.get(id=user_id)
     progress = models.TaskProgress.objects.get(id=progress_id)
     token, _created = Token.objects.get_or_create(user=user)
@@ -256,6 +258,21 @@ def run_deepssm_command(
 
             sw_project.load(sw_project_file)
 
+            groom_params = sw_project.get_parameters('groom')
+
+            # for each parameter in the form data, set the parameter in the project
+            for key, value in form_data.items():
+                groom_params.set(key, value)
+
+            sw_project.set_parameters('groom', groom_params)
+
+            optimize_params = sw_project.get_parameters('optimize')
+            # for each parameter in the form data, set the parameter in the project
+            for key, value in form_data.items():
+                optimize_params.set(key, value)
+
+            sw_project.set_parameters('optimize', optimize_params)
+
             os.chdir(sw_project.get_project_path())
             run_prep(form_data, sw_project, sw_project_file, progress)
 
@@ -265,6 +282,9 @@ def run_deepssm_command(
             result_data['augmentation'] = {
                 'total_data_csv': download_dir + '/deepssm/augmentation/TotalData.csv',
                 'violin_plot': download_dir + '/deepssm/augmentation/violin.png',
+                'generated_meshes': os.listdir(
+                    download_dir + '/deepssm/augmentation/Generated-Meshes/'
+                ),
                 'generated_images': os.listdir(
                     download_dir + '/deepssm/augmentation/Generated-Images/'
                 ),
@@ -293,6 +313,8 @@ def run_deepssm_command(
 
             run_testing(form_data, sw_project, download_dir, progress)
 
+            subjects = sw_project.get_subjects()
+
             result_data['testing'] = {
                 'world_predictions': os.listdir(
                     download_dir + '/deepssm/model/test_predictions/world_predictions/'
@@ -301,6 +323,7 @@ def run_deepssm_command(
                     download_dir + '/deepssm/model/test_predictions/local_predictions/'
                 ),
                 'test_distances': download_dir + '/deepssm/test_distances.csv',
+                'test_split_subjects': subjects,
             }
 
             os.chdir('../../')
@@ -352,6 +375,15 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                 ),
             )
             aug_pair.mesh.save(
+                result_data['augmentation']['generated_meshes'][i],
+                open(
+                    download_dir
+                    + '/deepssm/augmentation/Generated-Meshes/'
+                    + result_data['augmentation']['generated_meshes'][i],
+                    'rb',
+                ),
+            )
+            aug_pair.image.save(
                 result_data['augmentation']['generated_images'][i],
                 open(
                     download_dir
@@ -402,10 +434,15 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                     file1 = predictions.pop()
                     filename = file1.split('.')[0]
 
+                    # filename here represents the SUBJECT INDEX OF THE TEST SPLIT
+                    subject_name = result_data['testing']['test_split_subjects'][
+                        int(filename)
+                    ].get_display_name()
+
                     test_pair = models.DeepSSMTestingData.objects.create(
                         project=project,
                         image_type='world' if predictions == world_predictions else 'local',
-                        image_id=filename,
+                        image_id=subject_name,
                     )
 
                     predictions_path = (
@@ -457,9 +494,11 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
         for images in [train_images, val_and_test_images]:
             for image in images:
                 image_type = 'train' if images == train_images else 'val_and_test'
+
                 train_image = models.DeepSSMTrainingImage.objects.create(
                     project=project,
                     validation=True if image_type == 'val_and_test' else False,
+                    index=image.split('.')[0],
                 )
                 train_image.image.save(
                     image,
@@ -514,7 +553,7 @@ def deepssm_run(user_id, project_id, progress_id, form_data):
                     ),
                 )
 
-                training_pair.vtk.save(
+                training_pair.mesh.save(
                     vtk_file,
                     open(
                         download_dir + '/deepssm/model/examples/' + vtk_file,

@@ -181,7 +181,7 @@ class DeepSSMTestingData(ApiModel):
 
     project: Project
     image_type: str
-    image_id: int
+    image_id: str
     mesh_source: Union[str, Path]
     particles_source: Union[str, Path]
 
@@ -192,13 +192,13 @@ class DeepSSMTrainingPair(ApiModel):
     _file_fields = {
         'particles': 'core.DeepSSMTrainingPair.particles',
         'scalar': 'core.DeepSSMTrainingPair.scalar',
-        'vtk': 'core.DeepSSMTrainingPair.vtk',
+        'mesh': 'core.DeepSSMTrainingPair.vtk',
     }
 
     project: Project
     particles_source: Union[str, Path]
     scalar_source: Union[str, Path]
-    vtk_source: Union[str, Path]
+    mesh_source: Union[str, Path]
     validation: bool
     example_type: str
     index: str
@@ -213,6 +213,7 @@ class DeepSSMTrainingImage(ApiModel):
 
     project: Project
     image_source: Union[str, Path]
+    index: str
     validation: bool
 
 
@@ -221,13 +222,15 @@ class DeepSSMAugPair(ApiModel):
 
     _file_fields = {
         'mesh': 'core.DeepSSMAugPair.mesh',
+        'image': 'core.DeepSSMAugPair.image',
         'particles': 'core.DeepSSMAugPair.particles',
     }
 
     project: Project
     sample_num: int
-    mesh: Union[str, Path]
-    particles: Union[str, Path]
+    mesh_source: Union[str, Path]
+    image_source: Union[str, Path]
+    particles_source: Union[str, Path]
 
 
 class DeepSSMResult(ApiModel):

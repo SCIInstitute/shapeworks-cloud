@@ -201,7 +201,7 @@ class DeepSSMTestingData(models.Model):
         Project, on_delete=models.CASCADE, related_name='deepssm_testing_data'
     )
     image_type = models.CharField(max_length=255)
-    image_id = models.IntegerField()
+    image_id = models.CharField(max_length=255)
     mesh = S3FileField()
     particles = S3FileField()
 
@@ -212,8 +212,8 @@ class DeepSSMTrainingPair(models.Model):
     )
     particles = S3FileField()  # .particles
     scalar = S3FileField()  # .scalar
-    vtk = S3FileField()  # .vtk
-    index = models.CharField(max_length=255)  # subject
+    mesh = S3FileField()  # .vtk
+    index = models.CharField(max_length=255)  # index
     example_type = models.CharField(max_length=255)  # best, median, worst
     validation = models.BooleanField(default=False)
 
@@ -223,12 +223,14 @@ class DeepSSMTrainingImage(models.Model):
         Project, on_delete=models.CASCADE, related_name='deepssm_training_images'
     )
     image = S3FileField()
+    index = models.CharField(max_length=255)  # index
     validation = models.BooleanField(default=False)
 
 
 class DeepSSMAugPair(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='deepssm_aug_pair')
     sample_num = models.IntegerField()
+    image = S3FileField()
     mesh = S3FileField()
     particles = S3FileField()
 

@@ -8,7 +8,7 @@ import _ from 'lodash';
 import imageReader from '../reader/image';
 import pointsReader from '../reader/points';
 import { groupBy, shortFileName } from '../helper';
-import { DataObject, ShapeData } from '@/types';
+import { AugmentationPair, DataObject, DeepSSMImage, ShapeData, TestingData, TrainingPair } from '@/types';
 import ShapeViewer from '../components/ShapeViewer/viewer.vue';
 import DataList from '../components/DataList.vue'
 import RenderControls from '../components/RenderControls.vue'
@@ -42,6 +42,11 @@ import {
     landmarksLoading,
     constraintsLoading,
     imageViewMode,
+    deepSSMDataTab,
+    deepSSMResult,
+    deepSSMAugDataShown,
+    allDataObjectsInDataset,
+uniformScale,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -193,7 +198,6 @@ export default {
             let newRenderData = {}
             let newRenderMetaData = {}
             const groupedSelections: Record<string, DataObject[]> = groupBy(selectedDataObjects.value, 'subject')
-
             if (
                 analysisFilesShown.value?.length &&
                 currentAnalysisParticlesFiles.value?.length &&
@@ -236,6 +240,183 @@ export default {
                         }
                     })
                 )
+            } 
+            else if (tab.value === "deepssm" && deepSSMResult.value) {
+                // defaults to subjects selected
+                let labelledGroups: Record<string, any> = groupedSelections;
+                const trainingImages: DeepSSMImage[] = deepSSMResult.value.images
+                const augImages: AugmentationPair[] = deepSSMResult.value.aug_pairs
+
+                switch(deepSSMDataTab.value) {
+                    case 0:  // augmentation
+                        // populate labelledGroups from aug_pairs
+                        // if generated data is shown. Else pass groupedSelections
+                        if (deepSSMAugDataShown.value === 'Generated') {
+                            labelledGroups = groupBy(deepSSMResult.value.aug_pairs, 'sample_num')
+                        }
+                        else {
+                            labelledGroups = groupedSelections;
+                        }
+                        break;
+                    case 1:  // training
+                        // populate from training_pairs
+                        labelledGroups = deepSSMResult.value.training_pairs.reduce((acc, obj) => {
+                            const key = `${obj.example_type}_${(obj.validation)}`;
+                            if (!acc[key]) {
+                                acc[key] = [];
+                            }
+                            acc[key].push(obj);
+                            return acc;
+                        }, {});
+
+                        // sort labelledGroups where it should go: best true, median true, worst true, best false, median false, worst false
+                        // eslint-disable-next-line
+                        const order = ['best', 'median', 'worst'];
+                        labelledGroups = Object.fromEntries(
+                            Object.entries(labelledGroups).sort(
+                                // eslint-disable-next-line
+                                ([aKey, aVal], [bKey, bVal]) => {
+                                    const a = aKey.split('_');
+                                    const b = bKey.split('_');
+                                    if (a[1] === 'true' && b[1] === 'true') {
+                                        return order.indexOf(a[0]) - order.indexOf(b[0]);
+                                    } else if (a[1] === 'true') {
+                                        return -1;
+                                    } else if (b[1] === 'true') {
+                                        return 1;
+                                    } else {
+                                        return order.indexOf(a[0]) - order.indexOf(b[0]);
+                                    }
+                                }
+                            )
+                        )
+                        break;
+                    case 2:  // testing
+                        labelledGroups = groupBy(deepSSMResult.value.test_pairs, 'image_id')
+                        // filter labelled groups to use only items which have "image_type" == world
+                        labelledGroups = Object.fromEntries(
+                            Object.entries(labelledGroups).map(([subjectId, dataObjects]) => {
+                                const filteredDataObjects = dataObjects.filter((obj) => obj.image_type === 'world');
+                                return [subjectId, filteredDataObjects];
+                            })
+                        );
+
+                        break;
+                    default:
+                        break;
+                }
+
+                newRenderData = Object.fromEntries(
+                    await Promise.all(Object.entries(labelledGroups).map(
+                        async ([subjectId, dataObjects]) => {
+                            let label = subjectId;
+                            // prepend "Generated_Sample_" to label is dataObjects is AugmentationPair
+                            if ((dataObjects[0] as TrainingPair).example_type) {
+                                label = `${dataObjects[0].example_type} ${dataObjects[0].validation ? 'validation' : 'training'}`;
+                            }
+                            if((dataObjects[0] as AugmentationPair).sample_num) {
+                                label = "Generated_Sample_" + subjectId;
+                            }
+                            if(allSubjectsForDataset.value){
+                                const subject = allSubjectsForDataset.value.find(
+                                    (subject) => subject.id.toString() === subjectId
+                                )
+                                if (subject) label = subject.name
+                            }
+                            const shapeDatas = (await Promise.all(dataObjects.map(
+                                (dataObject: DataObject | DeepSSMImage | AugmentationPair | TrainingPair | TestingData) => {
+                                    const shapePromises: Promise<any>[] = [];
+                                    let shapeURL;
+                                    let imageURL;
+                                    let particleURL;
+                                    // Augmentation
+                                    if ('sample_num' in dataObject) {
+                                        const d = dataObject as AugmentationPair
+                                        shapeURL = d.mesh
+                                        imageURL = d.image
+                                        particleURL = d.particles
+                                        shapePromises.push(
+                                            imageReader(imageURL, `${label}.nrrd`)
+                                        )
+                                        shapePromises.push(
+                                            imageReader(shapeURL, `${label}.vtk`)
+                                        )
+                                    }
+                                    // Training
+                                    else if ('example_type' in dataObject) {
+                                        const d = dataObject as TrainingPair
+                                        shapeURL = d.mesh
+                                        particleURL = d.particles
+
+                                        if (d.index.startsWith('Generated_sample_')) {
+                                            const sample_num = parseInt(d.index.split('_')[2])
+                                            imageURL = augImages.find((i) => i.sample_num === sample_num)?.image
+                                        } else {
+                                            imageURL = trainingImages.find((i) => i.index === d.index)?.image
+                                        }
+                                        
+                                        shapePromises.push(
+                                            imageReader(imageURL, `${label}.nrrd`)
+                                        )
+                                        shapePromises.push(
+                                            imageReader(shapeURL, `${label}.vtk`, 'DeepSSM')
+                                        )
+                                    }
+                                    // Testing
+                                    else if ('image_id' in dataObject) {
+                                        const d = dataObject as TestingData
+                                        shapeURL = d.mesh
+                                        particleURL = d.particles
+                                        const image_id = d.image_id
+
+                                        // get subject name from allSubjectsForDataset
+                                        const subjectID = allSubjectsForDataset.value.find(
+                                            (subject) => subject.name.toString() === image_id
+                                        )?.id
+
+                                        // get dataObject for subjectID
+                                        const fetchedDataObject = allDataObjectsInDataset.value.find(
+                                            (dataObject) => dataObject.subject === subjectID
+                                        )
+
+                                        const imageURL = fetchedDataObject?.file
+                                        
+                                        shapePromises.push(
+                                            imageReader(imageURL, `${label}.nrrd`)
+                                        )
+                                        shapePromises.push(
+                                            imageReader(shapeURL, `${label}.vtk`, 'DeepSSM')
+                                        )
+                                    }
+                                    else {
+                                        shapeURL = (dataObject as DataObject).file
+                                        if ("anatomy_type" in dataObject) {
+                                            shapePromises.push(
+                                                imageReader(shapeURL, `${label}.vtk`, 'Original')
+                                            )
+                                        } else {
+                                            shapePromises.push(
+                                                imageReader(shapeURL, `${label}.nrrd`, 'Original')
+                                            )
+                                        }
+                                    }
+                                    
+                                    return Promise.all([
+                                        Promise.all(shapePromises),
+                                        pointsReader(particleURL),
+                                    ])
+                                }
+                            )))
+                            .map((e: any) => ({
+                                shape: e[0],
+                                points: e[1],
+                            }))
+                            return [
+                                label, shapeDatas
+                            ]
+                        }
+                    )
+                ))
             } else {
                 newRenderData = Object.fromEntries(
                     await Promise.all(Object.entries(groupedSelections).map(
@@ -256,22 +437,24 @@ export default {
                                             dataObject.file,
                                             shortFileName(dataObject.file),
                                             "Original",
-                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
+                                            dataObject.anatomy_type && { domain: dataObject.anatomy_type.replace('anatomy_', '') }
                                         )
                                       )
                                     }
                                     if(layersShown.value.includes("Groomed")){
-                                        const shapeURL = groomedShapesForOriginalDataObjects.value[
-                                            dataObject.type
-                                        ][dataObject.id].file
-                                        shapePromises.push(
-                                          imageReader(
-                                            shapeURL,
-                                            shortFileName(shapeURL),
-                                            "Groomed",
-                                            { domain: dataObject.anatomy_type.replace('anatomy_', '') }
-                                        )
-                                      )
+                                        if (groomedShapesForOriginalDataObjects.value[dataObject.type]) {
+                                            const shapeURL = groomedShapesForOriginalDataObjects.value[
+                                                dataObject.type
+                                            ][dataObject.id].file
+                                            shapePromises.push(
+                                                imageReader(
+                                                    shapeURL,
+                                                    shortFileName(shapeURL),
+                                                    "Groomed",
+                                                    { domain: dataObject.anatomy_type.replace('anatomy_', '') }
+                                                )
+                                            )
+                                        }
                                     }
                                     if(layersShown.value.includes("Reconstructed")){
                                         const targetReconstruction = reconstructionsForOriginalDataObjects.value.find(
@@ -350,6 +533,9 @@ export default {
         watch(layersShown, debouncedRefreshRender)
         watch(analysisFilesShown, debouncedRefreshRender, {deep: true})
         watch(meanAnalysisParticlesFiles, debouncedRefreshRender, {deep: true})
+        watch(deepSSMDataTab, debouncedRefreshRender)
+        watch(deepSSMAugDataShown, debouncedRefreshRender)
+        watch(uniformScale, debouncedRefreshRender)
         watch(tab, switchTab)
 
         return {
@@ -449,7 +635,7 @@ export default {
                         </v-tab-item>
                         <v-tab href="#deepssm">DeepSSM</v-tab>
                         <v-tab-item value="deepssm">
-                            <DeepSSMTab />
+                            <DeepSSMTab @change="refreshRender" />
                         </v-tab-item>
                     </v-tabs>
                 </v-list-item>

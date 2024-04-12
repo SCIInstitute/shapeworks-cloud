@@ -149,7 +149,7 @@ import { groupBy } from '../../helper';
               currentTasks.value[selectedProject.value.id] = {}
           }
 
-          const taskIds = await spawnJob("analyze", {"analysis": {range, steps: numSteps}}); // Record<string, any>
+          const taskIds = await spawnJob("analyze", {"range": range, "steps": numSteps}); // Record<string, any>
 
           if(!taskIds || taskIds.length === 0) {
               message.value = `Failed to submit analysis job.`

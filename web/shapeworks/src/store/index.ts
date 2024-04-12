@@ -124,3 +124,19 @@ export const imageViewWindowRange = ref<number[]>([0, 1]);
 export const imageViewLevel = ref<number>(0);
 
 export const imageViewLevelRange = ref<number[]>([0, 1]);
+
+export const deepSSMResult = ref<Record<string, any>>();
+
+export const deepSSMDataTab = ref<number>(-1);
+
+export const deepSSMAugDataShown = ref<'Original' | 'Generated'>('Generated');
+
+export const deepSSMLoadingData = ref<boolean>(false);
+
+export const groomFormData = ref({});
+
+export const optimizationFormData = ref({});
+
+export const uniformScale = ref<boolean>(true);
+
+export const deepSSMErrorGlobalRange = ref<number[]>([0, 1]);

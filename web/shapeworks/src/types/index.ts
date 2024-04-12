@@ -214,3 +214,36 @@ export interface CacheComparison {
     file: string,
     particles: string
 }
+
+export interface AugmentationPair {
+    sample_num: number,
+    project: number,
+    mesh: string,
+    image: string,
+    particles: string,
+}
+
+export interface TrainingPair {
+    project: number,
+    particles: string,
+    scalar: string,
+    mesh: string,
+    index: string,
+    example_type: string,
+    validation: boolean,
+}
+
+export interface TestingData {
+    project: number,
+    particles: string,
+    mesh: string,
+    image_type: string,
+    image_id: string,
+}
+
+export interface DeepSSMImage {
+    project: number,
+    index: string,
+    image: string,
+    validation: boolean,
+}

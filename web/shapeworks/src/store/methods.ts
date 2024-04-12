@@ -30,9 +30,11 @@ import {
      analysisAnimate,
      allSetLandmarks,
      allSubjectsForDataset,
-     anatomies,
      constraintInfo,
      allSetConstraints,
+     deepSSMResult,
+     deepSSMDataTab,
+     deepSSMLoadingData,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -159,8 +161,9 @@ export const loadReconstructedSamplesForProject = async (type: string, id: numbe
     }
 }
 
-export const loadDeepSSMDataForProject = async (id: number) => {
+export const loadDeepSSMDataForProject = async () => {
     if (selectedProject.value) {
+        deepSSMLoadingData.value = true;
         const results = await Promise.all([
             await getDeepSSMResultForProject(
                 selectedProject.value.id
@@ -178,13 +181,15 @@ export const loadDeepSSMDataForProject = async (id: number) => {
                 selectedProject.value.id
             )]
         )
-
-        return {
-            result: results[0],
+                
+        deepSSMResult.value = {
+            result: results[0][0],
             aug_pairs: results[1],
-            training_images: results[2],
-            test_images: results[3]
+            training_pairs: results[2],
+            images: results[3],
+            test_pairs: results[4]
         }
+        deepSSMLoadingData.value = false;
     }
 }
 
@@ -205,9 +210,6 @@ export function jobAlreadyDone(action: string): Boolean {
 }
 
 export async function spawnJob(action: string, payload: Record<string, any>): Promise<any> {
-    if (Object.keys(payload).every((key) => key.includes("section") || key.includes("analysis"))) {
-        payload = Object.assign({}, ...Object.values(payload))
-    }
     const projectId = selectedProject.value?.id;
     if (!projectId) return undefined
     switch (action) {
@@ -297,22 +299,25 @@ export async function fetchJobResults(taskName: string) {
             }
             break;
         case 'deepssm':
-            layerName = 'Groomed' // TODO: Implement shapeviewer changes for deepssm tabs
             loadFunction = loadDeepSSMDataForProject
             break;
     }
     if (layerName && loadFunction) {
-        await Promise.all(allDataObjectsInDataset.value.map(
-            (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
-        ))
-        cachedMarchingCubes.value = Object.fromEntries(
-            Object.entries(cachedMarchingCubes.value).filter(
-                ([cachedLabel]) => !cachedLabel.includes(layerName)
+        if (layerName) {
+            await Promise.all(allDataObjectsInDataset.value.map(
+                (dataObject) => loadFunction ? loadFunction(dataObject.type, dataObject.id) : undefined
+            ))
+            cachedMarchingCubes.value = Object.fromEntries(
+                Object.entries(cachedMarchingCubes.value).filter(
+                    ([cachedLabel]) => !cachedLabel.includes(layerName)
+                )
             )
-        )
-        const layer = layers.value.find((l) => l.name === layerName)
-        if (layer?.available() && !layersShown.value.includes(layerName)) {
-            layersShown.value = [...layersShown.value, layerName]
+            const layer = layers.value.find((l) => l.name === layerName)
+            if (layer?.available() && !layersShown.value.includes(layerName)) {
+                layersShown.value = [...layersShown.value, layerName]
+            }
+        } else {
+            loadFunction()
         }
     }
 }
@@ -330,6 +335,7 @@ export async function switchTab(tabName: string) {
     if (!selectedProject.value) {
         return;
     }
+    deepSSMDataTab.value = -1;
     const refreshedProject = await refreshProject(selectedProject.value.id)
     switch (tabName) {
         // add any other tab-switching updates here

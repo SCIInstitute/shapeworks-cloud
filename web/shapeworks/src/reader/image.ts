@@ -4,14 +4,55 @@ import vtkPLYReader from 'vtk.js/Sources/IO/Geometry/PLYReader';
 import vtkSTLReader from 'vtk.js/Sources/IO/Geometry/STLReader';
 import vtkPolyDataReader from 'vtk.js/Sources/IO/Legacy/PolyDataReader';
 import vtkStringArray from 'vtk.js/Sources/Common/Core/StringArray'
+import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
 import readImageArrayBuffer from 'itk/readImageArrayBuffer';
 import ITKHelper from 'vtk.js/Sources/Common/DataModel/ITKHelper';
 import axios from 'axios';
 import shapeReader from './shape'
 
-import { vtkShapesByType } from '@/store';
+
+import { vtkShapesByType, deepSSMErrorGlobalRange } from '@/store';
 
 const { convertItkToVtkImage } = ITKHelper;
+
+
+async function readDeepSSMScalars(url: string | undefined) {
+    if(!url) return vtkDataArray.newInstance({
+        name: 'deepssm_error'
+    })
+
+    const reader = vtkPolyDataReader.newInstance();
+    await reader.setUrl(url);
+    const data = reader.getOutputData();
+
+    const content = (await axios.get(url)).data;
+    const values: number[] = []
+    content.split('\r\n\r').forEach((section) => {
+        if (section.includes('deepssm_error')) {
+            const [header, data] = section.split('deepssm_error')
+            const line_values = data.slice(1).split('\r\n').map((line) => {
+                return line.split(' ').map((v) => parseFloat(v)).filter((v) => v)
+            }).pop()
+            if (line_values) {
+                values.push(...line_values)
+            }
+        }
+    })
+    const dataRange = [
+        Math.min(...values),
+        Math.max(...values),
+    ]
+    deepSSMErrorGlobalRange.value = [
+        Math.min(deepSSMErrorGlobalRange.value[0], dataRange[0]),
+        Math.max(deepSSMErrorGlobalRange.value[1], dataRange[1]),
+    ]
+
+    const arr = vtkDataArray.newInstance({
+        name: 'deepssm_error',
+        values
+    })
+    return arr 
+}
 
 
 export default async function (
@@ -63,6 +104,10 @@ export default async function (
         // @ts-ignore
         fieldData.addArray(arr)
     })
+    if (type === 'DeepSSM') {
+        const arr = await readDeepSSMScalars(url)
+        shape.getPointData().addArray(arr)
+    }
 
     vtkShapesByType.value[type].push(shape)
     return shape

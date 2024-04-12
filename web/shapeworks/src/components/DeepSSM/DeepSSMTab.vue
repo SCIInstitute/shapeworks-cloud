@@ -1,14 +1,29 @@
 <script lang="ts">
 /* eslint-disable no-unused-vars */
-import { currentTasks, selectedProject, spawnJob, spawnJobProgressPoll, abort } from '@/store';
-import { Ref, computed, ref, watch } from 'vue';
+import {
+    currentTasks,
+    selectedProject,
+    spawnJob,
+    spawnJobProgressPoll,
+    abort,
+    deepSSMDataTab,
+    deepSSMResult,
+    deepSSMAugDataShown,
+    groomFormData,
+    optimizationFormData,
+    loadDeepSSMDataForProject,
+    deepSSMLoadingData,
+    deepSSMErrorGlobalRange,
+} from '@/store';
+import { Ref, computed, onMounted, ref, watch } from 'vue';
+import { parseCSVFromURL } from '@/helper';
 
 
 export default {
     setup() {
         enum Sampler {
             Gaussian = "Gaussian",
-            Mixture = "Mixture",
+            Mixture = "mixture",
             KDE = "KDE",
         }
 
@@ -23,8 +38,8 @@ export default {
                 return currentTasks.value[selectedProject.value.id]['deepssm_task']
             }
         )
-
-        const openTab = ref<number>(0);
+        const openExpansionPanel = ref<number>(0);
+        const controlsTabs = ref();
         const showAbortConfirmation = ref(false);
 
         const prepData = {
@@ -52,6 +67,25 @@ export default {
             train_fine_tuning_learning_rate: ref<number>(0.001),
         }
 
+        // headers are assigned from the parseCSV function's output
+        const dataTables = {
+            aug_table: ref<any>(undefined),
+            aug_headers: ref<any>(undefined),
+            training_table: ref<any>(undefined),
+            training_headers: ref<any>([
+                {text: "Training Stage", value: '0'},
+                {text: "Epoch", value: '1'},
+                {text: "LR", value: '2'},
+                {text: "Train_Err", value: '3'},
+                {text: "Train_Rel_Err", value: '4'},
+                {text: "Val_Err", value: '5'},
+                {text: "Val_Rel_Err", value: '6'},
+                {text: "Sec", value: '7'},
+            ]),
+            testing_table: ref<any>(undefined),
+            testing_headers: ref<any>([{text: "Name", value: '0'}, {text: "Distance", value: '1'}]),
+        }
+
         /**
          * Converts an object of reactive properties to a plain object for use in api formData fields.
          */
@@ -72,21 +106,80 @@ export default {
             const prepFormData = getFormData(prepData);
             const augFormData = getFormData(augmentationData);
             const trainFormData = getFormData(trainingData);
-            const formData = {
+
+            const aggregatedFormData = {
                 ...prepFormData,
                 ...augFormData,
                 ...trainFormData,
+                ...groomFormData.value,
+                ...optimizationFormData.value,
             }
 
-            const taskId = await spawnJob("deepssm", formData);
+            const taskId = await spawnJob("deepssm", aggregatedFormData);
             currentTasks.value[selectedProject.value.id] = taskId;
 
             spawnJobProgressPoll();
             return taskId;
         }
 
+        async function getCSVDataFromURL(url: string) {
+            return await parseCSVFromURL(url);
+        }
+
+        onMounted(async () => {
+            if (!deepSSMResult.value && selectedProject.value) {
+                await loadDeepSSMDataForProject();
+            }
+            if (deepSSMResult.value) {
+                try {
+                    Promise.all([
+                        await getCSVDataFromURL(deepSSMResult.value.result.aug_total_data),
+                        await getCSVDataFromURL(deepSSMResult.value.result.training_data_table),
+                        await getCSVDataFromURL(deepSSMResult.value.result.testing_distances),
+                    ]).then((res) => {
+                        // get only the filename rather than the full path
+                        const aug_values = res[0].map((row: any) => {
+                            const newRow = {};
+                            Object.keys(row).forEach((key: string) => {
+                                const value = row[key];
+                                if (typeof value === 'string') {
+                                    newRow[key] = value.split('/').pop();
+                                } else {
+                                    newRow[key] = value;
+                                }
+                            });
+                            return newRow;
+                        });
+
+                        dataTables.aug_table.value = aug_values;
+                        dataTables.training_table.value = res[1];
+                        dataTables.testing_table.value = res[2];
+
+                        // Augmentation data table doesn't have headers, only a numbered list
+                        dataTables.aug_headers.value = Object.keys(dataTables.aug_table.value[0]).map((_: string, index: number) => {
+                            return {text: `${index+1}`, value: `${index}`}
+                        });
+                    });
+                }
+                catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+
+        watch(openExpansionPanel, () => {
+            if (openExpansionPanel.value === 1 && deepSSMDataTab.value === -1) {
+                deepSSMDataTab.value = 0;
+            }
+        });
+
+        watch(deepSSMDataTab, () => {
+            deepSSMErrorGlobalRange.value = [0, 1];
+        });
+
         return {
-            openTab,
+            openExpansionPanel,
+            controlsTabs,
             prepData,
             augmentationData,
             trainingData,
@@ -96,6 +189,11 @@ export default {
             taskData,
             abort,
             showAbortConfirmation,
+            deepSSMDataTab,
+            deepSSMResult,
+            deepSSMAugDataShown,
+            deepSSMLoadingData,
+            dataTables,
         }
     },
 }
@@ -155,89 +253,117 @@ export default {
         </v-dialog>
     </div>
     <div class="pa-3" v-else>
-        DeepSSM Controls
-        <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-                <v-icon
-                    v-bind="attrs"
-                    v-on="on"
-                >
-                mdi-information
-                </v-icon>
-            </template>
-            <span>
-               <v-subheader></v-subheader>
-            </span>
-        </v-tooltip>
-        <v-expansion-panels v-model="openTab">
+        <div class="loading-dialog"><v-dialog v-model="deepSSMLoadingData" width="10%">Fetching results...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
+        <v-expansion-panels v-model="openExpansionPanel">
             <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Prep
-                </v-expansion-panel-header>
+                <v-expansion-panel-header>Controls</v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <v-text-field v-model="prepData.testing_split" type="number" label="Test Split" suffix="%" />
-                    <v-text-field v-model="prepData.validation_split" type="number" label="Validation Split" suffix="%" />
-                    <v-text-field v-model="prepData.percent_variability" type="number" label="Percent Variablity Preserved" min="0" max="100" suffix="%" />
-                    <div class="image-spacing">
-                        <v-label class="spacing-label">Image Spacing</v-label>
-                        <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.x" type="number" label="X" />
-                        <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.y" type="number" label="Y" />
-                        <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.z" type="number" label="Z" />
-                    </div>
+                    <v-tabs v-model="controlsTabs">
+                        <v-tab>Prep</v-tab>
+                        <v-tab>Augmentation</v-tab>
+                        <v-tab>Training</v-tab>
+                    </v-tabs>
+                    <v-tabs-items v-model="controlsTabs">
+                        <v-tab-item>
+                            <div>
+                                <v-text-field v-model="prepData.testing_split.value" type="number" label="Test Split" suffix="%" />
+                                <v-text-field v-model="prepData.validation_split.value" type="number" label="Validation Split" suffix="%" />
+                                <v-text-field v-model="prepData.percent_variability.value" type="number" label="Percent Variablity Preserved" min="0.0" max="100.0" suffix="%" />
+                                <div class="image-spacing">
+                                    <v-label class="spacing-label">Image Spacing</v-label>
+                                    <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.x" type="number" label="X" />
+                                    <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.y" type="number" label="Y" />
+                                    <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.z" type="number" label="Z" />
+                                </div>
+                            </div>
+                        </v-tab-item>
+                        <v-tab-item>
+                            <div>
+                                <v-text-field v-model="augmentationData.aug_num_samples.value" type="number" label="Number of Samples" min="1" />
+
+                                <v-select 
+                                    :items="Object.values(Sampler)"
+                                    v-model="augmentationData.aug_sampler_type.value"
+                                    label="Sampler Type"
+                                />
+                            </div>
+                        </v-tab-item>
+                        <v-tab-item>
+                            <div>
+                                <v-select
+                                    :items="Object.values(LossFunction)"
+                                    v-model="trainingData.train_loss_function.value"
+                                    label="Loss Function"
+                                />
+                                <v-text-field v-model="trainingData.train_epochs.value" type="number" label="Epochs" min="0" />
+                                <v-text-field v-model="trainingData.train_learning_rate.value" type="number" label="Learning Rate" min="0" />
+                                <v-text-field v-model="trainingData.train_batch_size.value" type="number" label="Batch Size" min="1" />
+
+                                <v-checkbox v-model="trainingData.train_decay_learning_rate.value" label="Decay Learning Rate"></v-checkbox>
+
+                                <v-checkbox v-model="trainingData.train_fine_tuning.value" label="Fine Tuning"></v-checkbox>
+
+                                <v-text-field v-model="trainingData.train_fine_tuning_epochs.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Epochs" min="1" />
+                                <v-text-field v-model="trainingData.train_fine_tuning_learning_rate.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Learning Rate" min="0" />
+                            </div>
+                        </v-tab-item>
+                    </v-tabs-items>
+                    <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
                 </v-expansion-panel-content>
             </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Augmentation
-                </v-expansion-panel-header>
+            <v-expansion-panel v-if="deepSSMResult">
+                <v-expansion-panel-header>Data</v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <v-text-field v-model="augmentationData.aug_num_samples.value" type="number" label="Number of Samples" min="1" />
-
-                    <v-select 
-                        :items="Object.values(Sampler)"
-                        v-model="augmentationData.aug_sampler_type"
-                        label="Sampler Type"
-                    />
-                    <!-- needs sub-panel for data -->
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Training
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <v-select 
-                        :items="Object.values(LossFunction)"
-                        v-model="trainingData.train_loss_function"
-                        label="Loss Function"
-                    />
-                    <v-text-field v-model="trainingData.train_epochs.value" type="number" label="Epochs" min="0" />
-                    <v-text-field v-model="trainingData.train_learning_rate.value" type="number" label="Learning Rate" min="0" />
-                    <v-text-field v-model="trainingData.train_batch_size.value" type="number" label="Batch Size" min="1" />
-
-                    <v-checkbox v-model="trainingData.train_decay_learning_rate" label="Decay Learning Rate"></v-checkbox>
-
-                    <v-checkbox v-model="trainingData.train_fine_tuning" label="Fine Tuning"></v-checkbox>
-
-                    <v-text-field v-model="trainingData.train_fine_tuning_epochs.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Epochs" min="1" />
-                    <v-text-field v-model="trainingData.train_fine_tuning_learning_rate.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Learning Rate" min="0" />
-
-                    <!-- TODO: needs sub-panel for training output -->
-                    <!-- needs data table with "Original Data" and "Generated Data" options -->
-                    <!-- also needs violin plot to compare original and generated data -->
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Testing
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <!-- Data table for name and average distance -->
+                    <v-tabs v-model="deepSSMDataTab">
+                        <v-tab>Augmentation</v-tab>
+                        <v-tab>Training</v-tab>
+                        <v-tab>Testing</v-tab>
+                    </v-tabs>
+                    <v-tabs-items v-model="deepSSMDataTab">
+                        <v-tab-item>
+                            <div>
+                                <div class="aug-data-checkboxes">
+                                    <v-radio-group v-model="deepSSMAugDataShown">
+                                        <v-radio value="Original" label="Original Data"></v-radio>
+                                        <v-radio value="Generated" label="Generated Data"></v-radio>
+                                    </v-radio-group>
+                                </div>
+                                <v-data-table
+                                    :items="dataTables.aug_table.value"
+                                    :headers="dataTables.aug_headers.value"
+                                />
+                                <!-- violin plot -->
+                                <h4>Violin Plot</h4>
+                                <v-img :src="deepSSMResult.result?.aug_visualization" alt="Augmented Data Violin Plot" />
+                            </div>
+                        </v-tab-item>
+                        <v-tab-item>
+                            <div>
+                                <v-data-table
+                                    :items="dataTables.training_table.value"
+                                    :headers="dataTables.training_headers.value"
+                                />
+                                <!-- epoch plots -->
+                                Training Plot
+                                <v-img :src="deepSSMResult.result?.training_visualization" alt="Training Plot" />
+                                <div v-if="deepSSMResult.result?.training_visualization_ft">
+                                    Fine Tuning Plot
+                                    <v-img :src="deepSSMResult.result?.training_visualization_ft" alt="Fine Tuning Plot" />
+                                </div>
+                            </div>
+                        </v-tab-item>
+                        <v-tab-item>
+                            <div>
+                                <v-data-table
+                                    :items="dataTables.testing_table.value"
+                                    :headers="dataTables.testing_headers.value"
+                                />
+                            </div>
+                        </v-tab-item>
+                    </v-tabs-items>
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>
-        <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
-        <!-- <div class="loading-dialog"><v-dialog v-model="currentlyCaching" width="10%">Calculating...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div> -->
     </div>
 </template>
 
@@ -263,7 +389,7 @@ input[type=number] {
     margin: 0 10px;
 }
 
-.image-spacing {
+.image-spacing, .aug-data-checkboxes {
     display: flex;
     flex-direction: row;
     justify-content: space-between;

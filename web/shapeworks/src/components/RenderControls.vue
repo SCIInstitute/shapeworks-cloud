@@ -27,6 +27,9 @@ import {
     imageViewWindowRange,
     imageViewLevel,
     imageViewLevelRange,
+    deepSSMResult,
+    deepSSMDataTab,
+    uniformScale,
 } from '@/store';
 
 
@@ -170,12 +173,20 @@ export default {
         }
 
         const showAnalysisOptions = computed(() => {
-            return props.currentTab === 'analyze' && analysisFilesShown.value?.length;
+            if (props.currentTab === 'deepssm' && deepSSMResult.value) {
+                return true;
+            } else if (props.currentTab === 'analyze' && analysisFilesShown.value?.length) {
+                return true;
+            }
+            return false;
+        })
+
+        const showUniformScaleOption = computed(() => {
+            return deepSSMDataTab.value >= 1; // deepssm data tab training or testing
         })
 
         const imageIntersectAllowed = computed(() => {
-            // TODO: Add other applicable layers here
-            return layersShown.value.includes('Groomed')
+            return layersShown.value.includes('Groomed') || deepSSMDataTab.value > -1;
         })
 
         const imageViewSlice = computed(() => {
@@ -246,6 +257,9 @@ export default {
             thumbnailTarget,
             showDifferenceFromMeanMode,
             showAnalysisOptions,
+            showUniformScaleOption,
+            uniformScale,
+            currentTab: props.currentTab,
         }
     }
 }
@@ -279,7 +293,6 @@ export default {
             </v-select>
             <v-text-field
                 v-model.number="particleSize"
-                v-if="!showAnalysisOptions && layersShown.includes('Particles')"
                 label="Particle Size"
                 type="number"
                 style="width: 80px"
@@ -296,9 +309,14 @@ export default {
                 style="width: 150px"
             />
             <v-switch
-                v-if="showAnalysisOptions"
+                v-if="showAnalysisOptions && currentTab === 'analyze'"
                 v-model="showDifferenceFromMeanMode"
                 label="Show difference from mean"
+            />
+            <v-switch
+                v-if="showUniformScaleOption"
+                v-model="uniformScale"
+                label="Uniform Scale"
             />
             <v-btn
                 class="my-5"

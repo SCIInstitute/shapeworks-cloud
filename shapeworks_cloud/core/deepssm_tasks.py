@@ -6,7 +6,6 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-import shapeworks as sw
 
 from shapeworks_cloud.core import models
 from swcc.api import swcc_session
@@ -17,6 +16,7 @@ from .tasks import edit_swproj_section
 
 def run_prep(params, project, project_file, progress):
     import DeepSSMUtils
+    import shapeworks as sw
 
     # //////////////////////////////////////////////
     # /// STEP 1: Create Split
@@ -219,6 +219,8 @@ def run_deepssm_command(
     post_command_function,
     progress_id,
 ):
+    import shapeworks as sw
+
     user = User.objects.get(id=user_id)
     progress = models.TaskProgress.objects.get(id=progress_id)
     token, _created = Token.objects.get_or_create(user=user)

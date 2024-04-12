@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import DataAugmentationUtils
-import DeepSSMUtils
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -18,6 +16,8 @@ from .tasks import edit_swproj_section
 
 
 def run_prep(params, project, project_file, progress):
+    import DeepSSMUtils
+
     # //////////////////////////////////////////////
     # /// STEP 1: Create Split
     # //////////////////////////////////////////////
@@ -90,6 +90,9 @@ def run_prep(params, project, project_file, progress):
 
 
 def run_augmentation(params, project, download_dir, progress):
+    import DataAugmentationUtils
+    import DeepSSMUtils
+
     # /////////////////////////////////////////////////////////////////
     # /// STEP 7: Augment Data
     # /////////////////////////////////////////////////////////////////
@@ -120,6 +123,8 @@ def run_augmentation(params, project, download_dir, progress):
 
 
 def run_training(params, project, download_dir, aug_dims, progress):
+    import DeepSSMUtils
+
     batch_size = int(params['train_batch_size'])
 
     # /////////////////////////////////////////////////////////////////
@@ -169,6 +174,8 @@ def run_training(params, project, download_dir, aug_dims, progress):
 
 
 def run_testing(params, project, download_dir, progress):
+    import DeepSSMUtils
+
     test_indices = DeepSSMUtils.get_split_indices(project, 'test')
 
     # /////////////////////////////////////////////////////////////////

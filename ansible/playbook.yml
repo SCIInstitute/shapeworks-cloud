@@ -60,7 +60,8 @@
       ansible.builtin.shell: |
         export PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/Miniconda3-latest-Linux-x86_64.sh
-        ./tmp/Miniconda3-latest-Linux-x86_64.sh -p /opt/conda
+        chmod 777 /tmp/Miniconda3-latest-Linux-x86_64.sh
+        /tmp/Miniconda3-latest-Linux-x86_64.sh -p /opt/conda
         ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
       become: true
       become_user: root

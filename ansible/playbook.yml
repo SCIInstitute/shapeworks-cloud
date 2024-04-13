@@ -64,26 +64,17 @@
       become_user: root
     - name: Install Conda
       ansible.builtin.shell: |
-        export PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/Miniconda3-latest-Linux-x86_64.sh
         chmod 777 /tmp/Miniconda3-latest-Linux-x86_64.sh
         /tmp/Miniconda3-latest-Linux-x86_64.sh -b -f -p /opt/conda
       become: true
       become_user: root
-    - name: Update Conda
-      ansible.builtin.shell: |
-        conda update -n base -c defaults conda
-        conda install pip
-        echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
-        conda run /bin/bash -c
-      become: true
-      become_user: root
     - name: Create ShapeWorks Conda Env
       ansible.builtin.shell: |
-        cd /opt/shapeworks
-        source install_shapeworks.sh
-        conda clean -t -y
-        conda run -n shapeworks bin/bash -c
+        cd /opt/shapeworks && /opt/conda/bin/conda run /bin/bash -c "source install_shapeworks.sh"
+        echo "/opt/conda/bin/conda activate shapeworks" >> ~/.bashrc
+      args:
+        executable: /bin/bash
       become: true
       become_user: root
     # This is required because composed_configurations attempts to create the staticfiles directory in the python installation directory while being imported.
@@ -101,12 +92,5 @@
       # ensure startup script executable for supervisor
       ansible.builtin.shell: |
         chmod 777 /home/ubuntu/celery_project/dev/prod.celery.start.sh
-      become: true
-      become_user: root
-    - name: Restart celery service to pick up any changes
-      systemd:
-        state: restarted
-        daemon_reload: yes
-        name: celery
       become: true
       become_user: root

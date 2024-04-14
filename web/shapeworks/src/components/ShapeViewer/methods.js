@@ -409,7 +409,7 @@ export default {
             this.prepareColorScale(canvas, labels, range)
         } else {
             Object.entries(this.data).forEach(([, data], i) => {
-                const [y1, x2, y2] = this.grid[i]
+                const [, y1, x2, y2] = this.grid[i]
                 const canvas = document.createElement('canvas')
                 canvas.style.top = `calc(${(1 - y2) * 100}%)`
                 canvas.style.right = `calc(${(1 - x2) * 100}% + 10px)`

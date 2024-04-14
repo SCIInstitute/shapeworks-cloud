@@ -118,6 +118,7 @@ export default {
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <PCA ref="pca" :currentTab="currentTab" :openTab="openTab"/>
+                    <charts :charts="analysis.charts"/>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel :disabled="analysis.groups.length <= 0" id="groups-panel">
@@ -126,14 +127,6 @@ export default {
                 </v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <groups ref="groups" :currentTab="currentTab" :openTab="openTab"/>
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Charts
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <charts :charts="analysis.charts"/>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel>

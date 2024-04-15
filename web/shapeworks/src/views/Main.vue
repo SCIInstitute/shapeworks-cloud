@@ -48,7 +48,7 @@ import {
     allDataObjectsInDataset,
     uniformScale,
     deepSSMSamplePage,
-    SAMPLES_PER_PAGE,
+    DEEPSSM_SAMPLES_PER_PAGE,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
@@ -254,7 +254,7 @@ export default {
                         // populate labelledGroups from aug_pairs
                         // if generated data is shown. Else pass groupedSelections
                         if (deepSSMAugDataShown.value === 'Generated') {
-                            const paginatedAugPairs = augImages.slice(SAMPLES_PER_PAGE * (deepSSMSamplePage.value - 1), SAMPLES_PER_PAGE * deepSSMSamplePage.value)
+                            const paginatedAugPairs = augImages.slice(DEEPSSM_SAMPLES_PER_PAGE * (deepSSMSamplePage.value - 1), DEEPSSM_SAMPLES_PER_PAGE * deepSSMSamplePage.value)
                             labelledGroups = groupBy(paginatedAugPairs, 'sample_num')
                         }
                         else {

@@ -32,7 +32,7 @@ import {
     deepSSMDataTab,
     deepSSMSamplePage,
     uniformScale,
-    SAMPLES_PER_PAGE,
+    DEEPSSM_SAMPLES_PER_PAGE,
 } from '@/store';
 
 
@@ -189,7 +189,7 @@ export default {
         })
 
         const maxSamplePage = computed(() => {
-            return Math.ceil(Object.values(deepSSMResult.value?.aug_pairs).length / SAMPLES_PER_PAGE);
+            return Math.ceil(Object.values(deepSSMResult.value?.aug_pairs).length / DEEPSSM_SAMPLES_PER_PAGE);
         })
 
         const showUniformScaleOption = computed(() => {

@@ -163,7 +163,6 @@ export const loadReconstructedSamplesForProject = async (type: string, id: numbe
 
 export const loadDeepSSMDataForProject = async () => {
     if (selectedProject.value) {
-        deepSSMLoadingData.value = true;
         const results = await Promise.all([
             await getDeepSSMResultForProject(
                 selectedProject.value.id
@@ -189,7 +188,6 @@ export const loadDeepSSMDataForProject = async () => {
             images: results[3],
             test_pairs: results[4]
         }
-        deepSSMLoadingData.value = false;
     }
 }
 

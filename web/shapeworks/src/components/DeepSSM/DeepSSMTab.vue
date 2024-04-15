@@ -128,9 +128,11 @@ export default {
 
         onMounted(async () => {
             if (!deepSSMResult.value && selectedProject.value) {
+                deepSSMLoadingData.value = true;
                 await loadDeepSSMDataForProject();
+                deepSSMLoadingData.value = false;
             }
-            if (deepSSMResult.value) {
+            if (deepSSMResult.value && deepSSMResult.value.result) {
                 try {
                     Promise.all([
                         await getCSVDataFromURL(deepSSMResult.value.result.aug_total_data),
@@ -311,7 +313,7 @@ export default {
                     <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
                 </v-expansion-panel-content>
             </v-expansion-panel>
-            <v-expansion-panel v-if="deepSSMResult">
+            <v-expansion-panel v-if="deepSSMResult && deepSSMResult.result">
                 <v-expansion-panel-header>Data</v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-tabs v-model="deepSSMDataTab">

@@ -48,7 +48,7 @@ import {
     allDataObjectsInDataset,
     uniformScale,
     deepSSMSamplePage,
-SAMPLES_PER_PAGE,
+    SAMPLES_PER_PAGE,
 } from '@/store';
 import router from '@/router';
 import TabForm from '@/components/TabForm.vue';

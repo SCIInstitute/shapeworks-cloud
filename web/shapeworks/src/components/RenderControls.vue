@@ -32,7 +32,7 @@ import {
     deepSSMDataTab,
     deepSSMSamplePage,
     uniformScale,
-SAMPLES_PER_PAGE,
+    SAMPLES_PER_PAGE,
 } from '@/store';
 
 

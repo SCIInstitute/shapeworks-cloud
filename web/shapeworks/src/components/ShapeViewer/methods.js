@@ -249,7 +249,10 @@ export default {
                                 this.showDifferenceFromMean(mapper, renderer, label, domainIndex)
                             }
                             if ([1, 2].includes(deepSSMDataTab.value)) {
-                                const data = shapeData.getPointData().getArrayByName('deepssm_error').getData()
+                                let data;
+                                if (shapeData.getPointData().getArrayByName('deepssm_error')) {
+                                    data = shapeData.getPointData().getArrayByName('deepssm_error').getData()
+                                }
 
                                 if (data) {
                                     let normalizeRange;

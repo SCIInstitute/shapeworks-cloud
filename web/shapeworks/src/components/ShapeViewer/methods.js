@@ -436,11 +436,10 @@ export default {
                 let range = [-5, 5]
                 data[0].shape.forEach((shape) => {
                     if (shape.getClassName() === 'vtkPolyData') {
-                            const arr = shape.getPointData().getArrayByName('deepssm_error').getData()
-                            if (arr) range = [Math.min(...arr), Math.max(...arr)]
-                        } 
-                    }
-                )
+                        const arr = shape.getPointData().getArrayByName('deepssm_error').getData()
+                        if (arr) range = [Math.min(...arr), Math.max(...arr)]
+                    } 
+                })
                 this.prepareColorScale(canvas, labels, range)
             })
         }

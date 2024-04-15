@@ -140,3 +140,5 @@ export const optimizationFormData = ref({});
 export const uniformScale = ref<boolean>(true);
 
 export const deepSSMErrorGlobalRange = ref<number[]>([0, 1]);
+
+export const deepSSMSamplePage = ref<number>(1);

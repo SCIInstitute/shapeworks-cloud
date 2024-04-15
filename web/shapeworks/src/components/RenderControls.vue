@@ -1,6 +1,7 @@
 <script lang="ts">
 import { setDatasetThumbnail, setProjectThumbnail } from '@/api/rest';
 import { computed, ref, watch } from 'vue';
+import _ from 'lodash';
 import {
     particleSize,
     layers,
@@ -29,7 +30,9 @@ import {
     imageViewLevelRange,
     deepSSMResult,
     deepSSMDataTab,
+    deepSSMSamplePage,
     uniformScale,
+SAMPLES_PER_PAGE,
 } from '@/store';
 
 
@@ -181,6 +184,14 @@ export default {
             return false;
         })
 
+        const showSamplePageSelector = computed(() => {
+            return deepSSMDataTab.value === 0 && deepSSMSamplePage.value;
+        })
+
+        const maxSamplePage = computed(() => {
+            return Math.ceil(Object.values(deepSSMResult.value?.aug_pairs).length / SAMPLES_PER_PAGE);
+        })
+
         const showUniformScaleOption = computed(() => {
             return deepSSMDataTab.value >= 1; // deepssm data tab training or testing
         })
@@ -232,6 +243,16 @@ export default {
             }
         })
 
+        function changeSamplePage(page: number) {
+            if (page < 1) {
+                page = 1
+            } else if (page > maxSamplePage.value) {
+                page = maxSamplePage.value
+            }
+
+            deepSSMSamplePage.value = page
+        }
+
         return {
             particleSize,
             layersShown,
@@ -259,6 +280,10 @@ export default {
             showAnalysisOptions,
             showUniformScaleOption,
             uniformScale,
+            deepSSMSamplePage,
+            onChangeSamplePage: _.debounce(changeSamplePage, 1000),
+            showSamplePageSelector,
+            maxSamplePage,
             currentTab: props.currentTab,
         }
     }
@@ -312,6 +337,15 @@ export default {
                 v-if="showAnalysisOptions && currentTab === 'analyze'"
                 v-model="showDifferenceFromMeanMode"
                 label="Show difference from mean"
+            />
+            <v-text-field
+                v-if="showSamplePageSelector"
+                :value="deepSSMSamplePage"
+                label="Sample Page"
+                min="0"
+                step="1"
+                @input="onChangeSamplePage"
+                type="number"
             />
             <v-switch
                 v-if="showUniformScaleOption"

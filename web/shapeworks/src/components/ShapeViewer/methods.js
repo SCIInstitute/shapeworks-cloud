@@ -250,20 +250,23 @@ export default {
                             }
                             if ([1, 2].includes(deepSSMDataTab.value)) {
                                 const data = shapeData.getPointData().getArrayByName('deepssm_error').getData()
-                                let normalizeRange;
-                                if (uniformScale.value) {
-                                    normalizeRange = deepSSMErrorGlobalRange.value
-                                } else {
-                                    normalizeRange = [Math.min(...data), Math.max(...data)]
+
+                                if (data) {
+                                    let normalizeRange;
+                                    if (uniformScale.value) {
+                                        normalizeRange = deepSSMErrorGlobalRange.value
+                                    } else {
+                                        normalizeRange = [Math.min(...data), Math.max(...data)]
+                                    }
+                                    const normalizedData = data.map((v) => v / (normalizeRange[1] - normalizeRange[0]))
+                                    const normalizedArray = vtkDataArray.newInstance({
+                                        name: 'deepssm_error_normalized',
+                                        values: normalizedData,
+                                    })
+                                    shapeData.getPointData().addArray(normalizedArray)
+                                    mapper.setColorByArrayName('deepssm_error_normalized')
+                                    mapper.setLookupTable(this.lookupTable)
                                 }
-                                const normalizedData = data.map((v) => v / (normalizeRange[1] - normalizeRange[0]))
-                                const normalizedArray = vtkDataArray.newInstance({
-                                    name: 'deepssm_error_normalized',
-                                    values: normalizedData,
-                                })
-                                shapeData.getPointData().addArray(normalizedArray)
-                                mapper.setColorByArrayName('deepssm_error_normalized')
-                                mapper.setLookupTable(this.lookupTable)
                             }
                             const actor = vtkActor.newInstance();
                             if (type) actor.getProperty().setColor(...type.rgb);

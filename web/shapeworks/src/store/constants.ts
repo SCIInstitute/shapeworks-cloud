@@ -81,3 +81,5 @@ export const COLORS = [
     [255, 255, 153],
     [177, 89, 40],
 ];
+
+export const SAMPLES_PER_PAGE = 12;

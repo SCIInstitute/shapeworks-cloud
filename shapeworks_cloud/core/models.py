@@ -20,7 +20,7 @@ class Dataset(TimeStampedModel, models.Model):
     publications = models.TextField(blank=True, default='')
 
     def get_contents(self):
-        ret = []
+        ret = []  # type: ignore
 
         def truncate_filename(filename):
             return filename.split('/')[-1]
@@ -45,9 +45,9 @@ class Dataset(TimeStampedModel, models.Model):
                     label = 'image_'
                 if shape.subject.name in [s['name'] for s in ret]:  # type: ignore
                     subject = next(
-                        (s for s in ret if s['name'] == shape.subject.name), None
-                    )  # type: ignore
-                    subject[label + anatomy] = truncate_filename(shape.file.name)
+                        (s for s in ret if s['name'] == shape.subject.name), None  # type: ignore
+                    )
+                    subject[label + anatomy] = truncate_filename(shape.file.name)  # type: ignore
                 else:
                     subject = {
                         'name': shape.subject.name,  # type: ignore

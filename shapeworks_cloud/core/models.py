@@ -37,12 +37,15 @@ class Dataset(TimeStampedModel, models.Model):
 
         for shape_group in group_list:
             for shape in shape_group:
-                anatomy = truncate_anatomy(
-                    (shape.anatomy_type if hasattr(shape, 'anatomy_type') else shape.modality)
-                )
+                if hasattr(shape, 'anatomy_type'):
+                    anatomy = truncate_anatomy(shape.anatomy_type)
+                    label = 'shape_'
+                else:
+                    anatomy = shape.modality
+                    label = 'image_'
                 if (shape.subject.name in [s['name'] for s in ret]):
                     subject = next((s for s in ret if s['name'] == shape.subject.name), None)
-                    subject['shape_' + anatomy] = truncate_filename(shape.file.name)
+                    subject[label + anatomy] = truncate_filename(shape.file.name)
                 else:
                     subject = {
                         'name': shape.subject.name,  # type: ignore
@@ -50,7 +53,6 @@ class Dataset(TimeStampedModel, models.Model):
                     }
                     ret.append(subject)
 
-        print(ret)
         return ret
 
 

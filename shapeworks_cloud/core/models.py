@@ -25,6 +25,9 @@ class Dataset(TimeStampedModel, models.Model):
         def truncate_filename(filename):
             return filename.split('/')[-1]
 
+        def truncate_anatomy(anatomy_type):
+            return anatomy_type.replace('anatomy_', '')
+
         group_list = [
             Segmentation.objects.filter(subject__dataset=self),
             Mesh.objects.filter(subject__dataset=self),
@@ -34,12 +37,20 @@ class Dataset(TimeStampedModel, models.Model):
 
         for shape_group in group_list:
             for shape in shape_group:
-                ret.append(
-                    {
-                        'name': shape.subject.name,  # type: ignore
-                        'shape_1': truncate_filename(shape.file.name),  # type: ignore
-                    }
+                anatomy = truncate_anatomy(
+                    (shape.anatomy_type if hasattr(shape, 'anatomy_type') else shape.modality)
                 )
+                if (shape.subject.name in [s['name'] for s in ret]):
+                    subject = next((s for s in ret if s['name'] == shape.subject.name), None)
+                    subject['shape_' + anatomy] = truncate_filename(shape.file.name)
+                else:
+                    subject = {
+                        'name': shape.subject.name,  # type: ignore
+                        'shape_' + anatomy: truncate_filename(shape.file.name),  # type: ignore
+                    }
+                    ret.append(subject)
+
+        print(ret)
         return ret
 
 

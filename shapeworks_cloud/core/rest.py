@@ -227,6 +227,13 @@ class ProjectViewSet(BaseViewSet):
         else:
             return serializers.ProjectSerializer
 
+    def edit_allowed(self, request, **kwargs):
+        project = self.get_object()
+        user = self.request.user
+        if project.readonly and not user.is_staff:
+            return False
+        return True
+
     def create(self, request, **kwargs):
         data = request.data
         if 'creator' not in data:
@@ -283,6 +290,11 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def set_thumbnail(self, request, **kwargs):
+        if not self.edit_allowed(request, **kwargs):
+            return Response(
+                'Project is read only.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
         project = self.get_object()
         form_data = request.data
         encoded_thumbnail = form_data.get('encoding')
@@ -312,6 +324,11 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def set_landmarks(self, request, **kwargs):
+        if not self.edit_allowed(request, **kwargs):
+            return Response(
+                'Project is read only.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
         project = self.get_object()
         form_data = request.data
         landmarks_info = form_data.get('info')
@@ -372,6 +389,11 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def set_constraints(self, request, **kwargs):
+        if not self.edit_allowed(request, **kwargs):
+            return Response(
+                'Project is read only.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
         project = self.get_object()
         form_data = request.data
         constraints_locations = form_data.get('locations')
@@ -411,6 +433,11 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def groom(self, request, **kwargs):
+        if not self.edit_allowed(request, **kwargs):
+            return Response(
+                'Project is read only.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
@@ -437,6 +464,11 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def optimize(self, request, **kwargs):
+        if not self.edit_allowed(request, **kwargs):
+            return Response(
+                'Project is read only.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
@@ -475,6 +507,11 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def analyze(self, request, **kwargs):
+        if not self.edit_allowed(request, **kwargs):
+            return Response(
+                'Project is read only.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
         project = self.get_object()
 
         params = request.data
@@ -518,6 +555,11 @@ class ProjectViewSet(BaseViewSet):
         methods=['POST'],
     )
     def deepssm_run(self, request, **kwargs):
+        if not self.edit_allowed(request, **kwargs):
+            return Response(
+                'Project is read only.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
         project = self.get_object()
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}

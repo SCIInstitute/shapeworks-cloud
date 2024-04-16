@@ -415,6 +415,10 @@ export default {
             this.prepareColorScale(canvas, labels, range)
         } else {
             Object.entries(this.data).forEach(([, data], i) => {
+                // if the shape (vtk only) doesn't have the deepssm_error array, don't show the color scale
+                if (data[0].shape.filter((shape) => shape.getClassName() === 'vtkPolyData' && !shape.getPointData().getArrayByName('deepssm_error')).length > 0) {
+                    return;
+                }
                 const [, y1, x2, y2] = this.grid[i]
                 const canvas = document.createElement('canvas')
                 canvas.style.top = `calc(${(1 - y2) * 100}%)`
@@ -434,7 +438,7 @@ export default {
                     if (shape.getClassName() === 'vtkPolyData') {
                         const arr = shape.getPointData().getArrayByName('deepssm_error').getData()
                         if (arr) range = [Math.min(...arr), Math.max(...arr)]
-                    }
+                    } 
                 })
                 this.prepareColorScale(canvas, labels, range)
             })

@@ -603,7 +603,14 @@ export default {
                         </v-tab-item>
                         <v-tab href="#info">Info</v-tab>
                         <v-tab-item value="info">
-                            <info-tab />
+                            <span
+                                v-if="selectedProject && selectedProject.readonly"
+                                class="red--text pa-3"
+                            >
+                                This project is read only.
+                                No operations may be performed.
+                            </span>
+                            <info-tab v-else />
                         </v-tab-item>
                         <v-tab href="#groom">Groom</v-tab>
                         <v-tab-item value="groom">

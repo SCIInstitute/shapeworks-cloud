@@ -180,6 +180,7 @@ export default {
         });
 
         return {
+            selectedProject,
             openExpansionPanel,
             controlsTabs,
             prepData,
@@ -257,7 +258,7 @@ export default {
     <div class="pa-3" v-else>
         <div class="loading-dialog"><v-dialog v-model="deepSSMLoadingData" width="10%">Fetching results...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
         <v-expansion-panels v-model="openExpansionPanel">
-            <v-expansion-panel>
+            <v-expansion-panel v-if="selectedProject && !selectedProject.readonly">
                 <v-expansion-panel-header>Controls</v-expansion-panel-header>
                 <v-expansion-panel-content>
                     <v-tabs v-model="controlsTabs">

@@ -192,7 +192,8 @@ import { groupBy } from '../../helper';
         pcaInfo,
         animate,
         menu,
-        showConfirmation
+        showConfirmation,
+        selectedProject,
       };
     },
   };
@@ -230,7 +231,7 @@ import { groupBy } from '../../helper';
           bottom
           right
         >
-          <template v-slot:activator="{ on, attrs }">
+          <template v-slot:activator="{ on, attrs }" v-if="selectedProject && !selectedProject.readonly">
             <v-btn
               dark
               icon

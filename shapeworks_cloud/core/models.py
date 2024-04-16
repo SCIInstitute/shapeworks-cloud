@@ -41,10 +41,12 @@ class Dataset(TimeStampedModel, models.Model):
                     anatomy = truncate_anatomy(shape.anatomy_type)
                     label = 'shape_'
                 else:
-                    anatomy = shape.modality
+                    anatomy = shape.modality  # type: ignore
                     label = 'image_'
-                if shape.subject.name in [s['name'] for s in ret]:
-                    subject = next((s for s in ret if s['name'] == shape.subject.name), None)
+                if shape.subject.name in [s['name'] for s in ret]:  # type: ignore
+                    subject = next(
+                        (s for s in ret if s['name'] == shape.subject.name), None
+                    )  # type: ignore
                     subject[label + anatomy] = truncate_filename(shape.file.name)
                 else:
                     subject = {

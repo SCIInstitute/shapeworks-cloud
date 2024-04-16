@@ -49,7 +49,7 @@ class Dataset(TimeStampedModel, models.Model):
                 else:
                     subject = {
                         'name': shape.subject.name,  # type: ignore
-                        'shape_' + anatomy: truncate_filename(shape.file.name),  # type: ignore
+                        label + anatomy: truncate_filename(shape.file.name),  # type: ignore
                     }
                     ret.append(subject)
 

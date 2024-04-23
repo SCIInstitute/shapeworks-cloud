@@ -356,21 +356,30 @@ class ReconstructedSample(TimeStampedModel, models.Model):
 
 
 class TaskProgress(TimeStampedModel, models.Model):
+    class TaskAbortedError(Exception):
+        pass
+
     name = models.CharField(max_length=255)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
     error = models.CharField(max_length=255, blank=True)
     message = models.CharField(max_length=255, blank=True)
     percent_complete = models.IntegerField(default=0)
     abort = models.BooleanField(default=False)
+    form_data = models.JSONField(null=True, blank=True)
 
     def update_percentage(self, percentage):
         self.percent_complete = percentage
         self.save()
-
-    def update_error(self, error):
-        self.error = error[:255]
-        self.save()
+        if self.abort:
+            raise self.TaskAbortedError()
 
     def update_message(self, message):
         self.message = message[:255]
+        self.save()
+        if self.abort:
+            raise self.TaskAbortedError()
+
+    def update_error(self, error):
+        self.error = error[:255]
+        self.abort = True
         self.save()

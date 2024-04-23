@@ -142,6 +142,14 @@ class ReconstructedSampleFilter(FilterSet):
         fields = ['project']
 
 
+class TaskProgressFilter(FilterSet):
+    project = ModelChoiceFilter(queryset=models.Project.objects.all())
+
+    class Meta:
+        models = models.TaskProgress
+        fields = ['project']
+
+
 class DeepSSMTestingDataFilter(FilterSet):
     project = ModelChoiceFilter(queryset=models.Project.objects.all())
 

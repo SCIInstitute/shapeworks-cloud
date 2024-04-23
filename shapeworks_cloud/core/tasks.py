@@ -22,8 +22,7 @@ from swcc.models.project import ProjectFileIO
 def parse_progress(xml_string):
     match = re.search('(?<=<progress>)(.*)(?=</progress>)', xml_string)
     if match:
-        # running of exec represents ~80% of task progress
-        return int(int(match.group().split('.')[0]) * 0.8)
+        return int(match.group().split('.')[0])
     return 0
 
 
@@ -84,66 +83,76 @@ def run_shapeworks_command(
     progress = models.TaskProgress.objects.get(id=progress_id)
     token, _created = Token.objects.get_or_create(user=user)
     base_url = settings.API_URL  # type: ignore
+    try:
+        progress.update_message('Initializing task.')
+        with TemporaryDirectory() as download_dir:
+            with swcc_session(base_url=base_url) as session:
+                # fetch everything we need
+                session.set_token(token.key)
+                project = models.Project.objects.get(id=project_id)
+                project_filename = project.file.name.split('/')[-1]
+                swcc_project = SWCCProject.from_id(project.id)
+                progress.update_message('Downloading project.')
+                swcc_project.download(download_dir)
 
-    with TemporaryDirectory() as download_dir:
-        with swcc_session(base_url=base_url) as session:
-            # fetch everything we need
-            session.set_token(token.key)
-            project = models.Project.objects.get(id=project_id)
-            project_filename = project.file.name.split('/')[-1]
-            swcc_project = SWCCProject.from_id(project.id)
-            swcc_project.download(download_dir)
+                pre_command_function()
+                progress.update_percentage(10)
 
-            pre_command_function()
-            progress.update_percentage(10)
+                progress.update_message('Writing form data to project file.')
+                if form_data:
+                    # write the form data to the project file
+                    form_data = interpret_form_data(form_data, command, swcc_project)
+                    edit_swproj_section(
+                        Path(download_dir, project_filename),
+                        command,
+                        form_data,
+                    )
 
-            if form_data:
-                # write the form data to the project file
-                form_data = interpret_form_data(form_data, command, swcc_project)
-                edit_swproj_section(
-                    Path(download_dir, project_filename),
+                # perform command
+                full_command = [
+                    '/opt/shapeworks/bin/shapeworks',
                     command,
-                    form_data,
-                )
+                    f'--name={project_filename}',
+                ]
 
-            # perform command
-            full_command = [
-                '/opt/shapeworks/bin/shapeworks',
-                command,
-                f'--name={project_filename}',
-            ]
+                if command == 'analyze':
+                    full_command.append('--output=analysis.json')
+                else:
+                    full_command.append('--xmlconsole')
 
-            if command == 'analyze':
-                full_command.append('--output=analysis.json')
-            else:
-                full_command.append('--xmlconsole')
+                if len(args) > 0:
+                    full_command.extend(args)
 
-            if len(args) > 0:
-                full_command.extend(args)
-
-            with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
-                if process.stderr and process.stdout:
-                    for line in iter(process.stdout.readline, b''):
-                        progress.refresh_from_db()
-                        if progress.abort:
-                            progress.delete()
-                            process.kill()
-                            return
-                        else:
+                progress.update_message(f'Running {command} command on data.')
+                with Popen(full_command, cwd=download_dir, stdout=PIPE, stderr=PIPE) as process:
+                    if process.stderr and process.stdout:
+                        for line in iter(process.stdout.readline, b''):
+                            progress.refresh_from_db()
                             if command == 'analyze':
-                                print(line.decode())  # analyze task has no xmloutput
+                                message = line.decode().split('[info]')[-1]
+                                progress.update_message(message)
+                                progress.update_percentage(50)
                             else:
-                                progress.update_percentage(parse_progress(line.decode()) + 10)
-                    for line in iter(process.stderr.readline, b''):
-                        progress.update_error(line.decode())
-                        return
-                process.wait()
+                                percentage = int(parse_progress(line.decode()) * 0.8) + 10
+                                if percentage > progress.percent_complete and percentage <= 90:
+                                    progress.update_percentage(percentage)
+                        for line in iter(process.stderr.readline, b''):
+                            progress.update_error(line.decode())
+                            return
+                    process.wait()
 
-            result_filename = 'analysis.json' if command == 'analyze' else project_filename
-            with open(Path(download_dir, result_filename), 'r') as f:
-                result_data = json.load(f)
-            post_command_function(project, download_dir, result_data, project_filename)
-            progress.update_percentage(100)
+                progress.update_percentage(90)
+                progress.update_message('Saving task results.')
+                result_filename = 'analysis.json' if command == 'analyze' else project_filename
+                with open(Path(download_dir, result_filename), 'r') as f:
+                    result_data = json.load(f)
+                post_command_function(project, download_dir, result_data, project_filename)
+                progress.update_message('Finalizing task.')
+                progress.update_percentage(100)
+    except models.TaskProgress.TaskAbortedError:
+        print('Task Aborted. Exiting.')
+    except Exception as e:
+        progress.update_error(str(e))
 
 
 @shared_task

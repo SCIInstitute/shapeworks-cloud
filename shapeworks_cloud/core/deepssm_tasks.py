@@ -226,110 +226,115 @@ def run_deepssm_command(
     token, _created = Token.objects.get_or_create(user=user)
     base_url = settings.API_URL  # type: ignore
 
-    with TemporaryDirectory() as download_dir:
-        with swcc_session(base_url=base_url) as session:
-            # fetch everything we need
-            session.set_token(token.key)
-            project = models.Project.objects.get(id=project_id)
-            print('setting project filename')
-            project_filename = project.file.name.split('/')[-1]
-            print('project filename set', project_filename)
-            swcc_project = SWCCProject.from_id(project.id)
-            swcc_project.download(download_dir)
-            print('Downloaded swcc project')
+    try:
+        # TODO: this needs more frequent updates to progress message
+        with TemporaryDirectory() as download_dir:
+            with swcc_session(base_url=base_url) as session:
+                # fetch everything we need
+                session.set_token(token.key)
+                project = models.Project.objects.get(id=project_id)
+                project_filename = project.file.name.split('/')[-1]
+                swcc_project = SWCCProject.from_id(project.id)
+                swcc_project.download(download_dir)
 
-            pre_command_function()
-            progress.update_percentage(10)
+                pre_command_function()
+                progress.update_percentage(10)
 
-            if form_data:
-                # write the form data to the project file
-                edit_swproj_section(
-                    Path(download_dir, project_filename),
-                    'deepssm',
-                    form_data,
-                )
+                if form_data:
+                    # write the form data to the project file
+                    edit_swproj_section(
+                        Path(download_dir, project_filename),
+                        'deepssm',
+                        form_data,
+                    )
 
-            result_data = {}
+                result_data = {}
 
-            # Use shapeworks python project class
-            sw_project = sw.Project()
+                # Use shapeworks python project class
+                sw_project = sw.Project()
 
-            sw_project_file = str(Path(download_dir, project_filename))
+                sw_project_file = str(Path(download_dir, project_filename))
 
-            sw_project.load(sw_project_file)
+                sw_project.load(sw_project_file)
 
-            groom_params = sw_project.get_parameters('groom')
+                groom_params = sw_project.get_parameters('groom')
 
-            # for each parameter in the form data, set the parameter in the project
-            for key, value in form_data.items():
-                groom_params.set(key, value)
+                # for each parameter in the form data, set the parameter in the project
+                for key, value in form_data.items():
+                    groom_params.set(key, value)
 
-            sw_project.set_parameters('groom', groom_params)
+                sw_project.set_parameters('groom', groom_params)
 
-            optimize_params = sw_project.get_parameters('optimize')
-            # for each parameter in the form data, set the parameter in the project
-            for key, value in form_data.items():
-                optimize_params.set(key, value)
+                optimize_params = sw_project.get_parameters('optimize')
+                # for each parameter in the form data, set the parameter in the project
+                for key, value in form_data.items():
+                    optimize_params.set(key, value)
 
-            sw_project.set_parameters('optimize', optimize_params)
+                sw_project.set_parameters('optimize', optimize_params)
 
-            os.chdir(sw_project.get_project_path())
-            run_prep(form_data, sw_project, sw_project_file, progress)
+                os.chdir(sw_project.get_project_path())
+                run_prep(form_data, sw_project, sw_project_file, progress)
 
-            aug_dims = run_augmentation(form_data, sw_project, download_dir, progress)
+                aug_dims = run_augmentation(form_data, sw_project, download_dir, progress)
 
-            # result data has paths to files
-            result_data['augmentation'] = {
-                'total_data_csv': download_dir + '/deepssm/augmentation/TotalData.csv',
-                'violin_plot': download_dir + '/deepssm/augmentation/violin.png',
-                'generated_meshes': os.listdir(
-                    download_dir + '/deepssm/augmentation/Generated-Meshes/'
-                ),
-                'generated_images': os.listdir(
-                    download_dir + '/deepssm/augmentation/Generated-Images/'
-                ),
-                'generated_particles': os.listdir(
-                    download_dir + '/deepssm/augmentation/Generated-Particles/'
-                ),
-            }
+                # result data has paths to files
+                result_data['augmentation'] = {
+                    'total_data_csv': download_dir + '/deepssm/augmentation/TotalData.csv',
+                    'violin_plot': download_dir + '/deepssm/augmentation/violin.png',
+                    'generated_meshes': os.listdir(
+                        download_dir + '/deepssm/augmentation/Generated-Meshes/'
+                    ),
+                    'generated_images': os.listdir(
+                        download_dir + '/deepssm/augmentation/Generated-Images/'
+                    ),
+                    'generated_particles': os.listdir(
+                        download_dir + '/deepssm/augmentation/Generated-Particles/'
+                    ),
+                }
 
-            run_training(form_data, sw_project, download_dir, aug_dims, progress)
+                run_training(form_data, sw_project, download_dir, aug_dims, progress)
 
-            training_examples = os.listdir(download_dir + '/deepssm/model/examples/')
+                training_examples = os.listdir(download_dir + '/deepssm/model/examples/')
 
-            if 'train_' in training_examples:
-                training_examples.remove('train_')
-            if 'validation_' in training_examples:
-                training_examples.remove('validation_')
+                if 'train_' in training_examples:
+                    training_examples.remove('train_')
+                if 'validation_' in training_examples:
+                    training_examples.remove('validation_')
 
-            result_data['training'] = {
-                'train_log': download_dir + '/deepssm/model/train_log.csv',
-                'training_plot': download_dir + '/deepssm/model/training_plot.png',
-                'training_plot_ft': download_dir + '/deepssm/model/training_plot_ft.png',
-                'train_examples': training_examples,
-                'train_images': os.listdir(download_dir + '/deepssm/train_images/'),
-                'val_and_test_images': os.listdir(download_dir + '/deepssm/val_and_test_images/'),
-            }
+                result_data['training'] = {
+                    'train_log': download_dir + '/deepssm/model/train_log.csv',
+                    'training_plot': download_dir + '/deepssm/model/training_plot.png',
+                    'training_plot_ft': download_dir + '/deepssm/model/training_plot_ft.png',
+                    'train_examples': training_examples,
+                    'train_images': os.listdir(download_dir + '/deepssm/train_images/'),
+                    'val_and_test_images': os.listdir(
+                        download_dir + '/deepssm/val_and_test_images/'
+                    ),
+                }
 
-            run_testing(form_data, sw_project, download_dir, progress)
+                run_testing(form_data, sw_project, download_dir, progress)
 
-            subjects = sw_project.get_subjects()
+                subjects = sw_project.get_subjects()
 
-            result_data['testing'] = {
-                'world_predictions': os.listdir(
-                    download_dir + '/deepssm/model/test_predictions/world_predictions/'
-                ),
-                'local_predictions': os.listdir(
-                    download_dir + '/deepssm/model/test_predictions/local_predictions/'
-                ),
-                'test_distances': download_dir + '/deepssm/test_distances.csv',
-                'test_split_subjects': subjects,
-            }
+                result_data['testing'] = {
+                    'world_predictions': os.listdir(
+                        download_dir + '/deepssm/model/test_predictions/world_predictions/'
+                    ),
+                    'local_predictions': os.listdir(
+                        download_dir + '/deepssm/model/test_predictions/local_predictions/'
+                    ),
+                    'test_distances': download_dir + '/deepssm/test_distances.csv',
+                    'test_split_subjects': subjects,
+                }
 
-            os.chdir('../../')
+                os.chdir('../../')
 
-            post_command_function(project, download_dir, result_data, project_filename)
-            progress.update_percentage(100)
+                post_command_function(project, download_dir, result_data, project_filename)
+                progress.update_percentage(100)
+    except models.TaskProgress.TaskAbortedError:
+        print('Task Aborted. Exiting.')
+    except Exception as e:
+        progress.update_error(str(e))
 
 
 @shared_task

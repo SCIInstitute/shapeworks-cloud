@@ -1,10 +1,7 @@
 <script lang="ts">
 /* eslint-disable no-unused-vars */
 import {
-    currentTasks,
     selectedProject,
-    spawnJob,
-    spawnJobProgressPoll,
     abort,
     deepSSMDataTab,
     deepSSMResult,
@@ -15,11 +12,13 @@ import {
     deepSSMLoadingData,
     deepSSMErrorGlobalRange,
 } from '@/store';
-import { Ref, computed, onMounted, ref, watch } from 'vue';
+import { Ref, computed, onMounted, ref, watch, provide } from 'vue';
 import { parseCSVFromURL } from '@/helper';
+import TaskInfo from '../TaskInfo.vue';
 
 
 export default {
+  components: { TaskInfo },
     setup() {
         enum Sampler {
             Gaussian = "Gaussian",
@@ -32,15 +31,13 @@ export default {
             Focal = "Focal",
         }
 
-        const taskData = computed(
-            () => {
-                if (!selectedProject.value || !currentTasks.value[selectedProject.value.id]) return undefined
-                return currentTasks.value[selectedProject.value.id]['deepssm_task']
-            }
-        )
         const openExpansionPanel = ref<number>(0);
         const controlsTabs = ref();
         const showAbortConfirmation = ref(false);
+        const formData = ref();
+        const formDefaults = ref({});
+
+        provide('formData', formData);
 
         const prepData = {
             testing_split: ref<number>(20),
@@ -48,13 +45,13 @@ export default {
             percent_variability: ref<number>(95),
             image_spacing: ref<{x: number, y: number, z: number}>({x: 1, y: 1, z: 1})
         }
-        
+
         // Augmentation
         const augmentationData = {
             aug_num_samples: ref<number>(300),
             aug_sampler_type : ref<Sampler>(Sampler.Gaussian),
         }
-        
+
         // Training
         const trainingData = {
             train_loss_function: ref<LossFunction>(LossFunction.MSE),
@@ -89,7 +86,7 @@ export default {
         /**
          * Converts an object of reactive properties to a plain object for use in api formData fields.
          */
-        function getFormData(object: {[key: string]: Ref<any>}) {
+        function getFormSection(object: {[key: string]: Ref<any>}) {
             return (
                 Object.entries(object)
                     .map(([key, value]) => [key, value.value])
@@ -100,26 +97,29 @@ export default {
             )
         }
 
-        async function submitDeepSSMJob() {
-            if (!selectedProject.value) return;
+        function getFormData() {
+            const prepFormData = getFormSection(prepData);
+            const augFormData = getFormSection(augmentationData);
+            const trainFormData = getFormSection(trainingData);
 
-            const prepFormData = getFormData(prepData);
-            const augFormData = getFormData(augmentationData);
-            const trainFormData = getFormData(trainingData);
-
-            const aggregatedFormData = {
+            return {
                 ...prepFormData,
                 ...augFormData,
                 ...trainFormData,
                 ...groomFormData.value,
                 ...optimizationFormData.value,
             }
+        }
 
-            const taskId = await spawnJob("deepssm", aggregatedFormData);
-            currentTasks.value[selectedProject.value.id] = taskId;
-
-            spawnJobProgressPoll();
-            return taskId;
+        function resetForm() {
+            // TODO: get from proj file
+            console.log('resetting with', formDefaults.value)
+            formData.value = formDefaults.value
+            Object.entries(formData.value).forEach(([key, value]) => {
+                if (prepData[key]) prepData[key].value = value
+                if (augmentationData[key]) augmentationData[key].value = value
+                if (trainingData[key]) trainingData[key].value = value
+            })
         }
 
         async function getCSVDataFromURL(url: string) {
@@ -127,6 +127,8 @@ export default {
         }
 
         onMounted(async () => {
+            formDefaults.value = getFormData()
+            formData.value = {...formDefaults.value}
             if (!deepSSMResult.value && selectedProject.value) {
                 deepSSMLoadingData.value = true;
                 await loadDeepSSMDataForProject();
@@ -184,12 +186,12 @@ export default {
             openExpansionPanel,
             controlsTabs,
             prepData,
+            formData,
+            resetForm,
             augmentationData,
             trainingData,
             Sampler,
             LossFunction,
-            submitDeepSSMJob,
-            taskData,
             abort,
             showAbortConfirmation,
             deepSSMDataTab,
@@ -203,59 +205,12 @@ export default {
 </script>
 
 <template>
-    <div v-if="taskData" class="messages-box pa-3">
-        Running DeepSSM process...
-        <div v-if="taskData.error">{{ taskData.error }}</div>
-        <v-progress-linear v-else :value="taskData.percent_complete"/>
-        <div class="d-flex pa-3" style="width:100%; justify-content:space-around">
-            <v-btn
-                color="red"
-                @click="() => showAbortConfirmation = true"
-            >
-                Abort
-            </v-btn>
-        </div>
-        <br />
-        <v-dialog
-            v-model="showAbortConfirmation"
-            width="500"
-        >
-            <v-card>
-                <v-card-title>
-                Confirmation
-                </v-card-title>
-
-                <v-card-text>
-                    Are you sure you want to abort this task? This will cancel any related tasks in this project.
-                </v-card-text>
-
-                <v-divider></v-divider>
-
-                <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn
-                    text
-                    @click="() => {showAbortConfirmation = false}"
-                >
-                    Cancel
-                </v-btn>
-                <v-btn
-                    color="red"
-                    text
-                    @click="() => {
-                        showAbortConfirmation = false;
-                        if (taskData) {
-                            abort(taskData)
-                        }
-                    }"
-                >
-                    Abort
-                </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-    </div>
-    <div class="pa-3" v-else>
+    <div class="pa-3">
+        <task-info
+            taskName="deepssm"
+            :formData="formData"
+            @resetForm="resetForm"
+        />
         <div class="loading-dialog"><v-dialog v-model="deepSSMLoadingData" width="10%">Fetching results...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
         <v-expansion-panels v-model="openExpansionPanel">
             <v-expansion-panel v-if="selectedProject && !selectedProject.readonly">
@@ -284,7 +239,7 @@ export default {
                             <div>
                                 <v-text-field v-model="augmentationData.aug_num_samples.value" type="number" label="Number of Samples" min="1" />
 
-                                <v-select 
+                                <v-select
                                     :items="Object.values(Sampler)"
                                     v-model="augmentationData.aug_sampler_type.value"
                                     label="Sampler Type"
@@ -311,7 +266,6 @@ export default {
                             </div>
                         </v-tab-item>
                     </v-tabs-items>
-                    <v-btn @click="submitDeepSSMJob">Run DeepSSM tasks</v-btn>
                 </v-expansion-panel-content>
             </v-expansion-panel>
             <v-expansion-panel v-if="deepSSMResult && deepSSMResult.result">
@@ -371,7 +325,7 @@ export default {
 </template>
 
 <style>
-input::-webkit-outer-spin-button, 
+input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;

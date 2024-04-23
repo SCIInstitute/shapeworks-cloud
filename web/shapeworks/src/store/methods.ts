@@ -1,4 +1,4 @@
-import { AnalysisParams, CacheComparison, Project, Task, Constraints } from "@/types";
+import { AnalysisParams, CacheComparison, Project, Task } from "@/types";
 import {
      loadingState,
      selectedDataset,
@@ -34,7 +34,6 @@ import {
      allSetConstraints,
      deepSSMResult,
      deepSSMDataTab,
-     deepSSMLoadingData,
 } from ".";
 import imageReader from "@/reader/image";
 import pointsReader from "@/reader/points";
@@ -43,7 +42,6 @@ import constraintsReader from "@/reader/constraints";
 import {
     abortTask,
     analyzeProject,
-    deleteTaskProgress,
     getDataset,
     getDatasets,
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
@@ -57,6 +55,7 @@ import {
     getDeepSSMTestImagesForProject,
     getDeepSSMTrainingPairsForProject,
     getDeepSSMTrainingImagesForProject,
+    getTasksForProject,
 } from '@/api/rest';
 import { layers, COLORS } from "./constants";
 import { getDistance, hexToRgb } from "@/helper";
@@ -109,6 +108,7 @@ export const loadProjectForDataset = async (projectId: number) => {
     refreshProject(projectId).then((proj) => {
         selectedProject.value = proj
     });
+    spawnJobProgressPoll()
 }
 
 export const loadProjectsForDataset = async (datasetId: number) => {
@@ -135,22 +135,36 @@ export const loadParticlesForObject = async (type: string, id: number) => {
     let particles = await getOptimizedParticlesForDataObject(
         type, id, selectedProject.value?.id
     )
-    if (particles.length > 0) particles = particles[0]
-    if (!particlesForOriginalDataObjects.value[type]) {
-        particlesForOriginalDataObjects.value[type] = {}
+    if (particles && particles.length > 0) {
+        particles = particles[0]
+        if (!particlesForOriginalDataObjects.value[type]) {
+            particlesForOriginalDataObjects.value[type] = {}
+        }
+        particlesForOriginalDataObjects.value[type][id] = particles
+    } else if (
+        particlesForOriginalDataObjects.value[type] &&
+        particlesForOriginalDataObjects.value[type][id]
+    ){
+        particlesForOriginalDataObjects.value[type][id] = undefined
     }
-    particlesForOriginalDataObjects.value[type][id] = particles
 }
 
 export const loadGroomedShapeForObject = async (type: string, id: number) => {
     let groomed = await getGroomedShapeForDataObject(
         type, id, selectedProject.value?.id
     )
-    if (groomed.length > 0) groomed = groomed[0]
-    if (!groomedShapesForOriginalDataObjects.value[type]) {
-        groomedShapesForOriginalDataObjects.value[type] = {}
+    if (groomed && groomed.length > 0) {
+        groomed = groomed[0]
+        if (!groomedShapesForOriginalDataObjects.value[type]) {
+            groomedShapesForOriginalDataObjects.value[type] = {}
+        }
+        groomedShapesForOriginalDataObjects.value[type][id] = groomed
+    }else if (
+        groomedShapesForOriginalDataObjects.value[type] &&
+        groomedShapesForOriginalDataObjects.value[type][id]
+    ){
+        groomedShapesForOriginalDataObjects.value[type][id] = undefined
     }
-    groomedShapesForOriginalDataObjects.value[type][id] = groomed
 }
 
 export const loadReconstructedSamplesForProject = async (type: string, id: number) => {
@@ -180,7 +194,7 @@ export const loadDeepSSMDataForProject = async () => {
                 selectedProject.value.id
             )]
         )
-                
+
         deepSSMResult.value = {
             result: results[0][0],
             aug_pairs: results[1],
@@ -235,38 +249,27 @@ export async function spawnJob(action: string, payload: Record<string, any>): Pr
 }
 
 export async function spawnJobProgressPoll() {
+    if (jobProgressPoll.value) clearInterval(jobProgressPoll.value)
     jobProgressPoll.value = setInterval(pollJobProgress, 1000)
 }
 
-export async function pollJobProgress() {
-    if (selectedProject.value && currentTasks.value[selectedProject.value.id]) {
-        const refreshedTasks = await Promise.all(
-            Object.entries(currentTasks.value[selectedProject.value.id])
-                .map(async ([taskName, task]) => {
-                    if (task?.id) {
-                        task = await getTaskProgress(task.id)
-                        if (task?.id && task?.percent_complete === 100) {
-                            await deleteTaskProgress(task?.id)
-                            task.id = undefined
-                            setTimeout(() => {
-                                if (selectedProject.value) {
-                                    currentTasks.value[selectedProject.value.id][taskName] = undefined
-                                }
-                            }, 1000)
-                            fetchJobResults(taskName.replace('_task', ''))
-                        }
+export function pollJobProgress() {
+    if (selectedProject.value) {
+        const projectId = selectedProject.value.id
+        getTasksForProject(projectId).then((tasks) => {
+            if (tasks) {
+                const refreshedTasks = {}
+                tasks.forEach((task) => {
+                    if (task.name && !task.abort && !task.error && task.percent_complete !== 100) {
+                        refreshedTasks[`${task.name}`] = task
                     }
-                    return [taskName, task]
-                }))
-        currentTasks.value[selectedProject.value.id] = Object.fromEntries(refreshedTasks)
-        currentTasks.value = { ...currentTasks.value }  // reassign for watch response
-        if (
-            Object.values(currentTasks.value[selectedProject.value.id])
-                .every(task => task?.id === undefined)
-        ) {
-            clearInterval(jobProgressPoll.value)
-            jobProgressPoll.value = undefined
-        }
+                })
+                currentTasks.value = {
+                    ...currentTasks.value,
+                    ...{[projectId]: refreshedTasks}
+                }
+            }
+        })
     }
 }
 
@@ -320,13 +323,8 @@ export async function fetchJobResults(taskName: string) {
     }
 }
 
-export async function abort(task: Task) {
-    if (task.id) abortTask(task.id)
-    if (selectedProject.value) {
-        currentTasks.value[selectedProject.value.id] = {}
-    }
-    clearInterval(jobProgressPoll.value)
-    jobProgressPoll.value = undefined
+export async function abort(task: Task | undefined) {
+    if (task && task.id) abortTask(task.id)
 }
 
 export async function switchTab(tabName: string) {
@@ -338,7 +336,7 @@ export async function switchTab(tabName: string) {
     switch (tabName) {
         // add any other tab-switching updates here
         case 'analyze':
-            if (refreshedProject && !currentTasks.value[selectedProject.value.id]) {
+            if (refreshedProject) {
                 analysis.value = refreshedProject.last_cached_analysis
                 if (analysis.value) {
                     if (analysis.value.good_bad_angles) {

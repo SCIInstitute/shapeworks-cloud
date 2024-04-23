@@ -33,8 +33,7 @@ export interface AnalysisPCA {
 
 export interface AnalysisParams {
     range: number,
-    step: number,
-    numSteps: number,
+    steps: number,
 }
 
 export interface AnalysisMode {
@@ -171,8 +170,10 @@ export interface ReconstructedSample {
 export interface Task {
     id: number | undefined,
     name: string,
+    abort: boolean,
     percent_complete: number,
     error: string,
+    message: string,
     created: string,
     modified: string,
 }

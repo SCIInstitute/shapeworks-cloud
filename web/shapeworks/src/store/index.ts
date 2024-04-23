@@ -43,9 +43,9 @@ export const particleSize = ref<number>(2)
 
 export const reconstructionsForOriginalDataObjects = ref<ReconstructedSample[]>([])
 
-export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles>>>({})
+export const particlesForOriginalDataObjects = ref<Record<string, Record<number, Particles | undefined>>>({})
 
-export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape>>>({})
+export const groomedShapesForOriginalDataObjects = ref<Record<string, Record<number, GroomedShape| undefined>>>({})
 
 export const analysis = ref<Analysis>();
 

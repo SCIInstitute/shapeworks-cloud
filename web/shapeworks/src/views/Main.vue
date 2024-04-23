@@ -242,7 +242,7 @@ export default {
                         }
                     })
                 )
-            } 
+            }
             else if (tab.value === "deepssm" && deepSSMResult.value) {
                 // defaults to subjects selected
                 let labelledGroups: Record<string, any> = groupedSelections;
@@ -357,7 +357,7 @@ export default {
                                         } else {
                                             imageURL = trainingImages.find((i) => i.index === d.index)?.image
                                         }
-                                        
+
                                         shapePromises.push(
                                             imageReader(imageURL, `${label}.nrrd`)
                                         )
@@ -383,7 +383,7 @@ export default {
                                         )
 
                                         const imageURL = fetchedDataObject?.file
-                                        
+
                                         shapePromises.push(
                                             imageReader(imageURL, `${label}.nrrd`)
                                         )
@@ -403,7 +403,7 @@ export default {
                                             )
                                         }
                                     }
-                                    
+
                                     return Promise.all([
                                         Promise.all(shapePromises),
                                         pointsReader(particleURL),
@@ -445,18 +445,23 @@ export default {
                                       )
                                     }
                                     if(layersShown.value.includes("Groomed")){
-                                        if (groomedShapesForOriginalDataObjects.value[dataObject.type]) {
+                                        if (
+                                            groomedShapesForOriginalDataObjects.value[dataObject.type] &&
+                                            groomedShapesForOriginalDataObjects.value[dataObject.type][dataObject.id]
+                                        ) {
                                             const shapeURL = groomedShapesForOriginalDataObjects.value[
                                                 dataObject.type
-                                            ][dataObject.id].file
-                                            shapePromises.push(
-                                                imageReader(
-                                                    shapeURL,
-                                                    shortFileName(shapeURL),
-                                                    "Groomed",
-                                                    { domain: dataObject.anatomy_type.replace('anatomy_', '') }
+                                            ][dataObject.id]?.file
+                                            if(shapeURL) {
+                                                shapePromises.push(
+                                                    imageReader(
+                                                        shapeURL,
+                                                        shortFileName(shapeURL),
+                                                        "Groomed",
+                                                        { domain: dataObject.anatomy_type.replace('anatomy_', '') }
+                                                    )
                                                 )
-                                            )
+                                            }
                                         }
                                     }
                                     if(layersShown.value.includes("Reconstructed")){

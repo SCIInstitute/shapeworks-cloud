@@ -63,8 +63,13 @@ export async function getProjectsForDataset(search: string | undefined, datasetI
     return results
 }
 
-export async function refreshProject(projectId: number){
+export async function refreshProject(projectId: number) {
     return (await apiClient.get(`/projects/${projectId}`)).data
+}
+
+export async function getProjectFileContents(projectFileURL: string) {
+    const resp = await fetch(projectFileURL);
+    return (await resp.json())
 }
 
 export async function getTasksForProject(projectId: number): Promise<Task[]> {

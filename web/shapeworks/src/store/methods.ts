@@ -56,6 +56,7 @@ import {
     getDeepSSMTrainingPairsForProject,
     getDeepSSMTrainingImagesForProject,
     getTasksForProject,
+    getProjectFileContents,
 } from '@/api/rest';
 import { layers, COLORS } from "./constants";
 import { getDistance, hexToRgb } from "@/helper";
@@ -106,7 +107,14 @@ export async function getAllDatasets() {
 
 export const loadProjectForDataset = async (projectId: number) => {
     refreshProject(projectId).then((proj) => {
-        selectedProject.value = proj
+        if (proj.file){
+            getProjectFileContents(proj.file).then((contents) => {
+                proj.file_contents = contents
+                selectedProject.value = proj
+            })
+        } else {
+            selectedProject.value = proj
+        }
     });
     spawnJobProgressPoll()
 }

@@ -83,6 +83,7 @@ export interface Project {
     id: number,
     name: string,
     file: string,
+    file_contents: Object | undefined,
     private: boolean,
     readonly: boolean,
     thumbnail: string,

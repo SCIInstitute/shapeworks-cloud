@@ -12,7 +12,7 @@ import {
     deepSSMLoadingData,
     deepSSMErrorGlobalRange,
 } from '@/store';
-import { Ref, computed, onMounted, ref, watch, provide } from 'vue';
+import { Ref, onMounted, ref, watch } from 'vue';
 import { parseCSVFromURL } from '@/helper';
 import TaskInfo from '../TaskInfo.vue';
 
@@ -36,8 +36,6 @@ export default {
         const showAbortConfirmation = ref(false);
         const formData = ref();
         const formDefaults = ref({});
-
-        provide('formData', formData);
 
         const prepData = {
             testing_split: ref<number>(20),
@@ -112,8 +110,6 @@ export default {
         }
 
         function resetForm() {
-            // TODO: get from proj file
-            console.log('resetting with', formDefaults.value)
             formData.value = formDefaults.value
             Object.entries(formData.value).forEach(([key, value]) => {
                 if (prepData[key]) prepData[key].value = value
@@ -122,13 +118,30 @@ export default {
             })
         }
 
+        function overwriteFormDefaultsFromProjectFile() {
+            const file_contents = selectedProject.value?.file_contents
+            if (file_contents) {
+                const section = file_contents['deepssm']
+                formDefaults.value = Object.fromEntries(
+                    Object.entries(formDefaults.value).map(([key, value]) => {
+                        if (section[key]) value = section[key]
+                        if (value === "True") value = true
+                        else if (value === "False") value = false
+                        else if (typeof value === 'string' && !isNaN(parseFloat(value))) value = parseFloat(value)
+                        return [key, value]
+                    })
+                )
+            }
+        }
+
         async function getCSVDataFromURL(url: string) {
             return await parseCSVFromURL(url);
         }
 
         onMounted(async () => {
             formDefaults.value = getFormData()
-            formData.value = {...formDefaults.value}
+            overwriteFormDefaultsFromProjectFile()
+            resetForm()
             if (!deepSSMResult.value && selectedProject.value) {
                 deepSSMLoadingData.value = true;
                 await loadDeepSSMDataForProject();
@@ -224,20 +237,20 @@ export default {
                     <v-tabs-items v-model="controlsTabs">
                         <v-tab-item>
                             <div>
-                                <v-text-field v-model="prepData.testing_split.value" type="number" label="Test Split" suffix="%" />
-                                <v-text-field v-model="prepData.validation_split.value" type="number" label="Validation Split" suffix="%" />
-                                <v-text-field v-model="prepData.percent_variability.value" type="number" label="Percent Variablity Preserved" min="0.0" max="100.0" suffix="%" />
+                                <v-text-field v-model.number="prepData.testing_split.value" type="number" label="Test Split" suffix="%" />
+                                <v-text-field v-model.number="prepData.validation_split.value" type="number" label="Validation Split" suffix="%" />
+                                <v-text-field v-model.number="prepData.percent_variability.value" type="number" label="Percent Variablity Preserved" min="0.0" max="100.0" suffix="%" />
                                 <div class="image-spacing">
                                     <v-label class="spacing-label">Image Spacing</v-label>
-                                    <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.x" type="number" label="X" />
-                                    <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.y" type="number" label="Y" />
-                                    <v-text-field class="spacing-input" v-model="prepData.image_spacing.value.z" type="number" label="Z" />
+                                    <v-text-field class="spacing-input" v-model.number="prepData.image_spacing.value.x" type="number" label="X" />
+                                    <v-text-field class="spacing-input" v-model.number="prepData.image_spacing.value.y" type="number" label="Y" />
+                                    <v-text-field class="spacing-input" v-model.number="prepData.image_spacing.value.z" type="number" label="Z" />
                                 </div>
                             </div>
                         </v-tab-item>
                         <v-tab-item>
                             <div>
-                                <v-text-field v-model="augmentationData.aug_num_samples.value" type="number" label="Number of Samples" min="1" />
+                                <v-text-field v-model.number="augmentationData.aug_num_samples.value" type="number" label="Number of Samples" min="1" />
 
                                 <v-select
                                     :items="Object.values(Sampler)"
@@ -253,16 +266,16 @@ export default {
                                     v-model="trainingData.train_loss_function.value"
                                     label="Loss Function"
                                 />
-                                <v-text-field v-model="trainingData.train_epochs.value" type="number" label="Epochs" min="0" />
-                                <v-text-field v-model="trainingData.train_learning_rate.value" type="number" label="Learning Rate" min="0" />
-                                <v-text-field v-model="trainingData.train_batch_size.value" type="number" label="Batch Size" min="1" />
+                                <v-text-field v-model.number="trainingData.train_epochs.value" type="number" label="Epochs" min="0" />
+                                <v-text-field v-model.number="trainingData.train_learning_rate.value" type="number" label="Learning Rate" min="0" />
+                                <v-text-field v-model.number="trainingData.train_batch_size.value" type="number" label="Batch Size" min="1" />
 
                                 <v-checkbox v-model="trainingData.train_decay_learning_rate.value" label="Decay Learning Rate"></v-checkbox>
 
                                 <v-checkbox v-model="trainingData.train_fine_tuning.value" label="Fine Tuning"></v-checkbox>
 
-                                <v-text-field v-model="trainingData.train_fine_tuning_epochs.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Epochs" min="1" />
-                                <v-text-field v-model="trainingData.train_fine_tuning_learning_rate.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Learning Rate" min="0" />
+                                <v-text-field v-model.number="trainingData.train_fine_tuning_epochs.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Epochs" min="1" />
+                                <v-text-field v-model.number="trainingData.train_fine_tuning_learning_rate.value" :disabled="!trainingData.train_fine_tuning" type="number" label="Fine Tuning Learning Rate" min="0" />
                             </div>
                         </v-tab-item>
                     </v-tabs-items>

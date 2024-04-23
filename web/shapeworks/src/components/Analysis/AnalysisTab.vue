@@ -72,8 +72,6 @@ export default {
         })
 
         function resetForm() {
-            // TODO: get from proj file
-            console.log('reset with', formDefaults)
             formData.value = formDefaults
         }
 

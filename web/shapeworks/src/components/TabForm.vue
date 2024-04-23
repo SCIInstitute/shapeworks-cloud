@@ -1,5 +1,5 @@
 <script lang="ts">
-import { ref, watch, provide } from 'vue'
+import { ref, watch } from 'vue'
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
@@ -8,7 +8,7 @@ import '@koumoul/vjsf/dist/main.css'
 import Ajv from 'ajv';
 import defaults from 'json-schema-defaults';
 import {
-    allDataObjectsInDataset, groomFormData, optimizationFormData,
+    allDataObjectsInDataset, groomFormData, optimizationFormData, selectedProject,
 } from '@/store';
 import { DataObject } from '../types/index';
 import TaskInfo from './TaskInfo.vue'
@@ -42,7 +42,42 @@ export default {
         const formSchema = ref();
         const formValid = ref(false);
 
-        provide('formData', formData);
+        function overwriteFormDefaultsFromProjectFile() {
+            const file_contents = selectedProject.value?.file_contents
+            if (file_contents) {
+                const newDefaults = {}
+                const parseNewDefaults = (data: Object) => {
+                    if (data) {
+                        Object.entries(data).forEach(([key, value]) => {
+                            if (value === "True") value = true
+                            else if (value === "False") value = false
+                            else if (typeof value === 'string' && !isNaN(parseFloat(value))) value = parseFloat(value)
+                            newDefaults[key] = value
+                        })
+                    }
+                }
+
+                const section = file_contents[props.form]
+                if (section && props.form === 'groom') {
+                    // section organized by anatomies, pick first
+                    const data = Object.values(section)[0]
+                    if (data) parseNewDefaults(data)
+                } else if (section && props.form === 'optimize') {
+                    parseNewDefaults(section)
+                }
+                formDefaults.value = Object.fromEntries(
+                    Object.entries(formDefaults.value).map(([sName, sData]) => {
+                        if (!sData) return [sName, sData]
+                        return [sName, Object.fromEntries(
+                            Object.entries(sData).map(([key, value]) => {
+                                if (newDefaults[key]) return [key, newDefaults[key]]
+                                return [key, value]
+                            })
+                        )]
+                    })
+                )
+            }
+        }
 
         async function fetchFormSchema() {
             let formName = props.form
@@ -57,6 +92,9 @@ export default {
 
             formSchema.value = await (await fetch( `forms/${formName}.json`)).json()
             formDefaults.value = defaults(formSchema.value)
+            overwriteFormDefaultsFromProjectFile()
+
+            formData.value = formDefaults.value
         }
         fetchFormSchema()
 
@@ -108,7 +146,6 @@ export default {
         }, {deep:true})
 
         function resetForm() {
-            // TODO: get from proj file
             formData.value = formDefaults.value
         }
 

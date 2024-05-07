@@ -244,20 +244,21 @@ def run_deepssm_command(
     base_url = settings.API_URL  # type: ignore
 
     try:
+        progress.update_message('Initializing task...')
         with TemporaryDirectory() as download_dir:
             with swcc_session(base_url=base_url) as session:
                 # fetch everything we need
-                progress.update_message('Downloading Project...')
                 session.set_token(token.key)
                 project = models.Project.objects.get(id=project_id)
                 project_filename = project.file.name.split('/')[-1]
                 swcc_project = SWCCProject.from_id(project.id)
+                progress.update_message('Downloading project...')
                 swcc_project.download(download_dir)
 
                 pre_command_function()
                 progress.update_percentage(10)
-                progress.update_message('Running DeepSSM Command...')
-
+                
+                progress.update_message('Writing form data to project file...')
                 if form_data:
                     # write the form data to the project file
                     edit_swproj_section(
@@ -273,8 +274,10 @@ def run_deepssm_command(
 
                 sw_project_file = str(Path(download_dir, project_filename))
 
+                progress.update_message('Loading project file...')
                 sw_project.load(sw_project_file)
 
+                progress.update_message('Copying grooming parameters')
                 groom_params = sw_project.get_parameters('groom')
 
                 # for each parameter in the form data, set the parameter in the project
@@ -283,12 +286,15 @@ def run_deepssm_command(
 
                 sw_project.set_parameters('groom', groom_params)
 
+                progress.update_message('Copying optimization parameters')
                 optimize_params = sw_project.get_parameters('optimize')
                 # for each parameter in the form data, set the parameter in the project
                 for key, value in form_data.items():
                     optimize_params.set(key, value)
 
                 sw_project.set_parameters('optimize', optimize_params)
+
+                progress.update_message('Running DeepSSM on data...')
 
                 os.chdir(sw_project.get_project_path())
                 run_prep(form_data, sw_project, sw_project_file, progress)

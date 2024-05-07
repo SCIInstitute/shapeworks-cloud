@@ -30,6 +30,8 @@ def run_prep(params, project, project_file, progress):
     # /////////////////////////////////////////////////////////////////
     # /// STEP 2: Groom Training Shapes
     # /////////////////////////////////////////////////////////////////
+    progress.update_message('Grooming Training Shapes...')
+
     project_params = project.get_parameters('groom')
     # alignment should always be set to ICP
     project_params.set('alignment_method', 'Iterative Closest Point')
@@ -39,9 +41,12 @@ def run_prep(params, project, project_file, progress):
     DeepSSMUtils.groom_training_shapes(project)
     project.save(project_file)
 
+    progress.update_percentage(11)
+
     # /////////////////////////////////////////////////////////////////
     # /// STEP 3: Optimize Training Particles
     # /////////////////////////////////////////////////////////////////
+    progress.update_message('Optimizing Training Particles...')
     DeepSSMUtils.optimize_training_particles(project)
     project.save(project_file)
     progress.update_percentage(12)
@@ -49,13 +54,14 @@ def run_prep(params, project, project_file, progress):
     # /////////////////////////////////////////////////////////////////
     # /// STEP 4: Groom Training Images
     # /////////////////////////////////////////////////////////////////
-    print('Grooming training images')
+    progress.update_message('Grooming Training Images...')
     DeepSSMUtils.groom_training_images(project)
     project.save(project_file)
 
     # /////////////////////////////////////////////////////////////////
     # /// STEP 5: Groom Validation Images
     # /////////////////////////////////////////////////////////////////
+    progress.update_message('Grooming Validation Images...')
     val_indices = DeepSSMUtils.get_split_indices(project, 'val')
     test_indices = DeepSSMUtils.get_split_indices(project, 'test')
     val_test_indices = val_indices + test_indices
@@ -77,10 +83,12 @@ def run_prep(params, project, project_file, progress):
 
     project.set_parameters('optimize', project_params)
 
+    progress.update_message('Grooming Validation Shapes...')
     DeepSSMUtils.groom_validation_shapes(project)
     project.save(project_file)
     progress.update_percentage(17)
 
+    progress.update_message('Optimizing Validation Particles...')
     optimize = sw.Optimize()
     optimize.SetUpOptimize(project)
     optimize.Run()
@@ -102,6 +110,7 @@ def run_augmentation(params, project, download_dir, progress):
 
     num_dims = 0  # set to 0 to allow for percent variability to be used
 
+    progress.update_message('Running Data Augmentation...')
     embedded_dims = DeepSSMUtils.run_data_augmentation(
         project,
         num_samples,
@@ -111,6 +120,7 @@ def run_augmentation(params, project, download_dir, progress):
         mixture_num=0,
         processes=1,  # Thread count
     )
+    progress.update_message('Generating Augmentation visualizations...')
     progress.update_percentage(25)
 
     aug_dir = download_dir + '/deepssm/augmentation/'
@@ -130,6 +140,7 @@ def run_training(params, project, download_dir, aug_dims, progress):
     # /////////////////////////////////////////////////////////////////
     # /// STEP 8: Create PyTorch loaders from data
     # /////////////////////////////////////////////////////////////////
+    progress.update_message('Preparing Training Data Loaders...')
     DeepSSMUtils.prepare_data_loaders(project, batch_size, 'train')
     DeepSSMUtils.prepare_data_loaders(project, batch_size, 'val')
     progress.update_percentage(35)
@@ -169,6 +180,7 @@ def run_training(params, project, download_dir, aug_dims, progress):
     )
     progress.update_percentage(40)
 
+    progress.update_message('Training DeepSSM Model...')
     DeepSSMUtils.trainDeepSSM(project, config_file)
     progress.update_percentage(50)
 
@@ -181,12 +193,14 @@ def run_testing(params, project, download_dir, progress):
     # /////////////////////////////////////////////////////////////////
     # /// STEP 10: Groom Testing Images
     # /////////////////////////////////////////////////////////////////
+    progress.update_message('Grooming Testing Images...')
     DeepSSMUtils.groom_val_test_images(project, test_indices)
     progress.update_percentage(55)
 
     # /////////////////////////////////////////////////////////////////
     # /// STEP 11: Prepare Test Data PyTorch Loaders
     # /////////////////////////////////////////////////////////////////
+    progress.update_message('Preparing Testing Data Loaders...')
     batch_size = int(params['train_batch_size'])
     DeepSSMUtils.prepare_data_loaders(project, batch_size, 'test')
 
@@ -204,8 +218,11 @@ def run_testing(params, project, download_dir, progress):
     # /////////////////////////////////////////////////////////////////
     # /// STEP 12: Test DeepSSM Model
     # /////////////////////////////////////////////////////////////////
+    progress.update_message('Testing DeepSSM Model...')
     DeepSSMUtils.testDeepSSM(config_file)
-
+    
+    progress.update_messsage('Processing Test Predictions...')
+    progress.update_percentage(75)
     DeepSSMUtils.process_test_predictions(project, config_file)
     progress.update_percentage(90)
 
@@ -227,10 +244,10 @@ def run_deepssm_command(
     base_url = settings.API_URL  # type: ignore
 
     try:
-        # TODO: this needs more frequent updates to progress message
         with TemporaryDirectory() as download_dir:
             with swcc_session(base_url=base_url) as session:
                 # fetch everything we need
+                progress.update_message('Downloading Project...')
                 session.set_token(token.key)
                 project = models.Project.objects.get(id=project_id)
                 project_filename = project.file.name.split('/')[-1]
@@ -239,6 +256,7 @@ def run_deepssm_command(
 
                 pre_command_function()
                 progress.update_percentage(10)
+                progress.update_message('Running DeepSSM Command...')
 
                 if form_data:
                     # write the form data to the project file
@@ -313,6 +331,7 @@ def run_deepssm_command(
                 }
 
                 run_testing(form_data, sw_project, download_dir, progress)
+                progress.update_message("Saving Results...")
 
                 subjects = sw_project.get_subjects()
 

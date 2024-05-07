@@ -194,6 +194,21 @@ export default {
             deepSSMErrorGlobalRange.value = [0, 1];
         });
 
+        watch([ 
+            augmentationData.aug_num_samples,
+            augmentationData.aug_sampler_type,
+            trainingData.train_loss_function,
+            trainingData.train_epochs,
+            trainingData.train_learning_rate,
+            trainingData.train_batch_size,
+            trainingData.train_decay_learning_rate,
+            trainingData.train_fine_tuning,
+            trainingData.train_fine_tuning_epochs,
+            trainingData.train_fine_tuning_learning_rate,
+         ], () => {
+            formData.value = getFormData();
+        })
+
         return {
             selectedProject,
             openExpansionPanel,

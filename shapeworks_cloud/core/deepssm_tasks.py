@@ -331,7 +331,7 @@ def run_deepssm_command(
                 }
 
                 run_testing(form_data, sw_project, download_dir, progress)
-                progress.update_message("Saving Results...")
+                progress.update_message('Saving Results...')
 
                 subjects = sw_project.get_subjects()
 

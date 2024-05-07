@@ -23,6 +23,10 @@ export default {
         type: Object,
         required: false,
     },
+    disabled: {
+        type: Boolean,
+        required: false,
+    },
   },
   setup(props, { emit }) {
     const showSubmissionConfirmation = ref(false);
@@ -44,7 +48,9 @@ export default {
         }
     })
 
-    const submitDisabled = computed(() => !!taskData.value)
+    const submitDisabled = computed(() => props.disabled ? props.disabled : !!taskData.value)
+
+    const resetDisabled = computed(() => !!props.disabled)
 
     function resetForm() {
         emit('resetForm')
@@ -69,6 +75,7 @@ export default {
         resetForm,
         submitForm,
         abort,
+        resetDisabled,
     }
   }
 }
@@ -88,7 +95,12 @@ export default {
             <br />
         </div>
         <div style="display: flex; width: 100%; justify-content: space-between;">
-            <v-btn @click="resetForm">Reset form</v-btn>
+            <v-btn
+                @click="resetForm"
+                :disabled="resetDisabled"
+            >
+                Reset form
+            </v-btn>
             <v-btn
                 color="primary"
                 :disabled="submitDisabled"

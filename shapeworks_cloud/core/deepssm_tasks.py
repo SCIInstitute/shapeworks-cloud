@@ -220,7 +220,7 @@ def run_testing(params, project, download_dir, progress):
     # /////////////////////////////////////////////////////////////////
     progress.update_message('Testing DeepSSM Model...')
     DeepSSMUtils.testDeepSSM(config_file)
-    
+
     progress.update_messsage('Processing Test Predictions...')
     progress.update_percentage(75)
     DeepSSMUtils.process_test_predictions(project, config_file)

@@ -99,6 +99,7 @@ export default {
                         taskName="analyze"
                         :formData="formData"
                         @resetForm="resetForm"
+                        :disabled="!analysis"
                     />
                     <v-text-field
                         v-model.number="formData.range"
@@ -108,6 +109,7 @@ export default {
                         min="1.0"
                         label="Std. Dev. Range"
                         hide-details
+                        :disabled="!analysis"
                     />
                     <v-text-field
                         v-model.number="formData.steps"
@@ -117,6 +119,7 @@ export default {
                         max="100.0"
                         label="Number of steps"
                         hide-details
+                        :disabled="!analysis"
                     />
                 </v-expansion-panel-content>
             </v-expansion-panel>

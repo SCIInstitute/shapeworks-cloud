@@ -257,7 +257,7 @@ def run_deepssm_command(
 
                 pre_command_function()
                 progress.update_percentage(10)
-                
+
                 progress.update_message('Writing form data to project file...')
                 if form_data:
                     # write the form data to the project file

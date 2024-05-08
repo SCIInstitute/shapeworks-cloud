@@ -60,13 +60,13 @@ export default {
                 const section = file_contents[props.form]
                 if (section && props.form === 'groom') {
                     // section organized by anatomies, pick first
-                    const data = Object.values(section)[0]
+                    const data = Object.values(section)[0] as Object
                     if (data) parseNewDefaults(data)
                 } else if (section && props.form === 'optimize') {
                     parseNewDefaults(section)
                 }
                 formDefaults.value = Object.fromEntries(
-                    Object.entries(formDefaults.value).map(([sName, sData]) => {
+                    Object.entries(formDefaults.value).map(([sName, sData]: [string, any]) => {
                         if (!sData) return [sName, sData]
                         return [sName, Object.fromEntries(
                             Object.entries(sData).map(([key, value]) => {

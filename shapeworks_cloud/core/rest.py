@@ -271,6 +271,7 @@ class ProjectViewSet(BaseViewSet):
         project.id = None
         project.readonly = False
         project.private = True
+        project.creator = request.user
         project.name += ' (clone)'
         project.save()
         # project has new id now, is the cloned object
@@ -442,8 +443,11 @@ class ProjectViewSet(BaseViewSet):
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
 
-        models.TaskProgress.objects.filter(name='groom', project=project).delete()
-        progress = models.TaskProgress.objects.create(name='groom', project=project)
+        progress = models.TaskProgress.objects.create(
+            name='groom',
+            project=project,
+            form_data=form_data,
+        )
         groom.delay(request.user.id, project.id, form_data, progress.id)
         log_write_access(
             timezone.now(),
@@ -473,10 +477,11 @@ class ProjectViewSet(BaseViewSet):
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
 
-        models.TaskProgress.objects.filter(name='optimize', project=project).delete()
-        models.TaskProgress.objects.filter(name='analyze', project=project).delete()
-
-        progress = models.TaskProgress.objects.create(name='optimize', project=project)
+        progress = models.TaskProgress.objects.create(
+            name='optimize',
+            project=project,
+            form_data=form_data,
+        )
         analysis_progress = models.TaskProgress.objects.create(name='analyze', project=project)
         optimize.delay(
             request.user.id,
@@ -517,9 +522,11 @@ class ProjectViewSet(BaseViewSet):
         params = request.data
         params = {k: str(v) for k, v in params.items()}
 
-        models.TaskProgress.objects.filter(name='analyze', project=project).delete()
-
-        analysis_progress = models.TaskProgress.objects.create(name='analyze', project=project)
+        analysis_progress = models.TaskProgress.objects.create(
+            name='analyze',
+            project=project,
+            form_data=params,
+        )
 
         log_write_access(
             timezone.now(),
@@ -564,12 +571,16 @@ class ProjectViewSet(BaseViewSet):
         form_data = request.data
         form_data = {k: str(v) for k, v in form_data.items()}
 
-        deepssm_progress = models.TaskProgress.objects.create(name='deepssm', project=project)
+        deepssm_progress = models.TaskProgress.objects.create(
+            name='deepssm',
+            project=project,
+            form_data=form_data,
+        )
 
         log_write_access(
             timezone.now(),
             self.request.user.username,
-            'Analyze Project',
+            'Run DeepSSM',
             project.id,
         )
 
@@ -706,12 +717,14 @@ class ReconstructedSampleViewSet(
 
 class TaskProgressViewSet(
     mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
     mixins.DestroyModelMixin,
     GenericViewSet,
 ):
     permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = models.TaskProgress.objects.all()
     serializer_class = serializers.TaskProgressSerializer
+    filterset_class = filters.TaskProgressFilter
 
     @action(
         detail=True,

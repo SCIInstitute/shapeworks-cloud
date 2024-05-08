@@ -1,18 +1,15 @@
 <script lang="ts">
   import { computed, ref, Ref, watch, inject } from 'vue';
   import { AnalysisTabs } from './util';
-  import { AnalysisParams, CacheComparison } from '@/types';
+  import { CacheComparison } from '@/types';
 import { groupBy } from '../../helper';
   import {
     analysis,
     analysisFilesShown,
     cacheAllComparisons,
     currentAnalysisParticlesFiles,
-    currentTasks,
     meanAnalysisParticlesFiles,
     selectedProject,
-    spawnJob,
-    spawnJobProgressPoll
   } from '@/store';
 
   export default {
@@ -26,7 +23,6 @@ import { groupBy } from '../../helper';
 
       const menu = ref();
 
-      const message: Ref = inject('message') || ref('');
       const showConfirmation = ref(false);
 
       let step = 0;
@@ -63,8 +59,6 @@ import { groupBy } from '../../helper';
             range, step, numSteps
         }
       })
-
-      const params = ref<AnalysisParams>(stdDevRange.value)
 
       const pcaInfo = computed(() => {
         return {
@@ -139,28 +133,6 @@ import { groupBy } from '../../helper';
         stopAnimating() {
           animate.value = false;
         },
-        // spawn an analysis job when params are changed
-        async submitParams() {
-          const { range, numSteps } = params.value;
-
-          if (!selectedProject.value) return;
-
-          if (!currentTasks.value[selectedProject.value.id]) {
-              currentTasks.value[selectedProject.value.id] = {}
-          }
-
-          const taskIds = await spawnJob("analyze", {"range": range, "steps": numSteps}); // Record<string, any>
-
-          if(!taskIds || taskIds.length === 0) {
-              message.value = `Failed to submit analysis job.`
-              setTimeout(() => message.value = '', 10000)
-          } else {
-              message.value = `Successfully submitted analysis job. Awaiting results...`
-              currentTasks.value[selectedProject.value.id] = taskIds
-
-              spawnJobProgressPoll()
-          }
-        },
       }
 
       const init = () => {
@@ -188,7 +160,6 @@ import { groupBy } from '../../helper';
         mode,
         stdDev,
         stdDevRange,
-        params,
         pcaInfo,
         animate,
         menu,
@@ -225,56 +196,6 @@ import { groupBy } from '../../helper';
             {{ Math.round(stdDev * 100) / 100 }}
           </template>
         </v-slider>
-        <v-menu
-          v-model="menu"
-          :close-on-content-click="false"
-          bottom
-          right
-        >
-          <template v-slot:activator="{ on, attrs }" v-if="selectedProject && !selectedProject.readonly">
-            <v-btn
-              dark
-              icon
-              v-bind="attrs"
-              v-on="on"
-            >
-              <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn>
-          </template>
-          <v-list style="margin: auto">
-            <v-list-item>
-              <v-list-item-content>
-                  <v-text-field
-                    v-model="params.range"
-                    type="number"
-                    step="1.0"
-                    max="10.0"
-                    min="1.0"
-                    label="Std. Dev. Range"
-                    hide-details
-                  />
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-content>
-                  <v-text-field
-                    v-model="params.numSteps"
-                    type="number"
-                    step="1.0"
-                    min="1.0"
-                    max="100.0"
-                    label="Number of steps"
-                    hide-details
-                    @change="params.step = (params.range) / params.numSteps"
-                  />
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-          <div class="justifyAround" style="margin: auto">
-            <v-btn small color="secondary" @click="menu = false">Cancel</v-btn>
-            <v-btn small color="primary" @click="showConfirmation = true;">Submit</v-btn>
-          </div>
-        </v-menu>
       </v-row>
       <v-row justify="center">
           <v-checkbox
@@ -292,42 +213,7 @@ import { groupBy } from '../../helper';
         hide-default-header
         hide-default-footer
       />
-      <v-dialog
-      v-model="showConfirmation"
-      width="500"
-      >
-      <v-card>
-        <v-card-title>
-        Confirmation
-        </v-card-title>
-
-        <v-card-text>
-        Are you sure you want to re-run the analysis job?
-        The previous results will be overwritten.
-        </v-card-text>
-
-        <v-divider></v-divider>
-
-        <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-            text
-            @click="() => {showConfirmation = false}"
-        >
-            Cancel
-        </v-btn>
-        <v-btn
-            color="primary"
-            text
-            @click="() => {methods.submitParams(); showConfirmation = false;}"
-        >
-            Yes, Rerun
-        </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     </div>
-
 </template>
 
 <style>

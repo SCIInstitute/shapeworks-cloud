@@ -1,6 +1,6 @@
-import { AnalysisParams, DataObject, Dataset, LandmarkInfo, Constraints, Project, Subject } from "@/types";
+import { AnalysisParams, DataObject, Dataset, LandmarkInfo, Project, Subject, Task } from "@/types";
 import { apiClient } from "./auth";
-import { deepSSMDataTab, loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
+import { loadGroomedShapeForObject, loadParticlesForObject } from "@/store";
 
 
 export async function getDatasets(search: string | undefined): Promise<Dataset[]>{
@@ -43,7 +43,7 @@ export async function setProjectThumbnail(projectId: number, encoding: string) {
 export async function getSubjectsForDataset(datasetId: number): Promise<Subject[]> {
     return (await apiClient.get('/subjects', {
         params: {dataset: datasetId}
-    })).data.results
+    })).data?.results
 }
 
 export async function getProjectsForDataset(search: string | undefined, datasetId: number): Promise<Project[]>{
@@ -63,8 +63,19 @@ export async function getProjectsForDataset(search: string | undefined, datasetI
     return results
 }
 
-export async function refreshProject(projectId: number){
+export async function refreshProject(projectId: number) {
     return (await apiClient.get(`/projects/${projectId}`)).data
+}
+
+export async function getProjectFileContents(projectFileURL: string) {
+    const resp = await fetch(projectFileURL);
+    return (await resp.json())
+}
+
+export async function getTasksForProject(projectId: number): Promise<Task[]> {
+    return (await apiClient.get('/task-progress', {
+        params: { project: projectId}
+    })).data?.results
 }
 
 export async function getSubject(subjectId: number): Promise<Subject>{
@@ -78,7 +89,7 @@ export async function getDataObjectsForSubject(subjectId: number): Promise<DataO
             params: {subject: subjectId}
         })
     }))).map((response, index) => {
-        return response.data.results.map((result: DataObject) => {
+        return response.data?.results.map((result: DataObject) => {
             const type = dataTypes[index]
             if(type !== 'image'){
                 // don't await this, let particles and groomed shapes load in after
@@ -95,7 +106,7 @@ export async function getOptimizedParticlesForDataObject(
 ){
     return (await apiClient.get('/optimized-particles', {
         params: {[`original_${type}`]: id, project: projectId}
-    })).data.results
+    })).data?.results
 }
 
 export async function getGroomedShapeForDataObject(
@@ -105,7 +116,7 @@ export async function getGroomedShapeForDataObject(
         const plural = `${type}${type == 'mesh' ?'es' :'s'}`
         return (await apiClient.get(`/groomed-${plural}`, {
             params: {[type]: id, project: projectId}
-        })).data.results
+        })).data?.results
     }
 }
 
@@ -114,7 +125,7 @@ export async function getReconstructedSamplesForProject(
 ){
     return (await apiClient.get(`/reconstructed-samples/`, {
         params: {project: projectId}
-    })).data.results
+    })).data?.results
 }
 
 export async function getDeepSSMResultForProject(
@@ -122,7 +133,7 @@ export async function getDeepSSMResultForProject(
 ){
     return (await apiClient.get(`/deepssm-result/`, {
         params: {project: projectId}
-    })).data.results
+    })).data?.results
 }
 
 export async function getDeepSSMAugPairsForProject(
@@ -130,7 +141,7 @@ export async function getDeepSSMAugPairsForProject(
 ){
     return (await apiClient.get(`/deepssm-aug-pair/`, {
         params: {project: projectId}
-    })).data.results
+    })).data?.results
 }
 
 export async function getDeepSSMTrainingPairsForProject(
@@ -138,7 +149,7 @@ export async function getDeepSSMTrainingPairsForProject(
 ){
     return (await apiClient.get(`/deepssm-training-pair/`, {
         params: {project: projectId}
-    })).data.results
+    })).data?.results
 }
 
 export async function getDeepSSMTrainingImagesForProject(
@@ -146,7 +157,7 @@ export async function getDeepSSMTrainingImagesForProject(
 ){
     return (await apiClient.get(`/deepssm-training-image/`, {
         params: {project: projectId, page_size: 100}
-    })).data.results
+    })).data?.results
 }
 
 export async function getDeepSSMTestImagesForProject(
@@ -154,7 +165,7 @@ export async function getDeepSSMTestImagesForProject(
 ){
     return (await apiClient.get(`/deepssm-testing-data/`, {
         params: {project: projectId}
-    })).data.results
+    })).data?.results
 }
 
 export async function createProject(formData: Record<string, any>){
@@ -191,10 +202,6 @@ export async function deepssmRunProject(projectId: number, formData: Record<stri
 
 export async function getTaskProgress(taskId: number){
     return (await apiClient.get(`/task-progress/${taskId}`)).data
-}
-
-export async function deleteTaskProgress(taskId: number){
-    return (await apiClient.delete(`/task-progress/${taskId}`)).data
 }
 
 export async function abortTask(taskId: number) {

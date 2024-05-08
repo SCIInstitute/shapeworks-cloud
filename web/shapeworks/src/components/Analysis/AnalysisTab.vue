@@ -1,16 +1,17 @@
 <script lang="ts">
 import {
     analysis,
-    currentTasks,
-    selectedProject,
     analysisExpandedTab,
+    jobAlreadyDone,
 } from '@/store'
-import { ref, computed, watch, provide } from 'vue'
+import { ref, watch, provide } from 'vue'
 import Charts from './Charts.vue'
 import Groups from './Groups.vue'
 import Particles from './Particles.vue'
 import PCA from './PCA.vue'
 import { AnalysisTabs } from './util';
+import TaskInfo from '../TaskInfo.vue'
+import { AnalysisParams } from '@/types'
 
 export default {
     props: {
@@ -24,10 +25,12 @@ export default {
         Groups,
         Particles,
         PCA,
+        TaskInfo,
     },
     setup() {
+        const formDefaults: AnalysisParams = {range: 2, steps: 11}
         const openTab = ref(AnalysisTabs.PCA);
-        const message = ref<string>("");
+        const formData = ref<AnalysisParams>({...formDefaults});
         const currentlyCaching = ref<boolean>(false);
 
         const pca = ref();
@@ -35,14 +38,6 @@ export default {
 
         // provide mutable ref for use in child components
         provide('currentlyCaching', currentlyCaching);
-        provide('message', message);
-
-        const taskData = computed(
-            () => {
-                if (!selectedProject.value || !currentTasks.value[selectedProject.value.id]) return undefined
-                return currentTasks.value[selectedProject.value.id]['analyze_task']
-            }
-        )
 
         watch(openTab, () => {
             analysisExpandedTab.value = openTab.value;
@@ -76,85 +71,115 @@ export default {
             }
         })
 
+        function resetForm() {
+            formData.value = formDefaults
+        }
+
         return {
             analysis,
-            message,
-            taskData,
+            formData,
             openTab,
             currentlyCaching,
             pca,
-            groups
+            groups,
+            resetForm,
+            jobAlreadyDone
         }
     },
 }
 </script>
 
 <template>
-    <div v-if="taskData" class="messages-box pa-3">
-        Running analysis...
-        <div v-if="taskData.error">{{ taskData.error }}</div>
-        <v-progress-linear v-else :value="taskData.percent_complete"/>
-        <br />
-    </div>
-    <div class="pa-3" v-else-if="analysis">
-        Review shape analysis
-        <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-                <v-icon
-                    v-bind="attrs"
-                    v-on="on"
-                >
-                mdi-information
-                </v-icon>
-            </template>
-            <span>
-               <v-subheader>Last analysis run at {{ analysis.modified }}</v-subheader>
-            </span>
-        </v-tooltip>
-        <v-expansion-panels v-model="openTab">
+    <div v-if="jobAlreadyDone('optimize')">
+        <v-expansion-panels :value="analysis ? 1 : 0">
             <v-expansion-panel>
-                <v-expansion-panel-header>
-                    View PCA
-                </v-expansion-panel-header>
+                <v-expansion-panel-header>Controls</v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <PCA ref="pca" :currentTab="currentTab" :openTab="openTab"/>
-                    <charts :charts="analysis.charts"/>
+                    <task-info
+                        taskName="analyze"
+                        :formData="formData"
+                        @resetForm="resetForm"
+                        :disabled="!analysis"
+                    />
+                    <v-text-field
+                        v-model.number="formData.range"
+                        type="number"
+                        step="1.0"
+                        max="10.0"
+                        min="1.0"
+                        label="Std. Dev. Range"
+                        hide-details
+                        :disabled="!analysis"
+                    />
+                    <v-text-field
+                        v-model.number="formData.steps"
+                        type="number"
+                        step="1.0"
+                        min="1.0"
+                        max="100.0"
+                        label="Number of steps"
+                        hide-details
+                        :disabled="!analysis"
+                    />
                 </v-expansion-panel-content>
             </v-expansion-panel>
-            <v-expansion-panel :disabled="analysis.groups.length <= 0" id="groups-panel">
-                <v-expansion-panel-header>
-                    Group Difference
-                </v-expansion-panel-header>
+            <v-expansion-panel v-if="analysis">
+                <v-expansion-panel-header>Results</v-expansion-panel-header>
                 <v-expansion-panel-content>
-                    <groups ref="groups" :currentTab="currentTab" :openTab="openTab"/>
-                </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-                <v-expansion-panel-header>
-                    Particles
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                    <particles />
+                    <div class="pa-3">
+                        Review shape analysis
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-icon
+                                    v-bind="attrs"
+                                    v-on="on"
+                                >
+                                mdi-information
+                                </v-icon>
+                            </template>
+                            <span>
+                               <v-subheader>Last analysis run at {{ analysis.modified }}</v-subheader>
+                            </span>
+                        </v-tooltip>
+                        <v-expansion-panels v-model="openTab">
+                            <v-expansion-panel>
+                                <v-expansion-panel-header>
+                                    View PCA
+                                </v-expansion-panel-header>
+                                <v-expansion-panel-content>
+                                    <PCA ref="pca" :currentTab="currentTab" :openTab="openTab"/>
+                                    <charts :charts="analysis.charts"/>
+                                </v-expansion-panel-content>
+                            </v-expansion-panel>
+                            <v-expansion-panel :disabled="analysis.groups.length <= 0" id="groups-panel">
+                                <v-expansion-panel-header>
+                                    Group Difference
+                                </v-expansion-panel-header>
+                                <v-expansion-panel-content>
+                                    <groups ref="groups" :currentTab="currentTab" :openTab="openTab"/>
+                                </v-expansion-panel-content>
+                            </v-expansion-panel>
+                            <v-expansion-panel>
+                                <v-expansion-panel-header>
+                                    Particles
+                                </v-expansion-panel-header>
+                                <v-expansion-panel-content>
+                                    <particles />
+                                </v-expansion-panel-content>
+                            </v-expansion-panel>
+                        </v-expansion-panels>
+                        <div class="loading-dialog"><v-dialog v-model="currentlyCaching" width="10%">Calculating...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
+                    </div>
                 </v-expansion-panel-content>
             </v-expansion-panel>
         </v-expansion-panels>
-        <div class="loading-dialog"><v-dialog v-model="currentlyCaching" width="10%">Calculating...  <v-progress-circular indeterminate align-center></v-progress-circular></v-dialog></div>
     </div>
-    <div v-else class="messages-box pa-3">
-        {{ message ||
-            "No analysis generated yet; run the optimization step to generate an analysis."
-        }}
-    </div>
+    <div v-else class="pa-3" style="text-align: center;">Perform optimization before analyzing.</div>
 </template>
 
 <style>
 .percentage>.text-end::after {
     content: ' %'
-}
-
-.messages-box {
-    text-align: center;
-    color: #2196f3;
 }
 
 .v-dialog {

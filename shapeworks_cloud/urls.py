@@ -103,8 +103,3 @@ urlpatterns = [
     path('api-token-auth/', obtain_auth_token),
     path('', RedirectView.as_view(url=settings.HOMEPAGE_REDIRECT_URL)),  # type: ignore
 ]
-
-if settings.DEBUG:
-    import debug_toolbar
-
-    urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns

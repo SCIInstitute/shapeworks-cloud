@@ -9,8 +9,6 @@ from tempfile import TemporaryDirectory
 from swcc import models
 from swcc.api import swcc_session
 
-SAMPLE_SIZE = 3
-
 
 def project_as_dict_repr(project):
     project_repr = dict(project)
@@ -54,10 +52,14 @@ def public_server_download(download_dir):
     with swcc_session() as public_server_session:
         public_server_session.login('testuser@noemail.nil', 'cicdtest')
         all_datasets = list(models.Dataset.list())
-        tiny_tests = [d for d in all_datasets if 'tiny_test' in d.name]
-        dataset_subset = (
-            random.sample(tiny_tests, SAMPLE_SIZE) if len(tiny_tests) >= SAMPLE_SIZE else tiny_tests
-        )
+        dataset_subset = [
+            d for d in all_datasets
+            if d.name in [
+                'deep_ssm_femur_tiny_test',
+                'ellipsoid_multiple_domain_tiny_test',
+                'left_atrium_tiny_test',
+            ]
+        ]
         project_subset = [next(d.projects, None) for d in dataset_subset]
         for project in project_subset:
             if project is not None:

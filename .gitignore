@@ -127,3 +127,6 @@ dmypy.json
 
 # Ansible
 ansible/roles
+
+# Yarn env
+dev/yarn.env

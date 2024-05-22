@@ -17,10 +17,9 @@
         celery_repository_url: https://github.com/girder/shapeworks-cloud.git
         celery_environment: "{{ django_vars }}"
   tasks:
-    - name: Stop celery service to prevent manage_workers task from stopping instances
-      systemd:
-        state: stopped
-        name: celery
+    - name: Create lockfile to prevent manage_workers task from stopping instances
+      ansible.builtin.shell: |
+        date "+%Y.%m.%d-%H.%M.%S" > /home/ubuntu/celery_project/dev/deploy.lock
       become: true
       become_user: root
     - name: Save environment variables
@@ -92,5 +91,10 @@
       # ensure startup script executable for supervisor
       ansible.builtin.shell: |
         chmod 777 /home/ubuntu/celery_project/dev/prod.celery.start.sh
+      become: true
+      become_user: root
+    - name: Delete lockfile to allow manage_workers task to stop instances
+      ansible.builtin.shell: |
+        rm /home/ubuntu/celery_project/dev/deploy.lock
       become: true
       become_user: root

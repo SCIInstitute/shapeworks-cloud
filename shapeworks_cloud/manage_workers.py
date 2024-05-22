@@ -1,8 +1,14 @@
+import datetime
 import os
+from pathlib import Path
 import sys
 import time
 
 import boto3
+
+# DEPLOY_LOCK = Path('/opt/django-project/dev/deploy.lock')  # for development
+DEPLOY_LOCK = Path('/home/ubuntu/celery_project/dev/deploy.lock')
+MAX_LOCK_TIME = datetime.timedelta(minutes=10)
 
 
 def inspect_queue(queue_name):
@@ -80,6 +86,25 @@ def manage_workers(**kwargs):
         if v is not None:
             os.environ[k] = v
 
+    # check for lockfile indicating that a deployment is active
+    if DEPLOY_LOCK.exists():
+        with open(DEPLOY_LOCK) as lock:
+            lock_content = lock.readlines()
+            if len(lock_content) > 0:
+                lock_time = datetime.datetime.strptime(
+                    lock_content[0].replace('\n', ''), '%Y.%m.%d-%H.%M.%S'
+                )
+                time_delta = datetime.datetime.now() - lock_time
+                max_mins = MAX_LOCK_TIME.total_seconds() / 60
+                explanation = f"Deploy playbook started %s {max_mins} mins ago and hasn't exited."
+                if time_delta < MAX_LOCK_TIME:
+                    result = 'Valid deployment lockfile found. Skipping worker management.'
+                    print(f"{result} {explanation % 'less than'}")
+                    return
+                else:
+                    result = 'Invalid deployment lockfile found. Continuing with worker management.'
+                    print(f"{result} {explanation % 'greater than'}")
+
     num_messages_ready, num_messages_active = inspect_queue('gpu')
     if num_messages_ready < 0:
         return
@@ -116,7 +141,7 @@ def start_all():
     client.start_instances(InstanceIds=all_ids)
 
     # Wait for startup
-    time.sleep(60)
+    time.sleep(30)
 
     # Refresh hostnames
     all_workers = get_all_workers(client)

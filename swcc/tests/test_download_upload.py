@@ -3,7 +3,6 @@
 # upload them all to the local server
 import filecmp
 import os
-import random
 from tempfile import TemporaryDirectory
 
 from swcc import models
@@ -53,8 +52,10 @@ def public_server_download(download_dir):
         public_server_session.login('testuser@noemail.nil', 'cicdtest')
         all_datasets = list(models.Dataset.list())
         dataset_subset = [
-            d for d in all_datasets
-            if d.name in [
+            d
+            for d in all_datasets
+            if d.name
+            in [
                 'deep_ssm_femur_tiny_test',
                 'ellipsoid_multiple_domain_tiny_test',
                 'left_atrium_tiny_test',

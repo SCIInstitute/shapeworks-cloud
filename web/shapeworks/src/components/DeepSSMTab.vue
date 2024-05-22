@@ -14,7 +14,7 @@ import {
 } from '@/store';
 import { Ref, onMounted, ref, watch } from 'vue';
 import { parseCSVFromURL } from '@/helper';
-import TaskInfo from '../TaskInfo.vue';
+import TaskInfo from './TaskInfo.vue';
 
 
 export default {
@@ -194,7 +194,7 @@ export default {
             deepSSMErrorGlobalRange.value = [0, 1];
         });
 
-        watch([ 
+        watch([
             augmentationData.aug_num_samples,
             augmentationData.aug_sampler_type,
             trainingData.train_loss_function,

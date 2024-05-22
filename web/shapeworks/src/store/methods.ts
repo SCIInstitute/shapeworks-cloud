@@ -47,7 +47,6 @@ import {
     getGroomedShapeForDataObject, getOptimizedParticlesForDataObject,
     getProjectsForDataset,
     getReconstructedSamplesForProject,
-    getTaskProgress,
     groomProject, optimizeProject, refreshProject,
     deepssmRunProject,
     getDeepSSMResultForProject,

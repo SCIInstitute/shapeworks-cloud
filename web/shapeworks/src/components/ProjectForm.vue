@@ -106,13 +106,14 @@ export default {
     <v-btn
         v-if="!creating && !editMode"
         class="new-button"
-        @click="creating = true"
+        @click.stop="creating = true"
     >
         + New Project
     </v-btn>
     <v-card
         v-else
         class="selectable-card"
+        @click.stop
     >
         <div v-if="!editMode" class="text-overline mb-4">
             NEW PROJECT FOR DATASET {{selectedDataset.id}}
@@ -130,7 +131,7 @@ export default {
                     rounded
                     text
                     type="submit"
-                    @click="submit"
+                    @click.stop="submit"
                 >
                     {{ (editMode) ? "Save" : "Create" }}
                 </v-btn>
@@ -138,7 +139,7 @@ export default {
                     outlined
                     rounded
                     text
-                    @click="cancel"
+                    @click.stop="cancel"
                 >
                     Cancel
                 </v-btn>

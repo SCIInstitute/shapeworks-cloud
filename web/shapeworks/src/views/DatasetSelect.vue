@@ -27,9 +27,9 @@ export default {
         async function selectOrDeselectDataset (dataset: Dataset | undefined) {
             if(!selectedDataset.value && dataset) {
                 selectedDataset.value = dataset;
-                loadProjectsForDataset(dataset.id);
 
                 router.push("/dataset/"+dataset.id);
+                loadProjectsForDataset(dataset.id);
             } else {
                 selectedDataset.value = undefined;
                 selectedDataObjects.value = [];

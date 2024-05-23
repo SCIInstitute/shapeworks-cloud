@@ -66,11 +66,11 @@ setup(
     extras_require={
         'dev': [
             'django-composed-configuration[dev]',
+            'django-debug-toolbar',
             'django-s3-file-field[minio]<1',
             'ipython',
             'openpyxl',
             'tox',
-            'django-debug-toolbar',
         ]
     },
 )

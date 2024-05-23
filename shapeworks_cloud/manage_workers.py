@@ -90,9 +90,7 @@ def manage_workers(**kwargs):
         with open(DEPLOY_LOCK) as lock:
             lock_content = lock.readlines()
             if len(lock_content) > 0:
-                lock_time = datetime.datetime.strptime(
-                    lock_content[0].strip(), '%Y.%m.%d-%H.%M.%S'
-                )
+                lock_time = datetime.datetime.strptime(lock_content[0].strip(), '%Y.%m.%d-%H.%M.%S')
                 time_delta = datetime.datetime.now() - lock_time
                 max_mins = MAX_LOCK_TIME.total_seconds() / 60
                 explanation = f"Deploy playbook started %s {max_mins} mins ago and hasn't exited."

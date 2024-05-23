@@ -6,8 +6,7 @@ import time
 
 import boto3
 
-# DEPLOY_LOCK = Path('/opt/django-project/dev/deploy.lock')  # for development
-DEPLOY_LOCK = Path('/home/ubuntu/celery_project/dev/deploy.lock')
+DEPLOY_LOCK = Path(__file__).parent.parent / 'dev' / 'deploy.lock'
 MAX_LOCK_TIME = datetime.timedelta(minutes=10)
 
 
@@ -92,7 +91,7 @@ def manage_workers(**kwargs):
             lock_content = lock.readlines()
             if len(lock_content) > 0:
                 lock_time = datetime.datetime.strptime(
-                    lock_content[0].replace('\n', ''), '%Y.%m.%d-%H.%M.%S'
+                    lock_content[0].strip(), '%Y.%m.%d-%H.%M.%S'
                 )
                 time_delta = datetime.datetime.now() - lock_time
                 max_mins = MAX_LOCK_TIME.total_seconds() / 60

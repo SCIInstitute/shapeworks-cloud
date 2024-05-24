@@ -21,7 +21,7 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
       - name: Reset web branch
-        run: git reset --hard origin/master
+        run: git reset --hard origin/heroku-deployment-testing
       - uses: actions/setup-node@v2
         with:
           node-version: '16.x'

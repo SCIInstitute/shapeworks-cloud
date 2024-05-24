@@ -2,7 +2,7 @@ name: Build web app
 on:
   push:
     branches:
-      - master
+      - heroku-deployment-testing
 env:
   VUE_APP_OAUTH_CLIENT_ID: kNREkFvALDHTgTInKEdtNbvd6k9XUNN3dBytvaSr
   VUE_APP_API_ROOT: https://shapeworks-5f5454939472.herokuapp.com/

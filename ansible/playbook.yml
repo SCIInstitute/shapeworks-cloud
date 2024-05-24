@@ -14,7 +14,7 @@
     - role: girder.celery
       vars:
         celery_app: shapeworks_cloud.celery
-        celery_repository_url: https://github.com/girder/shapeworks-cloud.git
+        celery_repository_url: https://github.com/SCIInstitute/shapeworks-cloud.git
         celery_environment: "{{ django_vars }}"
   tasks:
     - name: Stop celery service to prevent manage_workers task from stopping instances

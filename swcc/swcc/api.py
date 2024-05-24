@@ -34,7 +34,7 @@ def swcc_session(**kwargs):
 class SwccSession(BaseUrlSession):
     def __init__(
         self,
-        base_url: str = 'https://app.shapeworks-cloud.org/api/v1',
+#        base_url: str = 'https://app.shapeworks-cloud.org/api/v1',
         token: Optional[str] = None,
         **kwargs,
     ):

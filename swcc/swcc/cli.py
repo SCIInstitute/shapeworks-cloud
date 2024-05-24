@@ -146,7 +146,7 @@ def main():
             err=True,
         )
         click.echo(
-            'https://github.com/girder/shapeworks-cloud/issues/new',
+            'https://github.com/SCIInstitute/shapeworks-cloud/issues/new',
             err=True,
         )
 

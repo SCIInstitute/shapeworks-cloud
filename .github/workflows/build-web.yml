@@ -5,8 +5,8 @@ on:
       - master
 env:
   VUE_APP_OAUTH_CLIENT_ID: kNREkFvALDHTgTInKEdtNbvd6k9XUNN3dBytvaSr
-  VUE_APP_API_ROOT: https://app.shapeworks-cloud.org/
-  VUE_APP_OAUTH_API_ROOT: https://app.shapeworks-cloud.org/oauth/
+  VUE_APP_API_ROOT: https://shapeworks-5f5454939472.herokuapp.com/
+  VUE_APP_OAUTH_API_ROOT: https://shapeworks-5f5454939472.herokuapp.com/oauth/
 jobs:
   build:
     runs-on: ubuntu-latest

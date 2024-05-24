@@ -1,6 +1,6 @@
 data "heroku_team" "heroku" {
   # This must be created by hand in the Heroku console
-  name = "kitware"
+  name = "shapeworks"
 }
 
 module "django" {
@@ -24,10 +24,10 @@ module "django" {
   ec2_worker_volume_size       = 40
 
   additional_django_vars = {
-    DJANGO_API_URL               = "https://app.shapeworks-cloud.org/api/v1"
-    DJANGO_HOMEPAGE_REDIRECT_URL = "https://www.shapeworks-cloud.org"
+    DJANGO_API_URL               = "https://shapeworks-5f5454939472.herokuapp.com/api/v1"
+    DJANGO_HOMEPAGE_REDIRECT_URL = "https://ec2-35-173-217-198.compute-1.amazonaws.com"
   }
-  django_cors_origin_whitelist = ["https://www.shapeworks-cloud.org"]
+  django_cors_origin_whitelist = ["https://ec2-35-173-217-198.compute-1.amazonaws.com"]
 }
 
 resource "aws_route53_record" "github_pages" {

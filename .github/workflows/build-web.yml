@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - repo-cleanup
 env:
   VUE_APP_OAUTH_CLIENT_ID: kNREkFvALDHTgTInKEdtNbvd6k9XUNN3dBytvaSr
   VUE_APP_API_ROOT: https://app.shapeworks-cloud.org/

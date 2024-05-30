@@ -1,5 +1,6 @@
 name: Build web app
 on:
+  workflow_dispatch:
   push:
     branches:
       - master

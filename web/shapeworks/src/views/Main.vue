@@ -54,8 +54,8 @@ import router from '@/router';
 import TabForm from '@/components/TabForm.vue';
 import AnalysisTab from '@/components/Analysis/AnalysisTab.vue';
 import InfoTab from '@/components/InfoTab.vue';
+import DeepSSMTab from '@/components/DeepSSMTab.vue';
 import { loadingState } from '../store/index';
-import DeepSSMTab from '@/components/DeepSSM/DeepSSMTab.vue';
 
 
 export default {

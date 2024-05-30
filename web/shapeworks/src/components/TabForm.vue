@@ -57,7 +57,7 @@ export default {
                     }
                 }
 
-                const section = file_contents[props.form]
+                const section: Record<string, Object> = file_contents[props.form]
                 if (section && props.form === 'groom') {
                     // section organized by anatomies, pick first
                     const data = Object.values(section)[0] as Object
@@ -69,6 +69,7 @@ export default {
                     Object.entries(formDefaults.value).map(([sName, sData]: [string, any]) => {
                         if (!sData) return [sName, sData]
                         return [sName, Object.fromEntries(
+                            // @ts-ignore
                             Object.entries(sData).map(([key, value]) => {
                                 if (newDefaults[key]) return [key, newDefaults[key]]
                                 return [key, value]
@@ -198,7 +199,7 @@ export default {
                 <br />
             </v-form>
         </div>
-        <div v-else>{{ props.prerequisite_unfulfilled }}</div>
+        <div v-else class="pa-3" style="text-align: center;">{{ props.prerequisite_unfulfilled }}</div>
     </div>
 </template>
 

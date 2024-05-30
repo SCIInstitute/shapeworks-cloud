@@ -64,7 +64,7 @@ export default {
             return deepSSMDataTab.value
         },
         showColorScale() {
-            return showDifferenceFromMeanMode.value || deepSSMDataTab.value
+            return showDifferenceFromMeanMode.value || deepSSMDataTab.value >= 0
         }
     },
     watch: {

@@ -27,9 +27,9 @@ export default {
         async function selectOrDeselectDataset (dataset: Dataset | undefined) {
             if(!selectedDataset.value && dataset) {
                 selectedDataset.value = dataset;
-                loadProjectsForDataset(dataset.id);
 
                 router.push("/dataset/"+dataset.id);
+                loadProjectsForDataset(dataset.id);
             } else {
                 selectedDataset.value = undefined;
                 selectedDataObjects.value = [];
@@ -80,6 +80,7 @@ export default {
                 :class="dataset.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
                 v-show="!selectedDataset || selectedDataset == dataset"
                 :width="selectedDataset == dataset ? '100%' :''"
+                @click="() => selectOrDeselectDataset(dataset)"
             >
                 <div class="text-overline mb-4">
                     DATASET ({{ dataset.created ? dataset.created.split('T')[0] : 'No creation time' }})
@@ -114,7 +115,7 @@ export default {
                     outlined
                     rounded
                     text
-                    @click="() => selectOrDeselectDataset(dataset)"
+                    @click.stop="() => selectOrDeselectDataset(dataset)"
                 >
                     {{ selectedDataset ?'Deselect' :'Select' }}
                 </v-btn>
@@ -122,7 +123,7 @@ export default {
                     outlined
                     rounded
                     text
-                    @click="() => selectingSubsetOf = dataset"
+                    @click.stop="() => selectingSubsetOf = dataset"
                 >
                     Create subset
                 </v-btn>

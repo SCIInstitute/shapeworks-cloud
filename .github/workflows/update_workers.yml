@@ -14,8 +14,6 @@ jobs:
       AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
       CLOUDAMQP_URL: ${{ secrets.CLOUDAMQP_URL }}
       CLOUDAMQP_APIKEY: ${{ secrets.CLOUDAMQP_APIKEY }}
-      CLOUDAMQP_GRAY_URL: ${{ secrets.CLOUDAMQP_GRAY_URL }}
-      CLOUDAMQP_GRAY_APIKEY: ${{ secrets.CLOUDAMQP_GRAY_APIKEY }}
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       DJANGO_EMAIL_URL: ${{ secrets.DJANGO_EMAIL_URL }}
       PAPERTRAIL_API_TOKEN: ${{ secrets.PAPERTRAIL_API_TOKEN }}
@@ -43,7 +41,7 @@ jobs:
           chmod 600 $HOME/.ssh/shapeworks-ec2-b
       - name: Update workers
         run: |
-          SECRETS_NAMES=('AWS_DEFAULT_REGION' 'AWS_ACCESS_KEY_ID' 'AWS_SECRET_ACCESS_KEY' 'CLOUDAMQP_URL' 'CLOUDAMQP_APIKEY' 'CLOUDAMQP_GRAY_URL' 'CLOUDAMQP_GRAY_APIKEY' 'DJANGO_SECRET_KEY' 'DJANGO_EMAIL_URL' 'PAPERTRAIL_API_TOKEN' 'DATABASE_URL')
+          SECRETS_NAMES=('AWS_DEFAULT_REGION' 'AWS_ACCESS_KEY_ID' 'AWS_SECRET_ACCESS_KEY' 'CLOUDAMQP_URL' 'CLOUDAMQP_APIKEY' 'DJANGO_SECRET_KEY' 'DJANGO_EMAIL_URL' 'PAPERTRAIL_API_TOKEN' 'DATABASE_URL')
           SECRETS_JSON=`jq -n '$ARGS.positional | map({ (.): env[.] }) | add' --args "${SECRETS_NAMES[@]}"`
           jq --argjson secrets "$SECRETS_JSON" '{django_vars: (.+=$secrets)}' dev/prod.celery.env.json > extra_vars.json
           INVENTORY=`python shapeworks_cloud/manage_workers.py start_all`

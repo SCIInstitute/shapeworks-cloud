@@ -1,6 +1,6 @@
 # Setting up your Shapeworks Cloud instance
 
-1. Clone https://github.com/girder/shapeworks-cloud and open that directory in your code editor. Check out the appropriate branch.
+1. Clone https://github.com/SCIInstitute/shapeworks-cloud and open that directory in your code editor. Check out the appropriate branch.
 
 2. In a terminal (in your repo directory), run `docker-compose up`. You may need to install docker. Keep this command running; this is the development server.
 

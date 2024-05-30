@@ -23,7 +23,7 @@ export default {
 
       router.beforeEach(async (to, from, next) => {
         if (!to.params.searchText) searchText.value = ''
-        searchText.value = to.params.searchText;
+        else searchText.value = to.params.searchText;
         next()
       })
 

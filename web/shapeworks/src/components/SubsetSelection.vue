@@ -70,6 +70,7 @@ export default {
                 Create subset
             </v-btn>
         </div>
+        <br/>
         <v-text-field autofocus label="Subset name" v-model="name" />
         <v-text-field label="Description" v-model="description" />
         <v-text-field label="Keywords" v-model="keywords" />

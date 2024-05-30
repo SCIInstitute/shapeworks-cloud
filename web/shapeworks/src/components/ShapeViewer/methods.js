@@ -438,7 +438,7 @@ export default {
                     if (shape.getClassName() === 'vtkPolyData') {
                         const arr = shape.getPointData().getArrayByName('deepssm_error').getData()
                         if (arr) range = [Math.min(...arr), Math.max(...arr)]
-                    } 
+                    }
                 })
                 this.prepareColorScale(canvas, labels, range)
             })
@@ -452,13 +452,13 @@ export default {
             const context = canvas.getContext('2d', { willReadFrequently: true });
             const pixelsArea = context.getImageData(0, 0, width, height);
             const colorsData = this.lookupTable.getUint8Table(
-                ...this.lookupTable.getMappingRange(), 
-                height * width, 
+                ...this.lookupTable.getMappingRange(),
+                height * width,
                 true
             )
             pixelsArea.data.set(colorsData)
             context.putImageData(pixelsArea, 0, 0)
-            
+
             const labelProportions = [1, 0.75, 0.5, 0.25, 0];
             labels.innerHTML = ''
             labels.style.position = "absolute"
@@ -558,7 +558,6 @@ export default {
 
         if (!this.showColorScale) {
             const targetRenderer = Object.values(this.vtk.renderers)[this.columns - 1]
-            this.vtk.orientationCube = this.newOrientationCube(this.vtk.interactor)
             if (targetRenderer) {
                 this.vtk.orientationCube.setParentRenderer(targetRenderer)
                 this.vtk.orientationCube.setEnabled(true);

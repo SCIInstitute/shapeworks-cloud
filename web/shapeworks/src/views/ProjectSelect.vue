@@ -118,8 +118,13 @@ export default {
             <div
                 v-for="project in allProjectsForDataset"
                 :key="'project_'+project.id"
+                @click="() => selectOrDeselectProject(project)"
             >
-            <project-form v-if="editingProject === project" editMode @cancel="() => editingProject = undefined"/>
+                <project-form
+                    v-if="editingProject === project"
+                    editMode
+                    @cancel="() => editingProject = undefined"
+                />
                 <v-card
                     v-else
                     :class="project.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
@@ -157,34 +162,33 @@ export default {
                     <v-card-actions class="action-buttons">
                         <v-btn
                             outlined rounded text style="width:40%; margin-left: 8px;"
-                            @click="() => cloneProj(project)"
+                            @click.stop="() => cloneProj(project)"
                         >
                             Clone
                         </v-btn>
                         <v-btn
                             outlined rounded text style="width:40%"
-                            @click="editingProject = project"
+                            @click.stop="editingProject = project"
                             >
                             Edit
                         </v-btn>
                         <v-btn
                             outlined rounded text style="width:40%"
                             color="blue"
-                            @click="() => selectOrDeselectProject(project)"
+                            @click.stop="() => selectOrDeselectProject(project)"
                         >
                             Select
                         </v-btn>
                         <v-btn
                             outlined rounded text style="width:40%"
                             color="red"
-                            @click="deleting = project"
+                            @click.stop="deleting = project"
                         >
                             Delete
                         </v-btn>
                     </v-card-actions>
                 </v-card>
             </div>
-            <project-form />
             <v-dialog
                 :value="deleting"
                 width="500"
@@ -204,14 +208,14 @@ export default {
                 <v-spacer></v-spacer>
                 <v-btn
                     text
-                    @click="deleting = undefined"
+                    @click.stop="deleting = undefined"
                 >
                     Cancel
                 </v-btn>
                 <v-btn
                     text
                     color="red"
-                    @click="deleteProj"
+                    @click.stop="deleteProj"
                 >
                     Delete
                 </v-btn>

@@ -51,12 +51,7 @@ def public_server_download(download_dir):
     with swcc_session() as public_server_session:
         public_server_session.login('testuser@noemail.nil', 'cicdtest')
         all_datasets = list(models.Dataset.list())
-        dataset_subset = [
-            d
-            for d in all_datasets
-            if 'CI/CD'
-            in d.keywords
-        ]
+        dataset_subset = [d for d in all_datasets if 'CI/CD' in d.keywords]
         project_subset = [next(d.projects, None) for d in dataset_subset]
         for project in project_subset:
             if project is not None:

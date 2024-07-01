@@ -49,16 +49,8 @@ def is_same(dir1, dir2):
 
 def public_server_download(download_dir):
     with swcc_session() as public_server_session:
-        username = (
-            os.environ['CICD_PUBLIC_USER']
-            if 'CICD_PUBLIC_USER' in os.environ
-            else ''
-        )
-        password = (
-            os.environ['CICD_PUBLIC_PASSWORD']
-            if 'CICD_PUBLIC_PASSWORD' in os.environ
-            else ''
-        )
+        username = os.getenv('CICD_PUBLIC_USERNAME', '')
+        password = os.getenv('CICD_PUBLIC_PASSWORD', '')
         public_server_session.login(username, password)
         all_datasets = list(models.Dataset.list())
         dataset_subset = [d for d in all_datasets if 'CI/CD' in d.keywords]

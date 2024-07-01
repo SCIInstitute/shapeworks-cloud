@@ -54,12 +54,8 @@ def public_server_download(download_dir):
         dataset_subset = [
             d
             for d in all_datasets
-            if d.name
-            in [
-                'deep_ssm_femur_tiny_test',
-                'ellipsoid_multiple_domain_tiny_test',
-                'left_atrium_tiny_test',
-            ]
+            if 'CI/CD'
+            in d.keywords
         ]
         project_subset = [next(d.projects, None) for d in dataset_subset]
         for project in project_subset:

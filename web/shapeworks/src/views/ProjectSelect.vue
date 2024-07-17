@@ -55,12 +55,16 @@ export default {
                 });
 
                 projects = projects.filter((p) => {
+                    if (filters.value.private && filters.value.readonly) {
+                        return !p.private && !p.readonly;
+                    }
                     if (filters.value.private) {
                         return !p.private;
                     }
                     if (filters.value.readonly) {
                         return !p.readonly;
                     }
+
                     return true;
                 })
 

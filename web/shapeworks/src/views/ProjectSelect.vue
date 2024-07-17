@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { cloneProject, deleteProject } from '@/api/rest'
 import {
     selectedDataset,
@@ -12,6 +12,9 @@ import {
     getAllDatasets,
     loadDataset,
     loadProjectsForDataset,
+    projectSortAscending,
+    projectSortOption,
+    projectFilters,
 } from '@/store';
 import ProjectForm from '@/components/ProjectForm.vue';
 import { Project } from '@/types';
@@ -31,6 +34,40 @@ export default {
     },
     setup(props) {
         const deleting = ref();
+
+        const sortedProjects = computed(() => {
+            if (allProjectsForDataset.value) {
+                let projects = allProjectsForDataset.value.sort((a, b) => {
+                    let sortA = a[projectSortOption.value];
+                    let sortB = b[projectSortOption.value];
+
+                    if ((!sortA || !sortB)) {
+                        return 0;
+                    }
+
+                    if (sortA < sortB) {
+                        return (projectSortAscending.value === true) ? -1 : 1;
+                    }
+                    if (sortA > sortB) {
+                        return (projectSortAscending.value === true) ? 1 : -1;
+                    }
+                    return 0;
+                });
+
+                projects = projects.filter((p) => {
+                    if (projectFilters.value.private) {
+                        return !p.private;
+                    }
+                    if (projectFilters.value.readonly) {
+                        return !p.readonly;
+                    }
+                    return true;
+                })
+
+                return projects;
+            }
+            return [];
+        });
 
         async function selectOrDeselectProject (project: Project) {
             if(!selectedProject.value){
@@ -98,6 +135,7 @@ export default {
             selectProject,
             back,
             loadingState,
+            sortedProjects,
         }
     }
 }
@@ -116,7 +154,7 @@ export default {
                 <v-card-title>No projects.</v-card-title>
             </v-card>
             <div
-                v-for="project in allProjectsForDataset"
+                v-for="project in sortedProjects"
                 :key="'project_'+project.id"
                 @click="() => selectOrDeselectProject(project)"
             >
@@ -189,6 +227,8 @@ export default {
                     </v-card-actions>
                 </v-card>
             </div>
+            <!-- Create project form (shows at end of list). Does this need more advanced perms? -->
+            <project-form />
             <v-dialog
                 :value="deleting"
                 width="500"

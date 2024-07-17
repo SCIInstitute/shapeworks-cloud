@@ -81,6 +81,7 @@ export interface Analysis {
 
 export interface Project {
     id: number,
+    creator: number,
     name: string,
     file: string,
     file_contents: Object | undefined,
@@ -100,6 +101,7 @@ export interface Project {
 
 export interface Dataset {
     id: number,
+    creator: number,
     name: string,
     file: string,
     private: boolean,
@@ -248,4 +250,9 @@ export interface DeepSSMImage {
     index: string,
     image: string,
     validation: boolean,
+}
+
+export interface ProjectFilters {
+    private: boolean,
+    readonly: boolean,
 }

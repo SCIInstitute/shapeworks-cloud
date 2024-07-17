@@ -4,7 +4,7 @@ import {
     Particles, GroomedShape, Project,
     ReconstructedSample, VTKInstance,
     Analysis, Task, LandmarkInfo, Constraints,
-    ProjectFilters
+    Filters
 } from '@/types'
 import { ref } from 'vue'
 import { SORT_OPTION } from './constants';
@@ -147,11 +147,11 @@ export const deepSSMErrorGlobalRange = ref<number[]>([0, 1]);
 
 export const deepSSMSamplePage = ref<number>(1);
 
-export const projectSortAscending = ref(true);
+export const sortAscending = ref(true);
 
-export const projectSortOption = ref<SORT_OPTION>(SORT_OPTION.NAME);
+export const sortOption = ref<SORT_OPTION>(SORT_OPTION.NAME);
 
-export const projectFilters = ref<ProjectFilters>({
+export const filters = ref<Filters>({
     private: false,
     readonly: false,
 });

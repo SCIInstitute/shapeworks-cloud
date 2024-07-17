@@ -1,7 +1,7 @@
 <script lang="ts">
 import { computed } from 'vue'
 import { logout, oauthClient } from '@/api/auth';
-import { allDatasets, loadingState, projectSortOption, projectSortAscending, selectedDataset, selectedProject, projectFilters, SORT_OPTION } from '@/store';
+import { allDatasets, loadingState, sortOption, sortAscending, selectedDataset, selectedProject, filters, SORT_OPTION } from '@/store';
 import FilterSearch from './FilterSearch.vue';
 import router from '@/router';
 import { getDatasets } from '@/api/rest';
@@ -18,7 +18,7 @@ export default {
       }))
 
       const ascendingLabel = computed(() => {
-        return projectSortOption.value !== 'modified' ? "A to Z" : "Oldest"
+        return sortOption.value !== 'modified' ? "A to Z" : "Oldest"
       })
 
       async function logInOrOut() {
@@ -52,10 +52,10 @@ export default {
           selectedDataset,
           selectedProject,
           navigateToHome,
-          projectSortOption,
-          projectSortAscending,
+          sortOption,
+          sortAscending,
           ascendingLabel,
-          projectFilters,
+          filters,
           SORT_OPTION,
           router,
       }
@@ -99,29 +99,29 @@ export default {
               <v-card-text>
                 <div class="flex">
                   <v-select
-                    v-model="projectSortOption"
+                    v-model="sortOption"
                     :items="Object.values(SORT_OPTION)"
                     label="Sort by"
                   />
                   <v-switch
-                    v-model="projectSortAscending"
+                    v-model="sortAscending"
                     :label="ascendingLabel"
                   />
                 </div>
               </v-card-text>
             </v-expansion-panel-content>
           </v-expansion-panel>
-          <v-expansion-panel>
+          <v-expansion-panel v-if="selectedDataset">
             <v-expansion-panel-header>Filter</v-expansion-panel-header>
             <v-expansion-panel-content>
               <v-card-text>
                 <v-switch
-                  v-model="projectFilters.private"
-                  label="Hide private projects"
+                  v-model="filters.private"
+                  label="Hide private"
                 />
                 <v-switch
-                  v-model="projectFilters.readonly"
-                  label="Hide read only projects"
+                  v-model="filters.readonly"
+                  label="Hide read only"
                 />
               </v-card-text>
             </v-expansion-panel-content>

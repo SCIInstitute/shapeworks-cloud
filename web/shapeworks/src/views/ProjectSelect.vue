@@ -12,9 +12,9 @@ import {
     getAllDatasets,
     loadDataset,
     loadProjectsForDataset,
-    projectSortAscending,
-    projectSortOption,
-    projectFilters,
+    sortAscending,
+    sortOption,
+    filters,
 } from '@/store';
 import ProjectForm from '@/components/ProjectForm.vue';
 import { Project } from '@/types';
@@ -38,27 +38,27 @@ export default {
         const sortedProjects = computed(() => {
             if (allProjectsForDataset.value) {
                 let projects = allProjectsForDataset.value.sort((a, b) => {
-                    let sortA = a[projectSortOption.value];
-                    let sortB = b[projectSortOption.value];
+                    let sortA = a[sortOption.value];
+                    let sortB = b[sortOption.value];
 
                     if ((!sortA || !sortB)) {
                         return 0;
                     }
 
                     if (sortA < sortB) {
-                        return (projectSortAscending.value === true) ? -1 : 1;
+                        return (sortAscending.value === true) ? -1 : 1;
                     }
                     if (sortA > sortB) {
-                        return (projectSortAscending.value === true) ? 1 : -1;
+                        return (sortAscending.value === true) ? 1 : -1;
                     }
                     return 0;
                 });
 
                 projects = projects.filter((p) => {
-                    if (projectFilters.value.private) {
+                    if (filters.value.private) {
                         return !p.private;
                     }
-                    if (projectFilters.value.readonly) {
+                    if (filters.value.readonly) {
                         return !p.readonly;
                     }
                     return true;

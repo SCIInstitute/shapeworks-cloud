@@ -252,7 +252,7 @@ export interface DeepSSMImage {
     validation: boolean,
 }
 
-export interface ProjectFilters {
+export interface Filters {
     private: boolean,
     readonly: boolean,
 }

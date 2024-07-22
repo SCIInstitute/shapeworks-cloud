@@ -114,6 +114,7 @@ export default {
         v-else
         class="selectable-card"
         @click.stop
+        :ripple="false"
     >
         <div v-if="!editMode" class="text-overline mb-4">
             NEW PROJECT FOR DATASET {{selectedDataset.id}}

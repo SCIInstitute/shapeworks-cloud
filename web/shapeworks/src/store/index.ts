@@ -3,9 +3,11 @@ import {
     DataObject, Dataset, Subject,
     Particles, GroomedShape, Project,
     ReconstructedSample, VTKInstance,
-    Analysis, Task, LandmarkInfo, Constraints
+    Analysis, Task, LandmarkInfo, Constraints,
+    Filters
 } from '@/types'
 import { ref } from 'vue'
+import { SORT_OPTION } from './constants';
 
 export * from './methods'
 
@@ -144,3 +146,12 @@ export const uniformScale = ref<boolean>(true);
 export const deepSSMErrorGlobalRange = ref<number[]>([0, 1]);
 
 export const deepSSMSamplePage = ref<number>(1);
+
+export const sortAscending = ref(true);
+
+export const sortOption = ref<SORT_OPTION>(SORT_OPTION.NAME);
+
+export const filters = ref<Filters>({
+    private: false,
+    readonly: false,
+});

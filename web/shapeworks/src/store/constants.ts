@@ -84,3 +84,10 @@ export const COLORS = [
 ];
 
 export const DEEPSSM_SAMPLES_PER_PAGE = 12;
+
+export enum SORT_OPTION {
+    NAME = 'name',
+    ID = 'id',
+    MODIFIED = 'modified',
+    CREATOR = 'creator',
+}

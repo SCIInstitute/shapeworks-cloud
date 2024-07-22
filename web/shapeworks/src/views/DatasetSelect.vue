@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import {
     allDatasets,
     selectedDataset,
@@ -7,6 +7,8 @@ import {
     selectedDataObjects,
     loadProjectsForDataset,
     getAllDatasets,
+sortOption,
+sortAscending,
 } from '@/store';
 import { Dataset } from '@/types';
 import SubsetSelection from '@/components/SubsetSelection.vue';
@@ -23,6 +25,30 @@ export default {
     setup(props) {
         const selectingSubsetOf = ref();
         selectedDataset.value = undefined;
+
+        const sortedDatasets = computed(() => {
+            if (allDatasets.value) {
+                const datasets = allDatasets.value.sort((a, b) => {
+                    let sortA = a[sortOption.value];
+                    let sortB = b[sortOption.value];
+
+                    if ((!sortA || !sortB)) {
+                        return 0;
+                    }
+
+                    if (sortA < sortB) {
+                        return (sortAscending.value === true) ? -1 : 1;
+                    }
+                    if (sortA > sortB) {
+                        return (sortAscending.value === true) ? 1 : -1;
+                    }
+                    return 0;
+                });
+
+                return datasets;
+            }
+            return [];
+        });
 
         async function selectOrDeselectDataset (dataset: Dataset | undefined) {
             if(!selectedDataset.value && dataset) {
@@ -59,6 +85,7 @@ export default {
             selectOrDeselectDataset,
             selectingSubsetOf,
             loadingState,
+            sortedDatasets,
         }
     }
 }
@@ -75,7 +102,7 @@ export default {
                 <v-card-title>No datasets.</v-card-title>
             </v-card>
             <v-card
-                v-for="dataset in allDatasets"
+                v-for="dataset in sortedDatasets"
                 :key="'dataset_'+dataset.id"
                 :class="dataset.thumbnail? 'selectable-card with-thumbnail': 'selectable-card'"
                 v-show="!selectedDataset || selectedDataset == dataset"

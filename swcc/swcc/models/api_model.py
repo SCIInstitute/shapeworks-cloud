@@ -23,7 +23,7 @@ class ApiModel(BaseModel):
         type_ = cls.__fields__[field.name].type_
         if (
             inspect.isclass(type_)
-            and type_ is not Any
+            and type_ is not Any  # type: ignore
             and issubclass(type_, ApiModel)
             and isinstance(v, int)
         ):
@@ -86,7 +86,7 @@ class ApiModel(BaseModel):
                 key in json
                 and type(json[key]) == int
                 and inspect.isclass(value.type_)  # exclude Unions of multiple classes
-                and value.type_ is not Any
+                and value.type_ is not Any  # type: ignore
                 and issubclass(value.type_, ApiModel)
             ):
                 json[key] = value.type_.from_id(json[key])

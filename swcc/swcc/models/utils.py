@@ -25,7 +25,7 @@ class FileIO(ABC):
         pass
 
     @abstractmethod
-    def interpret_data(self, data, root):
+    def interpret_data(self, data):
         pass
 
 

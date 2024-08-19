@@ -168,6 +168,10 @@ export async function getDeepSSMTestImagesForProject(
     })).data?.results
 }
 
+export async function createDataset(formData: Record<string, any>) {
+    return (await apiClient.post(`/datasets/`, formData))
+}
+
 export async function createProject(formData: Record<string, any>){
     return (await apiClient.post(`/projects/`, formData))
 }

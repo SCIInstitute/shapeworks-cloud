@@ -1,27 +1,19 @@
 <script>
 import { ref } from 'vue';
-import { createProject, editProject } from '../api/rest'
+import { createDataset } from '../api/rest'
 import {
-    selectedDataset,
     loadingState,
-    editingProject,
-    loadProjectsForDataset,
+    getAllDatasets,
 } from '@/store';
 
 export default {
-  props: {
-    editMode: {
-        type: Boolean,
-        default: false
-    },
-  },
-  setup(props, { emit }) {
+  setup() {
     const creating = ref(false)
-    const name = ref('My Project')
+    const name = ref('My Dataset')
     const description = ref('')
     const keywords = ref('')
-    const privated = ref(false);
-    const readonly = ref(false);
+    const license = ref('No license')
+    const acknowledgement = ref('No acknowledgement')
 
     function reset() {
         creating.value = false
@@ -30,42 +22,39 @@ export default {
     }
 
     function cancel() {
-        if(props.editMode) {
-            emit('cancel')
-        } else {
-            creating.value = false
-        }
+        creating.value = false;
     }
 
+    // TODO: revise for dataset
     function submit(e) {
         e.preventDefault()
         loadingState.value = true
 
         const formData = {
             name: name.value,
-            private: privated.value,
-            dataset: selectedDataset.value.id,
             description: description.value,
             keywords: keywords.value,
-            readonly: readonly.value,
+            license: license.value,
+            acknowledgement: acknowledgement.value,
         };
 
         let submitFunction = async () => {
-           return await createProject(formData);
-        }
-
-        if (props.editMode) {
-            submitFunction = async () => {
-                return await editProject(editingProject.value.id, formData);
-            }
+           return await createDataset(formData);
         }
 
         submitFunction().then(async (response) => {
-            if(response.status === 201){
-                loadProjectsForDataset(selectedDataset.value.id);
+            // if(response.status === 201){
+            //     loadProjectsForDataset(selectedDataset.value.id);
+            // } else if (response.status === 200) {
+            //     loadProjectsForDataset(selectedDataset.value.id);
+            //     editingProject.value = undefined;
+            // }
+            if (response.status === 201) {
+                console.log("SUCCESS")
+                await getAllDatasets();
             } else if (response.status === 200) {
-                loadProjectsForDataset(selectedDataset.value.id);
-                editingProject.value = undefined;
+                console.log("SUCCESS edit?")
+                await getAllDatasets();
             }
 
             loadingState.value = false
@@ -76,24 +65,12 @@ export default {
         })
     }
 
-    if (props.editMode) {
-        name.value = editingProject.value.name;
-        description.value = editingProject.value.description;
-        keywords.value = editingProject.value.keywords;
-        privated.value = editingProject.value.private;
-        readonly.value = editingProject.value.readonly;
-    }
-
     return {
         creating,
         name,
-        selectedDataset,
         loadingState,
         description,
         keywords,
-        privated,
-        readonly,
-        editingProject,
         cancel,
         submit,
     }
@@ -104,11 +81,11 @@ export default {
 <template>
     <div>
     <v-btn
-        v-if="!creating && !editMode"
+        v-if="!creating"
         class="new-button"
         @click.stop="creating = true"
     >
-        + New Project
+        + New Dataset
     </v-btn>
     <v-card
         v-else
@@ -116,19 +93,17 @@ export default {
         @click.stop
         :ripple="false"
     >
-        <div v-if="!editMode" class="text-overline mb-4">
-            NEW PROJECT FOR DATASET {{selectedDataset.id}}
+        <div class="text-overline mb-4">
+            NEW DATASET
         </div>
 
         <form :submit="submit">
-            <v-text-field autofocus v-model="name" class="text-h5 mb-1"/>
-            <v-text-field label="Description" v-model="description" />
+            <v-text-field autofocus v-model="name" class="text-h5 mb-1" required />
+            <v-text-field label="Description" v-model="description" required />
             <v-text-field label="Keywords" v-model="keywords" />
-            <v-checkbox dense label="Make this project read only" v-model="readonly" />
-            <v-checkbox  dense v-if="creating" label="Make this project private" v-model="privated" />
             <v-file-input
-                label="Project file (.swproj, .xlsx)"
-                accept=".swproj .xlsx"
+                label="Dataset file (.zip)"
+                accept=".zip"
             ></v-file-input>
             <v-card-actions class="action-buttons">
                 <v-btn
@@ -138,7 +113,7 @@ export default {
                     type="submit"
                     @click.stop="submit"
                 >
-                    {{ (editMode) ? "Save" : "Create" }}
+                    Create
                 </v-btn>
                 <v-btn
                     outlined

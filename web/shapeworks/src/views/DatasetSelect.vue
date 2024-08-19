@@ -7,15 +7,16 @@ import {
     selectedDataObjects,
     loadProjectsForDataset,
     getAllDatasets,
-sortOption,
-sortAscending,
+    sortOption,
+    sortAscending,
 } from '@/store';
 import { Dataset } from '@/types';
 import SubsetSelection from '@/components/SubsetSelection.vue';
+import DatasetForm from '@/components/DatasetForm.vue';
 import router from '@/router';
 
 export default {
-  components: { SubsetSelection },
+  components: { SubsetSelection, DatasetForm },
   props: {
     searchText: {
         type: String,
@@ -98,6 +99,7 @@ export default {
             class="flex-container pa-5"
             :style="selectingSubsetOf ? 'width: calc(100% - 500px)' : ''"
         >
+            <dataset-upload />
             <v-card v-if="allDatasets.length === 0 && !loadingState" width="100%">
                 <v-card-title>No datasets.</v-card-title>
             </v-card>
@@ -156,6 +158,8 @@ export default {
                 </v-btn>
                 </v-card-actions>
             </v-card>
+            <!-- Create dataset form (shows at end of list). Does this need more advanced perms? -->
+            <dataset-form />
         </div>
         <v-navigation-drawer
             right

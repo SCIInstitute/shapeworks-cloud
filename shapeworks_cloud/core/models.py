@@ -18,6 +18,7 @@ class Dataset(TimeStampedModel, models.Model):
     keywords = models.CharField(max_length=255, blank=True, default='')
     contributors = models.TextField(blank=True, default='')
     publications = models.TextField(blank=True, default='')
+    file = S3FileField(null=True, blank=True)
 
     def get_contents(self):
         ret = []  # type: ignore

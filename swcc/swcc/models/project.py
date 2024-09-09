@@ -12,7 +12,6 @@ import requests
 from ..api import current_session
 from .api_model import ApiModel
 from .constants import expected_key_prefixes, required_key_prefixes
-from .dataset import Dataset
 from .file import File
 from .other_models import (
     CachedAnalysis,
@@ -30,7 +29,6 @@ from .other_models import (
     OptimizedParticles,
     Segmentation,
 )
-from .subject import Subject
 from .utils import FileIO, print_progress_bar, raise_for_status, shape_file_type
 
 
@@ -59,6 +57,12 @@ class ProjectFileIO(BaseModel, FileIO):
     def load_data_from_json(self, file, create):
         contents = json.load(open(file))
         data = self.interpret_data(contents['data'])
+
+        if self.project.dataset.has_data():
+            if len(data) != len(list(self.project.dataset.subjects)):
+                raise Exception(
+                    f'Number of subjects in dataset ({len(list(self.project.dataset.subjects))}) does not match number of subjects in file ({len(data)}).'
+                )
         if create:
             print(f'Uploading files for {len(data)} subjects...')
             i = 0
@@ -386,7 +390,9 @@ class Project(ApiModel):
 
         result = super().create()
         if self.file:
-            file_io.load_data()
+            print('Uploading data...')
+            print('HAS DATA', self.dataset.has_data())
+            file_io.load_data(create=(not self.dataset.has_data()))
 
         # Load the new dataset so we get an appropriate file field
         assert result.id
@@ -414,4 +420,8 @@ class Project(ApiModel):
         print()
 
 
+from .dataset import Dataset  # noqa: E402
+from .subject import Subject  # noqa: E402
+
 ProjectFileIO.update_forward_refs()
+Project.update_forward_refs()

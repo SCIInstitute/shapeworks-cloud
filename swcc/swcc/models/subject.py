@@ -3,12 +3,13 @@ from typing import Dict, Iterator, List, Optional
 
 from pydantic.v1 import Field
 
-from .api_model import ApiModel
 from .dataset import Dataset
+from .api_model import ApiModel
 from .other_models import Constraints, Contour, Image, Landmarks, Mesh, Segmentation
 
 
 class Subject(ApiModel):
+
     _endpoint = 'subjects'
 
     name: str = Field(min_length=3, max_length=255)

@@ -89,6 +89,7 @@ class DatasetViewSet(BaseViewSet):
         return models.Dataset.objects.filter(Q(private=False) | Q(creator=user)).order_by('name')
 
     def perform_create(self, serializer):
+        print("PERFORM CREATE")
         user = None
         if self.request and hasattr(self.request, 'user'):
             user = self.request.user
@@ -98,6 +99,7 @@ class DatasetViewSet(BaseViewSet):
             'Create Dataset',
             str(serializer),
         )
+        print("PERFORM CREATE 2")
         serializer.save(creator=user)
 
     @action(

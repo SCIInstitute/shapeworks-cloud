@@ -1,5 +1,6 @@
 import re
-from typing import Iterator
+from typing import Iterator, Union
+from pathlib import Path
 
 from pydantic.v1 import Field
 
@@ -9,7 +10,9 @@ from .utils import logger
 
 class Dataset(ApiModel):
     _endpoint = 'datasets'
+    _file_fields = {'file': 'core.Dataset.file'}
 
+    file_source: Union[str, Path]
     name: str = Field(min_length=3, max_length=255)
     private: bool = False
     license: str = Field(min_length=3)
@@ -78,6 +81,22 @@ class Dataset(ApiModel):
         except StopIteration:
             return None
 
+    def has_data(self):
+        for subject in self.subjects:
+            if any(True for _ in subject.segmentations):
+                return True
+            if any(True for _ in subject.meshes):
+                return True
+            if any(True for _ in subject.contours):
+                return True
+            if any(True for _ in subject.images):
+                return True
+            if any(True for _ in subject.landmarks):
+                return True
+            if any(True for _ in subject.constraints):
+                return True
+        return False
+
     def force_create(self, backup=False):
         """
         Forcibly create the Dataset, even if it already exists.
@@ -86,6 +105,8 @@ class Dataset(ApiModel):
         If backup=True, then the new Dataset will append an appropriate `-v*` version string to
         its name before creation.
         """
+        from .project import Project
+
         old_dataset = Dataset.from_name(self.name)
         while old_dataset is not None:
             if not backup:
@@ -107,8 +128,29 @@ class Dataset(ApiModel):
             # We have a new name now, but that new name might also conflict.
             # Keep looping until there is no conflict.
             old_dataset = Dataset.from_name(self.name)
-        return self.create()
+
+        result = super().create()
+        assert result
+
+        new_dataset = Dataset.from_id(result.id)
+
+        # for the new dataset, add one project file
+        project = Project(
+            name='First project',
+            description='First project for this dataset',
+            dataset=new_dataset,
+            file_source=self.file_source,
+        )
+        project.create()
+
+        # hacky solution for avoiding multiple implementations of IO
+        project.delete()
+
+        return new_dataset
 
     def download(self, path):
         for subject in self.subjects:
             subject.download(path)
+
+
+Dataset.update_forward_refs()

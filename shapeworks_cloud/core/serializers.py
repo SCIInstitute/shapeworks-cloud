@@ -225,6 +225,7 @@ class ProjectDownloadSerializer(serializers.ModelSerializer):
 
 
 class DatasetSerializer(serializers.ModelSerializer):
+    file = S3FileSerializerField()
     projects = ProjectSerializer(required=False, many=True)
     summary = serializers.SerializerMethodField('get_summary')
     creator = serializers.SerializerMethodField('get_creator')

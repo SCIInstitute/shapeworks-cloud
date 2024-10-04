@@ -61,7 +61,7 @@ class ProjectFileIO(BaseModel, FileIO):
         if self.project.dataset.has_data():
             if len(data) != len(list(self.project.dataset.subjects)):
                 raise Exception(
-                    f'Number of subjects in dataset ({len(list(self.project.dataset.subjects))}) does not match number of subjects in file ({len(data)}).'
+                    f'Number of subjects in uploaded project ({len(list(self.project.dataset.subjects))}) does not match number of subjects in the dataset ({len(data)}).'
                 )
         if create:
             print(f'Uploading files for {len(data)} subjects...')

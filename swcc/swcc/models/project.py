@@ -122,12 +122,7 @@ class ProjectFileIO(BaseModel, FileIO):
             )
         return output_data
 
-    def create_objects_for_subject(
-        self,
-        subject,
-        objects_by_domain,
-        create_subjects
-    ):
+    def create_objects_for_subject(self, subject, objects_by_domain, create_subjects):
         def relative_path(filepath):
             if not self.project.file.path:
                 return None

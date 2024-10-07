@@ -1,16 +1,17 @@
 from __future__ import annotations
-import re
-from pydantic.v1 import BaseModel, Field
 
 import json
 from pathlib import Path
+import re
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterator, Union
 import warnings
 
+from pydantic.v1 import BaseModel, Field
+
 from .api_model import ApiModel
 from .constants import expected_key_prefixes, required_key_prefixes
-from .utils import FileIO, print_progress_bar, shape_file_type, logger
+from .utils import FileIO, logger, print_progress_bar, shape_file_type
 
 
 class DatasetFileIO(BaseModel, FileIO):
@@ -20,7 +21,7 @@ class DatasetFileIO(BaseModel, FileIO):
         arbitrary_types_allowed = True
 
     def load_data(self, create=True):
-        if (not hasattr(self.dataset.file, 'path') or not self.dataset.file.path):
+        if not hasattr(self.dataset.file, 'path') or not self.dataset.file.path:
             file = Path(str(self.dataset.file))
         else:
             file = self.dataset.file.path
@@ -58,12 +59,7 @@ class DatasetFileIO(BaseModel, FileIO):
         subject,
         objects_by_domain,
     ):
-        from .other_models import (  # noqa: I001
-            Contour,
-            Image,
-            Mesh,
-            Segmentation,
-        )
+        from .other_models import Contour, Image, Mesh, Segmentation  # noqa: I001
 
         def relative_path(filepath):
             if not self.dataset.file.path:
@@ -112,6 +108,7 @@ class DatasetFileIO(BaseModel, FileIO):
 
     def interpret_data(self, input_data):
         from .subject import Subject
+
         output_data = []
         for entry in input_data:
             subjects = [s for s in self.dataset.subjects if s.name == entry.get('name')]

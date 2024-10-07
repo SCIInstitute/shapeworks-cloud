@@ -38,4 +38,3 @@ with swcc_session(base_url='http://localhost:8000/api/v1') as session:
         last_cached_analysis='analysis/left_atrium_analysis.json',
     ).create()
     print('Done.')
-

@@ -4,8 +4,8 @@ from typing import Dict, Iterator, List, Optional
 from pydantic.v1 import Field
 
 from .api_model import ApiModel
-from .other_models import Constraints, Contour, Image, Landmarks, Mesh, Segmentation
 from .dataset import Dataset
+from .other_models import Constraints, Contour, Image, Landmarks, Mesh, Segmentation
 
 
 class Subject(ApiModel):

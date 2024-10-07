@@ -254,8 +254,8 @@ class DeepSSMResult(ApiModel):
     testing_distances: Union[str, Path]
 
 
-from .subject import Subject  # noqa: E402
 from .project import Project  # noqa: E402
+from .subject import Subject  # noqa: E402
 
 Segmentation.update_forward_refs()
 Mesh.update_forward_refs()

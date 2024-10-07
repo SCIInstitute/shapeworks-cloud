@@ -139,16 +139,13 @@ class ApiModel(BaseModel):
 
         self.assert_local()
         json = self.to_json()
-        print(json)
         r: requests.Response = session.post(f'{self._endpoint}/', json=json)
-        print(r)
         raise_for_status(r)
         json = r.json()
         self.id = json['id']
         for key, file in self._files.items():
             if key in json:
                 file.url = parse_obj_as(AnyHttpUrl, json[key])
-                print(file.url)
         if 'creator' in r.json():
             self.creator = r.json()['creator']
         return self

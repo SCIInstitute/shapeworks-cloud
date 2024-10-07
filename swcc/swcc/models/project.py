@@ -38,7 +38,7 @@ class ProjectFileIO(BaseModel, FileIO):
     class Config:
         arbitrary_types_allowed = True
 
-    def load_data(self, create=True):
+    def load_data(self, create_subjects=True):
         if (
             not self.project.file
             or not hasattr(self.project.file, 'path')
@@ -50,27 +50,32 @@ class ProjectFileIO(BaseModel, FileIO):
         if str(file).endswith('xlsx') or str(file).endswith('xlsx'):
             raise NotImplementedError('Convert spreadsheet file to excel before parsing')
         elif str(file).endswith('json') or str(file).endswith('swproj'):
-            return self.load_data_from_json(file, create)
+            return self.load_data_from_json(file, create_subjects)
         else:
             raise Exception(f'Unknown format for {file} - expected .xlsx, .xls, .swproj, or .json')
 
-    def load_data_from_json(self, file, create):
+    def load_data_from_json(self, file, create_subjects):
         contents = json.load(open(file))
         data = self.interpret_data(contents['data'])
 
         if self.project.dataset.has_data():
             if len(data) != len(list(self.project.dataset.subjects)):
                 raise Exception(
-                    f'Number of subjects in uploaded project ({len(list(self.project.dataset.subjects))}) does not match number of subjects in the dataset ({len(data)}).'
+                    f'''Number of subjects in uploaded project
+                    ({len(list(self.project.dataset.subjects))})
+                    does not match number of subjects in the dataset ({len(data)}).'''
                 )
-        if create:
-            print(f'Uploading files for {len(data)} subjects...')
+
+            if create_subjects:
+                print("Creating subjects using data in project file...")
+            else:
+                print("Creating project-specific objects for subjects...")
             i = 0
             total_progress_steps = len(data)
             print_progress_bar(i, total_progress_steps)
             for [subject, objects_by_domain] in data:
                 i += 1
-                self.create_objects_for_subject(subject, objects_by_domain)
+                self.create_objects_for_subject(subject, objects_by_domain, create_subjects)
                 print_progress_bar(i, total_progress_steps)
             print()
         return data
@@ -121,6 +126,7 @@ class ProjectFileIO(BaseModel, FileIO):
         self,
         subject,
         objects_by_domain,
+        create_subjects
     ):
         def relative_path(filepath):
             if not self.project.file.path:
@@ -142,32 +148,37 @@ class ProjectFileIO(BaseModel, FileIO):
                     if key == 'shape':
                         key = shape_file_type(Path(value)).__name__.lower()
 
-                    if key == 'mesh':
-                        original_shape = Mesh(
-                            file_source=relative_path(value),
-                            anatomy_type=anatomy_id,
-                            subject=subject,
-                        ).create()
-                    elif key == 'segmentation':
-                        original_shape = Segmentation(
-                            file_source=relative_path(value),
-                            anatomy_type=anatomy_id,
-                            subject=subject,
-                        ).create()
-                        pass
-                    elif key == 'contour':
-                        original_shape = Contour(
-                            file_source=relative_path(value),
-                            anatomy_type=anatomy_id,
-                            subject=subject,
-                        ).create()
-                    elif key == 'image':
-                        Image(
-                            file_source=relative_path(value),
-                            modality=anatomy_id,
-                            subject=subject,
-                        ).create()
-                    elif key == 'groomed':
+                    if create_subjects:
+                        if key == 'mesh':
+                            original_shape = Mesh(
+                                file_source=relative_path(value),
+                                anatomy_type=anatomy_id,
+                                subject=subject,
+                            ).create()
+                        elif key == 'segmentation':
+                            original_shape = Segmentation(
+                                file_source=relative_path(value),
+                                anatomy_type=anatomy_id,
+                                subject=subject,
+                            ).create()
+                            pass
+                        elif key == 'contour':
+                            original_shape = Contour(
+                                file_source=relative_path(value),
+                                anatomy_type=anatomy_id,
+                                subject=subject,
+                            ).create()
+                        elif key == 'image':
+                            Image(
+                                file_source=relative_path(value),
+                                modality=anatomy_id,
+                                subject=subject,
+                            ).create()
+                    else:
+                        original_shape = subject.get_shapes_for_anatomy_id(anatomy_id)[0]
+
+                    # These should be created for every single project file uploaded
+                    if key == 'groomed':
                         if type(original_shape) == Mesh:
                             groomed_shape = self.project.add_groomed_mesh(
                                 file_source=relative_path(value),
@@ -226,6 +237,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         ).create()
 
     def load_analysis_from_json(self, file_path):
+        print("Loading cached analysis...")
         project_root = Path(str(self.project.file.path)).parent
         analysis_file_location = project_root / Path(file_path)
         contents = json.load(open(analysis_file_location))
@@ -390,9 +402,7 @@ class Project(ApiModel):
 
         result = super().create()
         if self.file:
-            print('Uploading data...')
-            print('HAS DATA', self.dataset.has_data())
-            file_io.load_data(create=(not self.dataset.has_data()))
+            file_io.load_data(create_subjects=(not self.dataset.has_data()))
 
         # Load the new dataset so we get an appropriate file field
         assert result.id

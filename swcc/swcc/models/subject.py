@@ -3,13 +3,12 @@ from typing import Dict, Iterator, List, Optional
 
 from pydantic.v1 import Field
 
-from .dataset import Dataset
 from .api_model import ApiModel
 from .other_models import Constraints, Contour, Image, Landmarks, Mesh, Segmentation
+from .dataset import Dataset
 
 
 class Subject(ApiModel):
-
     _endpoint = 'subjects'
 
     name: str = Field(min_length=3, max_length=255)
@@ -40,6 +39,21 @@ class Subject(ApiModel):
     @property
     def constraints(self) -> Iterator[Constraints]:
         return Constraints.list(subject=self)
+
+    def get_shapes_for_anatomy_id(self, anatomy_id):
+        # for every mesh, segmentation, contour, find every shape that matches the anatomy_id
+        shapes = []
+        for shape in self.segmentations:
+            if shape.anatomy_type == anatomy_id:
+                shapes.append(shape)
+        for shape in self.meshes:
+            if shape.anatomy_type == anatomy_id:
+                shapes.append(shape)
+        for shape in self.contours:
+            if shape.anatomy_type == anatomy_id:
+                shapes.append(shape)
+
+        return shapes
 
     def add_segmentation(self, file: Path, anatomy_type: str) -> Segmentation:
         return Segmentation(file_source=file, anatomy_type=anatomy_type, subject=self).create()
@@ -74,3 +88,6 @@ class Subject(ApiModel):
         for iterator in data_lists:
             for item in iterator:
                 item.file.download(path)
+
+
+Subject.update_forward_refs()

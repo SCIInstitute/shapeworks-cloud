@@ -24,13 +24,13 @@ jobs:
           pip install tox
 
       - name: Build images
-        run: docker-compose build
+        run: docker compose build
       - name: Run migrations
-        run: docker-compose run --rm django ./manage.py migrate
+        run: docker compose run --rm django ./manage.py migrate
       - name: Create super user
-        run: docker-compose run -e DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD --rm django ./manage.py createsuperuser --noinput --email=$DJANGO_SUPERUSER_EMAIL
+        run: docker compose run -e DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD --rm django ./manage.py createsuperuser --noinput --email=$DJANGO_SUPERUSER_EMAIL
       - name: Start server
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - uses: ifaxity/wait-on-action@v1
         with:
@@ -41,5 +41,5 @@ jobs:
         working-directory: ./swcc
 
       - name: Stop server
-        run: docker-compose down --volumes
+        run: docker compose down --volumes
         if: ${{ always() }}

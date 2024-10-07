@@ -12,35 +12,30 @@ with swcc_session(base_url='http://localhost:8000/api/v1') as session:
     token = session.login(username, password)
     print('Authenticated with running server.')
 
+    project_file_1 = Path('left_atrium/left_atrium_barebones.swproj')
+    project_file_2 = Path('left_atrium/left_atrium.swproj')
     print('Uploading left atrium dataset and project (4 meshes).')
     dataset_1 = Dataset(
         name='Left Atria',
         description='Left atria meshes of 4 subjects',
         license='No license',
         acknowledgement='No acknowledgement',
+        file_source=project_file_1,
     ).force_create()
 
-    project_file_1 = Path('left_atrium/left_atrium.swproj')
     project_1 = Project(
         file_source=project_file_1,
-        description='First project for left atrium data',
+        description='First project for left atrium data, no project data',
         dataset=dataset_1,
         last_cached_analysis='analysis/left_atrium_analysis.json',
     ).create()
     print('Done.')
 
-    print('Uploading ellipsoid dataset and project (3 segmentations).')
-    dataset_2 = Dataset(
-        name='Ellipsoids',
-        description='3 ellipsoid segmentations',
-        license='No license',
-        acknowledgement='No acknowledgement',
-    ).force_create()
-
-    project_file_2 = Path('ellipsoid/ellipsoid.swproj')
     project_2 = Project(
         file_source=project_file_2,
-        description='First project for ellipsoid data',
-        dataset=dataset_2,
+        description='First project for left atrium data, with project specific data',
+        dataset=dataset_1,
+        last_cached_analysis='analysis/left_atrium_analysis.json',
     ).create()
     print('Done.')
+

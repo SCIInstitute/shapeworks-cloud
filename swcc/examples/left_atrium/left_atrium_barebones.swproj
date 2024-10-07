@@ -5,48 +5,28 @@
             "group_sex": "M",
             "group_age": "Adult",
             "group_diabetic": "No",
-            "shape_1": "LA_04.vtk",
-            "groomed_1": "groomed/LA_04_groomed.vtk",
-            "local_particles_1": "particles/LA_04_groomed_local.particles",
-            "world_particles_1": "particles/LA_04_groomed_world.particles",
-            "alignment_1": "0.973236 0.093433 0.209959 13.704221 -0.122920 0.983589 0.132076 38.924663 -0.194173 -0.154349 0.968748 3.464001 0.000000 0.000000 0.000000 1.000000",
-            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+            "shape_1": "LA_04.vtk"
         },
         {
             "name": "LA_03",
             "group_sex": "M",
             "group_age": "Senior",
             "group_diabetic": "Yes",
-            "shape_1": "LA_03.vtk",
-            "groomed_1": "groomed/LA_03_groomed.vtk",
-            "local_particles_1": "particles/LA_03_groomed_local.particles",
-            "world_particles_1": "particles/LA_03_groomed_world.particles",
-            "alignment_1": "0.971895 0.231026 0.045252 17.747530 -0.231372 0.972862 0.002501 -1.128621 -0.043446 -0.012900 0.998972 -83.856225 0.000000 0.000000 0.000000 1.000000",
-            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+            "shape_1": "LA_03.vtk"
         },
         {
             "name": "LA_02",
             "group_sex": "F",
             "group_age": "Young Adult",
             "group_diabetic": "No",
-            "shape_1": "LA_02.vtk",
-            "groomed_1": "groomed/LA_02_groomed.vtk",
-            "local_particles_1": "particles/LA_02_groomed_local.particles",
-            "world_particles_1": "particles/LA_02_groomed_world.particles",
-            "alignment_1": "0.963827 0.248433 0.096532 3.973339 -0.256333 0.963239 0.080393 36.697682 -0.073011 -0.102230 0.992078 -59.838894 0.000000 0.000000 0.000000 1.000000",
-            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+            "shape_1": "LA_02.vtk"
         },
         {
             "name": "LA_01",
             "group_sex": "F",
             "group_age": "Adult",
             "group_diabetic": "Yes",
-            "shape_1": "LA_01.vtk",
-            "groomed_1": "groomed/LA_01_groomed.vtk",
-            "local_particles_1": "particles/LA_01_groomed_local.particles",
-            "world_particles_1": "particles/LA_01_groomed_world.particles",
-            "alignment_1": "1.000000 0.000000 0.000000 -11.174815 0.000000 1.000000 0.000000 35.754910 0.000000 0.000000 1.000000 12.026655 0.000000 0.000000 0.000000 1.000000",
-            "procrustes_1": "1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000"
+            "shape_1": "LA_01.vtk"
         }
     ],
     "groom": {

@@ -61,15 +61,15 @@ class ProjectFileIO(BaseModel, FileIO):
         if self.project.dataset.has_data():
             if len(data) != len(list(self.project.dataset.subjects)):
                 raise Exception(
-                    f'''Number of subjects in uploaded project
+                    f"""Number of subjects in uploaded project
                     ({len(list(self.project.dataset.subjects))})
-                    does not match number of subjects in the dataset ({len(data)}).'''
+                    does not match number of subjects in the dataset ({len(data)})."""
                 )
 
             if create_subjects:
-                print("Creating subjects using data in project file...")
+                print('Creating subjects using data in project file...')
             else:
-                print("Creating project-specific objects for subjects...")
+                print('Creating project-specific objects for subjects...')
             i = 0
             total_progress_steps = len(data)
             print_progress_bar(i, total_progress_steps)
@@ -237,7 +237,7 @@ class ProjectFileIO(BaseModel, FileIO):
                         ).create()
 
     def load_analysis_from_json(self, file_path):
-        print("Loading cached analysis...")
+        print('Loading cached analysis...')
         project_root = Path(str(self.project.file.path)).parent
         analysis_file_location = project_root / Path(file_path)
         contents = json.load(open(analysis_file_location))

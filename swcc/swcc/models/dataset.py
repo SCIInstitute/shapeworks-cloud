@@ -20,10 +20,7 @@ class DatasetFileIO(BaseModel, FileIO):
         arbitrary_types_allowed = True
 
     def load_data(self, create=True):
-        if (
-            not hasattr(self.dataset.file, 'path')
-            or not self.dataset.file.path
-        ):
+        if (not hasattr(self.dataset.file, 'path') or not self.dataset.file.path):
             file = Path(str(self.dataset.file))
         else:
             file = self.dataset.file.path
@@ -41,8 +38,8 @@ class DatasetFileIO(BaseModel, FileIO):
         if self.dataset.has_data():
             if len(data) != len(list(self.dataset.subjects)):
                 raise Exception(
-                    f'''Number of subjects in uploaded project ({len(list(self.dataset.subjects))})
-                    does not match number of subjects in the dataset ({len(data)}).'''
+                    f"""Number of subjects in uploaded project ({len(list(self.dataset.subjects))})
+                    does not match number of subjects in the dataset ({len(data)})."""
                 )
         if create:
             print(f'Uploading files for {len(data)} subjects...')
@@ -61,7 +58,7 @@ class DatasetFileIO(BaseModel, FileIO):
         subject,
         objects_by_domain,
     ):
-        from .other_models import (
+        from .other_models import (  # noqa: I001
             Contour,
             Image,
             Mesh,

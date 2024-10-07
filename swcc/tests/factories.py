@@ -44,6 +44,7 @@ class DatasetFactory(Factory):
     class Meta:
         model = models.Dataset
 
+    file_source = './tests/test_data/project_demo.swproj'
     name = Sequence(lambda n: f'dataset_{n}')
     license = Faker('sentence')
     description = Faker('sentence')

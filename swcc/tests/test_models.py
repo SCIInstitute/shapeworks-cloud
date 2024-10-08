@@ -90,6 +90,7 @@ def test_dataset_force_create_overwrite(session):
         license=old_dataset.license,
         description=old_dataset.description,
         acknowledgement=old_dataset.acknowledgement,
+        file_source='./tests/test_data/project_demo.swproj',
     ).force_create()
     new_dataset.assert_remote()
 
@@ -109,6 +110,7 @@ def test_dataset_force_create_no_existing(session):
         license='license',
         description='description',
         acknowledgement='acknowledgement',
+        file_source='./tests/test_data/project_demo.swproj',
     ).force_create()
     dataset.assert_remote()
 
@@ -130,6 +132,7 @@ def test_dataset_force_create_backup(session, version):
         license=old_dataset.license,
         description=old_dataset.description,
         acknowledgement=old_dataset.acknowledgement,
+        file_source='./tests/test_data/project_demo.swproj',
     ).force_create(backup=True)
     new_dataset.assert_remote()
 
@@ -150,6 +153,7 @@ def test_dataset_force_create_backup_no_version_suffix(session):
         license=old_dataset.license,
         description=old_dataset.description,
         acknowledgement=old_dataset.acknowledgement,
+        file_source='./tests/test_data/project_demo.swproj',
     ).force_create(backup=True)
     new_dataset.assert_remote()
 
@@ -161,9 +165,18 @@ def test_dataset_force_create_backup_no_version_suffix(session):
 
 def test_dataset_force_create_backup_multiple_conflicts(session):
     old_dataset = factories.DatasetFactory(name='dataset').create()
-    factories.DatasetFactory(name='dataset-v1').create()
-    factories.DatasetFactory(name='dataset-v2').create()
-    factories.DatasetFactory(name='dataset-v3').create()
+    factories.DatasetFactory(
+        name='dataset-v1',
+        file_source='./tests/test_data/project_demo.swproj'
+    ).create()
+    factories.DatasetFactory(
+        name='dataset-v2',
+        file_source='./tests/test_data/project_demo.swproj'
+    ).create()
+    factories.DatasetFactory(
+        name='dataset-v3',
+        file_source='./tests/test_data/project_demo.swproj'
+    ).create()
     assert models.Dataset.from_id(old_dataset.id)
 
     new_dataset = models.Dataset(
@@ -171,6 +184,7 @@ def test_dataset_force_create_backup_multiple_conflicts(session):
         license=old_dataset.license,
         description=old_dataset.description,
         acknowledgement=old_dataset.acknowledgement,
+        file_source='./tests/test_data/project_demo.swproj',
     ).force_create(backup=True)
     new_dataset.assert_remote()
 

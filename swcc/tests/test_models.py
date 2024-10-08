@@ -180,7 +180,7 @@ def test_dataset_force_create_backup_multiple_conflicts(session):
     assert models.Dataset.from_id(old_dataset.id)
 
     new_dataset = models.Dataset(
-        name='dataset',
+        name='dataset-v4',
         license=old_dataset.license,
         description=old_dataset.description,
         acknowledgement=old_dataset.acknowledgement,
